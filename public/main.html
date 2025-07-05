@@ -1,1 +1,58 @@
-<!-- 主頁面 HTML，有側欄與右側內容區 -->
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>數位小兔主頁</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+    }
+    #sidebar {
+      width: 200px;
+      background-color: #ffeef4;
+      padding: 20px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    #sidebar h2 {
+      font-size: 20px;
+      margin-top: 0;
+    }
+    #sidebar button {
+      display: block;
+      margin: 10px 0;
+      width: 100%;
+      padding: 10px;
+      background-color: white;
+      border: 1px solid pink;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #main-content {
+      flex: 1;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h2>🎀 數位小兔</h2>
+    <p id="user-nickname">Hello, 暱稱！</p>
+    <button onclick="loadPage('daily')">1️⃣ 每日工作</button>
+    <button onclick="loadPage('progress')">2️⃣ 工作進度</button>
+    <button onclick="loadPage('add-user')">3️⃣ 新增帳號</button>
+    <button onclick="loadPage('members')">4️⃣ 會員管理</button>
+    <button onclick="loadPage('envelope')">5️⃣ 列印信封</button>
+    <button onclick="logout()">🚪 登出</button>
+  </div>
+  <div id="main-content">
+    <h1>歡迎使用 Rabbithome ✨</h1>
+    <p>請從左側選單選擇功能</p>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
