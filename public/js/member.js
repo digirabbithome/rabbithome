@@ -1,1 +1,1 @@
-// Member management logic
+// member management script

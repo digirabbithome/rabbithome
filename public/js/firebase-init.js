@@ -1,1 +1,1 @@
-// Firebase init
+// Firebase init here

@@ -1,1 +1,1 @@
-// Main JS
+// main page script
