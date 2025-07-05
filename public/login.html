@@ -1,1 +1,19 @@
-<!DOCTYPE html><html><head><title>Login</title><link rel='stylesheet' href='./css/style.css'></head><body><form id='loginForm'></form><script src='./js/login.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>登入 Rabbithome</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="login-container">
+    <h2>登入 Rabbithome 🐰</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="密碼" />
+    <button onclick="login()">登入</button>
+    <p id="error-message"></p>
+  </div>
+  <script src="firebase.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
