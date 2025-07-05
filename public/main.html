@@ -2,26 +2,27 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>Rabbithome 主畫面</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Rabbithome 主頁</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="container">
-    <aside class="sidebar">
-      <h2 id="nickname-title">Hello，暱稱！</h2>
+    <div class="sidebar">
+      <h2 id="nickname">Hello！</h2>
       <ul>
-        <li><a href="#">📋 每日工作</a></li>
-        <li><a href="#">🗂️ 工作進度</a></li>
-        <li><a href="#">✉️ 列印信封</a></li>
-        <li><a href="new_account.html">👤 新增帳號</a></li>
-        <li><a href="#">👥 會員管理</a></li>
-        <li><a href="#" id="logout">🚪 登出</a></li>
+        <li id="menu-daily">📋 每日工作</li>
+        <li id="menu-progress">🗂️ 工作進度</li>
+        <li id="menu-mail">✉️ 列印信封</li>
+        <li id="menu-add">👤 新增帳號</li>
+        <li id="menu-members">👥 會員管理</li>
+        <li id="logout">🚪 登出</li>
       </ul>
-    </aside>
-    <main class="content">
-      <h1>這裡是每日工作頁面。</h1>
-    </main>
+    </div>
+    <div class="content" id="workspace">
+      <h2>這裡是每日工作頁面。</h2>
+    </div>
   </div>
-  <script type="module" src="js/main.js"></script>
+  <script src="js/firebase.js" type="module"></script>
+  <script src="js/main.js" type="module"></script>
 </body>
 </html>

@@ -1,20 +1,25 @@
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { app } from './firebase.js';
+import { auth } from './firebase.js';
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
-const auth = getAuth(app);
-const db = getFirestore(app);
+const nicknameEl = document.getElementById("nickname");
+const workspace = document.getElementById("workspace");
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    const nickname = userDoc.exists() ? userDoc.data().nickname : "使用者";
-    document.getElementById("nickname-title").innerText = `Hello，${nickname}！`;
+    const uid = user.uid;
+    fetch(`https://firestore.googleapis.com/v1/projects/rabbithome-auth/databases/(default)/documents/users/${uid}`)
+      .then(res => res.json())
+      .then(data => {
+        const nickname = data.fields?.nickname?.stringValue || "未知使用者";
+        nicknameEl.innerText = `Hello，${nickname}！`;
+      });
+  } else {
+    location.href = "login.html";
   }
 });
 
 document.getElementById("logout").addEventListener("click", () => {
   signOut(auth).then(() => {
-    window.location.href = "login.html";
+    location.href = "login.html";
   });
 });

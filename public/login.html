@@ -4,42 +4,16 @@
   <meta charset="UTF-8" />
   <title>Rabbithome 登入</title>
   <style>
-    body {
-      font-family: "Microsoft JhengHei", sans-serif;
-      background-color: #ffeef2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+    body { background-color: #ffeef5; font-family: sans-serif; }
     .login-container {
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-      width: 300px;
-      text-align: center;
+      width: 300px; margin: 100px auto; padding: 20px;
+      background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .login-container h2 {
-      margin-bottom: 20px;
-      color: #d63384;
+    input, button {
+      display: block; width: 100%; padding: 10px;
+      margin-bottom: 10px; border: 1px solid #ccc;
     }
-    .login-container input {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    .login-container button {
-      background-color: #d63384;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+    button { background-color: pink; border: none; color: white; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -50,7 +24,7 @@
     <button onclick="login()">登入</button>
     <p id="error-message" style="color: red;"></p>
   </div>
-  <script type="module" src="js/firebase.js"></script>
-  <script type="module" src="js/login.js"></script>
+  <script src="js/firebase.js" type="module"></script>
+  <script src="js/login.js" type="module"></script>
 </body>
 </html>
