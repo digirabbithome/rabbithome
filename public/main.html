@@ -1,58 +1,56 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>數位小兔主頁</title>
+  <meta charset="UTF-8">
+  <title>數位小兔後台系統</title>
   <style>
     body {
+      display: flex;
       margin: 0;
       font-family: sans-serif;
-      display: flex;
     }
-    #sidebar {
+    .sidebar {
       width: 200px;
-      background-color: #ffeef4;
-      padding: 20px;
+      background-color: #f8d7da;
       height: 100vh;
-      box-sizing: border-box;
+      padding-top: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     }
-    #sidebar h2 {
-      font-size: 20px;
-      margin-top: 0;
-    }
-    #sidebar button {
+    .sidebar button {
       display: block;
-      margin: 10px 0;
       width: 100%;
       padding: 10px;
-      background-color: white;
-      border: 1px solid pink;
-      border-radius: 10px;
+      border: none;
+      background: none;
+      text-align: left;
       cursor: pointer;
+      font-size: 16px;
     }
-    #main-content {
-      flex: 1;
+    .sidebar button:hover {
+      background-color: #f1aeb5;
+    }
+    .main-content {
+      flex-grow: 1;
       padding: 20px;
+    }
+    #nickname {
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div id="sidebar">
-    <h2>🎀 數位小兔</h2>
-    <p id="user-nickname">Hello, 暱稱！</p>
-    <button onclick="loadPage('daily')">1️⃣ 每日工作</button>
-    <button onclick="loadPage('progress')">2️⃣ 工作進度</button>
-    <button onclick="loadPage('add-user')">3️⃣ 新增帳號</button>
-    <button onclick="loadPage('members')">4️⃣ 會員管理</button>
-    <button onclick="loadPage('envelope')">5️⃣ 列印信封</button>
-    <button onclick="logout()">🚪 登出</button>
+  <div class="sidebar">
+    <button id="btn-work">📋 每日工作</button>
+    <button id="btn-progress">📈 工作進度</button>
+    <button id="btn-add-user">➕ 新增帳號</button>
+    <button id="btn-member">👥 會員管理</button>
+    <button id="btn-print">✉️ 列印信封</button>
+    <button id="btn-logout">🚪 登出</button>
   </div>
-  <div id="main-content">
-    <h1>歡迎使用 Rabbithome ✨</h1>
-    <p>請從左側選單選擇功能</p>
+  <div class="main-content">
+    <h2>HELLO，<span id="nickname">暱稱</span>！</h2>
+    <div id="content">這裡是主頁面內容。</div>
   </div>
-
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
