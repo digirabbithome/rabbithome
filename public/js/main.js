@@ -1,41 +1,40 @@
-import { auth, db } from './firebase-init.js';
-import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { auth, db } from './js/firebase-init.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 const nicknameSpan = document.getElementById('nickname');
 const contentDiv = document.getElementById('content');
-
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const docRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      nicknameSpan.textContent = docSnap.data().nickname;
-    } else {
-      nicknameSpan.textContent = "未知使用者";
-    }
-  } else {
-    window.location.href = "login.html";
-  }
-});
+const addUserDiv = document.getElementById('add-user-container');
+const memberDiv = document.getElementById('member-management-container');
 
 document.getElementById('btn-logout').addEventListener('click', async () => {
   await signOut(auth);
-  window.location.href = "login.html";
+  window.location.href = 'login.html';
 });
 
-document.getElementById('btn-work').addEventListener('click', () => {
-  contentDiv.innerHTML = "<h3>📋 每日工作</h3><p>這裡是每日工作內容。</p>";
-});
-document.getElementById('btn-progress').addEventListener('click', () => {
-  contentDiv.innerHTML = "<h3>📈 工作進度</h3><p>這裡是工作進度頁面。</p>";
-});
 document.getElementById('btn-add-user').addEventListener('click', () => {
-  contentDiv.innerHTML = "<h3>➕ 新增帳號</h3><p>這裡將新增帳號表單。</p>";
+  contentDiv.style.display = 'none';
+  memberDiv.style.display = 'none';
+  addUserDiv.style.display = 'block';
+  addUserDiv.innerHTML = '<p>這裡是新增帳號區，待開發...</p>';
 });
+
 document.getElementById('btn-member').addEventListener('click', () => {
-  contentDiv.innerHTML = "<h3>👥 會員管理</h3><p>這裡是會員管理頁面。</p>";
+  contentDiv.style.display = 'none';
+  addUserDiv.style.display = 'none';
+  memberDiv.style.display = 'block';
+  memberDiv.innerHTML = '<p>這裡是會員管理區，待開發...</p>';
 });
-document.getElementById('btn-print').addEventListener('click', () => {
-  contentDiv.innerHTML = "<h3>✉️ 列印信封</h3><p>這裡是列印功能。</p>";
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const docSnap = await getDoc(doc(db, "users", user.uid));
+    if (docSnap.exists()) {
+      nicknameSpan.innerText = docSnap.data().nickname || '使用者';
+    } else {
+      nicknameSpan.innerText = '使用者';
+    }
+  } else {
+    window.location.href = 'login.html';
+  }
 });

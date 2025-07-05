@@ -13,13 +13,8 @@
       width: 200px;
       background-color: #f8d7da;
       height: 100vh;
-      padding: 20px 10px 10px 10px;
+      padding-top: 20px;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
-    .sidebar .nickname {
-      font-weight: bold;
-      margin-bottom: 20px;
-      font-size: 16px;
     }
     .sidebar button {
       display: block;
@@ -38,11 +33,13 @@
       flex-grow: 1;
       padding: 20px;
     }
+    #nickname {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <div class="nickname">HELLO，<span id="nickname">暱稱</span>！</div>
     <button id="btn-work">📋 每日工作</button>
     <button id="btn-progress">📈 工作進度</button>
     <button id="btn-add-user">➕ 新增帳號</button>
@@ -51,7 +48,10 @@
     <button id="btn-logout">🚪 登出</button>
   </div>
   <div class="main-content">
+    <h2>HELLO，<span id="nickname">暱稱</span>！</h2>
     <div id="content">這裡是主頁面內容。</div>
+    <div id="add-user-container" style="display:none;"></div>
+    <div id="member-management-container" style="display:none;"></div>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>

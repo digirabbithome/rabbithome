@@ -1,52 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>登入 - 數位小兔</title>
-  <style>
-    body {
-      background-color: #ffeef4;
-      font-family: sans-serif;
-      text-align: center;
-      padding-top: 100px;
-    }
-    .login-box {
-      display: inline-block;
-      padding: 40px;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 0 10px #ccc;
-    }
-    input {
-      display: block;
-      margin: 10px auto;
-      padding: 10px;
-      width: 200px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-    }
-    button {
-      padding: 10px 30px;
-      background-color: pink;
-      border: none;
-      border-radius: 20px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    img {
-      width: 100px;
-      margin-bottom: 20px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>登入頁面</title>
 </head>
 <body>
-  <div class="login-box">
-    <img src="img/logo.jpeg" alt="數位小兔 Logo" />
-    <h2>登入數位小兔</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="密碼" />
-    <button id="loginBtn">登入</button>
-  </div>
+  <h2>登入數位小兔</h2>
+  <input type="email" id="email" placeholder="Email"><br>
+  <input type="password" id="password" placeholder="密碼"><br>
+  <button id="login">登入</button>
+  <p id="message"></p>
   <script type="module" src="js/login.js"></script>
 </body>
 </html>
