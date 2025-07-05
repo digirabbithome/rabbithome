@@ -2,23 +2,26 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>Rabbithome 後台</title>
+  <title>Rabbithome 系統</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="sidebar">
-    <h2 id="nickname">Hello，</h2>
-    <ul>
-      <li id="daily-work">📋 每日工作</li>
-      <li id="progress">🗂️ 工作進度</li>
-      <li id="print-envelope">✉️ 列印信封</li>
-      <li id="add-account">👤 新增帳號</li>
-      <li id="member-manage">👥 會員管理</li>
-      <li id="logout">🚪 登出</li>
-    </ul>
+  <div class="container">
+    <div class="sidebar">
+      <h2 id="user-nickname">Hello，使用者！</h2>
+      <ul>
+        <li id="nav-daily">📋 每日工作</li>
+        <li id="nav-progress">🗂️ 工作進度</li>
+        <li id="nav-envelope">✉️ 列印信封</li>
+        <li id="nav-add-user">👤 新增帳號</li>
+        <li id="nav-member">👥 會員管理</li>
+        <li id="nav-logout">🚪 登出</li>
+      </ul>
+    </div>
+    <div class="main-content" id="main-content">
+      <p>請選擇左側功能。</p>
+    </div>
   </div>
-  <div id="content">這裡是工作區域</div>
-  <script src="js/firebase.js" type="module"></script>
-  <script src="js/main.js" type="module"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
