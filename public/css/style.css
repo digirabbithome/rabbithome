@@ -1,42 +1,35 @@
 body {
-  background-color: #f8d3e0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   margin: 0;
-  font-family: "Arial", sans-serif;
+  background-color: #ffeef3;
+  font-family: "Helvetica Neue", sans-serif;
 }
 .login-container {
-  background: #ffffff;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  margin: 100px auto;
   text-align: center;
-  width: 320px;
 }
 .logo {
   width: 120px;
   margin-bottom: 20px;
 }
 input {
+  display: block;
   width: 100%;
-  padding: 10px;
   margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
+  padding: 10px;
 }
 button {
-  width: 100%;
-  background-color: #f8a6c1;
+  background-color: #f598b0;
   color: white;
   border: none;
   padding: 10px;
-  border-radius: 8px;
-  font-size: 16px;
+  width: 100%;
   cursor: pointer;
 }
 button:hover {
-  background-color: #f67da8;
+  background-color: #f27b98;
+}
+#status {
+  margin-top: 10px;
+  color: #555;
 }
