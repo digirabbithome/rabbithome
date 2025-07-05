@@ -2,46 +2,21 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>數位小兔主頁</title>
-  <style>
-    body {
-      display: flex;
-      margin: 0;
-      font-family: sans-serif;
-    }
-    .sidebar {
-      width: 200px;
-      background-color: #ffc0cb;
-      height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .main-content {
-      flex-grow: 1;
-      padding: 20px;
-    }
-    .sidebar button {
-      display: block;
-      margin-bottom: 10px;
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background-color: white;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-  </style>
+  <title>主畫面 - Rabbithome</title>
 </head>
 <body>
-  <div class="sidebar">
-    <p>🎉 Hello, <span id="nickname">使用者</span>！</p>
-    <button>📋 每日工作</button>
-    <button>📬 列印信封</button>
-    <button>🚪 登出</button>
-  </div>
-  <div class="main-content">
-    <h1>歡迎來到數位小兔系統</h1>
+  <div style="display: flex;">
+    <div style="width: 200px; background-color: #eee; padding: 10px;">
+      <h3>📋 工具列</h3>
+      <ul>
+        <li>每日工作</li>
+        <li>登出</li>
+      </ul>
+    </div>
+    <div style="margin-left: 20px; padding: 10px;">
+      <h2 id="welcomeMsg">🎉 歡迎！</h2>
+      <p>這裡是每日工作頁面。</p>
+    </div>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>

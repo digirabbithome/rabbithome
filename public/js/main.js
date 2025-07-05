@@ -1,12 +1,18 @@
-import { auth } from './firebase-init.js';
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const user = auth.currentUser;
-  const nicknameSpan = document.getElementById("nickname");
-
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    nicknameSpan.textContent = user.displayName || user.email;
+    const uid = user.uid;
+    const userRef = doc(db, "users", uid);
+    const userSnap = await getDoc(userRef);
+    let nickname = "未知使用者";
+    if (userSnap.exists() && userSnap.data().nickname) {
+      nickname = userSnap.data().nickname;
+    }
+    document.getElementById("welcomeMsg").innerText = `🎉 歡迎回來，${nickname}！`;
   } else {
-    nicknameSpan.textContent = "未知使用者";
+    window.location.href = "/login.html";
   }
 });

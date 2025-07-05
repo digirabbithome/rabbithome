@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      localStorage.setItem("uid", userCredential.user.uid);
       alert("登入成功！");
       window.location.href = "/main.html";
     } catch (error) {
