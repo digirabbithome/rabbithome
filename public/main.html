@@ -1,43 +1,27 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Rabbithome 主畫面</title>
-  <style>
-body { font-family: sans-serif; display: flex; margin: 0; }
-.sidebar { width: 200px; background: #f8e1f4; padding: 20px; }
-.content { flex: 1; padding: 20px; }
-.login-container { margin: 100px auto; width: 300px; text-align: center; }
-input { display: block; margin: 10px auto; padding: 8px; width: 90%; }
-button { padding: 10px 20px; background: #f08080; color: white; border: none; cursor: pointer; }
-button:hover { background: #e56767; }
-</style>
-
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="sidebar">
-    <h3 id="welcome">Hello，使用者！</h3>
+    <h2>Hello，小兔！</h2>
     <ul>
-      <li onclick="showSection('daily')">📋 每日工作</li>
-      <li onclick="showSection('progress')">🗂️ 工作進度</li>
-      <li onclick="showSection('envelope')">✉️ 列印信封</li>
-      <li onclick="showSection('add')">👤 新增帳號</li>
-      <li onclick="showSection('members')">👥 會員管理</li>
+      <li>📋 每日工作</li>
+      <li>🗂️ 工作進度</li>
+      <li>✉️ 列印信封</li>
+      <li>👤 新增帳號</li>
+      <li>👥 會員管理</li>
       <li onclick="logout()">🚪 登出</li>
     </ul>
   </div>
-  <div class="content">
-    <div id="daily" class="section">這裡是 📋 每日工作 頁面。</div>
-    <div id="progress" class="section" style="display:none;">這裡是 🗂️ 工作進度 頁面。</div>
-    <div id="envelope" class="section" style="display:none;">這裡是 ✉️ 列印信封 頁面。</div>
-    <div id="add" class="section" style="display:none;">這裡是 👤 新增帳號 頁面。</div>
-    <div id="members" class="section" style="display:none;">這裡是 👥 會員管理 頁面。</div>
+  <div class="main-content">
+    <h1>🎉 歡迎回來！這裡是 Rabbithome 主畫面</h1>
+    <p>請從左邊選擇功能進行操作</p>
   </div>
-
-  <!-- Firebase + JS -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="js/firebase.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/main.js" type="module"></script>
 </body>
 </html>

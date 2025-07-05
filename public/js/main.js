@@ -1,15 +1,6 @@
-function showSection(id) {
-  document.querySelectorAll(".section").forEach(div => div.style.display = "none");
-  document.getElementById(id).style.display = "block";
+
+export function logout() {
+  alert("登出成功！");
+  window.location.href = "login.html";
 }
-function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  });
-}
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    const nickname = user.displayName || "使用者";
-    document.getElementById("welcome").innerText = `Hello，${nickname}！`;
-  }
-});
+window.logout = logout;
