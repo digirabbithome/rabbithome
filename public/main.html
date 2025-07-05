@@ -2,41 +2,28 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>主頁 - 數位小兔</title>
+  <title>RabbitHome</title>
   <style>
     body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; }
-    .sidebar {
-      width: 200px;
-      background: #ffeef4;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
-    .content {
-      flex-grow: 1;
-      padding: 20px;
-    }
-    button {
-      display: block;
-      margin: 10px 0;
-      padding: 10px;
-      width: 100%;
-      border: none;
-      border-radius: 10px;
-      background-color: pink;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    .sidebar { width: 220px; background-color: #ffeef4; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+    .sidebar h3 { margin-bottom: 20px; }
+    .sidebar button { display: block; width: 100%; padding: 10px; margin-bottom: 10px; background-color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    .content { flex-grow: 1; padding: 30px; background-color: #fff; overflow-y: auto; }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <h3 id="greeting">Hello, 暱稱</h3>
-    <button id="dailyTaskBtn">📋 每日工作</button>
-    <button id="printEnvelopeBtn">✉️ 列印信封</button>
-    <button id="logoutBtn">登出</button>
+    <h3 id="nickname">Hello, 使用者</h3>
+    <button onclick="showContent('work')">1️⃣ 每日工作</button>
+    <button onclick="showContent('progress')">2️⃣ 工作進度</button>
+    <button onclick="showContent('addUser')">3️⃣ 新增帳號</button>
+    <button onclick="showContent('manageUsers')">4️⃣ 會員管理</button>
+    <button onclick="showContent('print')">5️⃣ 列印信封</button>
+    <button onclick="logout()">🚪 登出</button>
   </div>
-  <div class="content" id="mainContent">
-    <p>這裡是工作內容區域。</p>
+  <div class="content" id="contentArea">
+    <h2>歡迎使用 RabbitHome</h2>
+    <p>請從左側選單選擇功能。</p>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>

@@ -8,9 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      localStorage.setItem("uid", userCredential.user.uid);
-      alert("登入成功！");
-      window.location.href = "/main.html";
+      const user = userCredential.user;
+
+      const response = await fetch(`https://firestore.googleapis.com/v1/projects/rabbithome-auth/databases/(default)/documents/users/${user.uid}`);
+      const data = await response.json();
+      const nickname = data.fields?.nickname?.stringValue || "未知使用者";
+
+      localStorage.setItem("nickname", nickname);
+      window.location.href = "main.html";
     } catch (error) {
       alert("登入失敗：" + error.message);
     }

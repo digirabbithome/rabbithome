@@ -1,22 +1,32 @@
-import { auth } from './firebase-init.js';
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+document.addEventListener("DOMContentLoaded", () => {
+  const nickname = localStorage.getItem("nickname") || "未知使用者";
+  document.getElementById("nickname").innerText = `Hello, ${nickname}`;
+});
 
-const db = getFirestore();
-
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const uid = user.uid;
-    const userDoc = await getDoc(doc(db, "users", uid));
-    const nickname = userDoc.exists() ? userDoc.data().nickname : "未知使用者";
-    document.getElementById("greeting").textContent = "Hello, " + nickname;
-  } else {
-    window.location.href = "/login.html";
+function showContent(page) {
+  const content = document.getElementById("contentArea");
+  switch(page) {
+    case 'work':
+      content.innerHTML = "<h2>每日工作</h2><p>這裡是每日工作區。</p>";
+      break;
+    case 'progress':
+      content.innerHTML = "<h2>工作進度</h2><p>這裡是工作進度追蹤。</p>";
+      break;
+    case 'addUser':
+      content.innerHTML = `<h2>新增帳號</h2>
+        <p>此處放置新增帳號表單。</p>`;
+      break;
+    case 'manageUsers':
+      content.innerHTML = `<h2>會員管理</h2>
+        <p>此處顯示所有使用者清單。</p>`;
+      break;
+    case 'print':
+      content.innerHTML = "<h2>列印信封</h2><p>這裡是列印信封工具。</p>";
+      break;
   }
-});
+}
 
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-  await signOut(auth);
-  localStorage.removeItem("uid");
-  window.location.href = "/login.html";
-});
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
