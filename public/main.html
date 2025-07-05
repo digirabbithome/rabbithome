@@ -2,57 +2,46 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>數位小兔後台</title>
+  <title>數位小兔主頁</title>
   <style>
     body {
+      display: flex;
       margin: 0;
       font-family: sans-serif;
-      display: flex;
-      height: 100vh;
     }
     .sidebar {
       width: 200px;
-      background-color: #ffdee9;
+      background-color: #ffc0cb;
+      height: 100vh;
       padding: 20px;
       box-sizing: border-box;
     }
-    .sidebar h2 {
-      font-size: 20px;
-      margin-top: 0;
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
     }
     .sidebar button {
       display: block;
+      margin-bottom: 10px;
       width: 100%;
       padding: 10px;
-      margin: 8px 0;
       border: none;
+      background-color: white;
       border-radius: 10px;
-      background-color: #ffc0cb;
       cursor: pointer;
       font-weight: bold;
-    }
-    .sidebar button:hover {
-      background-color: #ff92ac;
-    }
-    .main {
-      flex-grow: 1;
-      padding: 20px;
     }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <h2>🧰 工具列</h2>
-    <div id="nicknameArea">👋 Hello!</div>
-    <button onclick="showPage('daily')">📒 每日工作</button>
-    <button onclick="showPage('progress')">📈 工作進度</button>
-    <button onclick="showPage('adduser')">➕ 新增帳號</button>
-    <button onclick="showPage('members')">👥 會員管理</button>
-    <button onclick="showPage('print')">✉️ 列印信封</button>
-    <button onclick="logout()">🚪 登出</button>
+    <p>🎉 Hello, <span id="nickname">使用者</span>！</p>
+    <button>📋 每日工作</button>
+    <button>📬 列印信封</button>
+    <button>🚪 登出</button>
   </div>
-  <div class="main" id="mainContent">
-    🎉 歡迎使用數位小兔系統
+  <div class="main-content">
+    <h1>歡迎來到數位小兔系統</h1>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>

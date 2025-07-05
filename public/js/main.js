@@ -1,23 +1,12 @@
+import { auth } from './firebase-init.js';
 
-import { auth } from './js/firebase-init.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getFirestore, doc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+document.addEventListener("DOMContentLoaded", () => {
+  const user = auth.currentUser;
+  const nicknameSpan = document.getElementById("nickname");
 
-const db = getFirestore();
-
-window.addEventListener("DOMContentLoaded", async () => {
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const email = user.email;
-      const nicknameSnapshot = await getDocs(collection(db, "nicknames"));
-      let nickname = email;
-      nicknameSnapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data[email]) {
-          nickname = data[email];
-        }
-      });
-      document.getElementById("nickname").innerText = `Hello, ${nickname}！`;
-    }
-  });
+  if (user) {
+    nicknameSpan.textContent = user.displayName || user.email;
+  } else {
+    nicknameSpan.textContent = "未知使用者";
+  }
 });
