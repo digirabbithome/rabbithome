@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -41,7 +40,6 @@
 </head>
 <body>
   <div class="sidebar">
-    <div style="padding: 0 10px 10px;">HELLO，<span id="nickname">暱稱</span>！</div>
     <button id="btn-work">📋 每日工作</button>
     <button id="btn-progress">📈 工作進度</button>
     <button id="btn-add-user">➕ 新增帳號</button>
@@ -49,9 +47,12 @@
     <button id="btn-print">✉️ 列印信封</button>
     <button id="btn-logout">🚪 登出</button>
   </div>
-  <div class="main-content" id="content">這裡是主頁面內容。</div>
-  <div class="main-content" id="add-user-container" style="display:none;"></div>
-  <div class="main-content" id="member-management-container" style="display:none;"></div>
+  <div class="main-content">
+    <h2>HELLO，<span id="nickname">暱稱</span>！</h2>
+    <div id="content">這裡是主頁面內容。</div>
+    <div id="add-user-container" style="display: none;"></div>
+    <div id="member-management-container" style="display: none;"></div>
+  </div>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
