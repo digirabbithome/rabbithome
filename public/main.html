@@ -2,21 +2,41 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>主畫面 - Rabbithome</title>
+  <title>主頁 - 數位小兔</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; }
+    .sidebar {
+      width: 200px;
+      background: #ffeef4;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+    .content {
+      flex-grow: 1;
+      padding: 20px;
+    }
+    button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      background-color: pink;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <div style="display: flex;">
-    <div style="width: 200px; background-color: #eee; padding: 10px;">
-      <h3>📋 工具列</h3>
-      <ul>
-        <li>每日工作</li>
-        <li>登出</li>
-      </ul>
-    </div>
-    <div style="margin-left: 20px; padding: 10px;">
-      <h2 id="welcomeMsg">🎉 歡迎！</h2>
-      <p>這裡是每日工作頁面。</p>
-    </div>
+  <div class="sidebar">
+    <h3 id="greeting">Hello, 暱稱</h3>
+    <button id="dailyTaskBtn">📋 每日工作</button>
+    <button id="printEnvelopeBtn">✉️ 列印信封</button>
+    <button id="logoutBtn">登出</button>
+  </div>
+  <div class="content" id="mainContent">
+    <p>這裡是工作內容區域。</p>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>
