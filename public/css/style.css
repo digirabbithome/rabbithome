@@ -1,5 +1,4 @@
-.container { display: flex; height: 100vh; font-family: sans-serif; }
-.sidebar { width: 200px; background: #fff0f5; padding: 20px; }
-.sidebar ul { list-style: none; padding: 0; }
-.sidebar li { margin: 10px 0; cursor: pointer; }
-.content { flex: 1; padding: 20px; }
+body { font-family: sans-serif; }
+.sidebar { float: left; width: 200px; background: #fce4ec; height: 100vh; padding: 10px; }
+.content-area { margin-left: 220px; padding: 20px; }
+button { display: block; margin: 10px 0; }
