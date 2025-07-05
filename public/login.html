@@ -1,18 +1,61 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>登入 - 數位小兔後台</title>
-  <link rel="stylesheet" href="css/cute.css">
+  <meta charset="UTF-8" />
+  <title>登入 - 數位小兔</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #fff0f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 300px;
+    }
+    h2 {
+      text-align: center;
+      color: #d63384;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #d63384;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #c2186a;
+    }
+  </style>
 </head>
 <body>
-  <h2>🔐 登入後台</h2>
-  <form id="loginForm">
-    <label>Email：<input type="email" id="email" required></label><br>
-    <label>密碼：<input type="password" id="password" required></label><br>
-    <button type="submit">登入</button>
-  </form>
-  <div id="loginResult"></div>
+  <div class="login-container">
+    <h2>數位小兔登入</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="密碼" />
+    <button id="loginBtn">登入</button>
+    <p id="error" style="color:red;"></p>
+  </div>
   <script type="module" src="js/login.js"></script>
 </body>
 </html>
