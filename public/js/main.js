@@ -1,6 +1,5 @@
 
-export function logout() {
-  alert("登出成功！");
-  window.location.href = "login.html";
-}
-window.logout = logout;
+document.addEventListener("DOMContentLoaded", () => {
+  const userEmail = sessionStorage.getItem("userEmail") || "花花";
+  document.getElementById("nickname").textContent = `Hello，${userEmail}！`;
+});

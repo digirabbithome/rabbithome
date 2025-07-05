@@ -5,50 +5,6 @@
   <meta charset="UTF-8" />
   <title>Rabbithome 登入</title>
   <link rel="stylesheet" href="css/style.css" />
-  <style>
-    .login-container {
-      width: 320px;
-      margin: 100px auto;
-      padding: 30px;
-      background-color: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
-
-    .login-container h2 {
-      color: #cc3366;
-      margin-bottom: 20px;
-    }
-
-    .login-container input {
-      width: 90%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .login-container button {
-      width: 95%;
-      padding: 10px;
-      background-color: #ff99bb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .login-container button:hover {
-      background-color: #ff77a8;
-    }
-
-    #error-message {
-      margin-top: 10px;
-    }
-  </style>
 </head>
 <body>
   <div class="login-container">
@@ -58,7 +14,7 @@
     <button onclick="login()">登入</button>
     <p id="error-message" style="color: red;"></p>
   </div>
-  <script src="js/firebase.js" type="module"></script>
-  <script src="js/login.js" type="module"></script>
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/login.js"></script>
 </body>
 </html>
