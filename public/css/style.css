@@ -1,25 +1,26 @@
-
 body {
-  font-family: sans-serif;
-  background-color: #ffeef2;
+  font-family: "Arial", sans-serif;
+  background-color: #fff0f5;
   margin: 0;
+  display: flex;
 }
-.login-container {
-  width: 300px;
-  margin: 100px auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 10px;
-  text-align: center;
-}
-#sidebar {
+.sidebar {
   width: 200px;
-  background: #fdd;
-  position: fixed;
-  height: 100%;
-  padding: 10px;
+  background-color: #ffe4e1;
+  padding: 20px;
 }
-#content {
-  margin-left: 210px;
+.sidebar h2 {
+  font-size: 18px;
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+.sidebar li {
+  padding: 10px 0;
+  cursor: pointer;
+}
+.main-content {
+  flex: 1;
   padding: 20px;
 }
