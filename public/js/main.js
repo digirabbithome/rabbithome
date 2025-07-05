@@ -1,29 +1,23 @@
-const nickname = localStorage.getItem("nickname") || "使用者";
-document.getElementById("nicknameArea").innerText = "👋 Hello, " + nickname + "!";
 
-const mainContent = document.getElementById("mainContent");
+import { auth } from './js/firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getFirestore, doc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
-window.showPage = function(page) {
-  switch(page) {
-    case "daily":
-      mainContent.innerHTML = "📝 每日工作畫面（待建置）";
-      break;
-    case "progress":
-      mainContent.innerHTML = "📊 工作進度畫面（待建置）";
-      break;
-    case "adduser":
-      mainContent.innerHTML = "🧾 新增帳號畫面（待建置）";
-      break;
-    case "members":
-      mainContent.innerHTML = "👤 會員管理畫面（待建置）";
-      break;
-    case "print":
-      mainContent.innerHTML = "✉️ 列印信封畫面（待建置）";
-      break;
-  }
-};
+const db = getFirestore();
 
-window.logout = function() {
-  localStorage.removeItem("nickname");
-  location.href = "login.html";
-};
+window.addEventListener("DOMContentLoaded", async () => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const email = user.email;
+      const nicknameSnapshot = await getDocs(collection(db, "nicknames"));
+      let nickname = email;
+      nicknameSnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data[email]) {
+          nickname = data[email];
+        }
+      });
+      document.getElementById("nickname").innerText = `Hello, ${nickname}！`;
+    }
+  });
+});
