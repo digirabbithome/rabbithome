@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>新增帳號</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>新增帳號</h2>
+    <input type="email" id="email" placeholder="Email"><br>
+    <input type="text" id="name" placeholder="姓名"><br>
+    <input type="date" id="birthday" placeholder="生日"><br>
+    <input type="text" id="nickname" placeholder="暱稱"><br>
+    <input type="password" id="password" placeholder="密碼"><br>
+    <fieldset>
+      <legend>群組（可複選）</legend>
+      <label><input type="checkbox" value="外場">外場</label>
+      <label><input type="checkbox" value="內場">內場</label>
+      <label><input type="checkbox" value="美編">美編</label>
+      <label><input type="checkbox" value="出貨">出貨</label>
+      <label><input type="checkbox" value="維修">維修</label>
+    </fieldset>
+    <button id="create">送出</button>
+    <p id="status" style="color: green;"></p>
+  </div>
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/create_account.js"></script>
+</body>
+</html>

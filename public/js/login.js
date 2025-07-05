@@ -1,19 +1,10 @@
-
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { auth } from "./firebase.js";
-
-window.login = function login() {
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { app } from './firebase.js';
+const auth = getAuth(app);
+window.login = function () {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-  const errorMessage = document.getElementById("error-message");
-
   signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      sessionStorage.setItem("userEmail", user.email);
-      window.location.href = "main.html";
-    })
-    .catch((error) => {
-      errorMessage.textContent = "登入失敗：" + error.message;
-    });
+    .then(() => window.location.href = "main.html")
+    .catch((error) => document.getElementById("error-message").innerText = "登入失敗：" + error.message);
 };

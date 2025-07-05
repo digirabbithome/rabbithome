@@ -1,26 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <title>Rabbithome 主畫面</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="container">
-    <ul class="sidebar">
-      <li>👋 Hello，<span id="nickname">使用者</span>！</li>
-      <li id="work">📋 每日工作</li>
-      <li id="progress">🗂️ 工作進度</li>
-      <li id="envelope">✉️ 列印信封</li>
-      <li id="add-user">👤 新增帳號</li>
-      <li id="member">👥 會員管理</li>
-      <li id="logout-button">🚪 登出</li>
-    </ul>
-    <div class="content" id="content-area">
-      <h2>歡迎來到 Rabbithome！</h2>
-      <p>請選擇左側功能</p>
-    </div>
+    <aside class="sidebar">
+      <h2 id="nickname-title">Hello，暱稱！</h2>
+      <ul>
+        <li><a href="#">📋 每日工作</a></li>
+        <li><a href="#">🗂️ 工作進度</a></li>
+        <li><a href="#">✉️ 列印信封</a></li>
+        <li><a href="new_account.html">👤 新增帳號</a></li>
+        <li><a href="#">👥 會員管理</a></li>
+        <li><a href="#" id="logout">🚪 登出</a></li>
+      </ul>
+    </aside>
+    <main class="content">
+      <h1>這裡是每日工作頁面。</h1>
+    </main>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>

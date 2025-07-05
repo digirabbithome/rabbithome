@@ -1,34 +1,45 @@
 
 body {
-  background-color: #ffe6ec;
-  font-family: "Segoe UI", sans-serif;
+  font-family: "Microsoft JhengHei", sans-serif;
   margin: 0;
-  padding: 0;
+}
+.container {
+  display: flex;
+  height: 100vh;
 }
 .sidebar {
   width: 200px;
-  background-color: #ffccd5;
-  height: 100vh;
+  background-color: #ffeef2;
   padding: 20px;
-  box-sizing: border-box;
-  float: left;
 }
 .sidebar h2 {
-  font-size: 18px;
-  margin-bottom: 20px;
+  margin-top: 0;
+  color: #d63384;
 }
 .sidebar ul {
-  list-style: none;
+  list-style-type: none;
   padding: 0;
 }
-.sidebar ul li {
+.sidebar li {
   margin: 10px 0;
 }
-.sidebar ul li a {
+.sidebar a {
   text-decoration: none;
   color: #333;
 }
 .content {
-  margin-left: 200px;
+  flex-grow: 1;
   padding: 20px;
+}
+.form-container {
+  max-width: 400px;
+  margin: 50px auto;
+  background: #fff0f6;
+  padding: 20px;
+  border-radius: 12px;
+}
+.form-container input, .form-container button {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
 }
