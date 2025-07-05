@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <title>跳轉中...</title>
-    <meta http-equiv="refresh" content="0; url=login.html" />
-  </head>
-  <body>
-    <p>正在跳轉到登入頁面...</p>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <title>Rabbithome 登入</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="login-container">
+    <h2>登入 Rabbithome</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="密碼" />
+    <button onclick="login()">登入</button>
+    <p id="error-message" style="color: red;"></p>
+  </div>
+  <script src="../js/firebase.js" type="module"></script>
+  <script src="../js/login.js" type="module"></script>
+</body>
 </html>
