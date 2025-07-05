@@ -1,4 +1,3 @@
-// Firebase 設定（小兔專用版本）
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
   authDomain: "rabbithome-auth.firebaseapp.com",
