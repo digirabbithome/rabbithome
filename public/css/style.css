@@ -1,2 +1,15 @@
-body { font-family: sans-serif; background-color: #ffeef4; margin: 0; padding: 0; }
-.login-container { padding: 2em; }
+
+body {
+  font-family: sans-serif;
+  background-color: #fff0f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.login-container {
+  background-color: white;
+  padding: 2em;
+  border-radius: 1em;
+  box-shadow: 0 0 1em rgba(0,0,0,0.1);
+}
