@@ -3,24 +3,24 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>Rabbithome 主頁</title>
+  <title>Rabbithome 主畫面</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="sidebar">
-    <h2 id="nickname">Hello，花花！</h2>
-    <ul>
-      <li>📋 每日工作</li>
-      <li>🗂️ 工作進度</li>
-      <li>✉️ 列印信封</li>
-      <li>👤 新增帳號</li>
-      <li>👥 會員管理</li>
-      <li>🚪 登出</li>
+  <div class="container">
+    <ul class="sidebar">
+      <li>👋 Hello，<span id="nickname">使用者</span>！</li>
+      <li id="work">📋 每日工作</li>
+      <li id="progress">🗂️ 工作進度</li>
+      <li id="envelope">✉️ 列印信封</li>
+      <li id="add-user">👤 新增帳號</li>
+      <li id="member">👥 會員管理</li>
+      <li id="logout-button">🚪 登出</li>
     </ul>
-  </div>
-  <div class="content">
-    <h2>這裡是主畫面</h2>
-    <p>歡迎使用 Rabbithome 系統！</p>
+    <div class="content" id="content-area">
+      <h2>歡迎來到 Rabbithome！</h2>
+      <p>請選擇左側功能</p>
+    </div>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>

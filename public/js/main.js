@@ -13,29 +13,31 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
+// 監聽登入狀態
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     const docRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const nickname = docSnap.data().nickname || "使用者";
-      document.getElementById("nickname").innerText = `Hello，${nickname}！`;
-    } else {
-      document.getElementById("nickname").innerText = "Hello，使用者！";
-    }
-  }
-});
-
-document.getElementById("logout-button").addEventListener("click", async () => {
-  try {
-    await signOut(auth);
+    const nickname = docSnap.exists() ? docSnap.data().nickname : "使用者";
+    document.getElementById("nickname").textContent = nickname;
+  } else {
     window.location.href = "login.html";
-  } catch (error) {
-    console.error("登出失敗：", error);
-    alert("登出失敗！");
   }
 });
+
+// 登出功能
+const logoutBtn = document.getElementById("logout-button");
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+      window.location.href = "login.html";
+    } catch (error) {
+      console.error("登出失敗：", error);
+      alert("登出失敗！");
+    }
+  });
+}
