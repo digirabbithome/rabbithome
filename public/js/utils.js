@@ -1,0 +1,1 @@
+// 共同工具函式，如 getCurrentUserNickname()
