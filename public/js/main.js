@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-init.js';
-import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -12,7 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const docRef = doc(db, "users", uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        nicknameSpan.textContent = docSnap.data().nickname;
+        const nickname = docSnap.data().nickname || "使用者";
+        nicknameSpan.textContent = nickname;
       } else {
         nicknameSpan.textContent = "未知使用者";
       }
