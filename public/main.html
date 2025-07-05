@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Rabbithome 主畫面</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="sidebar">
-    <h3>📋 工具列</h3>
+    <h3 id="welcome">Hello，使用者！</h3>
     <ul>
-      <li onclick="showSection('daily')">每日工作</li>
-      <li onclick="logout()">登出</li>
+      <li onclick="showSection('daily')">📋 每日工作</li>
+      <li onclick="showSection('progress')">🗂️ 工作進度</li>
+      <li onclick="showSection('envelope')">✉️ 列印信封</li>
+      <li onclick="showSection('add')">👤 新增帳號</li>
+      <li onclick="showSection('members')">👥 會員管理</li>
+      <li onclick="logout()">🚪 登出</li>
     </ul>
   </div>
   <div class="content">
-    <div id="daily" class="section">這裡是每日工作頁面。</div>
+    <div id="daily" class="section">這裡是 📋 每日工作 頁面。</div>
+    <div id="progress" class="section" style="display:none;">這裡是 🗂️ 工作進度 頁面。</div>
+    <div id="envelope" class="section" style="display:none;">這裡是 ✉️ 列印信封 頁面。</div>
+    <div id="add" class="section" style="display:none;">這裡是 👤 新增帳號 頁面。</div>
+    <div id="members" class="section" style="display:none;">這裡是 👥 會員管理 頁面。</div>
   </div>
 
+  <!-- Firebase + JS -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="js/firebase.js"></script>

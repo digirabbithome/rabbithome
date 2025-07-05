@@ -7,3 +7,9 @@ function logout() {
     window.location.href = "login.html";
   });
 }
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    const nickname = user.displayName || "使用者";
+    document.getElementById("welcome").innerText = `Hello，${nickname}！`;
+  }
+});
