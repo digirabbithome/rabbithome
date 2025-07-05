@@ -1,9 +1,49 @@
-document.getElementById("logout").addEventListener("click", () => {
-  alert("已登出（尚未串接登出邏輯）");
+
+document.addEventListener("DOMContentLoaded", function () {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
+  }
+
+  const addAccountBtn = document.getElementById("addAccountBtn");
+  if (addAccountBtn) {
+    addAccountBtn.addEventListener("click", () => {
+      loadPage('addAccount');
+    });
+  }
+
+  const dailyWorkBtn = document.getElementById("dailyWorkBtn");
+  if (dailyWorkBtn) {
+    dailyWorkBtn.addEventListener("click", () => {
+      loadPage('dailyWork');
+    });
+  }
+
+  const memberManageBtn = document.getElementById("memberManageBtn");
+  if (memberManageBtn) {
+    memberManageBtn.addEventListener("click", () => {
+      loadPage('memberManage');
+    });
+  }
+
+  // 你可以依照實際按鈕 ID 繼續加入更多頁面載入綁定
 });
-document.getElementById("btn-daily").addEventListener("click", () => {
-  document.getElementById("content").innerHTML = "<h3>📋 每日工作</h3><p>這裡是每日工作內容...</p>";
-});
-document.getElementById("btn-create").addEventListener("click", () => {
-  document.getElementById("content").innerHTML = "<h3>👤 新增帳號</h3><p>新增帳號功能尚待實作...</p>";
-});
+
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = 'login.html';
+  }).catch((error) => {
+    console.error('登出錯誤：', error);
+  });
+}
+
+function loadPage(pageName) {
+  fetch(`pages/${pageName}.html`)
+    .then(response => response.text())
+    .then(html => {
+      document.getElementById("content").innerHTML = html;
+    })
+    .catch(error => {
+      console.error("載入頁面錯誤：", error);
+    });
+}
