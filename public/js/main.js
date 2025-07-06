@@ -1,17 +1,9 @@
-
-import { auth } from './firebase.js';
-import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
 document.addEventListener("DOMContentLoaded", () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const nicknameElement = document.getElementById("nickname");
-  if (user && user.email) {
-    nicknameElement.textContent = "Hello，" + user.email + "！";
-  }
+  const nickname = sessionStorage.getItem("nickname") || "使用者";
+  document.getElementById("welcome-text").textContent = `Hello ${nickname}`;
 
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    await signOut(auth);
-    localStorage.removeItem("user");
+  document.getElementById("logout-btn").addEventListener("click", () => {
+    sessionStorage.clear();
     window.location.href = "login.html";
   });
 });
