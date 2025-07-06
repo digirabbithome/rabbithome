@@ -1,12 +1,31 @@
-.container {
-  display: flex;
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #fff0f5;
+  margin: 0;
+  padding: 0;
 }
 .sidebar {
   width: 200px;
-  background: #f0f0f0;
-  padding: 10px;
+  background-color: #ffc0cb;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
 }
 .content {
+  margin-left: 220px;
   padding: 20px;
-  flex-grow: 1;
+}
+.sidebar button {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: none;
+  background-color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
 }

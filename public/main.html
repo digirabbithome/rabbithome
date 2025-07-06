@@ -1,23 +1,25 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>主畫面 - Rabbithome</title>
-  <link rel="stylesheet" href="style.css" />
-  <script type="module" src="./js/firebase.js"></script>
-  <script type="module" src="./js/main.js"></script>
+  <title>Rabbithome 系統</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container">
-    <aside class="sidebar">
-      <button id="daily-task-btn">📋 每日工作</button>
-      <button id="create-account-btn">👤 新增帳號</button>
-      <button id="logout-btn">🚪 登出</button>
-    </aside>
-    <main class="content" id="content-area">
-      <h2>🎉 歡迎使用 Rabbithome</h2>
-      <p>請選擇左側功能。</p>
-    </main>
+  <div class="sidebar">
+    <p id="nickname">Hello，使用者！</p>
+    <button id="dailyWorkBtn">📋 每日工作</button>
+    <button id="progressBtn">🗂️ 工作進度</button>
+    <button id="envelopeBtn">✉️ 列印信封</button>
+    <button id="addAccountBtn">👤 新增帳號</button>
+    <button id="memberManageBtn">👥 會員管理</button>
+    <button id="logoutBtn">🚪 登出</button>
   </div>
+  <div class="content" id="mainContent">
+    <h2>歡迎使用 Rabbithome</h2>
+  </div>
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
