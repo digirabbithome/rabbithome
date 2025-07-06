@@ -1,6 +1,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-  const nicknameEl = document.getElementById("nickname"); // 修正 ID
+  const nicknameEl = document.getElementById("nickname");
   const user = JSON.parse(localStorage.getItem("user"));
   if (user?.nickname && nicknameEl) {
     nicknameEl.textContent = `🙋‍♂️ Hello，${user.nickname}！`;
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("logout-btn")?.addEventListener("click", () => {
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("user");
     window.location.href = "login.html";
   });
