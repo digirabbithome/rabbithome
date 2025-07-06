@@ -1,46 +1,41 @@
 
 body {
   margin: 0;
+  padding: 0;
   font-family: "Helvetica Neue", sans-serif;
-  display: flex;
-  height: 100vh;
   background-color: #fff0f5;
 }
-
-.sidebar {
-  width: 240px;
+.login-container {
+  max-width: 360px;
+  margin: 80px auto;
+  padding: 30px;
   background: white;
-  padding: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
-
-.sidebar h2 {
-  color: #ff69b4;
-  font-size: 20px;
-  margin-bottom: 20px;
+.login-container h2 {
+  margin-bottom: 24px;
+  color: #d63384;
 }
-
-.sidebar button {
-  display: block;
-  width: 100%;
+.login-container input {
+  width: 90%;
   padding: 12px;
-  margin-bottom: 16px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.login-container button {
+  width: 95%;
+  padding: 12px;
   background-color: #ff69b4;
   border: none;
-  border-radius: 12px;
   color: white;
   font-weight: bold;
-  font-size: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  text-align: left;
-  padding-left: 16px;
+  transition: background-color 0.3s ease;
 }
-
-.sidebar button:hover {
+.login-container button:hover {
   background-color: #ff1493;
-}
-
-.main-content {
-  flex-grow: 1;
-  padding: 40px;
 }
