@@ -1,6 +1,6 @@
-// 初始化 Firebase
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -11,8 +11,5 @@ const firebaseConfig = {
   appId: "1:50928677930:web:e8eff13c8028b888537f53"
 };
 
-// 初始化 Firebase App
 const app = initializeApp(firebaseConfig);
-
-// 匯出 Auth 實例
 export const auth = getAuth(app);
