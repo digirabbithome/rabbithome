@@ -8,10 +8,13 @@
 </head>
 <body>
   <div class="sidebar">
-    <h2>Hello <span id="nickname">使用者</span></h2>
-    <button id="btn-daily">📋 每日工作</button>
-    <button id="btn-adduser">👤 新增帳號</button>
-    <button id="logout-btn">🚪 登出</button>
+    <h2>🙋‍♂️ Hello，<span id="nickname">使用者</span></h2>
+    <button class="sidebar-button" data-target="daily">📋 每日工作</button>
+    <button class="sidebar-button" data-target="progress">🗂️ 工作進度</button>
+    <button class="sidebar-button" data-target="envelope">✉️ 列印信封</button>
+    <button class="sidebar-button" data-target="addUser">👤 新增帳號</button>
+    <button class="sidebar-button" data-target="userList">👥 會員管理</button>
+    <button class="sidebar-button" id="logout-btn">🚪 登出</button>
   </div>
   <div class="content" id="content">
     <h2>這裡是每日工作區域</h2>
@@ -19,7 +22,3 @@
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
-
-<div id="mainContent" class="flex-1 p-4">
-  <!-- 預設顯示每日工作 -->
-</div>
