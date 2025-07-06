@@ -1,9 +1,9 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const nicknameEl = document.getElementById("nickname");
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (user?.nickname && nicknameEl) {
-    nicknameEl.textContent = `🙋‍♂️ Hello，${user.nickname}！`;
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  if (userData?.nickname && nicknameEl) {
+    nicknameEl.textContent = userData.nickname;
   }
 
   document.querySelectorAll(".sidebar-button").forEach(btn => {
@@ -28,14 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
         case "userList":
           document.getElementById("userListSection")?.scrollIntoView({ behavior: "smooth" });
           break;
-        default:
-          break;
       }
     });
   });
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("userData");
     window.location.href = "login.html";
   });
 });
