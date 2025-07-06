@@ -1,9 +1,9 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-  const nicknameEl = document.getElementById("nickname");
-  const userData = JSON.parse(localStorage.getItem("userData"));
-  if (userData?.nickname && nicknameEl) {
-    nicknameEl.textContent = userData.nickname;
+  const nicknameEl = document.getElementById("userNickname");
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user?.nickname && nicknameEl) {
+    nicknameEl.textContent = user.nickname;
   }
 
   document.querySelectorAll(".sidebar-button").forEach(btn => {
@@ -23,10 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
           contentEl.innerHTML = "<h2>✉️ 列印信封</h2><p>信封表單區塊（待建）</p>";
           break;
         case "addUser":
-          document.getElementById("addUserSection")?.scrollIntoView({ behavior: "smooth" });
+          contentEl.innerHTML = "<h2>👤 新增帳號</h2><p>表單區塊（待建）</p>";
           break;
         case "userList":
-          document.getElementById("userListSection")?.scrollIntoView({ behavior: "smooth" });
+          contentEl.innerHTML = "<h2>👥 會員管理</h2><p>成員名單（待建）</p>";
+          break;
+        default:
           break;
       }
     });
@@ -34,7 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("userData");
     window.location.href = "login.html";
   });
 });

@@ -1,31 +1,29 @@
 
 body {
   font-family: Arial, sans-serif;
-  margin: 0;
   display: flex;
 }
 .sidebar {
-  width: 220px;
-  background-color: #fff;
-  border-right: 1px solid #ddd;
-  padding: 20px;
+  width: 200px;
+  background-color: #fefefe;
+  padding: 1rem;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
-.sidebar button {
+.sidebar-button, #logoutBtn {
   display: block;
-  margin: 10px 0;
-  padding: 10px;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
   width: 100%;
-  border: none;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  background-color: white;
+  border: 1px solid #eee;
+  border-radius: 0.5rem;
   text-align: left;
   cursor: pointer;
 }
-.sidebar button:hover {
-  background-color: #ffe0eb;
+.sidebar-button:hover, #logoutBtn:hover {
+  background-color: #ffe6f0;
 }
 .content {
-  flex-grow: 1;
-  padding: 20px;
+  flex: 1;
+  padding: 1rem;
 }

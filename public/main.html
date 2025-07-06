@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="sidebar">
-    <h2>🙋‍♂️ Hello，<span id="nickname">使用者</span></h2>
+    <button class="sidebar-button" data-target="hello">🙋‍♂️ Hello，<span id="userNickname">使用者</span></button>
     <button class="sidebar-button" data-target="daily">📋 每日工作</button>
     <button class="sidebar-button" data-target="progress">🗂️ 工作進度</button>
     <button class="sidebar-button" data-target="envelope">✉️ 列印信封</button>
@@ -17,10 +17,7 @@
     <button id="logoutBtn">🚪 登出</button>
   </div>
   <div class="content" id="mainContent">
-    <h2>📋 每日工作</h2>
-    <p>打卡內容區</p>
-    <section id="addUserSection"><!-- 新增帳號表單 --></section>
-    <section id="userListSection"><!-- 會員管理表格 --></section>
+    <h2>📋 每日工作</h2><p>打卡內容區</p>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>
