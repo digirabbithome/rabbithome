@@ -1,58 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <title>Rabbithome 登入</title>
-  <style>
-  
-body {
-  margin: 0;
-  padding: 0;
-  font-family: "Helvetica Neue", sans-serif;
-  background-color: #fff0f5;
-}
-
-.login-container {
-  max-width: 360px;
-  margin: 80px auto;
-  padding: 30px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.login-container h2 {
-  margin-bottom: 24px;
-  color: #d63384;
-}
-
-.login-container input {
-  width: 90%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-.login-container button {
-  width: 95%;
-  padding: 12px;
-  background-color: #ff69b4;
-  border: none;
-  color: white;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.login-container button:hover {
-  background-color: #ff1493;
-}
-
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="login-container">
@@ -62,36 +13,6 @@ body {
     <button onclick="login()">登入</button>
     <p id="error-message" style="color: red;"></p>
   </div>
-  <script type="module">
-    import {{ initializeApp }} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import {{ getAuth, signInWithEmailAndPassword }} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-
-    const firebaseConfig = {{
-      apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
-      authDomain: "rabbithome-auth.firebaseapp.com",
-      projectId: "rabbithome-auth",
-      storageBucket: "rabbithome-auth.appspot.com",
-      messagingSenderId: "50928677930",
-      appId: "1:50928677930:web:e8eff13c8028b888537f53"
-    }};
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    window.login = function () {{
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const errorMessage = document.getElementById("error-message");
-
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {{
-          const user = userCredential.user;
-          window.location.href = "main.html";
-        }})
-        .catch((error) => {{
-          errorMessage.textContent = "登入失敗：" + error.message;
-        }});
-    }};
-  </script>
+  <script type="module" src="js/login.js"></script>
 </body>
 </html>
