@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rabbithome 主頁</title>
+  <link rel="stylesheet" href="public/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <h3 id="welcome">🙋‍♂️ Hello，使用者！</h3>
+      <ul>
+        <li onclick="showSection('daily')">📋 每日工作</li>
+        <li onclick="showSection('progress')">🗂️ 工作進度</li>
+        <li onclick="showSection('envelope')">✉️ 列印信封</li>
+        <li onclick="showSection('add')">👤 新增帳號</li>
+        <li onclick="showSection('members')">👥 會員管理</li>
+        <li onclick="logout()">🚪 登出</li>
+      </ul>
+    </div>
+    <div class="content">
+      <div id="daily" class="section">這裡是每日工作區</div>
+      <div id="progress" class="section" style="display:none;">這裡是工作進度</div>
+      <div id="envelope" class="section" style="display:none;">這裡是信封列印</div>
+      <div id="add" class="section" style="display:none;">這裡是新增帳號</div>
+      <div id="members" class="section" style="display:none;">這裡是會員管理</div>
+    </div>
+  </div>
+  <script type="module" src="public/js/main.js"></script>
+</body>
+</html>
