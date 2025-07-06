@@ -1,12 +1,52 @@
-
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>跳轉中...</title>
-    <meta http-equiv="refresh" content="0; url=public/login.html" />
-  </head>
-  <body>
-    <p>正在跳轉到登入頁面...</p>
-  </body>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rabbithome 主頁</title>
+  <script type="module" src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="flex h-screen">
+    <!-- 側邊欄 -->
+    <div class="w-64 bg-white p-4 shadow-md">
+      <div class="text-2xl font-bold text-pink-500 mb-4">🙋‍♂️ Hello，<span id="nickname">使用者</span></div>
+
+      <div id="sidebar-buttons" class="space-y-4">
+        <button class="sidebar-btn" onclick="showSection('daily-work')">📋 每日工作</button>
+        <button class="sidebar-btn" onclick="showSection('work-progress')">🗂️ 工作進度</button>
+        <button class="sidebar-btn" onclick="showSection('print-envelope')">✉️ 列印信封</button>
+        <button class="sidebar-btn" onclick="showSection('add-account')">👤 新增帳號</button>
+        <button class="sidebar-btn" onclick="showSection('member-management')">👥 會員管理</button>
+        <button class="sidebar-btn" onclick="logout()">🚪 登出</button>
+      </div>
+    </div>
+
+    <!-- 主內容區 -->
+    <div class="flex-1 p-10">
+      <div id="daily-work" class="content-section">這裡是每日工作區域</div>
+      <div id="work-progress" class="content-section hidden">這裡是工作進度區域</div>
+      <div id="print-envelope" class="content-section hidden">這裡是列印信封區域</div>
+      <div id="add-account" class="content-section hidden">
+        <h2 class="text-xl font-bold mb-4">新增帳號</h2>
+        <form id="addAccountForm" class="space-y-4">
+          <input type="email" id="newEmail" placeholder="Email" class="input" required />
+          <input type="text" id="newNickname" placeholder="暱稱" class="input" required />
+          <input type="text" id="newName" placeholder="姓名" class="input" required />
+          <input type="text" id="newBirthday" placeholder="生日（如 1990/01/01）" class="input" required />
+          <input type="password" id="newPassword" placeholder="密碼" class="input" required />
+          <select id="newGroup" class="input">
+            <option value="外場">外場</option>
+            <option value="內場">內場</option>
+            <option value="美編">美編</option>
+            <option value="出貨">出貨</option>
+          </select>
+          <button type="submit" class="btn">送出</button>
+        </form>
+        <p id="addAccountMessage" class="mt-2 text-green-600"></p>
+      </div>
+      <div id="member-management" class="content-section hidden">這裡是會員管理區域</div>
+    </div>
+  </div>
+</body>
 </html>
