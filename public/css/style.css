@@ -1,29 +1,36 @@
 
 body {
-  font-family: Arial, sans-serif;
-  display: flex;
+  margin: 0;
+  font-family: "Helvetica Neue", sans-serif;
+  background-color: #fdfdfd;
 }
 .sidebar {
   width: 200px;
-  background-color: #fefefe;
+  background-color: #fff;
+  height: 100vh;
   padding: 1rem;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-}
-.sidebar-button, #logoutBtn {
-  display: block;
-  margin: 0.5rem 0;
-  padding: 0.5rem;
-  width: 100%;
-  background-color: white;
-  border: 1px solid #eee;
-  border-radius: 0.5rem;
-  text-align: left;
-  cursor: pointer;
-}
-.sidebar-button:hover, #logoutBtn:hover {
-  background-color: #ffe6f0;
+  float: left;
 }
 .content {
-  flex: 1;
+  margin-left: 200px;
   padding: 1rem;
+}
+.sidebar h2 {
+  font-size: 16px;
+  color: #ff69b4;
+}
+.sidebar button {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 10px;
+  border: none;
+  background-color: #ffe4ec;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+.sidebar button:hover {
+  background-color: #ffcce0;
 }
