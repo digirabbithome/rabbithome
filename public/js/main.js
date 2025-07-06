@@ -1,21 +1,25 @@
 import { auth, db } from './firebase.js';
-import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const user = auth.currentUser;
-  if (user) {
-    const uid = user.uid;
-    const userDoc = await getDoc(doc(db, "users", uid));
-    const nickname = userDoc.exists() ? userDoc.data().nickname : user.email;
-    document.getElementById('user-nickname').textContent = `Hello，${nickname}！`;
-  }
+window.addEventListener('DOMContentLoaded', () => {
+  const greetingElement = document.getElementById('greeting');
+  const logoutBtn = document.getElementById('logoutBtn');
 
-  const logoutButton = document.getElementById('logout-button');
-  if (logoutButton) {
-    logoutButton.addEventListener('click', async () => {
-      await signOut(auth);
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
+      const nickname = userSnap.exists() ? userSnap.data().nickname : '使用者';
+      greetingElement.textContent = `Hello，${nickname}！`;
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+
+  logoutBtn?.addEventListener('click', () => {
+    signOut(auth).then(() => {
       window.location.href = 'login.html';
     });
-  }
+  });
 });
