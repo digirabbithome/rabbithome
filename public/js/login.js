@@ -1,16 +1,13 @@
-
 import { auth } from './firebase.js';
-import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 
-document.getElementById("loginBtn").addEventListener("click", () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  signInWithEmailAndPassword(auth, email, password)
-    .then(() => {
-      window.location.href = "main.html";
-    })
-    .catch((error) => {
-      alert("登入失敗：" + error.message);
-    });
+document.getElementById('login-btn').addEventListener('click', async () => {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    window.location.href = "main.html";
+  } catch (error) {
+    document.getElementById('error-message').textContent = "登入失敗：" + error.message;
+  }
 });

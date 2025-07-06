@@ -2,18 +2,15 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>Rabbithome 登入</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>登入 - Rabbithome</title>
+  <script type="module" src="./js/firebase.js"></script>
+  <script type="module" src="./js/login.js"></script>
 </head>
 <body>
-  <div class="login-container">
-    <h2>登入 Rabbithome</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="密碼" />
-    <button onclick="login()">登入</button>
-    <p id="error-message" style="color: red;"></p>
-  </div>
-  <script src="js/firebase.js" type="module"></script>
-  <script src="js/login.js" type="module"></script>
+  <h2>登入頁面</h2>
+  <input type="email" id="email" placeholder="Email" />
+  <input type="password" id="password" placeholder="Password" />
+  <button id="login-btn">登入</button>
+  <p id="error-message" style="color:red;"></p>
 </body>
 </html>
