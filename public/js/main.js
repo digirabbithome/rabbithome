@@ -1,45 +1,41 @@
 
-import { auth } from './firebase.js';
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-
-const nicknameSpan = document.getElementById("nickname");
-const contentDiv = document.getElementById("content");
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    fetch(`https://firestore.googleapis.com/v1/projects/rabbithome-auth/databases/(default)/documents/users/${user.uid}`)
-      .then(response => response.json())
-      .then(data => {
-        const nickname = data.fields?.nickname?.stringValue || "使用者";
-        nicknameSpan.textContent = nickname;
-      });
-  } else {
-    window.location.href = "login.html";
+document.addEventListener("DOMContentLoaded", () => {
+  const nicknameEl = document.getElementById("userNickname");
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user?.nickname && nicknameEl) {
+    nicknameEl.textContent = `🙋‍♂️ Hello，${user.nickname}！`;
   }
-});
 
-document.getElementById("logout-btn").addEventListener("click", () => {
-  signOut(auth).then(() => {
+  document.querySelectorAll(".sidebar-button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.getAttribute("data-target");
+      const contentEl = document.getElementById("mainContent");
+      if (!contentEl) return;
+
+      switch (target) {
+        case "daily":
+          contentEl.innerHTML = "<h2>📋 每日工作</h2><p>打卡內容區</p>";
+          break;
+        case "progress":
+          contentEl.innerHTML = "<h2>🗂️ 工作進度</h2><p>進度統計區塊（待建）</p>";
+          break;
+        case "envelope":
+          contentEl.innerHTML = "<h2>✉️ 列印信封</h2><p>信封表單區塊（待建）</p>";
+          break;
+        case "addUser":
+          document.getElementById("addUserSection")?.scrollIntoView({ behavior: "smooth" });
+          break;
+        case "userList":
+          document.getElementById("userListSection")?.scrollIntoView({ behavior: "smooth" });
+          break;
+        default:
+          break;
+      }
+    });
+  });
+
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    localStorage.removeItem("user");
     window.location.href = "login.html";
   });
-});
-
-document.getElementById("btn-daily").addEventListener("click", () => {
-  contentDiv.innerHTML = "<h2>這裡是每日工作區域</h2>";
-});
-
-document.getElementById("btn-adduser").addEventListener("click", () => {
-  contentDiv.innerHTML = `
-    <h2>新增帳號</h2>
-    <input type="text" placeholder="Email" /><br/>
-    <input type="password" placeholder="密碼" /><br/>
-    <input type="text" placeholder="姓名" /><br/>
-    <input type="text" placeholder="綽號" /><br/>
-    <input type="date" placeholder="生日" /><br/>
-    <label><input type="checkbox" value="外場" /> 外場</label>
-    <label><input type="checkbox" value="內場" /> 內場</label>
-    <label><input type="checkbox" value="美編" /> 美編</label>
-    <label><input type="checkbox" value="出貨" /> 出貨</label><br/>
-    <button>送出</button>
-  `;
 });
