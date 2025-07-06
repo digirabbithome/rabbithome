@@ -1,25 +1,45 @@
 
 import { auth } from './firebase.js';
-import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
-function loadPage(page) {
-  document.querySelector('.main-content').innerHTML = `<h1>🔄 ${page} 頁面載入中...</h1>`;
-}
-
-function logout() {
-  signOut(auth).then(() => {
-    window.location.href = "login.html";
-  });
-}
+const nicknameSpan = document.getElementById("nickname");
+const contentDiv = document.getElementById("content");
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    const nickname = localStorage.getItem('nickname') || "使用者";
-    document.getElementById('nickname').textContent = nickname;
+    fetch(`https://firestore.googleapis.com/v1/projects/rabbithome-auth/databases/(default)/documents/users/${user.uid}`)
+      .then(response => response.json())
+      .then(data => {
+        const nickname = data.fields?.nickname?.stringValue || "使用者";
+        nicknameSpan.textContent = nickname;
+      });
   } else {
     window.location.href = "login.html";
   }
 });
 
-window.loadPage = loadPage;
-window.logout = logout;
+document.getElementById("logout-btn").addEventListener("click", () => {
+  signOut(auth).then(() => {
+    window.location.href = "login.html";
+  });
+});
+
+document.getElementById("btn-daily").addEventListener("click", () => {
+  contentDiv.innerHTML = "<h2>這裡是每日工作區域</h2>";
+});
+
+document.getElementById("btn-adduser").addEventListener("click", () => {
+  contentDiv.innerHTML = `
+    <h2>新增帳號</h2>
+    <input type="text" placeholder="Email" /><br/>
+    <input type="password" placeholder="密碼" /><br/>
+    <input type="text" placeholder="姓名" /><br/>
+    <input type="text" placeholder="綽號" /><br/>
+    <input type="date" placeholder="生日" /><br/>
+    <label><input type="checkbox" value="外場" /> 外場</label>
+    <label><input type="checkbox" value="內場" /> 內場</label>
+    <label><input type="checkbox" value="美編" /> 美編</label>
+    <label><input type="checkbox" value="出貨" /> 出貨</label><br/>
+    <button>送出</button>
+  `;
+});
