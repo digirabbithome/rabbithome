@@ -2,19 +2,16 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>Rabbithome 主畫面</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <title>Rabbithome 主頁</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="sidebar">
-    <h2>Hello <span id="nickname">使用者</span></h2>
-    <button id="btn-daily">📋 每日工作</button>
-    <button id="btn-adduser">👤 新增帳號</button>
-    <button id="logout-btn">🚪 登出</button>
-  </div>
-  <div class="content" id="content">
-    <h2>這裡是每日工作區域</h2>
+  <div style="display: flex;">
+    <div id="sidebar" class="sidebar"></div>
+    <div style="flex-grow: 1; padding: 20px;">
+      <h1>這裡是每日工作區域</h1>
+    </div>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>
