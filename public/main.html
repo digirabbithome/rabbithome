@@ -12,7 +12,7 @@
     <h2>Rabbithome 🐰</h2>
     <ul>
       <li id="nicknameLabel">🙋‍♂️ Hello，使用者</li>
-      <li onclick="goToPage('main.html')">📋 每日工作</li>
+      <li onclick="goToPage('main_content.html')">📋 每日工作</li>
       <li onclick="goToPage('progress.html')">🗂️ 工作進度</li>
       <li onclick="goToPage('workitems.html')">🛠️ 工作項目</li>
       <li onclick="goToPage('print.html')">✉️ 列印信封</li>
@@ -23,8 +23,7 @@
     </ul>
   </div>
   <div class="content">
-    <h1>🎉 歡迎使用 Rabbithome 系統</h1>
-    <p>這裡是每日工作頁面。</p>
+    <iframe id="main-content" src="main_content.html" style="width:100%; height:100vh; border:none;"></iframe>
   </div>
 </body>
 </html>
