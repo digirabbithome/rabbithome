@@ -1,1 +1,73 @@
-<!-- 會員管理頁面 -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>會員管理</title>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
+      authDomain: "rabbithome-auth.firebaseapp.com",
+      projectId: "rabbithome-auth",
+      storageBucket: "rabbithome-auth.appspot.com",
+      messagingSenderId: "50928677930",
+      appId: "1:50928677930:web:e8eff13c8028b888537f53"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function loadUsers() {
+      const list = document.getElementById("user-list");
+      list.innerHTML = "載入中...";
+      const snap = await db.collection("users").get();
+      list.innerHTML = "";
+      snap.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "user-entry";
+        div.innerHTML = `
+          <strong>${data.nickname || "(無暱稱)"}</strong><br/>
+          Email: ${data.email || "(無)"}<br/>
+          群組: ${data.group || "(無)"}<br/>
+          <button onclick="changePassword('${data.email}')">修改密碼</button>
+          <hr/>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function changePassword(email) {
+      const newPass = prompt("輸入新密碼：", "");
+      if (newPass) {
+        firebase.auth().sendPasswordResetEmail(email)
+          .then(() => alert("已寄出密碼重設信到：" + email))
+          .catch(err => alert("錯誤：" + err.message));
+      }
+    }
+
+    window.onload = loadUsers;
+  </script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #fff9fc; }
+    h1 { color: #d63384; }
+    .user-entry { margin-bottom: 20px; }
+    button {
+      background: #ff80b5;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e05599;
+    }
+  </style>
+</head>
+<body>
+  <h1>👥 會員管理</h1>
+  <div id="user-list">載入中...</div>
+</body>
+</html>
