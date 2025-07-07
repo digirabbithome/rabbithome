@@ -1,26 +1,16 @@
-
-body { font-family: sans-serif; display: flex; margin: 0; }
-.sidebar {
-  width: 200px;
-  background-color: #fff;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+body { font-family: sans-serif; }
+#sidebar ul { list-style: none; padding: 0; }
+#sidebar li { padding: 10px; border-bottom: 1px solid #ccc; }
+.task-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+  margin: 10px 0;
   padding: 10px;
+  cursor: grab;
+  display: flex;
+  justify-content: space-between;
 }
-.sidebar button {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
-  padding: 10px;
-  border: none;
-  background-color: #f0f0f0;
-  cursor: pointer;
-  text-align: left;
-  border-radius: 8px;
-}
-.sidebar button:hover {
-  background-color: pink;
-}
-.content {
-  flex-grow: 1;
-  padding: 20px;
+.task-card:hover {
+  background: #ffe6f0;
 }
