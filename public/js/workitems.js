@@ -14,12 +14,12 @@ const db = getFirestore(app);
 const list = document.getElementById("taskList");
 
 document.getElementById("addTaskBtn").onclick = () => {
-  const li = createItem("請輸入內容");
+  const li = createItem("");
   list.appendChild(li);
 };
 
 document.getElementById("saveBtn").onclick = async () => {
-  const items = [...list.querySelectorAll("li input")].map((input) => input.value.trim()).filter(v => v);
+  const items = [...list.querySelectorAll("input[type='text']")].map(input => input.value.trim()).filter(v => v);
   const ref = doc(db, "workItems", "main");
   await setDoc(ref, { items });
   alert("✅ 已儲存！");
@@ -27,21 +27,18 @@ document.getElementById("saveBtn").onclick = async () => {
 
 function createItem(text) {
   const li = document.createElement("li");
-  li.style.display = "flex";
-  li.style.alignItems = "center";
-  li.style.gap = "10px";
-  li.style.margin = "5px 0";
 
   const input = document.createElement("input");
+  input.type = "text";
   input.value = text;
-  input.style.flex = "1";
+  input.placeholder = "例如：9:30 QA";
 
-  const del = document.createElement("button");
-  del.textContent = "🗑️";
-  del.onclick = () => li.remove();
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "🗑️";
+  delBtn.onclick = () => li.remove();
 
   li.appendChild(input);
-  li.appendChild(del);
+  li.appendChild(delBtn);
 
   li.draggable = true;
   li.ondragstart = (e) => {
