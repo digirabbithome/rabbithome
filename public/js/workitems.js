@@ -11,29 +11,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const list = document.createElement("ul");
-list.id = "taskList";
-list.style.listStyle = "none";
-list.style.padding = "0";
-document.body.appendChild(list);
+const list = document.getElementById("taskList");
 
-const addBtn = document.createElement("button");
-addBtn.textContent = "➕ 新增工作項目";
-addBtn.onclick = () => {
+document.getElementById("addTaskBtn").onclick = () => {
   const li = createItem("請輸入內容");
   list.appendChild(li);
 };
-document.body.appendChild(addBtn);
 
-const saveBtn = document.createElement("button");
-saveBtn.textContent = "💾 儲存排序結果";
-saveBtn.onclick = async () => {
+document.getElementById("saveBtn").onclick = async () => {
   const items = [...list.querySelectorAll("li input")].map((input) => input.value.trim()).filter(v => v);
   const ref = doc(db, "workItems", "main");
   await setDoc(ref, { items });
   alert("✅ 已儲存！");
 };
-document.body.appendChild(saveBtn);
 
 function createItem(text) {
   const li = document.createElement("li");
