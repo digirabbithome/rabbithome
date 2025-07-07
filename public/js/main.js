@@ -1,6 +1,6 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -11,9 +11,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, user => {
   if (user) {
-    const nickname = localStorage.getItem("nickname") || user.email?.split("@")[0] || "使用者";
-    document.getElementById("nickname-display").innerText = `🙋‍♂️ Hello，${nickname}`;
+    const nickname = localStorage.getItem("nickname") || "使用者";
+    document.getElementById("nicknameLabel").innerText = `🙋‍♂️ Hello，${nickname}`;
+  } else {
+    window.location.href = "login.html";
   }
 });
+
+function logout() {
+  signOut(auth).then(() => {
+    window.location.href = "login.html";
+  });
+}
+
+window.goToPage = function(page) {
+  window.location.href = page;
+}
+window.logout = logout;
