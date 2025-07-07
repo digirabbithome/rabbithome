@@ -1,27 +1,32 @@
-// main.js 功能：登入狀態、登出、新增帳號等功能
-import { auth } from './firebase.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 
-window.addEventListener('DOMContentLoaded', () => {
-  const nickname = localStorage.getItem('nickname') || '使用者';
-  document.getElementById('nickname').textContent = nickname;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = 'login.html';
-    }
-  });
+const firebaseConfig = {
+  apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
+  authDomain: "rabbithome-auth.firebaseapp.com",
+  projectId: "rabbithome-auth"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    const nickname = localStorage.getItem("nickname") || "使用者";
+    document.getElementById("nicknameLabel").innerText = `🙋‍♂️ Hello，${nickname}`;
+  } else {
+    window.location.href = "login.html";
+  }
 });
 
 function logout() {
   signOut(auth).then(() => {
-    window.location.href = 'login.html';
+    window.location.href = "login.html";
   });
 }
 
-function goTo(page) {
+window.goToPage = function(page) {
   window.location.href = page;
 }
-
 window.logout = logout;
-window.goTo = goTo;

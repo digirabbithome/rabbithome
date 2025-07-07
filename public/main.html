@@ -1,64 +1,31 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>Rabbithome Main</title>
+  <title>Rabbithome 主頁</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script type="module" src="js/main.js"></script>
-  <style>
-    body { display: flex; margin: 0; font-family: sans-serif; }
-    #sidebar {
-      width: 200px;
-      background-color: #fff;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .menu-button {
-      padding: 10px;
-      border-radius: 8px;
-      background: white;
-      color: #333;
-      border: 1px solid #eee;
-      cursor: pointer;
-      text-align: left;
-      transition: background 0.2s, color 0.2s;
-    }
-    .menu-button:hover {
-      background: #ffe0f0;
-      color: #d63384;
-    }
-    #content-frame {
-      flex-grow: 1;
-      border: none;
-      height: 100vh;
-    }
-  </style>
+  <script type="module" src="js/main.js" defer></script>
 </head>
 <body>
-  <div id="sidebar">
-    <div class="menu-button" id="nickname-display">🙋‍♂️ Hello，小兔！</div>
-    <div class="menu-button" onclick="navigate('daily.html')">📋 每日工作</div>
-    <div class="menu-button" onclick="navigate('progress.html')">🗂️ 工作進度</div>
-    <div class="menu-button" onclick="navigate('workitems.html')">🛠️ 工作項目</div>
-    <div class="menu-button" onclick="navigate('print-envelope.html')">✉️ 列印信封</div>
-    <div class="menu-button" onclick="navigate('new_account.html')">👤 新增帳號</div>
-    <div class="menu-button" onclick="navigate('user-manage.html')">👥 會員管理</div>
-    <div class="menu-button" onclick="navigate('https://rabbit-daily-news.vercel.app/auto-news.html')">📢 每日貼文</div>
-    <div class="menu-button" onclick="navigate('competitor.html')">📊 競品偵查</div>
-    <div class="menu-button" onclick="logout()">🚪 登出</div>
+  <div class="sidebar">
+    <h2>Rabbithome 🐰</h2>
+    <ul>
+      <li id="nicknameLabel">🙋‍♂️ Hello，使用者</li>
+      <li onclick="goToPage('main.html')">📋 每日工作</li>
+      <li onclick="goToPage('progress.html')">🗂️ 工作進度</li>
+      <li onclick="goToPage('workitems.html')">🛠️ 工作項目</li>
+      <li onclick="goToPage('print.html')">✉️ 列印信封</li>
+      <li onclick="goToPage('newuser.html')">👤 新增帳號</li>
+      <li onclick="goToPage('member.html')">👥 會員管理</li>
+      <li onclick="goToPage('auto-news.html')">📰 每日貼文</li>
+      <li onclick="goToPage('competitor.html')">📊 競品偵查</li>
+      <li onclick="logout()">🚪 登出</li>
+    </ul>
   </div>
-  <iframe id="content-frame" src="daily.html"></iframe>
-
-  <script>
-    function navigate(path) {
-      document.getElementById('content-frame').src = path;
-    }
-    function logout() {
-      window.location.href = 'login.html';
-    }
-  </script>
+  <div class="content">
+    <h1>🎉 歡迎使用 Rabbithome 系統</h1>
+    <p>這裡是每日工作頁面。</p>
+  </div>
 </body>
 </html>
