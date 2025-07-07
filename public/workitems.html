@@ -6,10 +6,12 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <h1>🛠️ 工作項目管理</h1>
-  <div id="task-container"></div>
-  <input type="text" id="taskInput" placeholder="輸入任務（例如 9:30 QA）" />
-  <button id="addTask">新增任務</button>
+  <div class="container">
+    <h2>🛠️ 工作任務管理</h2>
+    <ul id="taskList"></ul>
+    <input type="text" id="newTask" placeholder="新增任務，例如：9:30 QA" />
+    <button onclick="addTask()">新增任務</button>
+  </div>
   <script type="module" src="js/workitems.js"></script>
 </body>
 </html>
