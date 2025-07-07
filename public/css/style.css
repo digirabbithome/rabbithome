@@ -1,16 +1,28 @@
-body { font-family: sans-serif; }
-#sidebar ul { list-style: none; padding: 0; }
-#sidebar li { padding: 10px; border-bottom: 1px solid #ccc; }
-.task-card {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-  margin: 10px 0;
-  padding: 10px;
-  cursor: grab;
+
+body {
   display: flex;
-  justify-content: space-between;
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #fff0f5;
 }
-.task-card:hover {
-  background: #ffe6f0;
+.sidebar {
+  width: 200px;
+  padding: 1em;
+  background: white;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+.sidebar li {
+  padding: 8px;
+  cursor: pointer;
+}
+.sidebar li:hover {
+  background-color: #ffe0eb;
+}
+.content {
+  flex: 1;
+  padding: 2em;
 }
