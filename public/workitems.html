@@ -1,17 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>工作項目管理</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>🛠️ 工作項目管理</title>
 </head>
 <body>
-  <div class="container">
-    <h2>🛠️ 工作任務管理</h2>
-    <ul id="taskList"></ul>
-    <input type="text" id="newTask" placeholder="新增任務，例如：9:30 QA" />
-    <button onclick="addTask()">新增任務</button>
-  </div>
-  <script type="module" src="js/workitems.js"></script>
+  <h1>🛠️ 工作項目管理</h1>
+  <ul id="taskList" style="list-style: none; padding: 0;"></ul>
+  <button id="addTaskBtn">➕ 新增工作項目</button>
+  <button id="saveBtn">💾 儲存排序結果</button>
+  <script type="module" src="workitems.js"></script>
 </body>
 </html>
