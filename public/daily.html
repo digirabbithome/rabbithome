@@ -1,23 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>每日工作</title>
   <link rel="stylesheet" href="css/style.css" />
   <script type="module" src="js/daily.js" defer></script>
 </head>
 <body>
-  <div class="daily-wrapper">
-    <div class="header">
-      <h2>📅 每日工作</h2>
-      <input type="date" id="datePicker">
-    </div>
-    <div class="date-buttons" id="date-nav"></div>
-    <div class="main-grid">
-      <div class="task-list" id="task-list"></div>
-      <div class="record-list" id="record-list"></div>
-    </div>
+  <div class="page-wrapper">
+    <h2>📅 每日工作 <input type="date" id="datePicker" /></h2>
+    <div id="selectedDate" class="date-display"></div>
+    <div class="date-nav" id="date-nav"></div>
+    <div class="main-table" id="main-table"></div>
   </div>
 </body>
 </html>
