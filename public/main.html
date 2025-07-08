@@ -1,64 +1,68 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>Rabbithome Main</title>
+  <meta charset="UTF-8" />
+  <title>Rabbithome 主頁</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js" defer></script>
   <style>
-    body { display: flex; margin: 0; font-family: sans-serif; }
-    #sidebar {
-      width: 200px;
-      background-color: #fff;
+    body { display: flex; margin: 0; font-family: "Segoe UI", sans-serif; }
+    .sidebar {
+      width: 240px;
+      background-color: #ffffff;
       padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+      border-right: 1px solid #eee;
     }
-    .menu-button {
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 20px;
+      color: #ff6699;
+    }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar li {
       padding: 10px;
-      border-radius: 8px;
-      background: white;
-      color: #333;
-      border: 1px solid #eee;
+      margin-bottom: 10px;
+      background-color: #fff0f5;
+      border-radius: 12px;
       cursor: pointer;
-      text-align: left;
-      transition: background 0.2s, color 0.2s;
+      transition: all 0.3s ease;
     }
-    .menu-button:hover {
-      background: #ffe0f0;
-      color: #d63384;
+    .sidebar li:hover {
+      background-color: #ffe6ec;
+      color: #d6336c;
+    }
+    .main-content {
+      flex-grow: 1;
+      height: 100vh;
+      overflow: hidden;
     }
     #content-frame {
-      flex-grow: 1;
+      width: 100%;
+      height: 100%;
       border: none;
-      height: 100vh;
     }
   </style>
 </head>
 <body>
-  <div id="sidebar">
-    <div class="menu-button" id="nickname-display">🙋‍♂️ Hello，使用者</div>
-    <div class="menu-button" onclick="navigate('daily.html')">📋 每日工作</div>
-    <div class="menu-button" onclick="navigate('progress.html')">🗂️ 工作進度</div>
-    <div class="menu-button" onclick="navigate('workitems.html')">🛠️ 工作項目</div>
-    <div class="menu-button" onclick="navigate('print-envelope.html')">✉️ 列印信封</div>
-    <div class="menu-button" onclick="navigate('new_account.html')">👤 新增帳號</div>
-    <div class="menu-button" onclick="navigate('user-manage.html')">👥 會員管理</div>
-    <div class="menu-button" onclick="navigate('https://rabbit-daily-news.vercel.app/auto-news.html')">📢 每日貼文</div>
-    <div class="menu-button" onclick="navigate('competitor.html')">📊 競品偵查</div>
-    <div class="menu-button" onclick="logout()">🚪 登出</div>
+  <div class="sidebar">
+    <h2>Rabbithome 🐰</h2>
+    <ul>
+      <li id="nickname-display">🙋‍♂️ Hello，使用者</li>
+      <li onclick="navigate('main_content.html')">📋 每日工作</li>
+      <li onclick="navigate('progress.html')">🗂️ 工作進度</li>
+      <li onclick="navigate('workitems.html')">🛠️ 工作項目</li>
+      <li onclick="navigate('print.html')">✉️ 列印信封</li>
+      <li onclick="navigate('newuser.html')">👤 新增帳號</li>
+      <li onclick="navigate('member.html')">👥 會員管理</li>
+      <li onclick="navigate('https://rabbit-daily-news.vercel.app/auto-news.html')">📰 每日貼文</li>
+      <li onclick="navigate('competitor.html')">📊 競品偵查</li>
+      <li onclick="logout()">🚪 登出</li>
+    </ul>
   </div>
-  <iframe id="content-frame" src="daily.html"></iframe>
-
-  <script>
-    function navigate(path) {
-      document.getElementById('content-frame').src = path;
-    }
-    function logout() {
-      window.location.href = 'login.html';
-    }
-  </script>
+  <div class="main-content">
+    <iframe id="content-frame" src="main_content.html"></iframe>
+  </div>
 </body>
 </html>
