@@ -18,6 +18,13 @@ let nickname = localStorage.getItem("nickname") || "使用者";
 
 document.addEventListener("DOMContentLoaded", async () => {
   renderDateButtons();
+  document.getElementById("date-picker").value = selectedDate;
+  document.getElementById("date-picker").addEventListener("change", async (e) => {
+    selectedDate = e.target.value;
+    updateDateDisplay(selectedDate);
+    await renderTasks();
+  });
+  updateDateDisplay(selectedDate);
   await renderTasks();
 });
 
@@ -25,6 +32,11 @@ function getTodayString(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() - offset);
   return d.toISOString().slice(0, 10);
+}
+
+function updateDateDisplay(dateStr) {
+  const [y, m, d] = dateStr.split("-");
+  document.getElementById("current-date").textContent = `${y}/${m}/${d}`;
 }
 
 function renderDateButtons() {
@@ -36,6 +48,8 @@ function renderDateButtons() {
     btn.textContent = i === 0 ? "今天" : `前${i}天`;
     btn.onclick = async () => {
       selectedDate = dateStr;
+      document.getElementById("date-picker").value = dateStr;
+      updateDateDisplay(dateStr);
       await renderTasks();
     };
     container.appendChild(btn);
@@ -69,7 +83,7 @@ async function renderTasks() {
     section.className = "record-item";
     section.innerHTML = `<strong>${task}</strong><br>`;
     for (const [nick, time] of Object.entries(list)) {
-      section.innerHTML += `${nick} ${time}<br>`;
+      section.innerHTML += `<span class="record-user">${nick} ${time}</span>`;
     }
     recordListEl.appendChild(section);
   });

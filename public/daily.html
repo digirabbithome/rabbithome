@@ -2,50 +2,22 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>每日工作紀錄</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8" />
+  <title>每日工作</title>
+  <link rel="stylesheet" href="css/daily.css" />
   <script type="module" src="js/daily.js" defer></script>
-  <style>
-    body { font-family: "Segoe UI", sans-serif; padding: 20px; }
-    .date-nav { margin-bottom: 20px; }
-    .date-nav button {
-      margin-right: 8px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      background-color: #ffe6ec;
-      cursor: pointer;
-    }
-    .main-grid {
-      display: flex;
-      gap: 20px;
-    }
-    .task-list, .record-list {
-      flex: 1;
-      background: #fefefe;
-      border-radius: 12px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
-      padding: 20px;
-    }
-    .task-item {
-      padding: 10px;
-      margin-bottom: 8px;
-      background: #fff0f5;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .task-item:hover {
-      background: #ffe6ec;
-    }
-    .record-item {
-      margin-bottom: 10px;
-    }
-  </style>
 </head>
 <body>
-  <h2>📅 每日工作打勾系統</h2>
-  <div class="date-nav" id="date-nav"></div>
+  <div class="top-bar">
+    <h2>📅 每日工作</h2>
+    <div class="date-control">
+      <span id="current-date" class="today-display">2025/07/08</span>
+      <input type="date" id="date-picker" />
+    </div>
+  </div>
+
+  <div id="date-nav" class="date-nav"></div>
+
   <div class="main-grid">
     <div class="task-list">
       <h3>📋 任務列表</h3>
