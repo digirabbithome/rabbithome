@@ -2,43 +2,69 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>信封列印系統 v2.0</title>
-  <link rel="stylesheet" href="/css/envelope.css">
-  <script defer src="/js/envelop.js"></script>
+  <meta charset="UTF-8" />
+  <title>信封列印系統</title>
+  <link rel="stylesheet" href="/css/envelope.css" />
+  <script src="/js/envelop.js" defer></script>
 </head>
 <body>
-  <h2>📮 數位小兔 - 信封列印系統</h2>
-  <form id="envelopeForm">
-    <label>寄件公司：
-      <select id="senderType" name="senderType">
-        <option value="digitalrabbit" selected>數位小兔 Digital Rabbit</option>
-        <option value="focus">聚焦數位 Focus Camera</option>
-        <option value="neversleep">免睡攝影 Never Sleep Camera</option>
-        <option value="custom">其他（自訂）</option>
+  <div class="container">
+    <h1>📬 信封列印系統</h1>
+    <form id="envelopeForm">
+      <label for="company">寄件公司</label>
+      <select id="company" name="company">
+        <option value="數位小兔">數位小兔</option>
+        <option value="聚焦數位">聚焦數位</option>
+        <option value="免睡攝影">免睡攝影</option>
+        <option value="其他">其他</option>
       </select>
-    </label><br>
-    <div id="customSenderWrapper" style="display: none;">
-      <label>自訂寄件人名稱：<input type="text" id="customSender" /></label>
-    </div><br>
-    <label>收件人：<input type="text" id="recipient" required></label><br>
-    <label>電話：<input type="text" id="phone" required></label><br>
-    <label>地址：<input type="text" id="address" required></label><br>
-    <label>商品：<input type="text" id="product"></label><br>
-    <label>來源：<input type="text" id="source"></label><br>
-    <label>帳號：<input type="text" id="account"></label><br><br>
-    <button type="submit">送出並列印</button>
-    <div id="successMessage" style="color: green; display: none;">✅ 信封產生完成！</div>
-  </form>
+      <textarea id="customCompany" placeholder="請輸入自訂寄件公司資料..." style="display:none; height: 3em;"></textarea>
 
-  <h3>📋 今日列印紀錄</h3>
-  <table id="recordTable" border="1" cellpadding="8" cellspacing="0">
-    <thead>
-      <tr>
-        <th>時間</th><th>收件人</th><th>地址</th><th>商品</th><th>來源</th><th>帳號</th><th>操作</th>
-      </tr>
-    </thead>
-    <tbody id="recordBody"></tbody>
-  </table>
+      <label for="recipient">收件人姓名</label>
+      <input type="text" id="recipient" required />
+
+      <label for="phone">電話</label>
+      <input type="text" id="phone" required />
+
+      <label for="address">地址</label>
+      <input type="text" id="address" required style="width: 100%;" />
+
+      <label for="product">商品內容</label>
+      <input type="text" id="product" />
+
+      <div>
+        <label>來源</label><br />
+        <label><input type="radio" name="source" value="Line" required /> Line</label>
+        <label><input type="radio" name="source" value="官網" /> 官網</label>
+        <label><input type="radio" name="source" value="Yahoo" /> Yahoo</label>
+        <label><input type="radio" name="source" value="露天" /> 露天</label>
+        <label><input type="radio" name="source" value="蝦皮" /> 蝦皮</label>
+      </div>
+
+      <label for="account">填寫帳號</label>
+      <input type="text" id="account" required />
+
+      <button type="submit">送出並列印</button>
+    </form>
+
+    <div id="confirmationMessage"></div>
+
+    <h2>📋 今日列印紀錄</h2>
+    <table id="recordTable">
+      <thead>
+        <tr>
+          <th>時間</th>
+          <th>收件人</th>
+          <th>地址</th>
+          <th>電話</th>
+          <th>商品</th>
+          <th>來源</th>
+          <th>帳號</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </body>
 </html>
