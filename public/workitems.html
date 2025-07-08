@@ -1,6 +1,49 @@
 
-<h1>🛠️ 工作項目管理</h1>
-<ul id="taskList" style="list-style: none; padding: 0;"></ul>
-<button id="addTaskBtn">➕ 新增工作項目</button>
-<button id="saveBtn">💾 儲存排序結果</button>
-<script type="module" src="js/workitems.js"></script>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>工作項目管理</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="module" src="js/workitems.js" defer></script>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 20px; }
+    h1 { font-size: 24px; color: #333; }
+    input, button {
+      padding: 8px;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      margin: 5px 0;
+      background-color: #fff0f5;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: grab;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .delete-btn {
+      background: #ff6666;
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🛠️ 工作項目管理</h1>
+  <input type="text" id="taskInput" placeholder="輸入工作項目，例如 9:30 QA">
+  <button onclick="addTask()">新增任務</button>
+  <ul id="taskList"></ul>
+  <button onclick="saveOrder()">💾 儲存排序</button>
+</body>
+</html>
