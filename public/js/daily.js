@@ -11,7 +11,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let selectedDate = getTodayString();
 let nickname = localStorage.getItem("nickname") || "使用者";
 
@@ -54,56 +53,33 @@ async function renderTasks() {
   const taskDocs = [];
   snapshot.forEach(doc => taskDocs.push(doc.data()));
 
-  const usersSet = new Set();
-  const allRecords = {};
+  const taskDisplay = document.getElementById("task-display");
+  taskDisplay.innerHTML = "";
+
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const recordData = snap.exists() ? snap.data() : {};
 
   for (const task of taskDocs) {
     const taskName = task.text;
-    const snap = await getDoc(doc(db, "dailyCheck", selectedDate));
-    const done = snap.exists() && snap.data()[taskName] ? snap.data()[taskName] : {};
-    allRecords[taskName] = done;
-    Object.keys(done).forEach(nick => usersSet.add(nick));
-  }
-
-  const users = [...usersSet];
-  const mainTable = document.getElementById("main-table");
-  mainTable.innerHTML = "";
-
-  const headerRow = document.createElement("div");
-  headerRow.className = "table-row table-header";
-
-  const taskHeader = document.createElement("div");
-  taskHeader.className = "table-cell";
-  taskHeader.textContent = "任務";
-  headerRow.appendChild(taskHeader);
-
-  users.forEach(user => {
-    const cell = document.createElement("div");
-    cell.className = "table-cell";
-    cell.textContent = user;
-    headerRow.appendChild(cell);
-  });
-  mainTable.appendChild(headerRow);
-
-  for (const task of taskDocs) {
     const row = document.createElement("div");
-    row.className = "table-row";
+    row.className = "task-row";
 
-    const taskCell = document.createElement("div");
-    taskCell.className = "table-cell task-col";
-    taskCell.textContent = task.text;
-    taskCell.onclick = () => markComplete(task.text);
-    row.appendChild(taskCell);
+    const name = document.createElement("div");
+    name.className = "task-name";
+    name.textContent = taskName;
+    name.onclick = () => markComplete(taskName);
 
-    users.forEach(user => {
-      const cell = document.createElement("div");
-      cell.className = "table-cell";
-      const record = allRecords[task.text]?.[user] || "";
-      cell.textContent = record;
-      row.appendChild(cell);
-    });
+    const record = document.createElement("div");
+    record.className = "task-records";
 
-    mainTable.appendChild(row);
+    const logs = recordData[taskName] || {};
+    const entries = Object.entries(logs).map(([user, time]) => `${user} ${time}`);
+    record.textContent = entries.join("　");
+
+    row.appendChild(name);
+    row.appendChild(record);
+    taskDisplay.appendChild(row);
   }
 }
 

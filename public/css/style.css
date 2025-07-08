@@ -5,14 +5,13 @@ body {
   padding: 20px;
 }
 .page-wrapper {
-  max-width: 1400px;
+  max-width: 1000px;
   margin: auto;
 }
 .date-display {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
-  color: #009;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 .date-nav {
   margin-bottom: 20px;
@@ -25,30 +24,23 @@ body {
   background-color: #ffe6ec;
   cursor: pointer;
 }
-.main-table {
-  display: table;
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+.task-row {
+  background: #fff;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.1);
 }
-.table-row {
-  display: table-row;
-}
-.table-header {
-  background-color: #fefefe;
+.task-name {
   font-weight: bold;
-}
-.table-cell {
-  display: table-cell;
-  border: 1px solid #eee;
-  padding: 8px 12px;
-  min-width: 120px;
-}
-.task-col {
-  background-color: #fff0f5;
-  font-weight: 500;
+  color: #c0392b;
+  margin-bottom: 6px;
   cursor: pointer;
 }
-.task-col:hover {
-  background-color: #ffdfea;
+.task-name:hover {
+  text-decoration: underline;
+}
+.task-records {
+  font-size: 14px;
+  color: #333;
 }
