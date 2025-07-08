@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>📋 每日工作紀錄</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="module" src="js/daily.js" defer></script>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #fffafc;
+      padding: 20px;
+    }
+    h1 {
+      color: #d63384;
+      font-size: 24px;
+    }
+    .date-buttons {
+      margin: 20px 0;
+    }
+    .date-buttons button {
+      margin: 4px;
+      padding: 6px 12px;
+      background: #ffb3d9;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li.task-item {
+      background: #ffe6f0;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .check-line {
+      margin-top: 6px;
+      padding-left: 24px;
+      font-size: 14px;
+      color: #444;
+    }
+    .done-name {
+      display: inline-block;
+      background: #e6f9ec;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-right: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 每日工作紀錄</h1>
+  <div class="date-buttons" id="dateButtons"></div>
+  <ul id="taskList"></ul>
+</body>
+</html>
