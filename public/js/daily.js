@@ -72,7 +72,6 @@ async function renderTasks() {
 
     const record = document.createElement("div");
     record.className = "task-records";
-
     const logs = recordData[taskName] || {};
     const entries = Object.entries(logs).map(([user, time]) => `${user} ${time}`);
     record.textContent = entries.join("　");

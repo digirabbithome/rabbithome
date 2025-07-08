@@ -26,15 +26,17 @@ body {
 }
 .task-row {
   background: #fff;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   border-radius: 10px;
-  padding: 12px;
+  padding: 12px 16px;
   box-shadow: 0 0 4px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .task-name {
   font-weight: bold;
   color: #c0392b;
-  margin-bottom: 6px;
   cursor: pointer;
 }
 .task-name:hover {
@@ -43,4 +45,5 @@ body {
 .task-records {
   font-size: 14px;
   color: #333;
+  text-align: right;
 }
