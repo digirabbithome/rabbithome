@@ -1,11 +1,8 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import {
-  getFirestore, collection, doc, getDocs, setDoc, getDoc
+  getFirestore, doc, getDoc, setDoc, getDocs, collection
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-import {
-  getAuth, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -15,99 +12,77 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
 
-let currentDate = getToday();
-const taskList = document.getElementById("taskList");
-const dateButtons = document.getElementById("dateButtons");
-let nickname = "使用者";
+let selectedDate = getTodayString();
+let nickname = localStorage.getItem("nickname") || "使用者";
 
-function getToday(offset = 0) {
+document.addEventListener("DOMContentLoaded", async () => {
+  renderDateButtons();
+  await renderTasks();
+});
+
+function getTodayString(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() - offset);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().slice(0, 10);
 }
 
 function renderDateButtons() {
-  for (let i = 0; i <= 6; i++) {
-    const date = getToday(i);
+  const container = document.getElementById("date-nav");
+  container.innerHTML = "";
+  for (let i = 0; i < 7; i++) {
+    const dateStr = getTodayString(i);
     const btn = document.createElement("button");
-    btn.textContent = i === 0 ? `今天 (${date})` : `前 ${i} 天 (${date})`;
-    btn.onclick = () => {
-      currentDate = date;
-      loadTasks();
+    btn.textContent = i === 0 ? "今天" : `前${i}天`;
+    btn.onclick = async () => {
+      selectedDate = dateStr;
+      await renderTasks();
     };
-    dateButtons.appendChild(btn);
+    container.appendChild(btn);
   }
 }
 
-async function loadTasks() {
-  taskList.innerHTML = "";
-  const workItemsSnapshot = await getDocs(collection(db, "workItems"));
-  const workItems = [];
+async function renderTasks() {
+  const taskListEl = document.getElementById("task-list");
+  const recordListEl = document.getElementById("record-list");
+  taskListEl.innerHTML = "";
+  recordListEl.innerHTML = "";
 
-  workItemsSnapshot.forEach(doc => {
-    workItems.push(doc.data().text);
+  const snapshot = await getDocs(collection(db, "workItems"));
+  const tasks = [];
+  snapshot.forEach(doc => {
+    tasks.push(doc.data().text);
   });
 
-  for (let task of workItems) {
-    const li = document.createElement("li");
-    li.className = "task-item";
+  tasks.forEach(task => {
+    const el = document.createElement("div");
+    el.className = "task-item";
+    el.textContent = task;
+    el.onclick = () => markComplete(task);
+    taskListEl.appendChild(el);
+  });
 
-    const checkBtn = document.createElement("input");
-    checkBtn.type = "checkbox";
-    checkBtn.onclick = () => markDone(task);
-
-    const label = document.createElement("label");
-    label.textContent = " " + task;
-
-    const checkLine = document.createElement("div");
-    checkLine.className = "check-line";
-    checkLine.id = "line-" + task;
-
-    li.appendChild(checkBtn);
-    li.appendChild(label);
-    li.appendChild(checkLine);
-
-    taskList.appendChild(li);
-
-    loadCompletedUsers(task);
-  }
-}
-
-async function markDone(task) {
-  const timeStr = new Date().toTimeString().substring(0,5);
-  const ref = doc(db, `dailyCheck/${currentDate}/${task}`);
-  const snap = await getDoc(ref);
-  const data = snap.exists() ? snap.data() : {};
-  data[nickname] = timeStr;
-  await setDoc(ref, data);
-  loadCompletedUsers(task);
-}
-
-async function loadCompletedUsers(task) {
-  const ref = doc(db, `dailyCheck/${currentDate}/${task}`);
-  const snap = await getDoc(ref);
-  const line = document.getElementById("line-" + task);
-  line.innerHTML = "";
-
-  if (snap.exists()) {
-    const data = snap.data();
-    for (let [user, time] of Object.entries(data)) {
-      const span = document.createElement("span");
-      span.className = "done-name";
-      span.textContent = `${user} ${time}`;
-      line.appendChild(span);
+  tasks.forEach(async task => {
+    const taskDoc = await getDoc(doc(db, "dailyCheck", selectedDate));
+    const list = taskDoc.exists() && taskDoc.data()[task] ? taskDoc.data()[task] : {};
+    const section = document.createElement("div");
+    section.className = "record-item";
+    section.innerHTML = `<strong>${task}</strong><br>`;
+    for (const [nick, time] of Object.entries(list)) {
+      section.innerHTML += `${nick} ${time}<br>`;
     }
-  }
+    recordListEl.appendChild(section);
+  });
 }
 
-onAuthStateChanged(auth, user => {
-  if (user) {
-    nickname = localStorage.getItem("nickname") || "使用者";
-    renderDateButtons();
-    loadTasks();
-  } else {
-    window.location.href = "login.html";
-  }
-});
+async function markComplete(task) {
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const oldData = snap.exists() ? snap.data() : {};
+  if (!oldData[task]) oldData[task] = {};
+  oldData[task][nickname] = timeStr;
+  await setDoc(ref, oldData);
+  await renderTasks();
+}

@@ -3,59 +3,58 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>📋 每日工作紀錄</title>
+  <title>每日工作紀錄</title>
   <link rel="stylesheet" href="css/style.css" />
   <script type="module" src="js/daily.js" defer></script>
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: #fffafc;
+    body { font-family: "Segoe UI", sans-serif; padding: 20px; }
+    .date-nav { margin-bottom: 20px; }
+    .date-nav button {
+      margin-right: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: #ffe6ec;
+      cursor: pointer;
+    }
+    .main-grid {
+      display: flex;
+      gap: 20px;
+    }
+    .task-list, .record-list {
+      flex: 1;
+      background: #fefefe;
+      border-radius: 12px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
       padding: 20px;
     }
-    h1 {
-      color: #d63384;
-      font-size: 24px;
-    }
-    .date-buttons {
-      margin: 20px 0;
-    }
-    .date-buttons button {
-      margin: 4px;
-      padding: 6px 12px;
-      background: #ffb3d9;
-      border: none;
+    .task-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #fff0f5;
       border-radius: 8px;
       cursor: pointer;
     }
-    ul {
-      list-style: none;
-      padding: 0;
+    .task-item:hover {
+      background: #ffe6ec;
     }
-    li.task-item {
-      background: #ffe6f0;
-      border-radius: 8px;
-      padding: 10px;
+    .record-item {
       margin-bottom: 10px;
-    }
-    .check-line {
-      margin-top: 6px;
-      padding-left: 24px;
-      font-size: 14px;
-      color: #444;
-    }
-    .done-name {
-      display: inline-block;
-      background: #e6f9ec;
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-right: 8px;
-      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>📋 每日工作紀錄</h1>
-  <div class="date-buttons" id="dateButtons"></div>
-  <ul id="taskList"></ul>
+  <h2>📅 每日工作打勾系統</h2>
+  <div class="date-nav" id="date-nav"></div>
+  <div class="main-grid">
+    <div class="task-list">
+      <h3>📋 任務列表</h3>
+      <div id="task-list"></div>
+    </div>
+    <div class="record-list">
+      <h3>✅ 完成情況</h3>
+      <div id="record-list"></div>
+    </div>
+  </div>
 </body>
 </html>
