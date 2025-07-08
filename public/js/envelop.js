@@ -32,8 +32,10 @@ window.addEventListener("load", () => {
     const reprint = document.createElement("button");
     reprint.textContent = "再印一次";
     reprint.onclick = () => {
-      const printWin = window.open("print.html", "_blank");
-      printWin.senderData = { recipient, phone, address, product, senderName };
+      const query = new URLSearchParams({
+        recipient, phone, address, product, senderName
+      }).toString();
+      window.open("print.html?" + query, "_blank");
     };
     const tdOp = document.createElement("td");
     tdOp.appendChild(reprint);
@@ -42,8 +44,10 @@ window.addEventListener("load", () => {
     recordTable.appendChild(row);
     confirmation.textContent = "✅ 信封產生完成，已加入下方列表！";
 
-    // 打開新分頁列印
-    const printWin = window.open("print.html", "_blank");
-    printWin.senderData = { recipient, phone, address, product, senderName };
+    // 跳出新分頁列印
+    const query = new URLSearchParams({
+      recipient, phone, address, product, senderName
+    }).toString();
+    window.open("print.html?" + query, "_blank");
   });
 });

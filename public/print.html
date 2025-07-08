@@ -20,14 +20,20 @@
 
   <script>
     window.onload = function() {
-      const data = window.opener?.senderData;
-      if (!data) return;
-      document.getElementById("sender").textContent = data.senderName || "";
+      const params = new URLSearchParams(window.location.search);
+      const senderName = params.get("senderName") || "";
+      const recipient = params.get("recipient") || "";
+      const phone = params.get("phone") || "";
+      const address = params.get("address") || "";
+      const product = params.get("product") || "";
+
+      document.getElementById("sender").textContent = senderName;
       document.getElementById("recipient").innerHTML = 
-        data.recipient + "<br>" + data.phone + "<br>" + data.address;
-      if (data.product) {
-        document.getElementById("product").textContent = data.product;
+        recipient + "<br>" + phone + "<br>" + address;
+      if (product) {
+        document.getElementById("product").textContent = product;
       }
+
       window.print();
     };
   </script>
