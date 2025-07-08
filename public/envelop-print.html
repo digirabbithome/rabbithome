@@ -2,47 +2,39 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>列印信封</title>
+  <meta charset="UTF-8" />
+  <title>信封列印測試頁</title>
   <link rel="stylesheet" href="/css/envelope.css" />
-  <script src="/js/envelop.js" defer></script>
+  <script type="module" src="/js/envelop.js"></script>
 </head>
 <body>
-  <h2>✉️ 信封列印系統</h2>
   <form id="envelopeForm">
     <label>寄件公司：
-      <select id="senderCompany" name="senderCompany">
+      <select name="senderCompany" id="senderCompany">
         <option value="數位小兔">數位小兔</option>
         <option value="聚焦數位">聚焦數位</option>
         <option value="免睡攝影">免睡攝影</option>
         <option value="其他">其他</option>
       </select>
-    </label><br>
-    <div id="customSenderContainer" style="display:none;">
-      <label>自訂寄件人資料：<br>
-        <textarea id="customSender" rows="3" style="width: 80%;"></textarea>
-      </label><br>
+    </label>
+    <div id="customSenderField" style="display:none;">
+      <textarea name="customSender" rows="3" placeholder="自訂寄件人資訊"></textarea>
     </div>
-
-    <label>收件人姓名：<input type="text" name="receiverName" /></label><br>
-    <label>電話：<input type="text" name="phone" /></label><br>
-    <label>地址：<input type="text" name="address" style="width: 60%;" /></label><br>
-    <label>商品內容：<input type="text" name="product" /></label><br>
-
-    <div>
-      來源：
+    <br>
+    <label>收件人姓名：<input name="receiverName" /></label><br>
+    <label>電話：<input name="phone" /></label><br>
+    <label>地址：<input name="address" style="width: 400px;" /></label><br>
+    <label>商品內容：<input name="product" /></label><br>
+    <fieldset>
+      <legend>來源：</legend>
       <label><input type="radio" name="source" value="Line" /> Line</label>
       <label><input type="radio" name="source" value="官網" /> 官網</label>
       <label><input type="radio" name="source" value="Yahoo" /> Yahoo</label>
       <label><input type="radio" name="source" value="露天" /> 露天</label>
       <label><input type="radio" name="source" value="蝦皮" /> 蝦皮</label>
-    </div><br>
-
-    <button type="submit">送出並列印</button>
+    </fieldset>
+    <br>
+    <button type="submit">送出產生信封</button>
   </form>
-
-  <hr>
-  <h3>📜 今日列印紀錄</h3>
-  <div id="recordList">載入中...</div>
 </body>
 </html>
