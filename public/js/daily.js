@@ -12,19 +12,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let selectedDate = getTodayString();
 let nickname = localStorage.getItem("nickname") || "使用者";
 
 document.addEventListener("DOMContentLoaded", async () => {
   renderDateButtons();
-  document.getElementById("date-picker").value = selectedDate;
-  document.getElementById("date-picker").addEventListener("change", async (e) => {
+  document.getElementById("datePicker").value = selectedDate;
+  document.getElementById("datePicker").addEventListener("change", async e => {
     selectedDate = e.target.value;
-    updateDateDisplay(selectedDate);
     await renderTasks();
   });
-  updateDateDisplay(selectedDate);
   await renderTasks();
 });
 
@@ -32,11 +29,6 @@ function getTodayString(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() - offset);
   return d.toISOString().slice(0, 10);
-}
-
-function updateDateDisplay(dateStr) {
-  const [y, m, d] = dateStr.split("-");
-  document.getElementById("current-date").textContent = `${y}/${m}/${d}`;
 }
 
 function renderDateButtons() {
@@ -48,8 +40,7 @@ function renderDateButtons() {
     btn.textContent = i === 0 ? "今天" : `前${i}天`;
     btn.onclick = async () => {
       selectedDate = dateStr;
-      document.getElementById("date-picker").value = dateStr;
-      updateDateDisplay(dateStr);
+      document.getElementById("datePicker").value = selectedDate;
       await renderTasks();
     };
     container.appendChild(btn);
@@ -62,45 +53,29 @@ async function renderTasks() {
   taskListEl.innerHTML = "";
   recordListEl.innerHTML = "";
 
-  const q = query(collection(db, "workItems"), orderBy("order"));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(query(collection(db, "workItems"), orderBy("order")));
   const tasks = [];
   snapshot.forEach(doc => {
-    tasks.push(doc.data().text);
+    const data = doc.data();
+    tasks.push(data.text);
   });
 
-  // 左側任務列
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const recordData = snap.exists() ? snap.data() : {};
+
   tasks.forEach(task => {
-    const el = document.createElement("div");
-    el.className = "task-item";
-    el.textContent = task;
-    el.onclick = () => markComplete(task);
-    taskListEl.appendChild(el);
-  });
+    const taskEl = document.createElement("div");
+    taskEl.textContent = task;
+    taskEl.onclick = () => markComplete(task);
+    taskListEl.appendChild(taskEl);
 
-  // 右側完成表格（橫向）
-  const usersSet = new Set();
-  const taskRecords = {};
-  for (let task of tasks) {
-    const taskDoc = await getDoc(doc(db, "dailyCheck", selectedDate));
-    const list = taskDoc.exists() && taskDoc.data()[task] ? taskDoc.data()[task] : {};
-    taskRecords[task] = list;
-    Object.keys(list).forEach(user => usersSet.add(user));
-  }
-
-  const users = Array.from(usersSet);
-  let html = "<table class='record-table'><thead><tr><th>任務</th>";
-  users.forEach(u => html += `<th>${u}</th>`);
-  html += "</tr></thead><tbody>";
-  tasks.forEach(task => {
-    html += `<tr><td>${task}</td>`;
-    users.forEach(u => {
-      html += `<td>${taskRecords[task]?.[u] || ""}</td>`;
-    });
-    html += "</tr>";
+    const row = document.createElement("div");
+    row.className = "record-row";
+    const logs = recordData[task] || {};
+    row.textContent = Object.entries(logs).map(([name, time]) => `${name} ${time}`).join("　");
+    recordListEl.appendChild(row);
   });
-  html += "</tbody></table>";
-  recordListEl.innerHTML = html;
 }
 
 async function markComplete(task) {
