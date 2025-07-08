@@ -1,5 +1,5 @@
 
-document.addEventListener('DOMContentLoaded', () => {
+window.onload = () => {
   const form = document.getElementById('envelopeForm');
   const customWrapper = document.getElementById('customSenderWrapper');
   const senderType = document.getElementById('senderType');
@@ -62,4 +62,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadTodayRecords();
-});
+};
