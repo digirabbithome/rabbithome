@@ -54,7 +54,7 @@ async function renderTasks() {
   snapshot.forEach(doc => taskDocs.push(doc.data()));
 
   const taskDisplay = document.getElementById("task-display");
-  taskDisplay.innerHTML = "";
+  taskDisplay.innerHTML = ""; const table = document.createElement("table"); table.style.width = "100%"; table.style.borderSpacing = "0 10px"; taskDisplay.appendChild(table);
 
   const ref = doc(db, "dailyCheck", selectedDate);
   const snap = await getDoc(ref);
@@ -62,8 +62,8 @@ async function renderTasks() {
 
   for (const task of taskDocs) {
     const taskName = task.text;
-    const row = document.createElement("div");
-    row.className = "task-row";
+    const row = document.createElement("tr"); row.style.verticalAlign = "top";
+    row.className = "task-row"; row.style.background = "#fff"; row.style.borderRadius = "10px"; row.style.boxShadow = "0 0 4px rgba(0,0,0,0.1)";
 
     const name = document.createElement("div");
     name.className = "task-name";
@@ -76,9 +76,9 @@ async function renderTasks() {
     const entries = Object.entries(logs).map(([user, time]) => `${user} ${time}`);
     record.textContent = entries.join("　");
 
-    row.appendChild(name);
-    row.appendChild(record);
-    taskDisplay.appendChild(row);
+    const td1 = document.createElement("td"); td1.style.padding = "10px"; td1.appendChild(name); row.appendChild(td1);
+    const td2 = document.createElement("td"); td2.style.padding = "10px"; record.style.textAlign = "left"; td2.appendChild(record); row.appendChild(td2);
+    table.appendChild(row);
   }
 }
 
