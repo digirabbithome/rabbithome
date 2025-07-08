@@ -1,36 +1,60 @@
 
-function toggleCustomSender() {
-  const select = document.getElementById('sender-company');
-  const custom = document.getElementById('custom-sender');
-  if (select.value === '其他') {
-    custom.style.display = 'block';
-  } else {
-    custom.style.display = 'none';
-  }
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
+  authDomain: "rabbithome-auth.firebaseapp.com",
+  projectId: "rabbithome-auth",
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-function submitEnvelope() {
-  const sender = document.getElementById('sender-company').value;
-  const customSender = document.getElementById('custom-sender').value;
-  const name = document.getElementById('recipient-name').value;
-  const phone = document.getElementById('recipient-phone').value;
-  const address = document.getElementById('recipient-address').value;
-  const product = document.getElementById('product').value;
-  const account = document.getElementById('account').value;
+window.addEventListener('load', () => {
+  const form = document.getElementById('envelopeForm');
+  const companySelect = document.getElementById('senderCompany');
+  const customSenderWrapper = document.getElementById('customSenderWrapper');
 
-  const sources = Array.from(document.querySelectorAll('input[name="source"]:checked'))
-                      .map(el => el.value).join(',');
-
-  const params = new URLSearchParams({
-    sender: sender,
-    customSender: customSender,
-    name: name,
-    phone: phone,
-    address: address,
-    product: product,
-    source: sources,
-    account: account
+  companySelect.addEventListener('change', () => {
+    customSenderWrapper.style.display = companySelect.value === '其他' ? 'block' : 'none';
   });
 
-  window.open("print.html?" + params.toString(), "_blank");
-}
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const source = Array.from(document.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value).join(",");
+    const data = {
+      senderCompany: companySelect.value,
+      customSender: document.getElementById('customSender').value,
+      recipientName: document.getElementById('recipientName').value,
+      recipientPhone: document.getElementById('recipientPhone').value,
+      recipientAddress: document.getElementById('recipientAddress').value,
+      product: document.getElementById('product').value,
+      source,
+      account: document.getElementById('account').value,
+      timestamp: new Date().toISOString()
+    };
+    await db.collection("envelopes").add(data);
+    window.open("/print.html", "_blank");
+    alert("資料已送出！");
+    form.reset();
+    loadTodayRecords();
+  });
+
+  async function loadTodayRecords() {
+    const today = new Date().toISOString().slice(0, 10);
+    const tableBody = document.querySelector("#todayRecords tbody");
+    tableBody.innerHTML = "";
+    const snapshot = await db.collection("envelopes").get();
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      if (d.timestamp && d.timestamp.startsWith(today)) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${d.timestamp.slice(11, 16)}</td>
+          <td>${d.recipientName}</td><td>${d.recipientAddress}</td>
+          <td>${d.recipientPhone}</td><td>${d.product}</td>
+          <td>${d.source}</td><td>${d.account}</td>
+          <td><button onclick="window.open('/print.html')">列印</button></td>`;
+        tableBody.appendChild(tr);
+      }
+    });
+  }
+
+  loadTodayRecords();
+});
