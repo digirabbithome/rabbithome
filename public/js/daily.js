@@ -69,6 +69,7 @@ async function renderTasks() {
     tasks.push(doc.data().text);
   });
 
+  // 左側任務列
   tasks.forEach(task => {
     const el = document.createElement("div");
     el.className = "task-item";
@@ -77,17 +78,29 @@ async function renderTasks() {
     taskListEl.appendChild(el);
   });
 
-  tasks.forEach(async task => {
+  // 右側完成表格（橫向）
+  const usersSet = new Set();
+  const taskRecords = {};
+  for (let task of tasks) {
     const taskDoc = await getDoc(doc(db, "dailyCheck", selectedDate));
     const list = taskDoc.exists() && taskDoc.data()[task] ? taskDoc.data()[task] : {};
-    const section = document.createElement("div");
-    section.className = "record-item";
-    section.innerHTML = `<strong>${task}</strong><br>`;
-    for (const [nick, time] of Object.entries(list)) {
-      section.innerHTML += `<span class="record-user">${nick} ${time}</span>`;
-    }
-    recordListEl.appendChild(section);
+    taskRecords[task] = list;
+    Object.keys(list).forEach(user => usersSet.add(user));
+  }
+
+  const users = Array.from(usersSet);
+  let html = "<table class='record-table'><thead><tr><th>任務</th>";
+  users.forEach(u => html += `<th>${u}</th>`);
+  html += "</tr></thead><tbody>";
+  tasks.forEach(task => {
+    html += `<tr><td>${task}</td>`;
+    users.forEach(u => {
+      html += `<td>${taskRecords[task]?.[u] || ""}</td>`;
+    });
+    html += "</tr>";
   });
+  html += "</tbody></table>";
+  recordListEl.innerHTML = html;
 }
 
 async function markComplete(task) {

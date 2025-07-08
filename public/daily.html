@@ -2,22 +2,18 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>每日工作</title>
+  <meta charset="UTF-8">
+  <title>每日工作紀錄</title>
   <link rel="stylesheet" href="css/daily.css" />
   <script type="module" src="js/daily.js" defer></script>
 </head>
 <body>
-  <div class="top-bar">
-    <h2>📅 每日工作</h2>
-    <div class="date-control">
-      <span id="current-date" class="today-display">2025/07/08</span>
-      <input type="date" id="date-picker" />
-    </div>
+  <h2>📅 每日工作</h2>
+  <div class="date-row">
+    <div id="current-date">2025/07/08</div>
+    <input type="date" id="date-picker" />
   </div>
-
-  <div id="date-nav" class="date-nav"></div>
-
+  <div id="date-nav"></div>
   <div class="main-grid">
     <div class="task-list">
       <h3>📋 任務列表</h3>
