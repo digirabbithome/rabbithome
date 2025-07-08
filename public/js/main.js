@@ -27,6 +27,6 @@ function logout() {
 }
 
 window.goToPage = function(page) {
-  window.location.href = page;
-}
+  document.getElementById("main-content").src = page;
+};
 window.logout = logout;

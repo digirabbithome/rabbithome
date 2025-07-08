@@ -1,6 +1,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+import Sortable from "https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/+esm";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -10,65 +11,56 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const taskList = document.getElementById("taskList");
+const tasksRef = collection(db, "workItems");
 
-const list = document.getElementById("taskList");
-
-document.getElementById("addTaskBtn").onclick = () => {
-  const li = createItem("");
-  list.appendChild(li);
-};
-
-document.getElementById("saveBtn").onclick = async () => {
-  const items = [...list.querySelectorAll("input[type='text']")].map(input => input.value.trim()).filter(v => v);
-  const ref = doc(db, "workItems", "main");
-  await setDoc(ref, { items });
-  alert("✅ 已儲存！");
-};
-
-function createItem(text) {
-  const li = document.createElement("li");
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = text;
-  input.placeholder = "例如：9:30 QA";
-
-  const delBtn = document.createElement("button");
-  delBtn.textContent = "🗑️";
-  delBtn.onclick = () => li.remove();
-
-  li.appendChild(input);
-  li.appendChild(delBtn);
-
-  li.draggable = true;
-  li.ondragstart = (e) => {
-    e.dataTransfer.setData("text/plain", [...list.children].indexOf(li));
-  };
-  li.ondragover = (e) => e.preventDefault();
-  li.ondrop = (e) => {
-    e.preventDefault();
-    const fromIndex = +e.dataTransfer.getData("text/plain");
-    const toIndex = [...list.children].indexOf(li);
-    if (fromIndex !== toIndex) {
-      const item = list.children[fromIndex];
-      list.removeChild(item);
-      list.insertBefore(item, toIndex > fromIndex ? li.nextSibling : li);
-    }
-  };
-
-  return li;
-}
-
-async function loadData() {
-  const snap = await getDocs(collection(db, "workItems"));
-  snap.forEach(doc => {
-    const data = doc.data();
-    if (Array.isArray(data.items)) {
-      data.items.forEach(text => {
-        list.appendChild(createItem(text));
-      });
-    }
+// 載入任務
+async function loadTasks() {
+  taskList.innerHTML = "";
+  const snapshot = await getDocs(tasksRef);
+  snapshot.forEach(docSnap => {
+    addTaskItem(docSnap.data().text, docSnap.id);
   });
 }
+loadTasks();
 
-loadData();
+// 新增任務
+document.getElementById("addTaskBtn").addEventListener("click", async () => {
+  const text = prompt("請輸入任務（例如 9:30 QA）");
+  if (text) {
+    const docRef = await addDoc(tasksRef, { text });
+    addTaskItem(text, docRef.id);
+  }
+});
+
+// 儲存排序
+document.getElementById("saveBtn").addEventListener("click", async () => {
+  const items = taskList.querySelectorAll("li");
+  let i = 0;
+  for (const item of items) {
+    const id = item.dataset.id;
+    await setDoc(doc(tasksRef, id), { text: item.innerText.replace(" 🗑️", "") });
+    i++;
+  }
+  alert("✅ 已儲存任務順序！");
+});
+
+// 加入任務項目
+function addTaskItem(text, id) {
+  const li = document.createElement("li");
+  li.innerText = text;
+  li.dataset.id = id;
+
+  const del = document.createElement("span");
+  del.innerText = " 🗑️";
+  del.style.cursor = "pointer";
+  del.onclick = async () => {
+    await deleteDoc(doc(tasksRef, id));
+    li.remove();
+  };
+  li.appendChild(del);
+  taskList.appendChild(li);
+}
+
+// 拖曳排序
+Sortable.create(taskList, { animation: 150 });
