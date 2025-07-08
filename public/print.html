@@ -2,14 +2,53 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>列印信封</title>
+  <meta charset="UTF-8">
+  <title>列印信封頁面</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; text-align: center; }
+    body { font-family: sans-serif; padding: 40px; }
+    .envelope {
+      border: 1px solid #ccc;
+      padding: 20px;
+      width: 900px;
+      height: 450px;
+      position: relative;
+    }
+    .sender-info {
+      position: absolute;
+      top: 20px;
+      left: 30px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .logo {
+      position: absolute;
+      top: 130px;
+      left: 30px;
+      width: 120px;
+    }
+    .receiver-info {
+      position: absolute;
+      top: 130px;
+      left: 180px;
+      font-size: 20px;
+      line-height: 1.8;
+    }
+    .product {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      font-size: 16px;
+      color: #333;
+    }
   </style>
   <script src="/js/print.js" defer></script>
 </head>
 <body>
-  <h2>🕐 正在載入信封資料，請稍候...</h2>
+  <div class="envelope">
+    <div class="sender-info" id="senderInfo"></div>
+    <img class="logo" src="/img/logo.png" />
+    <div class="receiver-info" id="receiverInfo"></div>
+    <div class="product" id="productInfo"></div>
+  </div>
 </body>
 </html>

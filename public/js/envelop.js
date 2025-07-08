@@ -1,60 +1,65 @@
 
-const firebaseConfig = {
-  apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
-  authDomain: "rabbithome-auth.firebaseapp.com",
-  projectId: "rabbithome-auth",
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+import { db, auth } from '/js/firebase.js';
+import { collection, addDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-lite.js';
 
 window.addEventListener('load', () => {
   const form = document.getElementById('envelopeForm');
+  const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
-  const customSenderWrapper = document.getElementById('customSenderWrapper');
+  const addressInput = document.getElementById('address');
 
+  // 控制「其他」寄件公司欄位顯示
   companySelect.addEventListener('change', () => {
-    customSenderWrapper.style.display = companySelect.value === '其他' ? 'block' : 'none';
+    if (companySelect.value === '其他') {
+      otherField.style.display = 'block';
+    } else {
+      otherField.style.display = 'none';
+    }
   });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const source = Array.from(document.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value).join(",");
-    const data = {
-      senderCompany: companySelect.value,
-      customSender: document.getElementById('customSender').value,
-      recipientName: document.getElementById('recipientName').value,
-      recipientPhone: document.getElementById('recipientPhone').value,
-      recipientAddress: document.getElementById('recipientAddress').value,
-      product: document.getElementById('product').value,
-      source,
-      account: document.getElementById('account').value,
-      timestamp: new Date().toISOString()
+
+    const senderCompany = form.senderCompany.value;
+    const customSender = form.customSender?.value || '';
+    const receiverName = form.receiverName.value;
+    const phone = form.phone.value;
+    const address = form.address.value;
+    const product = form.product.value;
+    const source = form.querySelector('input[name="source"]:checked')?.value || '';
+    const nickname = localStorage.getItem('nickname') || '匿名';
+
+    const fullSource = source ? `${nickname}(${source})` : nickname;
+
+    const now = new Date();
+    const record = {
+      senderCompany,
+      customSender,
+      receiverName,
+      phone,
+      address,
+      product,
+      source: fullSource,
+      account: nickname,
+      timestamp: Timestamp.fromDate(now)
     };
-    await db.collection("envelopes").add(data);
-    window.open("/print.html", "_blank");
-    alert("資料已送出！");
-    form.reset();
-    loadTodayRecords();
+
+    // 儲存進 localStorage 給 print.html 使用
+    localStorage.setItem('envelopeData', JSON.stringify(record));
+
+    // 開啟新頁列印
+    window.open('/print.html', '_blank');
+
+    // 寫入 Firebase
+    try {
+      await addDoc(collection(db, 'envelopes'), record);
+      alert('✅ 資料已儲存！');
+      form.reset();
+      companySelect.value = '數位小兔';
+      otherField.style.display = 'none';
+      // 可以在這裡觸發重新載入列表
+    } catch (err) {
+      alert('❌ 寫入失敗：' + err.message);
+    }
   });
-
-  async function loadTodayRecords() {
-    const today = new Date().toISOString().slice(0, 10);
-    const tableBody = document.querySelector("#todayRecords tbody");
-    tableBody.innerHTML = "";
-    const snapshot = await db.collection("envelopes").get();
-    snapshot.forEach(doc => {
-      const d = doc.data();
-      if (d.timestamp && d.timestamp.startsWith(today)) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${d.timestamp.slice(11, 16)}</td>
-          <td>${d.recipientName}</td><td>${d.recipientAddress}</td>
-          <td>${d.recipientPhone}</td><td>${d.product}</td>
-          <td>${d.source}</td><td>${d.account}</td>
-          <td><button onclick="window.open('/print.html')">列印</button></td>`;
-        tableBody.appendChild(tr);
-      }
-    });
-  }
-
-  loadTodayRecords();
 });
