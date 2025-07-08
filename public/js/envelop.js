@@ -39,9 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (key.startsWith("envelope_")) {
         const item = JSON.parse(localStorage.getItem(key));
         if (item.createdAt.startsWith(today)) {
+          const date = new Date(item.createdAt);
+          const timeString = date.toLocaleTimeString("zh-TW", {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td>${item.createdAt.slice(11,16)}</td>
+            <td>${timeString}</td>
             <td>${item.recipient}</td>
             <td>${item.address}</td>
             <td>${item.product}</td>
