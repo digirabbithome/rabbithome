@@ -1,3 +1,4 @@
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import {
   getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy
@@ -11,16 +12,19 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 let selectedDate = getTodayString();
 let nickname = localStorage.getItem("nickname") || "使用者";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  document.getElementById("datePicker").value = selectedDate;
-  document.getElementById("datePicker").addEventListener("change", async e => {
+  renderDateButtons();
+  document.getElementById("date-picker").value = selectedDate;
+  document.getElementById("date-picker").addEventListener("change", async (e) => {
     selectedDate = e.target.value;
+    updateDateDisplay(selectedDate);
     await renderTasks();
   });
-  renderDateButtons();
+  updateDateDisplay(selectedDate);
   await renderTasks();
 });
 
@@ -28,6 +32,11 @@ function getTodayString(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() - offset);
   return d.toISOString().slice(0, 10);
+}
+
+function updateDateDisplay(dateStr) {
+  const [y, m, d] = dateStr.split("-");
+  document.getElementById("current-date").textContent = `${y}/${m}/${d}`;
 }
 
 function renderDateButtons() {
@@ -39,7 +48,8 @@ function renderDateButtons() {
     btn.textContent = i === 0 ? "今天" : `前${i}天`;
     btn.onclick = async () => {
       selectedDate = dateStr;
-      document.getElementById("datePicker").value = dateStr;
+      document.getElementById("date-picker").value = dateStr;
+      updateDateDisplay(dateStr);
       await renderTasks();
     };
     container.appendChild(btn);
@@ -47,43 +57,64 @@ function renderDateButtons() {
 }
 
 async function renderTasks() {
-  document.getElementById("selectedDate").textContent = selectedDate.replace(/-/g, "/");
+  const taskListEl = document.getElementById("task-list");
+  const recordListEl = document.getElementById("record-list");
+  taskListEl.innerHTML = "";
+  recordListEl.innerHTML = "";
 
-  const snapshot = await getDocs(query(collection(db, "workItems"), orderBy("order")));
-  const taskDocs = [];
-  snapshot.forEach(doc => taskDocs.push(doc.data()));
+  const q = query(collection(db, "workItems"), orderBy("order"));
+  const snapshot = await getDocs(q);
+  const tasks = [];
+  snapshot.forEach(doc => {
+    tasks.push(doc.data().text);
+  });
 
-  const taskDisplay = document.getElementById("task-display");
-  taskDisplay.innerHTML = ""; const table = document.createElement("table"); table.style.width = "100%"; table.style.borderSpacing = "0 10px"; taskDisplay.appendChild(table);
+  // 左側任務列
+  tasks.forEach(task => {
+    const el = document.createElement("div");
+    el.className = "task-item";
+    el.textContent = task;
+    el.onclick = () => markComplete(task);
+    taskListEl.appendChild(el);
+  });
 
-  const ref = doc(db, "dailyCheck", selectedDate);
-  const snap = await getDoc(ref);
-  const recordData = snap.exists() ? snap.data() : {};
-
-  for (const task of taskDocs) {
-    const taskName = task.text;
-    const row = document.createElement("tr"); row.style.verticalAlign = "top";
-    row.className = "task-row"; row.style.background = "#fff"; row.style.borderRadius = "10px"; row.style.boxShadow = "0 0 4px rgba(0,0,0,0.1)";
-
-    const name = document.createElement("div");
-    name.className = "task-name";
-    name.textContent = taskName;
-    name.onclick = () => markComplete(taskName);
-
-    const record = document.createElement("div");
-    record.className = "task-records";
-    const logs = recordData[taskName] || {};
-    const entries = Object.entries(logs).map(([user, time]) => `${user} ${time}`);
-    record.textContent = entries.join("　");
-
-    const td1 = document.createElement("td"); td1.style.padding = "10px"; td1.appendChild(name); row.appendChild(td1);
-    const td2 = document.createElement("td"); td2.style.padding = "10px"; record.style.textAlign = "left"; td2.appendChild(record); row.appendChild(td2);
-    table.appendChild(row);
+  // 右側完成表格（橫向）
+  const usersSet = new Set();
+  const taskRecords = {};
+  for (let task of tasks) {
+    const taskDoc = await getDoc(doc(db, "dailyCheck", selectedDate));
+    const list = taskDoc.exists() && taskDoc.data()[task] ? taskDoc.data()[task] : {};
+    taskRecords[task] = list;
+    Object.keys(list).forEach(user => usersSet.add(user));
   }
+
+  const users = Array.from(usersSet);
+  let html = "<table class='record-table'><thead><tr><th>任務</th>";
+  users.forEach(u => html += `<th>${u}</th>`);
+  html += "</tr></thead><tbody>";
+  tasks.forEach(task => {
+    html += `<tr><td>${task}</td>`;
+    users.forEach(u => {
+      html += `<td>${taskRecords[task]?.[u] || ""}</td>`;
+    });
+    html += "</tr>";
+  });
+  html += "</tbody></table>";
+  recordListEl.innerHTML = html;
 }
 
 async function markComplete(task) {
   const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const oldData = snap.exists() ? snap.data() : {};
+  if (!oldData[task]) oldData[task] = {};
+  oldData[task][nickname] = timeStr;
+  await setDoc(ref, oldData);
+  await renderTasks();
+}
+
   const timeStr = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
   const ref = doc(db, "dailyCheck", selectedDate);
   const snap = await getDoc(ref);
