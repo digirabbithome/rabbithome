@@ -3,39 +3,16 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>信封列印畫面</title>
-  <style>
-    body { font-family: sans-serif; padding: 40px; }
-    .sender { font-weight: bold; font-size: 18px; }
-    .logo { margin: 10px 0; }
-    .recipient { margin-top: 30px; font-size: 16px; }
-    .product { margin-top: 40px; font-size: 14px; font-style: italic; }
-  </style>
+  <title>信封列印</title>
+  <link rel="stylesheet" href="/css/envelope.css" />
+  <script src="/js/print.js" defer></script>
 </head>
 <body>
-  <div class="sender" id="sender"></div>
-  <div class="logo"><img src="/img/logo.png" alt="Logo" height="60"></div>
-  <div class="recipient" id="recipient"></div>
-  <div class="product" id="product"></div>
-
-  <script>
-    window.onload = function() {
-      const params = new URLSearchParams(window.location.search);
-      const senderName = params.get("senderName") || "";
-      const recipient = params.get("recipient") || "";
-      const phone = params.get("phone") || "";
-      const address = params.get("address") || "";
-      const product = params.get("product") || "";
-
-      document.getElementById("sender").textContent = senderName;
-      document.getElementById("recipient").innerHTML = 
-        recipient + "<br>" + phone + "<br>" + address;
-      if (product) {
-        document.getElementById("product").textContent = product;
-      }
-
-      window.print();
-    };
-  </script>
+  <div class="sender-block" id="sender-info"></div>
+  <div class="logo-recipient-row">
+    <img src="/img/logo.png" class="logo" />
+    <div id="recipient-info" class="recipient-block"></div>
+  </div>
+  <div id="product-info" class="product-info"></div>
 </body>
 </html>

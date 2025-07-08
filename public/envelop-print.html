@@ -2,81 +2,42 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>信封列印系統</title>
+  <meta charset="UTF-8">
+  <title>列印信封</title>
   <link rel="stylesheet" href="/css/envelope.css" />
   <script src="/js/envelop.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h1>📬 信封列印系統</h1>
-    <form id="envelopeForm">
-      <div>
-        <label for="company">寄件公司</label>
-        <select id="company" name="company">
-          <option value="數位小兔">數位小兔</option>
-          <option value="聚焦數位">聚焦數位</option>
-          <option value="免睡攝影">免睡攝影</option>
-          <option value="其他">其他</option>
-        </select>
-        <textarea id="customCompany" placeholder="請輸入自訂寄件公司資料..." style="display:none; height: 4em; width: 100%;"></textarea>
-      </div>
-
-      <div>
-        <label for="recipient">收件人姓名</label>
-        <input type="text" id="recipient" />
-      </div>
-
-      <div>
-        <label for="phone">電話</label>
-        <input type="text" id="phone" />
-      </div>
-
-      <div>
-        <label for="address">地址</label>
-        <input type="text" id="address" style="width: 66%;" />
-      </div>
-
-      <div>
-        <label for="product">商品內容</label>
-        <input type="text" id="product" />
-      </div>
-
-      <div>
-        <label>來源</label><br />
-        <label><input type="radio" name="source" value="Line" /> Line</label>
-        <label><input type="radio" name="source" value="官網" /> 官網</label>
-        <label><input type="radio" name="source" value="Yahoo" /> Yahoo</label>
-        <label><input type="radio" name="source" value="露天" /> 露天</label>
-        <label><input type="radio" name="source" value="蝦皮" /> 蝦皮</label>
-      </div>
-
-      <div>
-        <label for="account">填寫帳號</label>
-        <input type="text" id="account" />
-      </div>
-
-      <button type="submit">送出並列印</button>
-    </form>
-
-    <div id="confirmationMessage"></div>
-
-    <h2>📋 今日列印紀錄</h2>
-    <table id="recordTable">
-      <thead>
-        <tr>
-          <th>時間</th>
-          <th>收件人</th>
-          <th>地址</th>
-          <th>電話</th>
-          <th>商品</th>
-          <th>來源</th>
-          <th>帳號</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="form-container">
+    <h2>✉️ 信封資料填寫</h2>
+    <label>寄件公司：
+      <select id="sender-company" onchange="toggleCustomSender()">
+        <option>數位小兔</option>
+        <option>聚焦數位</option>
+        <option>免睡攝影</option>
+        <option>其他</option>
+      </select>
+    </label>
+    <textarea id="custom-sender" placeholder="請輸入寄件人資訊" style="display:none;"></textarea>
+    <label>收件人姓名：<input type="text" id="recipient-name"></label>
+    <label>電話：<input type="text" id="recipient-phone"></label>
+    <label>地址：<input type="text" id="recipient-address" style="width: 60%;"></label>
+    <label>商品內容：<input type="text" id="product"></label>
+    <div>
+      來源：<label><input type="checkbox" name="source" value="Line"> Line</label>
+            <label><input type="checkbox" name="source" value="官網"> 官網</label>
+            <label><input type="checkbox" name="source" value="Yahoo"> Yahoo</label>
+            <label><input type="checkbox" name="source" value="露天"> 露天</label>
+            <label><input type="checkbox" name="source" value="蝦皮"> 蝦皮</label>
+    </div>
+    <label>帳號：<input type="text" id="account"></label>
+    <button onclick="submitEnvelope()">📤 送出並列印</button>
   </div>
+
+  <h3>🗂️ 今日列印紀錄</h3>
+  <table id="history-table" border="1">
+    <thead><tr><th>時間</th><th>收件人</th><th>地址</th><th>電話</th><th>商品</th><th>來源</th><th>帳號</th><th>操作</th></tr></thead>
+    <tbody id="history-body"></tbody>
+  </table>
 </body>
 </html>
