@@ -62,7 +62,8 @@ async function renderTasks() {
   taskListEl.innerHTML = "";
   recordListEl.innerHTML = "";
 
-  const snapshot = await getDocs(collection(db, "workItems"));
+  const q = query(collection(db, "workItems"), orderBy("order"));
+  const snapshot = await getDocs(q);
   const tasks = [];
   snapshot.forEach(doc => {
     tasks.push(doc.data().text);
