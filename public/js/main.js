@@ -14,19 +14,19 @@ const auth = getAuth(app);
 onAuthStateChanged(auth, user => {
   if (user) {
     const nickname = localStorage.getItem("nickname") || "使用者";
-    document.getElementById("nicknameLabel").innerText = `🙋‍♂️ Hello，${nickname}`;
+    const nicknameLabel = document.getElementById("nickname-display");
+    if (nicknameLabel) nicknameLabel.innerText = `🙋‍♂️ Hello，${nickname}`;
   } else {
     window.location.href = "login.html";
   }
 });
 
-function logout() {
+window.navigate = function(page) {
+  document.getElementById("content-frame").src = page;
+};
+
+window.logout = function() {
   signOut(auth).then(() => {
     window.location.href = "login.html";
   });
-}
-
-window.goToPage = function(page) {
-  document.getElementById("main-content").src = page;
 };
-window.logout = logout;

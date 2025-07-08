@@ -14,7 +14,6 @@ const db = getFirestore(app);
 const taskList = document.getElementById("taskList");
 const tasksRef = collection(db, "workItems");
 
-// 載入任務
 async function loadTasks() {
   taskList.innerHTML = "";
   const snapshot = await getDocs(tasksRef);
@@ -24,7 +23,6 @@ async function loadTasks() {
 }
 loadTasks();
 
-// 新增任務
 document.getElementById("addTaskBtn").addEventListener("click", async () => {
   const text = prompt("請輸入任務（例如 9:30 QA）");
   if (text) {
@@ -33,19 +31,15 @@ document.getElementById("addTaskBtn").addEventListener("click", async () => {
   }
 });
 
-// 儲存排序
 document.getElementById("saveBtn").addEventListener("click", async () => {
   const items = taskList.querySelectorAll("li");
-  let i = 0;
   for (const item of items) {
     const id = item.dataset.id;
     await setDoc(doc(tasksRef, id), { text: item.innerText.replace(" 🗑️", "") });
-    i++;
   }
   alert("✅ 已儲存任務順序！");
 });
 
-// 加入任務項目
 function addTaskItem(text, id) {
   const li = document.createElement("li");
   li.innerText = text;
@@ -62,5 +56,4 @@ function addTaskItem(text, id) {
   taskList.appendChild(li);
 }
 
-// 拖曳排序
 Sortable.create(taskList, { animation: 150 });
