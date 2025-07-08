@@ -20,24 +20,30 @@ const taskList = document.getElementById("taskList");
 async function loadTasks() {
   const querySnapshot = await getDocs(workItemsCol);
   const tasks = [];
+
   querySnapshot.forEach(docSnap => {
-    tasks.push({ id: docSnap.id, text: docSnap.data().text });
+    const data = docSnap.data();
+    tasks.push({ id: docSnap.id, text: data.text, order: data.order ?? 999 });
   });
+
+  // 依照 order 排序
+  tasks.sort((a, b) => a.order - b.order);
 
   // 清空畫面
   taskList.innerHTML = "";
 
-  tasks.forEach(task => {
+  tasks.forEach((task, index) => {
     const li = document.createElement("li");
     li.setAttribute("data-id", task.id);
     li.draggable = true;
     li.innerHTML = `
-      <span>${task.text}</span>
+      <span><strong>${index + 1}.</strong> ${task.text}</span>
       <button class="delete-btn" onclick="deleteTask('${task.id}')">刪除</button>
     `;
-    addDragEvents(li);
     taskList.appendChild(li);
   });
+
+  addDragListeners(); // 每次重新載入任務後都加上拖曳事件
 }
 
 window.addTask = async function () {
@@ -61,33 +67,38 @@ window.saveOrder = async function () {
     const id = items[i].getAttribute("data-id");
     await updateDoc(doc(db, "workItems", id), { order: i });
   }
+  console.log("✅ 排序已更新");
   alert("排序已儲存！");
+  loadTasks(); // 重新顯示排序號碼
 };
 
-function addDragEvents(element) {
-  element.addEventListener("dragstart", e => {
-    e.dataTransfer.setData("text/plain", element.dataset.id);
-    element.classList.add("dragging");
-  });
+function addDragListeners() {
+  const items = document.querySelectorAll("#taskList li");
+  items.forEach(item => {
+    item.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", item.dataset.id);
+      item.classList.add("dragging");
+    });
 
-  element.addEventListener("dragend", e => {
-    element.classList.remove("dragging");
-  });
+    item.addEventListener("dragend", () => {
+      item.classList.remove("dragging");
+    });
 
-  element.addEventListener("dragover", e => {
-    e.preventDefault();
-    const dragging = document.querySelector(".dragging");
-    if (dragging && dragging !== element) {
-      const rect = element.getBoundingClientRect();
-      const offset = e.clientY - rect.top;
-      const midpoint = rect.height / 2;
-      const parent = element.parentNode;
-      if (offset > midpoint) {
-        parent.insertBefore(dragging, element.nextSibling);
-      } else {
-        parent.insertBefore(dragging, element);
+    item.addEventListener("dragover", e => {
+      e.preventDefault();
+      const dragging = document.querySelector(".dragging");
+      if (dragging && dragging !== item) {
+        const rect = item.getBoundingClientRect();
+        const offset = e.clientY - rect.top;
+        const midpoint = rect.height / 2;
+        const parent = item.parentNode;
+        if (offset > midpoint) {
+          parent.insertBefore(dragging, item.nextSibling);
+        } else {
+          parent.insertBefore(dragging, item);
+        }
       }
-    }
+    });
   });
 }
 
