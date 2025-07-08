@@ -11,38 +11,50 @@
   <div class="container">
     <h1>📬 信封列印系統</h1>
     <form id="envelopeForm">
-      <label for="company">寄件公司</label>
-      <select id="company" name="company">
-        <option value="數位小兔">數位小兔</option>
-        <option value="聚焦數位">聚焦數位</option>
-        <option value="免睡攝影">免睡攝影</option>
-        <option value="其他">其他</option>
-      </select>
-      <textarea id="customCompany" placeholder="請輸入自訂寄件公司資料..." style="display:none; height: 3em;"></textarea>
+      <div>
+        <label for="company">寄件公司</label>
+        <select id="company" name="company">
+          <option value="數位小兔">數位小兔</option>
+          <option value="聚焦數位">聚焦數位</option>
+          <option value="免睡攝影">免睡攝影</option>
+          <option value="其他">其他</option>
+        </select>
+        <textarea id="customCompany" placeholder="請輸入自訂寄件公司資料..." style="display:none; height: 4em; width: 100%;"></textarea>
+      </div>
 
-      <label for="recipient">收件人姓名</label>
-      <input type="text" id="recipient" required />
+      <div>
+        <label for="recipient">收件人姓名</label>
+        <input type="text" id="recipient" />
+      </div>
 
-      <label for="phone">電話</label>
-      <input type="text" id="phone" required />
+      <div>
+        <label for="phone">電話</label>
+        <input type="text" id="phone" />
+      </div>
 
-      <label for="address">地址</label>
-      <input type="text" id="address" required style="width: 100%;" />
+      <div>
+        <label for="address">地址</label>
+        <input type="text" id="address" style="width: 66%;" />
+      </div>
 
-      <label for="product">商品內容</label>
-      <input type="text" id="product" />
+      <div>
+        <label for="product">商品內容</label>
+        <input type="text" id="product" />
+      </div>
 
       <div>
         <label>來源</label><br />
-        <label><input type="radio" name="source" value="Line" required /> Line</label>
+        <label><input type="radio" name="source" value="Line" /> Line</label>
         <label><input type="radio" name="source" value="官網" /> 官網</label>
         <label><input type="radio" name="source" value="Yahoo" /> Yahoo</label>
         <label><input type="radio" name="source" value="露天" /> 露天</label>
         <label><input type="radio" name="source" value="蝦皮" /> 蝦皮</label>
       </div>
 
-      <label for="account">填寫帳號</label>
-      <input type="text" id="account" required />
+      <div>
+        <label for="account">填寫帳號</label>
+        <input type="text" id="account" />
+      </div>
 
       <button type="submit">送出並列印</button>
     </form>

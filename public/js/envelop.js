@@ -20,7 +20,6 @@ window.addEventListener("load", () => {
     const product = document.getElementById("product").value;
     const account = document.getElementById("account").value;
     const source = form.querySelector('input[name="source"]:checked')?.value || "";
-
     const senderName = companySelect.value === "其他" ? customCompany.value : companySelect.value;
 
     const row = document.createElement("tr");
@@ -32,7 +31,10 @@ window.addEventListener("load", () => {
 
     const reprint = document.createElement("button");
     reprint.textContent = "再印一次";
-    reprint.onclick = () => alert("🔁 準備再印一次！");
+    reprint.onclick = () => {
+      const printWin = window.open("print.html", "_blank");
+      printWin.senderData = { recipient, phone, address, product, senderName };
+    };
     const tdOp = document.createElement("td");
     tdOp.appendChild(reprint);
     row.appendChild(tdOp);
@@ -40,6 +42,8 @@ window.addEventListener("load", () => {
     recordTable.appendChild(row);
     confirmation.textContent = "✅ 信封產生完成，已加入下方列表！";
 
-    // optional future: window.open("print.html", "_blank");
+    // 打開新分頁列印
+    const printWin = window.open("print.html", "_blank");
+    printWin.senderData = { recipient, phone, address, product, senderName };
   });
 });

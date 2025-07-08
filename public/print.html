@@ -3,13 +3,33 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>列印信封</title>
-  <link rel="stylesheet" href="css/envelope.css">
-  <script defer src="js/print.js"></script>
+  <title>信封列印畫面</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; }
+    .sender { font-weight: bold; font-size: 18px; }
+    .logo { margin: 10px 0; }
+    .recipient { margin-top: 30px; font-size: 16px; }
+    .product { margin-top: 40px; font-size: 14px; font-style: italic; }
+  </style>
 </head>
 <body>
-  <div id="envelope">
-    <!-- 信封資料將透過 JS 動態填入 -->
-  </div>
+  <div class="sender" id="sender"></div>
+  <div class="logo"><img src="/img/logo.png" alt="Logo" height="60"></div>
+  <div class="recipient" id="recipient"></div>
+  <div class="product" id="product"></div>
+
+  <script>
+    window.onload = function() {
+      const data = window.opener?.senderData;
+      if (!data) return;
+      document.getElementById("sender").textContent = data.senderName || "";
+      document.getElementById("recipient").innerHTML = 
+        data.recipient + "<br>" + data.phone + "<br>" + data.address;
+      if (data.product) {
+        document.getElementById("product").textContent = data.product;
+      }
+      window.print();
+    };
+  </script>
 </body>
 </html>
