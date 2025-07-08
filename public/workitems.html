@@ -7,43 +7,104 @@
   <link rel="stylesheet" href="css/style.css" />
   <script type="module" src="js/workitems.js" defer></script>
   <style>
-    body { font-family: "Segoe UI", sans-serif; margin: 20px; }
-    h1 { font-size: 24px; color: #333; }
-    input, button {
-      padding: 8px;
-      font-size: 14px;
-      margin: 5px 0;
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 30px;
+      background-color: #fff8fb;
+    }
+    h1 {
+      font-size: 26px;
+      color: #d63384;
+      margin-bottom: 20px;
+    }
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 25px;
+      max-width: 600px;
+    }
+    input[type="text"] {
+      flex: 1;
+      min-width: 250px;
+      max-width: 400px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+    button:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .add-btn {
+      background-color: #ff85b3;
+      color: white;
+    }
+    .save-btn {
+      background-color: #6f42c1;
+      color: white;
     }
     ul {
       list-style: none;
       padding: 0;
+      max-width: 600px;
     }
     li {
-      padding: 10px;
-      margin: 5px 0;
+      padding: 12px;
+      margin-bottom: 10px;
       background-color: #fff0f5;
       border: 1px solid #ddd;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: grab;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+    }
+    li span {
+      flex: 1;
+      font-size: 16px;
     }
     .delete-btn {
-      background: #ff6666;
+      background: #ff5c5c;
       color: white;
       border: none;
-      padding: 4px 10px;
-      border-radius: 6px;
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 14px;
       cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+    .delete-btn:hover {
+      background: #e33;
+    }
+
+    @media (max-width: 600px) {
+      .input-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      input[type="text"] {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <h1>🛠️ 工作項目管理</h1>
-  <input type="text" id="taskInput" placeholder="輸入工作項目，例如 9:30 QA">
-  <button onclick="addTask()">新增任務</button>
+  <div class="input-group">
+    <input type="text" id="taskInput" placeholder="📝 輸入工作項目，例如 9:30 QA">
+    <button class="add-btn" onclick="addTask()">➕ 新增任務</button>
+    <button class="save-btn" onclick="saveOrder()">💾 儲存排序</button>
+  </div>
   <ul id="taskList"></ul>
-  <button onclick="saveOrder()">💾 儲存排序</button>
 </body>
 </html>
