@@ -1,80 +1,95 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-import { db } from '/js/firebase.js';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
-window.onload = async function () {
-  const datePicker = document.getElementById("datePicker");
-  const dateNav = document.getElementById("date-nav");
-  const taskDisplay = document.getElementById("task-display");
-  const selectedDateDisplay = document.getElementById("selectedDate");
-
-  const today = new Date();
-  let selectedDate = formatDate(today);
-
-  // 初始化
-  renderDateButtons();
-  datePicker.value = selectedDate;
-  await loadTasksAndCheckins(selectedDate);
-
-  // 切換日曆
-  datePicker.addEventListener("change", async () => {
-    selectedDate = datePicker.value;
-    selectedDateDisplay.innerText = `${selectedDate} 列表`;
-    await loadTasksAndCheckins(selectedDate);
-  });
-
-  function renderDateButtons() {
-    const labels = ["今天", "前一天", "前兩天", "前三天", "前四天", "前五天", "前六天"];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const dateStr = formatDate(d);
-      const btn = document.createElement("button");
-      btn.innerText = labels[i];
-      btn.onclick = async () => {
-        selectedDate = dateStr;
-        datePicker.value = selectedDate;
-        selectedDateDisplay.innerText = `${selectedDate} 列表`;
-        await loadTasksAndCheckins(selectedDate);
-      };
-      dateNav.appendChild(btn);
-    }
-  }
-
-  async function loadTasksAndCheckins(dateStr) {
-    taskDisplay.innerHTML = "";
-    const workSnap = await getDocs(collection(db, "workItems"));
-    const tasks = [];
-    workSnap.forEach(doc => {
-      tasks.push(doc.data().text);
-    });
-
-    const table = document.createElement("table");
-    for (let task of tasks) {
-      const row = document.createElement("tr");
-      const tdTask = document.createElement("td");
-      tdTask.innerText = task;
-      const tdDone = document.createElement("td");
-
-      // 最終正確用法 ✅
-      const checkRef = collection(db, 'dailyCheck', dateStr, task);
-      const checkSnap = await getDocs(checkRef);
-      const doneList = [];
-      checkSnap.forEach(doc => {
-        doneList.push(`${doc.id} ${doc.data().time || ""}`);
-      });
-      tdDone.innerText = doneList.join("、");
-      row.appendChild(tdTask);
-      row.appendChild(tdDone);
-      table.appendChild(row);
-    }
-    taskDisplay.appendChild(table);
-  }
-
-  function formatDate(date) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
+  authDomain: "rabbithome-auth.firebaseapp.com",
+  projectId: "rabbithome-auth"
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let selectedDate = getTodayString();
+let nickname = localStorage.getItem("nickname") || "使用者";
+
+document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("datePicker").value = selectedDate;
+  document.getElementById("datePicker").addEventListener("change", async e => {
+    selectedDate = e.target.value;
+    await renderTasks();
+  });
+  renderDateButtons();
+  await renderTasks();
+});
+
+function getTodayString(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function renderDateButtons() {
+  const container = document.getElementById("date-nav");
+  container.innerHTML = "";
+  for (let i = 0; i < 7; i++) {
+    const dateStr = getTodayString(i);
+    const btn = document.createElement("button");
+    btn.textContent = i === 0 ? "今天" : `前${i}天`;
+    btn.onclick = async () => {
+      selectedDate = dateStr;
+      document.getElementById("datePicker").value = dateStr;
+      await renderTasks();
+    };
+    container.appendChild(btn);
+  }
+}
+
+async function renderTasks() {
+  document.getElementById("selectedDate").textContent = selectedDate.replace(/-/g, "/");
+
+  const snapshot = await getDocs(query(collection(db, "workItems"), orderBy("order")));
+  const taskDocs = [];
+  snapshot.forEach(doc => taskDocs.push(doc.data()));
+
+  const taskDisplay = document.getElementById("task-display");
+  taskDisplay.innerHTML = ""; const table = document.createElement("table"); table.style.width = "100%"; table.style.borderSpacing = "0 10px"; taskDisplay.appendChild(table);
+
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const recordData = snap.exists() ? snap.data() : {};
+
+  for (const task of taskDocs) {
+    const taskName = task.text;
+    const row = document.createElement("tr"); row.style.verticalAlign = "top";
+    row.className = "task-row"; row.style.background = "#fff"; row.style.borderRadius = "10px"; row.style.boxShadow = "0 0 4px rgba(0,0,0,0.1)";
+
+    const name = document.createElement("div");
+    name.className = "task-name";
+    name.textContent = taskName;
+    name.onclick = () => markComplete(taskName);
+
+    const record = document.createElement("div");
+    record.className = "task-records";
+    const logs = recordData[taskName] || {};
+    const entries = Object.entries(logs).map(([user, time]) => `${user} ${time}`);
+    record.textContent = entries.join("　");
+
+    const td1 = document.createElement("td"); td1.style.padding = "10px"; td1.appendChild(name); row.appendChild(td1);
+    const td2 = document.createElement("td"); td2.style.padding = "10px"; record.style.textAlign = "left"; td2.appendChild(record); row.appendChild(td2);
+    table.appendChild(row);
+  }
+}
+
+async function markComplete(task) {
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const oldData = snap.exists() ? snap.data() : {};
+  if (!oldData[task]) oldData[task] = {};
+  oldData[task][nickname] = timeStr;
+  await setDoc(ref, oldData);
+  await renderTasks();
+}
