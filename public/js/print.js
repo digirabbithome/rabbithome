@@ -2,51 +2,43 @@
 window.addEventListener('load', () => {
   const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
 
-  document.getElementById('receiverName').textContent = data.receiverName || '';
-  document.getElementById('phone').textContent = data.phone || '';
-  document.getElementById('address').textContent = data.address || '';
-  document.getElementById('product').textContent = data.product || '';
-
-  const companyMap = {
+  const senderMap = {
     '數位小兔': {
-      en: 'Digital Rabbit',
+      name: '數位小兔 Digital Rabbit',
       address: '台北市信義區大道路74巷1號',
       phone: '02-27592006 / 02-27592013',
-      line: '@digirabbit'
+      line: 'LINE：@digirabbit'
     },
     '聚焦數位': {
-      en: 'Focus Digital',
-      address: '（請填寫地址）',
-      phone: '（請填寫電話）',
-      line: '（請填寫 LINE）'
+      name: '聚焦數位 Focus Digital',
+      address: '台北市中山區範例路10號',
+      phone: '02-23456789',
+      line: 'LINE：@focuscam'
     },
     '免睡攝影': {
-      en: 'NoSleep Studio',
-      address: '（請填寫地址）',
-      phone: '（請填寫電話）',
-      line: '（請填寫 LINE）'
-    },
-    '其他': {
-      en: '',
-      address: '',
-      phone: '',
-      line: ''
+      name: '免睡攝影 No Sleep Studio',
+      address: '新北市板橋區攝影街88號',
+      phone: '02-87654321',
+      line: 'LINE：@nosleep'
     }
   };
 
-  const senderInfo = companyMap[data.senderCompany] || {};
-  const custom = data.senderCompany === '其他' ? (data.customSender || '') : '';
+  const sender = senderMap[data.senderCompany] || {
+    name: data.customSender || '',
+    address: '',
+    phone: '',
+    line: ''
+  };
 
-  document.getElementById('senderCompany').textContent = data.senderCompany || '';
-  document.getElementById('senderCompanyEn').textContent = senderInfo.en || '';
-  document.getElementById('senderAddress').textContent = senderInfo.address || '';
-  document.getElementById('senderPhone').textContent = senderInfo.phone || '';
-  document.getElementById('senderLine').textContent = senderInfo.line || '';
+  document.getElementById('senderInfo').innerHTML = `
+    ${sender.name}<br>
+    ${sender.address}<br>
+    ${sender.phone}<br>
+    ${sender.line}
+  `;
 
-  if (data.senderCompany === '其他') {
-    document.getElementById('senderCompanyEn').textContent = '';
-    document.getElementById('senderAddress').textContent = custom;
-  }
+  document.getElementById('receiverInfo').textContent = `TO：${data.receiverName || ''}　${data.phone || ''}　${data.address || ''}`;
+  document.getElementById('productInfo').textContent = data.product || '';
 
   window.print();
 });

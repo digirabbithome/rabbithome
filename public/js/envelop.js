@@ -1,20 +1,56 @@
 
 import { db, auth } from '/js/firebase.js';
-import { collection, addDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { collection, addDoc, Timestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+function formatTime(ts) {
+  const date = ts.toDate();
+  return date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadTodayRecords() {
+  const tbody = document.getElementById('recordsBody');
+  tbody.innerHTML = '🕐 正在載入信封資料，請稍候...';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  const q = query(
+    collection(db, 'envelopes'),
+    where('timestamp', '>=', Timestamp.fromDate(today)),
+    where('timestamp', '<', Timestamp.fromDate(tomorrow))
+  );
+
+  try {
+    const snapshot = await getDocs(q);
+    tbody.innerHTML = '';
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatTime(d.timestamp)}</td>
+        <td>${d.receiverName || ''}</td>
+        <td>${d.address || ''}</td>
+        <td>${d.phone || ''}</td>
+        <td>${d.product || ''}</td>
+        <td>${d.source || ''}</td>
+        <td>${d.account || ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7">❌ 無法載入資料</td></tr>';
+  }
+}
 
 window.addEventListener('load', () => {
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
-  const addressInput = document.getElementById('address');
 
-  // 控制「其他」寄件公司欄位顯示
   companySelect.addEventListener('change', () => {
-    if (companySelect.value === '其他') {
-      otherField.style.display = 'block';
-    } else {
-      otherField.style.display = 'none';
-    }
+    otherField.style.display = (companySelect.value === '其他') ? 'block' : 'none';
   });
 
   form.addEventListener('submit', async (e) => {
@@ -44,23 +80,20 @@ window.addEventListener('load', () => {
       timestamp: Timestamp.fromDate(now)
     };
 
-    // 儲存進 localStorage 給 print.html 使用
     localStorage.setItem('envelopeData', JSON.stringify(record));
+    setTimeout(() => window.open('/print.html', '_blank'), 200);
 
-    // 稍微延遲再開啟新頁列印，避免資料還沒寫入 localStorage
-    setTimeout(() => {
-      window.open('/print.html', '_blank');
-    }, 200);
-
-    // 寫入 Firebase
     try {
       await addDoc(collection(db, 'envelopes'), record);
       alert('✅ 資料已儲存！');
       form.reset();
       companySelect.value = '數位小兔';
       otherField.style.display = 'none';
+      loadTodayRecords();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
     }
   });
+
+  loadTodayRecords();
 });
