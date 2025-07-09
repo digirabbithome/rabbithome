@@ -36,25 +36,25 @@
       </div>
 
       <div class="form-row">
-        <label style="flex:2">地址：
+        <label style="flex:1">地址：
           <input type="text" name="address" />
         </label>
-        <div style="flex:1">
-          <fieldset>
-            <legend>來源：</legend>
+        <label style="flex:1">商品資訊：
+          <input type="text" name="product" />
+        </label>
+      </div>
+
+      <div class="form-row" style="margin-top: -10px;">
+        <fieldset style="width: 100%;">
+          <legend>來源：</legend>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
             <label><input type="radio" name="source" value="Line"> Line</label>
             <label><input type="radio" name="source" value="官網"> 官網</label>
             <label><input type="radio" name="source" value="Yahoo"> Yahoo</label>
             <label><input type="radio" name="source" value="露天"> 露天</label>
             <label><input type="radio" name="source" value="蝦皮"> 蝦皮</label>
-          </fieldset>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label style="width:100%">商品資訊：
-          <input type="text" name="product" />
-        </label>
+          </div>
+        </fieldset>
       </div>
 
       <div class="form-row">
@@ -79,7 +79,6 @@
           <th>收件人</th>
           <th>地址</th>
           <th>電話</th>
-          <th>商品</th>
           <th>來源</th>
           <th>操作</th>
         </tr>
