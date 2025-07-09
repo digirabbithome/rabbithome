@@ -1,6 +1,6 @@
 
 import { db } from '/js/firebase.js';
-import { collection, addDoc, Timestamp, query, orderBy, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { collection, addDoc, Timestamp, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -8,13 +8,10 @@ window.addEventListener('load', async () => {
   const companySelect = document.getElementById('senderCompany');
   const addressInput = document.getElementById('address');
 
-  const today = new Date().toISOString().split('T')[0];
-
   companySelect.addEventListener('change', () => {
     otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
   });
 
-  // 兩個按鈕
   const btnNormal = document.getElementById('printNormal');
   const btnReply = document.getElementById('printReply');
 
@@ -79,7 +76,12 @@ window.addEventListener('load', async () => {
 
     snapshot.forEach(doc => {
       const data = doc.data();
-      const ts = data.timestamp.toDate();
+      let ts = data.timestamp;
+      if (ts && typeof ts.toDate === 'function') {
+        ts = ts.toDate();
+      } else {
+        ts = new Date(ts);
+      }
       const dateStr = ts.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
 
       const tr = document.createElement('tr');
