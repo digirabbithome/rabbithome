@@ -1,84 +1,79 @@
 
 import { db } from '/js/firebase.js';
-import {
-  doc, setDoc, getDoc, collection, getDocs
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-const today = new Date();
-const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-document.getElementById('date-title').textContent = `📅 ${dateStr} 每日工作狀態`;
+window.onload = async function () {
+  const datePicker = document.getElementById("datePicker");
+  const dateNav = document.getElementById("date-nav");
+  const taskDisplay = document.getElementById("task-display");
+  const selectedDateDisplay = document.getElementById("selectedDate");
 
-const nickname = localStorage.getItem('nickname') || '匿名';
-const workList = document.getElementById('work-list');
+  const today = new Date();
+  let selectedDate = formatDate(today);
 
-async function fetchWorkItems() {
-  const snapshot = await getDocs(collection(db, 'workItems'));
-  const workItems = snapshot.docs.map(doc => doc.data().text);
-  renderWorkList(workItems);
-}
+  // 初始化
+  renderDateButtons();
+  datePicker.value = selectedDate;
+  await loadTasksAndCheckins(selectedDate);
 
-function renderWorkList(items) {
-  workList.innerHTML = '';
-  items.forEach(task => {
-    const row = document.createElement('tr');
-    const taskCell = document.createElement('td');
-    taskCell.textContent = task;
-
-    const statusCell = document.createElement('td');
-    statusCell.id = `status-${task}`;
-    statusCell.style.whiteSpace = 'nowrap';
-    statusCell.style.textAlign = 'left';
-
-    row.appendChild(taskCell);
-    row.appendChild(statusCell);
-    workList.appendChild(row);
-
-    row.addEventListener('click', () => markTaskComplete(task));
-    loadTaskStatus(task);
+  // 切換日曆
+  datePicker.addEventListener("change", async () => {
+    selectedDate = datePicker.value;
+    selectedDateDisplay.innerText = `${selectedDate} 列表`;
+    await loadTasksAndCheckins(selectedDate);
   });
-}
 
-async function markTaskComplete(task) {
-  const now = new Date();
-  const timeStr = now.toTimeString().substring(0,5);
-  const ref = doc(db, 'dailyCheck', dateStr, task, nickname);
-  const snap = await getDoc(ref);
-
-  let data = {};
-  if (snap.exists()) {
-    const existing = snap.data();
-    if (Array.isArray(existing.times)) {
-      data = { times: [...existing.times, timeStr] };
-    } else if (existing.time) {
-      data = { times: [existing.time, timeStr] };
-    } else {
-      data = { times: [timeStr] };
+  function renderDateButtons() {
+    const labels = ["今天", "前一天", "前兩天", "前三天", "前四天", "前五天", "前六天"];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dateStr = formatDate(d);
+      const btn = document.createElement("button");
+      btn.innerText = labels[i];
+      btn.onclick = async () => {
+        selectedDate = dateStr;
+        datePicker.value = selectedDate;
+        selectedDateDisplay.innerText = `${selectedDate} 列表`;
+        await loadTasksAndCheckins(selectedDate);
+      };
+      dateNav.appendChild(btn);
     }
-  } else {
-    data = { times: [timeStr] };
   }
 
-  await setDoc(ref, data);
-  loadTaskStatus(task);
-}
+  async function loadTasksAndCheckins(dateStr) {
+    taskDisplay.innerHTML = "";
+    const workSnap = await getDocs(collection(db, "workItems"));
+    const tasks = [];
+    workSnap.forEach(doc => {
+      tasks.push(doc.data().text); // 預設 text 欄位為任務名稱
+    });
 
-async function loadTaskStatus(task) {
-  const container = document.getElementById(`status-${task}`);
-  const ref = doc(db, 'dailyCheck', dateStr, task, nickname);
-  const snap = await getDoc(ref);
-
-  if (snap.exists()) {
-    const data = snap.data();
-    let display = '';
-    if (Array.isArray(data.times)) {
-      display = data.times.join(', ');
-    } else if (data.time) {
-      display = data.time;
+    // 排序與顯示
+    const table = document.createElement("table");
+    for (let task of tasks) {
+      const row = document.createElement("tr");
+      const tdTask = document.createElement("td");
+      tdTask.innerText = task;
+      const tdDone = document.createElement("td");
+      const checkRef = collection(db, `dailyCheck/${dateStr}/${task}`);
+      const checkSnap = await getDocs(checkRef);
+      const doneList = [];
+      checkSnap.forEach(doc => {
+        doneList.push(`${doc.id} ${doc.data().time || ""}`);
+      });
+      tdDone.innerText = doneList.join("、");
+      row.appendChild(tdTask);
+      row.appendChild(tdDone);
+      table.appendChild(row);
     }
-    container.textContent = `${nickname} ${display} 完成`;
-  } else {
-    container.textContent = '';
+    taskDisplay.appendChild(table);
   }
-}
 
-fetchWorkItems();
+  function formatDate(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+};
