@@ -1,6 +1,6 @@
 
 import { db } from '/js/firebase.js';
-import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 window.onload = async function () {
   const datePicker = document.getElementById("datePicker");
@@ -46,7 +46,7 @@ window.onload = async function () {
     const workSnap = await getDocs(collection(db, "workItems"));
     const tasks = [];
     workSnap.forEach(doc => {
-      tasks.push(doc.data().text); // 預設 text 欄位為任務名稱
+      tasks.push(doc.data().text);
     });
 
     // 排序與顯示
@@ -56,7 +56,8 @@ window.onload = async function () {
       const tdTask = document.createElement("td");
       tdTask.innerText = task;
       const tdDone = document.createElement("td");
-      const checkRef = collection(db, `dailyCheck/${dateStr}/${task}`);
+      const taskRef = doc(db, "dailyCheck", dateStr);
+      const checkRef = collection(taskRef, task);
       const checkSnap = await getDocs(checkRef);
       const doneList = [];
       checkSnap.forEach(doc => {
