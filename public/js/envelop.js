@@ -5,10 +5,8 @@ import {
   addDoc,
   serverTimestamp,
   query,
-  where,
   orderBy,
   getDocs,
-  Timestamp,
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.onload = async () => {
@@ -73,6 +71,15 @@ async function loadTodayRecords() {
 
   snapshot.forEach((doc) => {
     const d = doc.data();
+    const printUrl = d.type === 'reply' ? '/print-reply.html' : '/print.html';
+    const queryStr = new URLSearchParams({
+      receiverName: d.receiverName || '',
+      address: d.address || '',
+      phone: d.phone || '',
+      senderCompany: d.senderCompany || '',
+      product: d.product || ''
+    }).toString();
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${d.time || ''}</td>
@@ -80,7 +87,7 @@ async function loadTodayRecords() {
       <td>${d.address || ''}</td>
       <td>${d.phone || ''}</td>
       <td>${d.source || ''}</td>
-      <td><a href="#">補印</a></td>
+      <td><a href="${printUrl}?${queryStr}" target="_blank">補印</a></td>
     `;
     tbody.appendChild(tr);
   });
