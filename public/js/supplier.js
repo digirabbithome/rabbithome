@@ -6,11 +6,15 @@ import { db } from "/js/firebase.js";
 
 let suppliersRef = collection(db, "suppliers");
 let allData = [];
+let currentPage = 1;
+const pageSize = 50;
 
 window.onload = async () => {
   document.getElementById("supplierForm").addEventListener("submit", handleSubmit);
   document.getElementById("newBtn").addEventListener("click", resetForm);
   document.getElementById("searchBtn").addEventListener("click", handleSearch);
+  document.getElementById("prevPage").addEventListener("click", () => changePage(-1));
+  document.getElementById("nextPage").addEventListener("click", () => changePage(1));
   await renderTable();
 };
 
@@ -53,8 +57,6 @@ async function handleSubmit(e) {
 }
 
 async function renderTable() {
-  const tbody = document.querySelector("#supplierTable tbody");
-  tbody.innerHTML = "";
   const snapshot = await getDocs(suppliersRef);
   allData = [];
   snapshot.forEach(docSnap => {
@@ -62,13 +64,19 @@ async function renderTable() {
     allData.push({ ...data, id: docSnap.id });
   });
 
-  displayTable(allData);
+  currentPage = 1;
+  displayTable();
 }
 
-function displayTable(dataArray) {
+function displayTable(dataArray = allData) {
   const tbody = document.querySelector("#supplierTable tbody");
   tbody.innerHTML = "";
-  for (let item of dataArray) {
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pageData = dataArray.slice(startIndex, endIndex);
+
+  for (let item of pageData) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${item.code}</td>
@@ -83,6 +91,35 @@ function displayTable(dataArray) {
     `;
     tbody.appendChild(tr);
   }
+
+  updatePageInfo(dataArray.length);
+}
+
+function updatePageInfo(totalItems) {
+  const pageInfo = document.getElementById("pageInfo");
+  const totalPages = Math.ceil(totalItems / pageSize);
+  pageInfo.textContent = `第 ${currentPage} 頁／共 ${totalPages} 頁`;
+}
+
+function changePage(direction) {
+  const totalPages = Math.ceil(allData.length / pageSize);
+  const newPage = currentPage + direction;
+  if (newPage >= 1 && newPage <= totalPages) {
+    currentPage = newPage;
+    displayTable();
+  }
+}
+
+function handleSearch() {
+  const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+  const filtered = allData.filter(item =>
+    item.code?.toLowerCase().includes(keyword) ||
+    item.name?.toLowerCase().includes(keyword) ||
+    item.shortName?.toLowerCase().includes(keyword) ||
+    item.brand?.toLowerCase().includes(keyword)
+  );
+  currentPage = 1;
+  displayTable(filtered);
 }
 
 window.editSupplier = function (id) {
@@ -110,14 +147,3 @@ window.deleteSupplier = async function (id) {
     await renderTable();
   }
 };
-
-function handleSearch() {
-  const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-  const filtered = allData.filter(item =>
-    item.code?.toLowerCase().includes(keyword) ||
-    item.name?.toLowerCase().includes(keyword) ||
-    item.shortName?.toLowerCase().includes(keyword) ||
-    item.brand?.toLowerCase().includes(keyword)
-  );
-  displayTable(filtered);
-}
