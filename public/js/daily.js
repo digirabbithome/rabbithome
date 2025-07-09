@@ -56,7 +56,9 @@ window.onload = async function () {
       tdTask.innerText = task;
       const tdDone = document.createElement("td");
 
-      const checkRef = collection(doc(db, `dailyCheck/${dateStr}`), task);
+      // 正確的 Firebase 路徑用法
+      const taskDocRef = doc(db, 'dailyCheck', dateStr);
+      const checkRef = collection(taskDocRef, task);
       const checkSnap = await getDocs(checkRef);
       const doneList = [];
       checkSnap.forEach(doc => {
