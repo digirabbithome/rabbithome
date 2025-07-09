@@ -1,0 +1,70 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>新增供應商</title>
+  <link rel="stylesheet" href="/css/supplier.css" />
+  <script type="module" src="/js/supplier.js" defer></script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <h2>🏪 新增供應商</h2>
+    <div class="top-controls">
+      <button id="newBtn">➕ 新增供應商</button>
+      <input type="text" id="searchInput" placeholder="搜尋代號、公司、品牌..." />
+      <button id="searchBtn">搜尋</button>
+    </div>
+
+    <form id="supplierForm">
+      <input type="hidden" id="docId" />
+      <div class="form-row">
+        <label>廠商代號</label><input type="text" id="code" required />
+        <label>公司全名</label><input type="text" id="name" required />
+        <label>公司簡稱</label><input type="text" id="shortName" required />
+      </div>
+      <div class="form-row">
+        <label>業務</label><input type="text" id="contact" />
+        <label>Email</label><input type="email" id="email" />
+        <label>電話</label><input type="tel" id="phone" />
+      </div>
+      <div class="form-row">
+        <label>代理品牌</label><input type="text" id="brand" />
+        <label>來源</label>
+        <select id="origin">
+          <option value="台灣">台灣</option>
+          <option value="中國">中國</option>
+        </select>
+        <label>結帳方式</label>
+        <select id="payType">
+          <option value="月結">月結</option>
+          <option value="匯款">匯款</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>屬性</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="type" value="供應商" />供應商</label>
+          <label><input type="checkbox" name="type" value="批發客戶" />批發客戶</label>
+          <label><input type="checkbox" name="type" value="單一客戶" />單一客戶</label>
+        </div>
+        <button type="submit">💾 儲存</button>
+      </div>
+    </form>
+
+    <table id="supplierTable">
+      <thead>
+        <tr>
+          <th>廠商代號</th>
+          <th>公司全名</th>
+          <th>簡稱</th>
+          <th>電話</th>
+          <th>屬性</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</body>
+</html>

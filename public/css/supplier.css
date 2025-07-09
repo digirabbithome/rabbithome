@@ -1,0 +1,91 @@
+
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background-color: #fff6fb;
+  margin: 0;
+  padding: 20px;
+}
+
+.page-wrapper {
+  max-width: 1100px;
+  margin: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+h2 {
+  margin-top: 0;
+  color: #e64a83;
+}
+
+.top-controls {
+  margin-bottom: 20px;
+}
+
+.top-controls input {
+  padding: 6px;
+  margin-left: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+form {
+  margin-bottom: 30px;
+  background: #fff0f5;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.form-row label {
+  width: 90px;
+  font-weight: bold;
+}
+
+.form-row input, .form-row select {
+  flex: 1;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.checkbox-group label {
+  margin-right: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+thead {
+  background-color: #ffe0ec;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background-color: #ff6699;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #ff4477;
+}
