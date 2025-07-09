@@ -1,7 +1,7 @@
 
 import {
-  getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  collection, addDoc, getDocs, doc, updateDoc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { db } from "/js/firebase.js";
 
 let suppliersRef = collection(db, "suppliers");
