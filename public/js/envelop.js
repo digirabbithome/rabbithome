@@ -1,12 +1,14 @@
-
 import { db, auth } from '/js/firebase.js';
-import { collection, addDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-lite.js';
+import { collection, addDoc, query, where, orderBy, getDocs, Timestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
   const addressInput = document.getElementById('address');
+  const todayList = document.getElementById('todayRecords');
+
+  const nickname = localStorage.getItem('nickname') || '匿名';
 
   // 控制「其他」寄件公司欄位顯示
   companySelect.addEventListener('change', () => {
@@ -27,11 +29,9 @@ window.addEventListener('load', () => {
     const address = form.address.value;
     const product = form.product.value;
     const source = form.querySelector('input[name="source"]:checked')?.value || '';
-    const nickname = localStorage.getItem('nickname') || '匿名';
-
     const fullSource = source ? `${nickname}(${source})` : nickname;
-
     const now = new Date();
+
     const record = {
       senderCompany,
       customSender,
@@ -44,22 +44,52 @@ window.addEventListener('load', () => {
       timestamp: Timestamp.fromDate(now)
     };
 
-    // 儲存進 localStorage 給 print.html 使用
     localStorage.setItem('envelopeData', JSON.stringify(record));
-
-    // 開啟新頁列印
     window.open('/print.html', '_blank');
 
-    // 寫入 Firebase
     try {
       await addDoc(collection(db, 'envelopes'), record);
       alert('✅ 資料已儲存！');
       form.reset();
       companySelect.value = '數位小兔';
       otherField.style.display = 'none';
-      // 可以在這裡觸發重新載入列表
+      await loadTodayRecords();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
     }
   });
+
+  async function loadTodayRecords() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    const q = query(
+      collection(db, 'envelopes'),
+      where('timestamp', '>=', Timestamp.fromDate(today)),
+      where('timestamp', '<', Timestamp.fromDate(tomorrow)),
+      orderBy('timestamp', 'desc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    todayList.innerHTML = '';
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      const time = data.timestamp.toDate().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${time}</td>
+        <td>${data.receiverName || ''}</td>
+        <td>${data.address || ''}</td>
+        <td>${data.phone || ''}</td>
+        <td>${data.product || ''}</td>
+        <td>${data.source || ''}</td>
+        <td>${data.account || ''}</td>
+        <td><button onclick="window.open('/print.html', '_blank')">重新列印</button></td>
+      `;
+      todayList.appendChild(row);
+    });
+  }
+
+  await loadTodayRecords();
 });
