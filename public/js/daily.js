@@ -1,6 +1,6 @@
 
 import { db } from '/js/firebase.js';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 window.onload = async function () {
   const datePicker = document.getElementById("datePicker");
@@ -49,25 +49,20 @@ window.onload = async function () {
       tasks.push(doc.data().text);
     });
 
-    // 排序與顯示
     const table = document.createElement("table");
     for (let task of tasks) {
       const row = document.createElement("tr");
       const tdTask = document.createElement("td");
       tdTask.innerText = task;
       const tdDone = document.createElement("td");
-      try {
-        const checkRef = collection(db, `dailyCheck/${dateStr}/${task}`);
-        const checkSnap = await getDocs(checkRef);
-        const doneList = [];
-        checkSnap.forEach(doc => {
-          doneList.push(`${doc.id} ${doc.data().time || ""}`);
-        });
-        tdDone.innerText = doneList.join("、");
-      } catch (error) {
-        tdDone.innerText = "⚠️ 無法讀取";
-        console.error("取得紀錄錯誤：", error);
-      }
+
+      const checkRef = collection(doc(db, `dailyCheck/${dateStr}`), task);
+      const checkSnap = await getDocs(checkRef);
+      const doneList = [];
+      checkSnap.forEach(doc => {
+        doneList.push(`${doc.id} ${doc.data().time || ""}`);
+      });
+      tdDone.innerText = doneList.join("、");
       row.appendChild(tdTask);
       row.appendChild(tdDone);
       table.appendChild(row);
