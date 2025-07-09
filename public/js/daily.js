@@ -1,6 +1,6 @@
 
 import { db } from '/js/firebase.js';
-import { collection, getDocs, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 window.onload = async function () {
   const datePicker = document.getElementById("datePicker");
@@ -56,9 +56,8 @@ window.onload = async function () {
       tdTask.innerText = task;
       const tdDone = document.createElement("td");
 
-      // 正確的 Firebase 路徑用法
-      const taskDocRef = doc(db, 'dailyCheck', dateStr);
-      const checkRef = collection(taskDocRef, task);
+      // 最終正確用法 ✅
+      const checkRef = collection(db, 'dailyCheck', dateStr, task);
       const checkSnap = await getDocs(checkRef);
       const doneList = [];
       checkSnap.forEach(doc => {
