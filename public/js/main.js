@@ -15,5 +15,5 @@ window.logout = function () {
 
 window.onload = function () {
   const nickname = localStorage.getItem("nickname") || "使用者";
-  document.getElementById("nickname-display").textContent = `🙋‍♂️ ${nickname}`;
+  document.getElementById("nickname-display").textContent = `🙋‍♂️ 使用者：${nickname}`;
 };
