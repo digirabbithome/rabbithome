@@ -4,20 +4,20 @@ window.addEventListener('load', () => {
 
   const senderMap = {
     '數位小兔': {
-      name: '數位小兔 Digital Rabbit 台北市信義區大道路74巷1號',
-      phone: 'TEL：02-2759-2006 / 02-2759-2013 LINE：@digirabbit',
+      name: '數位小兔 Digital Rabbit 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013 LINE：@digirabbit',
+      phone: '',
       address: '',
       line: ''
     },
     '聚焦數位': {
-      name: '聚焦數位 Focus Digital　台北市中山區範例路10號',
-      phone: 'TEL：02-2345-6789　LINE：@focuscam',
+      name: '聚焦數位 Focus Digital　台北市中山區範例路10號<BR>TEL：02-2345-6789　LINE：@focuscam',
+      phone: '',
       address: '',
       line: ''
     },
     '免睡攝影': {
-      name: '免睡攝影 No Sleep Studio　新北市板橋區攝影街88號',
-      phone: 'TEL：02-8765-4321　LINE：@nosleep',
+      name: '免睡攝影 No Sleep Studio　新北市板橋區攝影街88號<BR>TEL：02-8765-4321　LINE：@nosleep',
+      phone: '',
       address: '',
       line: ''
     }
