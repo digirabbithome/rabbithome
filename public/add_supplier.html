@@ -29,7 +29,6 @@
         <label>電話</label><input type="tel" id="phone" />
       </div>
       <div class="form-row">
-        <label>代理品牌</label><input type="text" id="brand" />
         <label>來源</label>
         <select id="origin">
           <option value="台灣">台灣</option>
@@ -40,14 +39,18 @@
           <option value="月結">月結</option>
           <option value="匯款">匯款</option>
         </select>
-      </div>
-      <div class="form-row">
         <label>屬性</label>
         <div class="checkbox-group">
           <label><input type="checkbox" name="type" value="供應商" />供應商</label>
           <label><input type="checkbox" name="type" value="批發客戶" />批發客戶</label>
           <label><input type="checkbox" name="type" value="單一客戶" />單一客戶</label>
         </div>
+      </div>
+      <div class="form-row full-width">
+        <label>代理品牌</label>
+        <textarea id="brand" rows="3" placeholder="可輸入多個品牌，以逗號或換行分隔"></textarea>
+      </div>
+      <div class="form-row">
         <button type="submit">💾 儲存</button>
       </div>
     </form>
@@ -65,6 +68,12 @@
       </thead>
       <tbody></tbody>
     </table>
+
+    <div class="pagination">
+      <button id="prevPage">← 上一頁</button>
+      <span id="pageInfo">第 1 頁</span>
+      <button id="nextPage">下一頁 →</button>
+    </div>
   </div>
 </body>
 </html>
