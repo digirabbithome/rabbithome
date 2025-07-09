@@ -1,50 +1,48 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
   <title>列印信封頁面</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 30px;
-    }
+    body { font-family: sans-serif; padding: 20px; }
     .envelope {
       border: 1px solid #ccc;
       padding: 20px;
-      width: 850px;
-      height: 430px;
+      width: 900px;
+      height: 450px;
       position: relative;
-      box-sizing: border-box;
     }
     .sender-info {
       position: absolute;
       top: 20px;
       left: 30px;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     .logo {
       position: absolute;
-      top: 120px;
+      top: 130px;
       left: 30px;
       width: 300px;
     }
     .receiver-info {
       position: absolute;
-      top: 120px;
+      top: 130px;
       left: 350px;
       font-size: 34px;
       line-height: 1.6;
-      max-width: 480px;
+      max-width: 500px;
       word-wrap: break-word;
     }
     .product {
       position: absolute;
-      bottom: 30px;
+      bottom: 20px;
       left: 30px;
-      font-size: 16px;
+      font-size: 18px;
       color: #333;
-      max-width: 750px;
+      max-width: 800px;
+      word-wrap: break-word;
     }
   </style>
   <script src="/js/print.js" defer></script>
