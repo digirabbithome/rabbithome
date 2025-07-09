@@ -4,65 +4,55 @@
 <head>
   <meta charset="UTF-8" />
   <title>Rabbithome 主頁</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/main.css" />
   <script type="module" src="js/main.js" defer></script>
-  <style>
-    body { display: flex; margin: 0; font-family: "Segoe UI", sans-serif; }
-    .sidebar {
-      width: 240px;
-      background-color: #ffffff;
-      padding: 20px;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.1);
-      border-right: 1px solid #eee;
-    }
-    .sidebar h2 {
-      margin-top: 0;
-      font-size: 20px;
-      color: #ff6699;
-    }
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar li {
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #fff0f5;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .sidebar li:hover {
-      background-color: #ffe6ec;
-      color: #d6336c;
-    }
-    .main-content {
-      flex-grow: 1;
-      height: 100vh;
-      overflow: hidden;
-    }
-    #content-frame {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-  </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h2>Rabbithome 🐰</h2>
-    <ul>
-      <li id="nickname-display">🙋‍♂️ Hello，使用者</li>
-      <li onclick="navigate('daily.html')">📋 每日工作</li>
-      <li onclick="navigate('progress.html')">🗂️ 工作進度</li>
-      <li onclick="navigate('workitems.html')">🛠️ 工作項目</li>
-      <li onclick="navigate('envelop-print.html')">✉️ 列印信封</li>
-      <li onclick="navigate('new_account.html')">👤 新增帳號</li>
-      <li onclick="navigate('user-manage.html')">👥 會員管理</li>
-      <li onclick="navigate('https://rabbit-daily-news.vercel.app/auto-news.html')">📰 每日貼文</li>
-      <li onclick="navigate('competitor.html')">📊 競品偵查</li>
-      <li onclick="logout()">🚪 登出</li>
-    </ul>
-  </div>
-  <div class="main-content">
-    <iframe id="content-frame" src="main_content.html"></iframe>
+  <div class="container">
+    <div class="sidebar">
+      <h2>Rabbithome 🐰</h2>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('user')">🙋‍♂️ 使用者</div>
+        <div class="menu-items" id="user">
+          <div id="nickname-display">Hello，使用者</div>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('daily')">📁 每日任務</div>
+        <div class="menu-items" id="daily">
+          <button onclick="navigate('daily.html')">📋 每日工作</button>
+          <button onclick="navigate('progress.html')">🗂️ 工作進度</button>
+          <button onclick="navigate('workitems.html')">🛠️ 工作項目</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('competitor')">📁 競品偵查</div>
+        <div class="menu-items" id="competitor">
+          <button onclick="navigate('competitor.html')">📊 競品偵查</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('tools')">📁 工具功能</div>
+        <div class="menu-items" id="tools">
+          <button onclick="navigate('envelop-print.html')">✉️ 列印信封</button>
+          <button onclick="navigate('https://rabbit-daily-news.vercel.app/auto-news.html')">📰 每日貼文</button>
+          <button onclick="navigate('new_account.html')">👤 新增帳號</button>
+          <button onclick="navigate('user-manage.html')">👥 會員管理</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="logout()">🚪 登出</div>
+      </div>
+
+    </div>
+    <div class="main-content">
+      <iframe id="content-frame" src="main_content.html"></iframe>
+    </div>
   </div>
 </body>
 </html>
