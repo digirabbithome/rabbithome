@@ -4,7 +4,7 @@ window.addEventListener('load', () => {
 
   const senderMap = {
     '數位小兔': {
-      name: '數位小兔 Digital Rabbit 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013 LINE：@digirabbit',
+      name: '數位小兔 Digital Rabbit 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013　LINE：@digirabbit',
       phone: '',
       address: '',
       line: ''
