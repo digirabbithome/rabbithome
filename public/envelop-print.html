@@ -13,7 +13,7 @@
 
     <form id="envelopeForm">
       <div class="form-row">
-        <label style="flex:1">寄件公司：
+        <label>寄件公司：
           <select id="senderCompany" name="senderCompany">
             <option>數位小兔</option>
             <option>聚焦數位</option>
@@ -21,41 +21,40 @@
             <option>其他</option>
           </select>
         </label>
-        <label style="flex:1">收件人姓名：
-          <input type="text" name="receiverName" />
-        </label>
-        <label style="flex:1">電話：
-          <input type="text" name="phone" />
-        </label>
       </div>
 
       <div id="customSenderField" class="form-row" style="display:none;">
-        <label style="width:100%">自訂寄件人資料：
+        <label>自訂寄件人資料：
           <textarea name="customSender" rows="3"></textarea>
         </label>
       </div>
 
       <div class="form-row">
-        <label style="flex:1">地址：
+        <label>收件人姓名：
+          <input type="text" name="receiverName" />
+        </label>
+        <label>電話：
+          <input type="text" name="phone" />
+        </label>
+        <label>地址：
           <input type="text" name="address" />
         </label>
-        <label style="flex:1">商品資訊：
+      </div>
+
+      <div class="form-row">
+        <label>商品資訊：
           <input type="text" name="product" />
         </label>
       </div>
 
-      <div class="form-row" style="margin-top: -10px;">
-        <fieldset style="width: 100%;">
-          <legend>來源：</legend>
-          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <label><input type="radio" name="source" value="Line"> Line</label>
-            <label><input type="radio" name="source" value="官網"> 官網</label>
-            <label><input type="radio" name="source" value="Yahoo"> Yahoo</label>
-            <label><input type="radio" name="source" value="露天"> 露天</label>
-            <label><input type="radio" name="source" value="蝦皮"> 蝦皮</label>
-          </div>
-        </fieldset>
-      </div>
+      <fieldset class="form-row">
+        <legend>來源：</legend>
+        <label><input type="radio" name="source" value="Line"> Line</label>
+        <label><input type="radio" name="source" value="官網"> 官網</label>
+        <label><input type="radio" name="source" value="Yahoo"> Yahoo</label>
+        <label><input type="radio" name="source" value="露天"> 露天</label>
+        <label><input type="radio" name="source" value="蝦皮"> 蝦皮</label>
+      </fieldset>
 
       <div class="form-row">
         <button id="printNormal" type="button">列印信封</button>
@@ -79,6 +78,7 @@
           <th>收件人</th>
           <th>地址</th>
           <th>電話</th>
+          <th>商品</th>
           <th>來源</th>
           <th>操作</th>
         </tr>
