@@ -71,10 +71,10 @@ window.addEventListener('load', async () => {
     const source = form.querySelector('input[name="source"]:checked')?.value || '';
     const nickname = localStorage.getItem('nickname') || '匿名';
 
-    const fullSource = source ? \`\${nickname}(\${source})\` : nickname;
+    const fullSource = source ? `${nickname}(${source})` : nickname;
     const displaySource = type === "reply"
-      ? (source ? \`\${nickname}(\${source})(回郵)\` : \`\${nickname}(回郵)\`)
-      : (source ? \`\${nickname}(\${source})\` : nickname);
+      ? (source ? `${nickname}(${source})(回郵)` : `${nickname}(回郵)`)
+      : (source ? `${nickname}(${source})` : nickname);
 
     const now = new Date();
     const record = {
@@ -130,15 +130,18 @@ window.addEventListener('load', async () => {
       let ts = data.timestamp;
       if (ts && typeof ts.toDate === 'function') {
         ts = ts.toDate();
+      } else if (typeof ts === 'object' && ts.seconds) {
+        ts = new Date(ts.seconds * 1000);
       } else {
-        ts = new Date(ts);
+        ts = new Date();
       }
+
       if (ts >= currentFilter.start && ts <= currentFilter.end) {
         allData.push({ id: doc.id, ...data, timestamp: ts });
       }
     });
 
-    dateTitle.textContent = \`\${currentFilter.start.getFullYear()}/\${String(currentFilter.start.getMonth()+1).padStart(2,'0')}/\${String(currentFilter.start.getDate()).padStart(2,'0')} 列印信封紀錄\`;
+    dateTitle.textContent = `${currentFilter.start.getFullYear()}/${String(currentFilter.start.getMonth()+1).padStart(2,'0')}/${String(currentFilter.start.getDate()).padStart(2,'0')} 列印信封紀錄`;
     renderFilteredData();
   }
 
@@ -157,15 +160,15 @@ window.addEventListener('load', async () => {
     filtered.forEach(data => {
       const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
       const tr = document.createElement('tr');
-      tr.innerHTML = \`
-        <td>\${timeStr}</td>
-        <td>\${data.receiverName || ''}</td>
-        <td>\${data.address || ''}</td>
-        <td>\${data.phone || ''}</td>
-        <td>\${data.product || ''}</td>
-        <td>\${data.source || ''}</td>
-        <td><a href="#" data-id="\${data.id}" data-type="\${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
-      \`;
+      tr.innerHTML = `
+        <td>${timeStr}</td>
+        <td>${data.receiverName || ''}</td>
+        <td>${data.address || ''}</td>
+        <td>${data.phone || ''}</td>
+        <td>${data.product || ''}</td>
+        <td>${data.source || ''}</td>
+        <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
+      `;
       tbody.appendChild(tr);
     });
 
