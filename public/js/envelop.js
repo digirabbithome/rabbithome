@@ -1,5 +1,5 @@
 
-import { db, auth } from '/js/firebase.js';
+import { db } from '/js/firebase.js';
 import { collection, addDoc, Timestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 function formatTime(ts) {
@@ -44,56 +44,68 @@ async function loadTodayRecords() {
   }
 }
 
+function handleEnvelopeSubmit(isReply = false) {
+  const form = document.getElementById('envelopeForm');
+  const companySelect = document.getElementById('senderCompany');
+  const customSender = form.customSender?.value || '';
+  const receiverName = form.receiverName.value;
+  const phone = form.phone.value;
+  const address = form.address.value;
+  const product = form.product.value;
+  const source = form.querySelector('input[name="source"]:checked')?.value || '';
+  const nickname = localStorage.getItem('nickname') || '匿名';
+  const fullSource = source ? `${nickname}(${source})` : nickname;
+  const now = new Date();
+
+  const record = {
+    type: isReply ? 'reply' : 'normal',
+    senderCompany: companySelect.value,
+    customSender,
+    receiverName,
+    phone,
+    address,
+    product,
+    source: fullSource,
+    account: nickname,
+    timestamp: Timestamp.fromDate(now)
+  };
+
+  localStorage.setItem('envelopeData', JSON.stringify(record));
+  setTimeout(() => window.open(isReply ? '/print-reply.html' : '/print.html', '_blank'), 200);
+
+  addDoc(collection(db, 'envelopes'), record)
+    .then(() => {
+      alert('✅ 資料已儲存！');
+      form.reset();
+      companySelect.value = '數位小兔';
+      document.getElementById('customSenderField').style.display = 'none';
+      loadTodayRecords();
+    })
+    .catch(err => {
+      alert('❌ 寫入失敗：' + err.message);
+    });
+}
+
 window.addEventListener('load', () => {
+  loadTodayRecords();
+
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
+  const normalBtn = document.getElementById('printNormal');
+  const replyBtn = document.getElementById('printReply');
 
   companySelect.addEventListener('change', () => {
     otherField.style.display = (companySelect.value === '其他') ? 'block' : 'none';
   });
 
-  form.addEventListener('submit', async (e) => {
+  normalBtn.addEventListener('click', (e) => {
     e.preventDefault();
-
-    const senderCompany = form.senderCompany.value;
-    const customSender = form.customSender?.value || '';
-    const receiverName = form.receiverName.value;
-    const phone = form.phone.value;
-    const address = form.address.value;
-    const product = form.product.value;
-    const source = form.querySelector('input[name="source"]:checked')?.value || '';
-    const nickname = localStorage.getItem('nickname') || '匿名';
-
-    const fullSource = source ? `${nickname}(${source})` : nickname;
-
-    const now = new Date();
-    const record = {
-      senderCompany,
-      customSender,
-      receiverName,
-      phone,
-      address,
-      product,
-      source: fullSource,
-      account: nickname,
-      timestamp: Timestamp.fromDate(now)
-    };
-
-    localStorage.setItem('envelopeData', JSON.stringify(record));
-    setTimeout(() => window.open('/print.html', '_blank'), 200);
-
-    try {
-      await addDoc(collection(db, 'envelopes'), record);
-      alert('✅ 資料已儲存！');
-      form.reset();
-      companySelect.value = '數位小兔';
-      otherField.style.display = 'none';
-      loadTodayRecords();
-    } catch (err) {
-      alert('❌ 寫入失敗：' + err.message);
-    }
+    handleEnvelopeSubmit(false);
   });
 
-  loadTodayRecords();
+  replyBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleEnvelopeSubmit(true);
+  });
 });
