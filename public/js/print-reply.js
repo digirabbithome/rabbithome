@@ -1,29 +1,24 @@
 
 window.addEventListener('load', () => {
-  const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
-
-  const sender = {
-    name: data.receiverName || '',
-    address: data.address || '',
-    phone: data.phone || '',
-    line: ''
+  const params = new URLSearchParams(window.location.search);
+  const data = {
+    senderCompany: params.get('senderCompany') || '',
+    receiverName: params.get('receiverName') || '',
+    phone: params.get('phone') || '',
+    address: params.get('address') || '',
+    product: params.get('product') || ''
   };
 
-  const receiver = {
-    name: '數位小兔 Digital Rabbit',
-    address: '台北市信義區大道路74巷1號',
-    phone: '02-27592006 / 02-27592013',
-    line: 'LINE：@digirabbit'
+  const senderMap = {
+    '數位小兔': '數位小兔 Digital Rabbit　110 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013　LINE：@digirabbit',
+    '聚焦數位': '聚焦數位 Focus Digital　110 台北市信義區範例路10號<BR>TEL：02-2345-6789　LINE：@focuscam',
+    '免睡攝影': '免睡攝影 No Sleep Studio　220 新北市板橋區攝影街88號<BR>TEL：02-8765-4321　LINE：@nosleep'
   };
 
-  document.getElementById('senderInfo').innerHTML = `
-    ${sender.name}<br>
-    ${sender.address}<br>
-    ${sender.phone}<br>
-    ${sender.line}
-  `;
+  const senderInfo = senderMap[data.senderCompany] || (data.senderCompany || '');
 
-  document.getElementById('receiverInfo').textContent = `TO：${receiver.name}　${receiver.phone}　${receiver.address}`;
+  document.getElementById('senderInfo').innerHTML = senderInfo;
+  document.getElementById('receiverInfo').textContent = `TO：${data.receiverName}　${data.phone}　${data.address}`;
   document.getElementById('productInfo').textContent = data.product || '';
 
   window.print();
