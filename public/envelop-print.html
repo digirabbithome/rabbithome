@@ -1,92 +1,67 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <title>列印信封系統</title>
-  <link rel="stylesheet" href="/css/envelop.css" />
+  <link rel="stylesheet" href="/css/envelope.css" />
   <script src="/js/envelop.js" type="module" defer></script>
 </head>
 <body>
-  <div class="page-wrapper">
-    <h2>✉️ 列印信封系統</h2>
-
-    <form id="envelopeForm">
-      <div class="form-row">
-        <label>寄件公司：
-          <select id="senderCompany" name="senderCompany">
-            <option>數位小兔</option>
-            <option>聚焦數位</option>
-            <option>免睡攝影</option>
-            <option>其他</option>
-          </select>
-        </label>
-      </div>
-
-      <div id="customSenderField" class="form-row" style="display:none;">
-        <label>自訂寄件人資料：
-          <textarea name="customSender" rows="3"></textarea>
-        </label>
-      </div>
-
-      <div class="form-row">
-        <label>收件人姓名：
-          <input type="text" name="receiverName" />
-        </label>
-        <label>電話：
-          <input type="text" name="phone" />
-        </label>
-        <label>地址：
-          <input type="text" name="address" />
-        </label>
-      </div>
-
-      <div class="form-row">
-        <label>商品資訊：
-          <input type="text" name="product" />
-        </label>
-      </div>
-
-      <fieldset class="form-row">
-        <legend>來源：</legend>
-        <label><input type="radio" name="source" value="Line"> Line</label>
-        <label><input type="radio" name="source" value="官網"> 官網</label>
-        <label><input type="radio" name="source" value="Yahoo"> Yahoo</label>
-        <label><input type="radio" name="source" value="露天"> 露天</label>
-        <label><input type="radio" name="source" value="蝦皮"> 蝦皮</label>
-      </fieldset>
-
-      <div class="form-row">
-        <button id="printNormal" type="button">列印信封</button>
-        <button id="printReply" type="button">列印回郵信封</button>
-      </div>
-    </form>
-
-    <div id="searchBar">
-      <button id="btnPrevDay">前一天</button>
-      <button id="btnLast3Days">前三天</button>
-      <button id="btnLastWeek">前一週</button>
-      <input type="date" id="datePicker" />
-      <input type="text" id="searchInput" placeholder="搜尋姓名/電話/地址/商品" />
+  <h1>✉️ 列印信封系統</h1>
+  <form id="envelopeForm">
+    <label>寄件公司：
+      <select id="senderCompany" name="senderCompany">
+        <option>數位小兔</option>
+        <option>聚焦數位</option>
+        <option>免睡攝影</option>
+        <option>其他</option>
+      </select>
+    </label>
+    <div id="customSenderField" style="display:none;">
+      <label>自訂寄件人資料：
+        <textarea name="customSender" rows="3" style="width: 100%;"></textarea>
+      </label>
     </div>
+    <label>收件人姓名：<input type="text" name="receiverName" /></label>
+    <label>電話：<input type="text" name="phone" /></label>
+    <label>地址：<input type="text" name="address" style="width: 60%;" /></label>
+    <label>商品資訊：<input type="text" name="product" /></label>
+    <fieldset>
+      <legend>來源：</legend>
+      <label><input type="radio" name="source" value="Line"> Line</label>
+      <label><input type="radio" name="source" value="官網"> 官網</label>
+      <label><input type="radio" name="source" value="Yahoo"> Yahoo</label>
+      <label><input type="radio" name="source" value="露天"> 露天</label>
+      <label><input type="radio" name="source" value="蝦皮"> 蝦皮</label>
+    </fieldset>
+    <button id="printNormal">列印信封</button>
+    <button id="printReply">列印回郵信封</button>
+  </form>
 
-    <h2 id="dateTitle">📋 今日列印信封紀錄</h2>
-    <table id="recordTable">
-      <thead>
-        <tr>
-          <th>時間</th>
-          <th>收件人</th>
-          <th>地址</th>
-          <th>電話</th>
-          <th>商品</th>
-          <th>來源</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody id="recordsBody">
-        <!-- 資料會插入這裡 -->
-      </tbody>
-    </table>
+  <div style="margin-top: 20px;">
+    <button id="btnPrevDay">前一天</button>
+    <button id="btnLast3Days">前三天</button>
+    <button id="btnLastWeek">前一週</button>
+    <input type="date" id="datePicker">
+    <input type="text" id="searchInput" placeholder="搜尋姓名/電話/地址/商品">
   </div>
+
+  <h2 id="dateTitle">📋 今日列印信封紀錄</h2>
+  <table id="recordsTable">
+    <thead>
+      <tr>
+        <th>時間</th>
+        <th>收件人</th>
+        <th>地址</th>
+        <th>電話</th>
+        <th>商品</th>
+        <th>來源</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="recordsBody">
+      <!-- 資料會插入這裡 -->
+    </tbody>
+  </table>
 </body>
 </html>
