@@ -6,17 +6,24 @@ window.addEventListener('load', () => {
     receiverName: params.get('receiverName') || '',
     phone: params.get('phone') || '',
     address: params.get('address') || '',
-    product: params.get('product') || ''
+    product: params.get('product') || '',
+    customSender: params.get('customSender') || ''
   };
 
-  const storeInfo = '數位小兔 Digital Rabbit　110 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013　LINE：@digirabbit';
+  const senderMap = {
+    '數位小兔': '數位小兔 Digital Rabbit　110 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013　LINE：@digirabbit',
+    '聚焦數位': '聚焦數位 Focus Digital　110 台北市信義區範例路10號<BR>TEL：02-2345-6789　LINE：@focuscam',
+    '免睡攝影': '免睡攝影 No Sleep Studio　220 新北市板橋區攝影街88號<BR>TEL：02-8765-4321　LINE：@nosleep'
+  };
 
-  // 回郵信封：TO 是數位小兔，左上角是原收件人資料（即使用者填的）
-  document.getElementById('senderInfo').innerHTML = `
-    ${data.receiverName}　${data.phone}<br>${data.address}
-  `;
-  document.getElementById('receiverInfo').innerHTML = `TO：${storeInfo}`;
+  const senderInfo = senderMap[data.senderCompany] || (data.customSender || '');
+
+  document.getElementById('senderInfo').innerHTML = `TO：${data.receiverName}　${data.phone}　${data.address}`;
+  document.getElementById('receiverInfo').innerHTML = senderInfo;
   document.getElementById('productInfo').textContent = data.product || '';
 
   window.print();
+
+  // 清除列印資料
+  localStorage.removeItem('envelopeData');
 });
