@@ -1,162 +1,190 @@
 
-import { db, auth } from '/js/firebase.js';
+import { db } from '/js/firebase.js';
 import {
   collection,
   addDoc,
-  serverTimestamp,
-  query,
-  where,
-  orderBy,
-  getDocs,
   Timestamp,
-  getDoc,
-  getDocsFromServer,
+  query,
+  orderBy,
+  getDocs
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-window.onload = async () => {
-  const nickname = localStorage.getItem('nickname') || '使用者';
-
-  const senderCompany = document.getElementById('senderCompany');
-  const customSenderField = document.getElementById('customSenderField');
-  senderCompany.addEventListener('change', () => {
-    customSenderField.style.display = senderCompany.value === '其他' ? 'block' : 'none';
-  });
-
-  document.getElementById('printNormal').addEventListener('click', () => handlePrint(false));
-  document.getElementById('printReply').addEventListener('click', () => handlePrint(true));
-
-  document.getElementById('btnPrevDay').addEventListener('click', () => loadRecordsByDates([getDateOffset(-1)]));
-  document.getElementById('btnLast3Days').addEventListener('click', () => loadRecordsByDates(getDateRange(-2, 0)));
-  document.getElementById('btnLastWeek').addEventListener('click', () => loadRecordsByDates(getDateRange(-6, 0)));
-  document.getElementById('datePicker').addEventListener('change', (e) => {
-    const date = e.target.value;
-    if (date) loadRecordsByDates([date]);
-  });
-  document.getElementById('searchInput').addEventListener('input', async (e) => {
-    const keyword = e.target.value.trim();
-    if (keyword) {
-      await searchAllRecords(keyword);
-    } else {
-      await loadRecordsByDates([getToday()]);
-    }
-  });
-
-  await loadRecordsByDates([getToday()]);
-};
-
-function getToday() {
-  return new Date().toISOString().split('T')[0];
-}
-function getDateOffset(offset) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().split('T')[0];
-}
-function getDateRange(startOffset, endOffset) {
-  const range = [];
-  for (let i = startOffset; i <= endOffset; i++) {
-    range.push(getDateOffset(i));
-  }
-  return range;
-}
-
-async function handlePrint(isReply) {
+window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
-  const data = Object.fromEntries(new FormData(form).entries());
+  const otherField = document.getElementById('customSenderField');
+  const companySelect = document.getElementById('senderCompany');
+  const searchInput = document.getElementById('searchInput');
+  const dateTitle = document.getElementById('dateTitle');
 
-  const now = new Date();
-  const timeString = now.toTimeString().substring(0, 5);
-  const today = getToday();
+  let currentFilter = { start: getStartOfDay(new Date()), end: getEndOfDay(new Date()) };
 
-  const nickname = localStorage.getItem('nickname') || '使用者';
-  let source = data.source ? `(${data.source})` : '';
-  if (isReply) source += '(回郵)';
+  companySelect.addEventListener('change', () => {
+    otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
+  });
 
-  const record = {
-    time: timeString,
-    receiverName: data.receiverName || '',
-    address: data.address || '',
-    phone: data.phone || '',
-    senderCompany: data.senderCompany,
-    product: data.product || '',
-    source: `${nickname}${source}`,
-    type: isReply ? 'reply' : 'normal',
-    timestamp: serverTimestamp(),
-  };
+  document.getElementById('printNormal').addEventListener('click', e => {
+    e.preventDefault();
+    handleSubmit('normal');
+  });
 
-  try {
-    await addDoc(collection(db, 'envelopes', today, 'records'), record);
+  document.getElementById('printReply').addEventListener('click', e => {
+    e.preventDefault();
+    handleSubmit('reply');
+  });
+
+  document.getElementById('btnPrevDay').addEventListener('click', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    applyDateFilter(yesterday, yesterday);
+  });
+
+  document.getElementById('btnLast3Days').addEventListener('click', () => {
+    const today = new Date();
+    const past = new Date();
+    past.setDate(today.getDate() - 2);
+    applyDateFilter(past, today);
+  });
+
+  document.getElementById('btnLastWeek').addEventListener('click', () => {
+    const today = new Date();
+    const past = new Date();
+    past.setDate(today.getDate() - 6);
+    applyDateFilter(past, today);
+  });
+
+  document.getElementById('datePicker').addEventListener('change', (e) => {
+    const selected = new Date(e.target.value);
+    applyDateFilter(selected, selected);
+  });
+
+  searchInput.addEventListener('input', () => {
+    renderFilteredData();
+  });
+
+  async function handleSubmit(type = "normal") {
+    const senderCompany = form.senderCompany.value;
+    const customSender = form.customSender?.value || '';
+    const receiverName = form.receiverName.value;
+    const phone = form.phone.value;
+    const address = form.address.value;
+    const product = form.product.value;
+    const source = form.querySelector('input[name="source"]:checked')?.value || '';
+    const nickname = localStorage.getItem('nickname') || '匿名';
+
+    const fullSource = source ? `${nickname}(${source})` : nickname;
+    const displaySource = type === "reply"
+      ? (source ? `${nickname}(${source})(回郵)` : `${nickname}(回郵)`)
+      : (source ? `${nickname}(${source})` : nickname);
+
+    const now = new Date();
+    const record = {
+      senderCompany,
+      customSender,
+      receiverName,
+      phone,
+      address,
+      product,
+      source: displaySource,
+      account: nickname,
+      timestamp: Timestamp.fromDate(now),
+      type
+    };
+
     localStorage.setItem('envelopeData', JSON.stringify(record));
-    const printUrl = isReply ? '/print-reply.html' : '/print.html';
-    window.open(printUrl, '_blank');
-  } catch (err) {
-    console.error('寫入失敗', err);
+    window.open(type === "reply" ? '/print-reply.html' : '/print.html', '_blank');
+
+    try {
+      await addDoc(collection(db, 'envelopes'), record);
+      alert('✅ 資料已儲存！');
+      form.reset();
+      companySelect.value = '數位小兔';
+      otherField.style.display = 'none';
+      await loadData();
+    } catch (err) {
+      alert('❌ 寫入失敗：' + err.message);
+    }
   }
-}
 
-async function loadRecordsByDates(dates) {
-  const tbody = document.getElementById('recordsBody');
-  tbody.innerHTML = '';
-  document.getElementById('dateTitle').textContent = `📋 查詢 ${dates.join(', ')} 的信封紀錄`;
+  function getStartOfDay(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
+  }
 
-  for (const date of dates) {
-    const q = query(collection(db, 'envelopes', date, 'records'), orderBy('timestamp'));
+  function getEndOfDay(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+  }
+
+  async function applyDateFilter(start, end) {
+    currentFilter = { start: getStartOfDay(start), end: getEndOfDay(end) };
+    await loadData();
+  }
+
+  let allData = [];
+
+  async function loadData() {
+    const q = query(collection(db, 'envelopes'), orderBy('timestamp', 'desc'));
     const snapshot = await getDocs(q);
-    snapshot.forEach((doc) => {
-      const d = doc.data();
+    allData = [];
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      let ts = data.timestamp;
+      if (ts && typeof ts.toDate === 'function') {
+        ts = ts.toDate();
+      } else if (typeof ts === 'object' && ts.seconds) {
+        ts = new Date(ts.seconds * 1000);
+      } else {
+        ts = new Date();
+      }
+
+      if (ts >= currentFilter.start && ts <= currentFilter.end) {
+        allData.push({ id: doc.id, ...data, timestamp: ts });
+      }
+    });
+
+    dateTitle.textContent = `${currentFilter.start.getFullYear()}/${String(currentFilter.start.getMonth()+1).padStart(2,'0')}/${String(currentFilter.start.getDate()).padStart(2,'0')} 列印信封紀錄`;
+    renderFilteredData();
+  }
+
+  function renderFilteredData() {
+    const keyword = searchInput.value.toLowerCase();
+    const tbody = document.getElementById('recordsBody');
+    tbody.innerHTML = '';
+
+    const filtered = allData.filter(item =>
+      item.receiverName?.toLowerCase().includes(keyword) ||
+      item.phone?.toLowerCase().includes(keyword) ||
+      item.address?.toLowerCase().includes(keyword) ||
+      item.product?.toLowerCase().includes(keyword)
+    );
+
+    filtered.forEach(data => {
+      const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${d.time || ''}</td>
-        <td>${d.receiverName || ''}</td>
-        <td>${d.address || ''}</td>
-        <td>${d.phone || ''}</td>
-        <td>${d.source || ''}</td>
-        <td><a href="#" onclick="reprintEnvelope('${date}', '${doc.id}')">補印</a></td>
+        <td>${timeStr}</td>
+        <td>${data.receiverName || ''}</td>
+        <td>${data.address || ''}</td>
+        <td>${data.phone || ''}</td>
+        <td>${data.product || ''}</td>
+        <td>${data.source || ''}</td>
+        <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
       `;
       tbody.appendChild(tr);
     });
-  }
-}
 
-window.reprintEnvelope = async (date, id) => {
-  const docRef = collection(db, 'envelopes', date, 'records');
-  const snapshot = await getDocs(query(docRef, where('__name__', '==', id)));
-  if (!snapshot.empty) {
-    const d = snapshot.docs[0].data();
-    localStorage.setItem('envelopeData', JSON.stringify(d));
-    const printUrl = d.type === 'reply' ? '/print-reply.html' : '/print.html';
-    window.open(printUrl, '_blank');
-  }
-};
-
-async function searchAllRecords(keyword) {
-  const tbody = document.getElementById('recordsBody');
-  tbody.innerHTML = '';
-  document.getElementById('dateTitle').textContent = `🔍 搜尋結果：「${keyword}」`;
-
-  const envelopesRef = collection(db, 'envelopes');
-  const daysSnap = await getDocs(envelopesRef);
-  for (const day of daysSnap.docs) {
-    const date = day.id;
-    const subRef = collection(db, 'envelopes', date, 'records');
-    const subs = await getDocs(subRef);
-    subs.forEach((doc) => {
-      const d = doc.data();
-      const keywordIn = [d.receiverName, d.phone, d.address, d.product].some(field =>
-        field && field.includes(keyword)
-      );
-      if (keywordIn) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${d.time || ''}</td>
-          <td>${d.receiverName || ''}</td>
-          <td>${d.address || ''}</td>
-          <td>${d.phone || ''}</td>
-          <td>${d.source || ''}</td>
-          <td><a href="#" onclick="reprintEnvelope('${date}', '${doc.id}')">補印</a></td>
-        `;
-        tbody.appendChild(tr);
-      }
+    document.querySelectorAll('.reprint-link').forEach(link => {
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const docId = e.target.dataset.id;
+        const type = e.target.dataset.type;
+        const record = allData.find(d => d.id === docId);
+        if (record) {
+          localStorage.setItem('envelopeData', JSON.stringify(record));
+          window.open(type === "reply" ? '/print-reply.html' : '/print.html', '_blank');
+        }
+      });
     });
   }
-}
+
+  await loadData();
+});
