@@ -1,5 +1,5 @@
 
-import { db, auth } from '/js/firebase.js';
+import { db } from '/js/firebase.js';
 import {
   collection,
   addDoc,
@@ -9,7 +9,7 @@ import {
   getDocs,
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-window.onload = async () => {
+window.onload = () => {
   const nickname = localStorage.getItem('nickname') || '使用者';
   document.querySelector('h2').innerHTML = '✉️ 列印信封系統';
 
@@ -23,7 +23,17 @@ window.onload = async () => {
   document.getElementById('printNormal').addEventListener('click', () => handlePrint(false));
   document.getElementById('printReply').addEventListener('click', () => handlePrint(true));
 
-  await loadTodayRecords();
+  document.getElementById('btnPrevDay').addEventListener('click', () => changeDateBy(-1));
+  document.getElementById('btnLast3Days').addEventListener('click', () => changeDateBy(-3));
+  document.getElementById('btnLastWeek').addEventListener('click', () => changeDateBy(-7));
+  document.getElementById('datePicker').addEventListener('change', (e) => {
+    if (e.target.value) loadRecordsByDate(e.target.value);
+  });
+  document.getElementById('searchInput').addEventListener('input', () => filterRecords());
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('datePicker').value = today;
+  loadRecordsByDate(today);
 };
 
 async function handlePrint(isReply) {
@@ -52,18 +62,16 @@ async function handlePrint(isReply) {
 
   try {
     await addDoc(collection(db, 'envelopes', today, 'records'), record);
+    localStorage.setItem('envelopeData', JSON.stringify(record));
     const printUrl = isReply ? '/print-reply.html' : '/print.html';
-    window.open(printUrl + '?' + new URLSearchParams(record), '_blank');
+    window.open(printUrl, '_blank');
   } catch (err) {
     console.error('寫入失敗', err);
   }
 }
 
-async function loadTodayRecords() {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-
-  const q = query(collection(db, 'envelopes', today, 'records'), orderBy('timestamp'));
+async function loadRecordsByDate(dateStr) {
+  const q = query(collection(db, 'envelopes', dateStr, 'records'), orderBy('timestamp'));
   const snapshot = await getDocs(q);
 
   const tbody = document.getElementById('recordsBody');
@@ -71,15 +79,6 @@ async function loadTodayRecords() {
 
   snapshot.forEach((doc) => {
     const d = doc.data();
-    const printUrl = d.type === 'reply' ? '/print-reply.html' : '/print.html';
-    const queryStr = new URLSearchParams({
-      receiverName: d.receiverName || '',
-      address: d.address || '',
-      phone: d.phone || '',
-      senderCompany: d.senderCompany || '',
-      product: d.product || ''
-    }).toString();
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${d.time || ''}</td>
@@ -87,8 +86,41 @@ async function loadTodayRecords() {
       <td>${d.address || ''}</td>
       <td>${d.phone || ''}</td>
       <td>${d.source || ''}</td>
-      <td><a href="${printUrl}?${queryStr}" target="_blank">補印</a></td>
+      <td><a href="#" class="reprint" data-json='${JSON.stringify(d)}'>補印</a></td>
     `;
     tbody.appendChild(tr);
+  });
+
+  document.getElementById('dateTitle').textContent = `📋 ${dateStr} 列印信封紀錄`;
+
+  // 綁定補印功能
+  document.querySelectorAll('.reprint').forEach((el) =>
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const data = JSON.parse(el.dataset.json);
+      localStorage.setItem('envelopeData', JSON.stringify(data));
+      const url = data.type === 'reply' ? '/print-reply.html' : '/print.html';
+      window.open(url, '_blank');
+    })
+  );
+
+  filterRecords();
+}
+
+function changeDateBy(offset) {
+  const picker = document.getElementById('datePicker');
+  const newDate = new Date(picker.value || new Date());
+  newDate.setDate(newDate.getDate() + offset);
+  const formatted = newDate.toISOString().split('T')[0];
+  picker.value = formatted;
+  loadRecordsByDate(formatted);
+}
+
+function filterRecords() {
+  const keyword = document.getElementById('searchInput').value.trim();
+  const rows = document.querySelectorAll('#recordsBody tr');
+  rows.forEach((row) => {
+    const text = row.innerText;
+    row.style.display = text.includes(keyword) ? '' : 'none';
   });
 }
