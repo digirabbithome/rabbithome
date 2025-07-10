@@ -23,7 +23,5 @@ window.addEventListener('load', () => {
   document.getElementById('productInfo').textContent = data.product || '';
 
   window.print();
-
-  // 清除列印資料
   localStorage.removeItem('envelopeData');
 });
