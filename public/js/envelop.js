@@ -1,21 +1,23 @@
 
-import { db } from '/js/firebase.js';
+import { db, auth } from '/js/firebase.js';
 import {
   collection,
   addDoc,
   serverTimestamp,
   query,
+  where,
   orderBy,
   getDocs,
+  Timestamp,
+  getDoc,
+  getDocsFromServer,
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-window.onload = () => {
+window.onload = async () => {
   const nickname = localStorage.getItem('nickname') || '使用者';
-  document.querySelector('h2').innerHTML = '✉️ 列印信封系統';
 
   const senderCompany = document.getElementById('senderCompany');
   const customSenderField = document.getElementById('customSenderField');
-
   senderCompany.addEventListener('change', () => {
     customSenderField.style.display = senderCompany.value === '其他' ? 'block' : 'none';
   });
@@ -23,18 +25,40 @@ window.onload = () => {
   document.getElementById('printNormal').addEventListener('click', () => handlePrint(false));
   document.getElementById('printReply').addEventListener('click', () => handlePrint(true));
 
-  document.getElementById('btnPrevDay').addEventListener('click', () => changeDateBy(-1));
-  document.getElementById('btnLast3Days').addEventListener('click', () => changeDateBy(-3));
-  document.getElementById('btnLastWeek').addEventListener('click', () => changeDateBy(-7));
+  document.getElementById('btnPrevDay').addEventListener('click', () => loadRecordsByDates([getDateOffset(-1)]));
+  document.getElementById('btnLast3Days').addEventListener('click', () => loadRecordsByDates(getDateRange(-2, 0)));
+  document.getElementById('btnLastWeek').addEventListener('click', () => loadRecordsByDates(getDateRange(-6, 0)));
   document.getElementById('datePicker').addEventListener('change', (e) => {
-    if (e.target.value) loadRecordsByDate(e.target.value);
+    const date = e.target.value;
+    if (date) loadRecordsByDates([date]);
   });
-  document.getElementById('searchInput').addEventListener('input', () => filterRecords());
+  document.getElementById('searchInput').addEventListener('input', async (e) => {
+    const keyword = e.target.value.trim();
+    if (keyword) {
+      await searchAllRecords(keyword);
+    } else {
+      await loadRecordsByDates([getToday()]);
+    }
+  });
 
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('datePicker').value = today;
-  loadRecordsByDate(today);
+  await loadRecordsByDates([getToday()]);
 };
+
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+function getDateOffset(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().split('T')[0];
+}
+function getDateRange(startOffset, endOffset) {
+  const range = [];
+  for (let i = startOffset; i <= endOffset; i++) {
+    range.push(getDateOffset(i));
+  }
+  return range;
+}
 
 async function handlePrint(isReply) {
   const form = document.getElementById('envelopeForm');
@@ -42,7 +66,7 @@ async function handlePrint(isReply) {
 
   const now = new Date();
   const timeString = now.toTimeString().substring(0, 5);
-  const today = now.toISOString().split('T')[0];
+  const today = getToday();
 
   const nickname = localStorage.getItem('nickname') || '使用者';
   let source = data.source ? `(${data.source})` : '';
@@ -70,57 +94,69 @@ async function handlePrint(isReply) {
   }
 }
 
-async function loadRecordsByDate(dateStr) {
-  const q = query(collection(db, 'envelopes', dateStr, 'records'), orderBy('timestamp'));
-  const snapshot = await getDocs(q);
-
+async function loadRecordsByDates(dates) {
   const tbody = document.getElementById('recordsBody');
   tbody.innerHTML = '';
+  document.getElementById('dateTitle').textContent = `📋 查詢 ${dates.join(', ')} 的信封紀錄`;
 
-  snapshot.forEach((doc) => {
-    const d = doc.data();
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${d.time || ''}</td>
-      <td>${d.receiverName || ''}</td>
-      <td>${d.address || ''}</td>
-      <td>${d.phone || ''}</td>
-      <td>${d.source || ''}</td>
-      <td><a href="#" class="reprint" data-json='${JSON.stringify(d)}'>補印</a></td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('dateTitle').textContent = `📋 ${dateStr} 列印信封紀錄`;
-
-  // 綁定補印功能
-  document.querySelectorAll('.reprint').forEach((el) =>
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      const data = JSON.parse(el.dataset.json);
-      localStorage.setItem('envelopeData', JSON.stringify(data));
-      const url = data.type === 'reply' ? '/print-reply.html' : '/print.html';
-      window.open(url, '_blank');
-    })
-  );
-
-  filterRecords();
+  for (const date of dates) {
+    const q = query(collection(db, 'envelopes', date, 'records'), orderBy('timestamp'));
+    const snapshot = await getDocs(q);
+    snapshot.forEach((doc) => {
+      const d = doc.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.time || ''}</td>
+        <td>${d.receiverName || ''}</td>
+        <td>${d.address || ''}</td>
+        <td>${d.phone || ''}</td>
+        <td>${d.source || ''}</td>
+        <td><a href="#" onclick="reprintEnvelope('${date}', '${doc.id}')">補印</a></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 }
 
-function changeDateBy(offset) {
-  const picker = document.getElementById('datePicker');
-  const newDate = new Date(picker.value || new Date());
-  newDate.setDate(newDate.getDate() + offset);
-  const formatted = newDate.toISOString().split('T')[0];
-  picker.value = formatted;
-  loadRecordsByDate(formatted);
-}
+window.reprintEnvelope = async (date, id) => {
+  const docRef = collection(db, 'envelopes', date, 'records');
+  const snapshot = await getDocs(query(docRef, where('__name__', '==', id)));
+  if (!snapshot.empty) {
+    const d = snapshot.docs[0].data();
+    localStorage.setItem('envelopeData', JSON.stringify(d));
+    const printUrl = d.type === 'reply' ? '/print-reply.html' : '/print.html';
+    window.open(printUrl, '_blank');
+  }
+};
 
-function filterRecords() {
-  const keyword = document.getElementById('searchInput').value.trim();
-  const rows = document.querySelectorAll('#recordsBody tr');
-  rows.forEach((row) => {
-    const text = row.innerText;
-    row.style.display = text.includes(keyword) ? '' : 'none';
-  });
+async function searchAllRecords(keyword) {
+  const tbody = document.getElementById('recordsBody');
+  tbody.innerHTML = '';
+  document.getElementById('dateTitle').textContent = `🔍 搜尋結果：「${keyword}」`;
+
+  const envelopesRef = collection(db, 'envelopes');
+  const daysSnap = await getDocs(envelopesRef);
+  for (const day of daysSnap.docs) {
+    const date = day.id;
+    const subRef = collection(db, 'envelopes', date, 'records');
+    const subs = await getDocs(subRef);
+    subs.forEach((doc) => {
+      const d = doc.data();
+      const keywordIn = [d.receiverName, d.phone, d.address, d.product].some(field =>
+        field && field.includes(keyword)
+      );
+      if (keywordIn) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.time || ''}</td>
+          <td>${d.receiverName || ''}</td>
+          <td>${d.address || ''}</td>
+          <td>${d.phone || ''}</td>
+          <td>${d.source || ''}</td>
+          <td><a href="#" onclick="reprintEnvelope('${date}', '${doc.id}')">補印</a></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    });
+  }
 }
