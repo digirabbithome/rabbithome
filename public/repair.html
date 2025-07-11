@@ -11,25 +11,43 @@
   <section id="new-form">
     <h2>➕ 新增維修單</h2>
     <form id="repairForm">
-      <label>維修單號：
-        <input type="text" id="repairID" placeholder="自動產生或手動輸入" />
-        <button type="button" id="generateID">取得流水號</button>
-      </label><br/>
-      <label>客戶姓名：<input type="text" id="customerName" /></label><br/>
-      <label>電話：<input type="text" id="phone" /></label><br/>
-      <label>地址：<input type="text" id="address" /></label><br/>
-      <label>商品：<input type="text" id="product" /></label><br/>
-      <label>保固狀況：
-        <input type="radio" name="warranty" value="有保卡(保固內)">有保卡(保固內)
-        <input type="radio" name="warranty" value="有保卡(過保)">有保卡(過保)
-        <input type="radio" name="warranty" value="沒有保卡">沒有保卡
-      </label><br/>
-      <label>廠商：
-        <select id="supplier"></select>
-      </label><br/>
-      <label>狀況描述：
-        <textarea id="status" rows="3" cols="40"></textarea>
-      </label><br/>
+      <div class="form-grid">
+        <div>
+          <label>維修單號：
+            <input type="text" id="repairID" placeholder="自動產生或手動輸入" />
+          </label>
+          <button type="button" id="generateID">取得流水號</button>
+        </div>
+        <div>
+          <label>客戶姓名：<input type="text" id="customerName" /></label>
+        </div>
+        <div>
+          <label>電話：<input type="text" id="phone" /></label>
+        </div>
+        <div>
+          <label>地址：<input type="text" id="address" /></label>
+        </div>
+        <div>
+          <label>商品：<input type="text" id="product" /></label>
+        </div>
+        <div>
+          <label>保固狀況：
+            <input type="radio" name="warranty" value="有保卡(保固內)">有保卡(保固內)
+            <input type="radio" name="warranty" value="有保卡(過保)">有保卡(過保)
+            <input type="radio" name="warranty" value="沒有保卡">沒有保卡
+          </label>
+        </div>
+        <div>
+          <label>廠商：
+            <select id="supplier"></select>
+          </label>
+        </div>
+        <div class="full-width">
+          <label>狀況描述：
+            <textarea id="status" rows="2" cols="40"></textarea>
+          </label>
+        </div>
+      </div>
       <button type="submit">送出維修單</button>
     </form>
   </section>

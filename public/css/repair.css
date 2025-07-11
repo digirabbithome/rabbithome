@@ -60,3 +60,12 @@ button:hover {
   min-height: 100px;
   border-radius: 10px;
 }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.full-width {
+  grid-column: 1 / -1;
+}
