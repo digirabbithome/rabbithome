@@ -1,6 +1,6 @@
 
 import { db } from '/js/firebase.js'
-import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-lite.js'
+import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 window.onload = () => {
   // 自動產生維修單號
@@ -17,13 +17,21 @@ window.onload = () => {
     repairIdInput.value = repairId;
   });
 
-  // 撈取廠商列表（suppliers）資料，排序依代號
+  // 撈取廠商列表並顯示在選單
   const supplierSelect = document.getElementById('supplier-select');
   const suppliersRef = collection(db, 'suppliers');
   const q = query(suppliersRef, orderBy('code'));
 
   getDocs(q).then((snapshot) => {
     supplierSelect.innerHTML = '';
+
+    // 加上預設選項
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = '請選擇廠商';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    supplierSelect.appendChild(defaultOption);
+
     snapshot.forEach((doc) => {
       const data = doc.data();
       const code = data.code || '';
