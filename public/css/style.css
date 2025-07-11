@@ -1,1 +1,7 @@
-body { font-family: sans-serif; padding: 20px; }
+
+body { font-family: "Noto Sans TC", sans-serif; padding: 20px; background: #f8f8ff; }
+h1, h2 { color: #333; }
+label { display: block; margin: 8px 0; }
+input, textarea, select { padding: 4px; margin-left: 4px; }
+form { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
+#repair-list { background: #fff; padding: 12px; margin-top: 16px; border: 1px solid #ddd; min-height: 100px; }
