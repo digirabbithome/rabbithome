@@ -1,6 +1,6 @@
 
 import { db } from '/js/firebase.js'
-import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 window.onload = () => {
   // 自動產生維修單號
@@ -17,15 +17,13 @@ window.onload = () => {
     repairIdInput.value = repairId;
   });
 
-  // 撈取廠商列表並顯示在選單
+  // 撈取廠商列表
   const supplierSelect = document.getElementById('supplier-select');
   const suppliersRef = collection(db, 'suppliers');
   const q = query(suppliersRef, orderBy('code'));
 
   getDocs(q).then((snapshot) => {
     supplierSelect.innerHTML = '';
-
-    // 加上預設選項
     const defaultOption = document.createElement('option');
     defaultOption.textContent = '請選擇廠商';
     defaultOption.disabled = true;
@@ -37,11 +35,54 @@ window.onload = () => {
       const code = data.code || '';
       const shortName = data.shortName || '';
       const option = document.createElement('option');
-      option.value = code;
+      option.value = shortName || code;
       option.textContent = `${code} - ${shortName}`;
       supplierSelect.appendChild(option);
     });
-  }).catch((error) => {
-    console.error('載入廠商失敗:', error);
+  });
+
+  // 表單送出邏輯
+  const repairForm = document.getElementById('repair-form');
+  repairForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const repairId = document.getElementById('repair-id').value.trim();
+    const customer = document.getElementById('customer').value.trim();
+
+    if (!repairId || !customer) {
+      alert('請填寫必填欄位：維修單號與客人姓名');
+      return;
+    }
+
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const product = document.getElementById('product').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const warranty = document.getElementById('warranty-select')?.value || '';
+    const supplier = document.getElementById('supplier-select')?.value || '';
+
+    const data = {
+      repairId,
+      customer,
+      phone,
+      address,
+      product,
+      description,
+      warranty,
+      supplier,
+      createdAt: serverTimestamp(),
+      status: 1
+    };
+
+    try {
+      await setDoc(doc(db, 'repairs', repairId), data);
+      alert('✅ 維修單送出成功！');
+
+      // 清空表單欄位（不清空 repairId）
+      repairForm.reset();
+    } catch (error) {
+      console.error('❌ 寫入失敗:', error);
+      alert('❌ 維修單送出失敗，請稍後再試');
+    }
   });
 };
