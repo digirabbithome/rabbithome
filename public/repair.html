@@ -12,16 +12,17 @@
 
   <form id="repair-form" style="margin-bottom: 20px;">
     <h3>➕ 新增維修單</h3>
-    <input type="text" id="repairID" placeholder="維修單號" required><br>
-    <input type="text" id="supplier" placeholder="廠商"><br>
+    <input type="text" id="repairID" placeholder="維修單號" required>
+    <button type="button" id="generate-id">自動取得流水號</button><br>
+    <select id="supplier"><option value="">請選擇廠商</option></select><br>
     <input type="text" id="contact" placeholder="客人聯絡方式"><br>
     <input type="text" id="warranty" placeholder="保固狀況"><br>
     <textarea id="description" placeholder="維修說明" rows="3"></textarea><br>
     <button type="submit">送出</button>
   </form>
 
-  <div id="tabs">
-    <label>🔍 狀態篩選：</label>
+  <div id="tabs" style="margin-bottom:10px;">
+    🔍 狀態篩選：
     <select id="state-filter">
       <option value="all">全部</option>
       <option value="1">新進維修</option>
@@ -29,8 +30,14 @@
       <option value="3">維修完成</option>
       <option value="4">客人已取貨</option>
     </select>
+    <input type="text" id="search" placeholder="搜尋客人、廠商、說明" style="margin-left: 10px;">
   </div>
 
-  <div id="repair-list" style="margin-top:20px;">載入中...</div>
+  <div id="repair-list">載入中...</div>
+  <div style="margin-top:10px;">
+    <button id="prev-page">上一頁</button>
+    <span id="page-info"></span>
+    <button id="next-page">下一頁</button>
+  </div>
 </body>
 </html>
