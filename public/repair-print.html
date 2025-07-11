@@ -2,90 +2,66 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>列印維修單</title>
+  <title>維修單列印</title>
   <style>
-    @media print {
-      body { margin: 10mm; }
+    @page {
+      size: 100mm 150mm landscape;
+      margin: 5mm;
     }
     body {
       font-family: "Noto Sans TC", sans-serif;
-      width: 210mm;
-      max-width: 210mm;
-      padding: 20mm;
+      width: 100mm;
+      height: 150mm;
+      padding: 5mm;
+      margin: 0;
+      box-sizing: border-box;
       background: white;
-      color: #333;
     }
-    .header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 10px;
+    .box {
+      border: 1px solid #ccc;
+      padding: 6px;
+      font-size: 12px;
+      line-height: 1.4;
     }
-    .logo {
-      width: 100px;
-      height: auto;
-      margin-right: 20px;
-    }
-    .company-info {
+    .title {
+      font-weight: bold;
       font-size: 14px;
+      margin-bottom: 6px;
     }
-    .section {
-      margin-top: 20px;
+    .row {
+      margin-bottom: 4px;
     }
-    .section h3 {
-      margin-bottom: 10px;
-      color: #cc3366;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    td, th {
-      border: 1px solid #ddd;
-      padding: 6px 10px;
-      font-size: 14px;
+    .label {
+      display: inline-block;
+      width: 70px;
+      font-weight: bold;
     }
     .footer {
-      margin-top: 30px;
-      font-size: 12px;
       text-align: center;
-      color: #999;
+      font-size: 10px;
+      margin-top: 8px;
+      color: #888;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="/images/logo.png" class="logo" alt="LOGO">
-    <div class="company-info">
-      <strong>數位小兔 Digital Rabbit</strong><br>
-      110 台北市信義區大道路74巷1號<br>
-      TEL：02-2759-2006 / 02-2759-2013<br>
-      LINE：@digirabbit
-    </div>
+  <div class="box">
+    <div class="title">數位小兔 維修單</div>
+    <div class="row"><span class="label">維修單號：</span><span id="repairID"></span></div>
+    <div class="row"><span class="label">廠商：</span><span id="supplier"></span></div>
+    <div class="row"><span class="label">客人聯絡：</span><span id="contact"></span></div>
+    <div class="row"><span class="label">商品：</span><span id="product"></span></div>
+    <div class="row"><span class="label">保固狀況：</span><span id="warranty"></span></div>
+    <div class="row"><span class="label">說明：</span><span id="description"></span></div>
   </div>
 
-  <div class="section">
-    <h3>📄 維修單資料</h3>
-    <table>
-      <tr><th>維修單號</th><td id="repairID"></td></tr>
-      <tr><th>廠商</th><td id="supplier"></td></tr>
-      <tr><th>客人聯絡</th><td id="contact"></td></tr>
-      <tr><th>保固狀況</th><td id="warranty"></td></tr>
-      <tr><th>說明</th><td id="description"></td></tr>
-    </table>
-  </div>
-
-  <div class="section">
-    <h3>🔄 維修處理紀錄</h3>
-    <table id="history-table">
-      <tr><th>階段</th><th>時間</th><th>負責人</th><th>內容</th></tr>
-    </table>
+  <div class="box" style="margin-top:8px;">
+    <div class="title">維修處理紀錄</div>
+    <div id="history-box"></div>
   </div>
 
   <div class="footer">
-    本頁為維修用單據，請妥善保管。© 2025 數位小兔
+    數位小兔 Digital Rabbit｜02-27592006｜LINE：@digirabbit
   </div>
 
   <script type="module">
@@ -107,9 +83,10 @@
       document.getElementById("contact").textContent = d.contact || "";
       document.getElementById("warranty").textContent = d.warranty || "";
       document.getElementById("description").textContent = d.description || "";
+      document.getElementById("product").textContent = d.product || "";
 
       const history = d.history || {};
-      const table = document.getElementById("history-table");
+      const box = document.getElementById("history-box");
       const mapping = {
         status2: "已交付廠商",
         status3: "維修完成",
@@ -117,14 +94,9 @@
       };
       for (const key of Object.keys(mapping)) {
         if (history[key]) {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${mapping[key]}</td>
-            <td>${history[key].time || ""}</td>
-            <td>${history[key].by || ""}</td>
-            <td>${history[key].note || ""}</td>
-          `;
-          table.appendChild(row);
+          const line = document.createElement("div");
+          line.textContent = `${mapping[key]}｜${history[key].time || ""}｜${history[key].by || ""}｜${history[key].note || ""}`;
+          box.appendChild(line);
         }
       }
     }

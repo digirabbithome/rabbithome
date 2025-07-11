@@ -16,11 +16,15 @@
     <button type="button" id="generate-id">自動取得流水號</button><br>
     <select id="supplier"><option value="">請選擇廠商</option></select><br>
     <input type="text" id="contact" placeholder="客人聯絡方式"><br>
-    <label>保固狀況：</label><br>
-    <input type="radio" name="warranty" value="有保卡（保固內）" checked> 有保卡（保固內）
-    <input type="radio" name="warranty" value="有保卡（過保）"> 有保卡（過保）
-    <input type="radio" name="warranty" value="沒有保卡"> 沒有保卡
-    <br>
+    <input type="text" id="product" placeholder="送修商品／型號"><br>
+    <div>
+      <label>保固狀況：</label><br>
+      <td>
+        <input type="radio" name="warranty" value="有保卡（保固內）" checked> 有保卡（保固內）
+        <input type="radio" name="warranty" value="有保卡（過保）"> 有保卡（過保）
+        <input type="radio" name="warranty" value="沒有保卡"> 沒有保卡
+      </td>
+    </div>
     <textarea id="description" placeholder="維修說明" rows="3"></textarea><br>
     <button type="submit">送出</button>
   </form>
