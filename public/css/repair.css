@@ -1,7 +1,62 @@
 
-body { font-family: "Noto Sans TC", sans-serif; padding: 20px; background: #f8f8ff; }
-h1, h2 { color: #333; }
-label { display: block; margin: 8px 0; }
-input, textarea, select { padding: 4px; margin-left: 4px; }
-form { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
-#repair-list { background: #fff; padding: 12px; margin-top: 16px; border: 1px solid #ddd; min-height: 100px; }
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  padding: 20px;
+  background: #fff0f5;
+}
+h1, h2 {
+  color: #d63384;
+}
+label {
+  display: block;
+  margin: 8px 0;
+  font-weight: bold;
+  color: #444;
+}
+input, textarea, select {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
+form {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 192, 203, 0.3);
+}
+button {
+  background-color: #ff80ab;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #ff4081;
+}
+#filter-buttons button {
+  margin: 5px 8px 5px 0;
+  padding: 6px 10px;
+  background-color: #ffc1e3;
+  color: #4a154b;
+  border: 1px solid #ffa4c5;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#filter-buttons button:hover {
+  background-color: #ff9dc2;
+}
+#repair-list {
+  background: #fff;
+  padding: 12px;
+  margin-top: 16px;
+  border: 1px solid #ddd;
+  min-height: 100px;
+  border-radius: 10px;
+}
