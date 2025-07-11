@@ -4,7 +4,7 @@ import {
   collection, getDocs, query, orderBy, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-window.addEventListener('load', async () => {
+window.onload = async () => {
   const listEl = document.getElementById('repair-list');
   const searchInput = document.getElementById('search-input');
   const statusButtons = document.querySelectorAll('.status-filter');
