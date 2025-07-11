@@ -1,4 +1,3 @@
-
 import { db } from '/js/firebase.js';
 import {
   collection, getDocs, doc, setDoc,
@@ -9,7 +8,25 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
+import {
+  getAuth, onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+
 const storage = getStorage();
+const auth = getAuth();
+let currentUser = null;
+
+// ✅ 檢查登入狀態
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
+    console.log("✅ 使用者已登入：", user.email);
+  } else {
+    console.warn("❌ 尚未登入，請重新登入！");
+    alert("請先登入帳號才能上傳維修單！");
+    window.location.href = "/login.html";
+  }
+});
 
 // 載入廠商資料
 async function loadSuppliers() {
@@ -45,6 +62,11 @@ document.getElementById('generate-id').addEventListener('click', () => {
 document.getElementById('repair-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
+  if (!currentUser) {
+    alert("尚未登入，無法送出維修單！");
+    return;
+  }
+
   const repairId = document.getElementById('repair-id').value.trim();
   const supplier = document.getElementById('supplier-select').value.trim();
   const customer = document.getElementById('customer').value.trim();
@@ -70,6 +92,8 @@ document.getElementById('repair-form').addEventListener('submit', async (e) => {
     }
   } catch (err) {
     console.error("上傳圖片失敗", err);
+    alert("圖片上傳失敗，請確認已登入或稍後再試");
+    return;
   }
 
   const repairData = {
@@ -82,7 +106,8 @@ document.getElementById('repair-form').addEventListener('submit', async (e) => {
     product,
     description,
     photos: photoURLs,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
+    createdBy: currentUser.email
   };
 
   try {
