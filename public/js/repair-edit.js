@@ -1,81 +1,72 @@
 
-import { db } from '/js/firebase.js';
-import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { db, storage } from '/js/firebase.js';
+import {
+  doc, getDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  ref, uploadBytes, getDownloadURL, listAll, deleteObject
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-window.onload = async () => {
-  const params = new URLSearchParams(window.location.search);
-  const repairID = params.get('id') || 'REPAIR123';
-  const nickname = localStorage.getItem('nickname') || '未知';
+const params = new URLSearchParams(window.location.search);
+const repairID = params.get("id") || "";
+const nickname = localStorage.getItem("nickname") || "未知";
 
-  document.getElementById('repair-id').textContent = repairID;
+async function loadRepair() {
+  const refDoc = doc(db, "repairs", repairID);
+  const snap = await getDoc(refDoc);
+  if (!snap.exists()) return alert("查無資料");
 
-  const docRef = doc(db, 'repairs', repairID);
-  const docSnap = await getDoc(docRef);
+  const d = snap.data();
+  document.getElementById("repair-id").textContent = d.repairID || "";
+  document.getElementById("supplier").textContent = d.supplier || "";
+  document.getElementById("contact").textContent = d.contact || "";
+  document.getElementById("warranty").textContent = d.warranty || "";
+  document.getElementById("product").textContent = d.product || "";
+  document.getElementById("description").textContent = d.description || "";
 
-  if (!docSnap.exists()) {
-    alert('找不到這筆維修資料');
+  loadImages();
+}
+
+async function loadImages() {
+  const container = document.getElementById("imagePreview");
+  container.innerHTML = "";
+  const imageRef = ref(storage, `repairs/${repairID}`);
+  const res = await listAll(imageRef);
+  for (const item of res.items) {
+    const url = await getDownloadURL(item);
+    const box = document.createElement("div");
+    box.className = "img-box";
+    box.innerHTML = `
+      <img src="${url}">
+      <button data-path="${item.fullPath}">x</button>
+    `;
+    container.appendChild(box);
+  }
+
+  container.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const path = btn.dataset.path;
+      await deleteObject(ref(storage, path));
+      loadImages();
+    });
+  });
+}
+
+document.getElementById("imageUpload").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files);
+  const imageRef = ref(storage, `repairs/${repairID}`);
+  const current = await listAll(imageRef);
+  if (current.items.length + files.length > 3) {
+    alert("最多僅能上傳 3 張圖片");
     return;
   }
 
-  const data = docSnap.data();
-
-  document.getElementById('supplier').textContent = data.supplier || '';
-  document.getElementById('contact').textContent = data.contact || '';
-  document.getElementById('warranty').textContent = data.warranty || '';
-  document.getElementById('description').textContent = data.description || '';
-  document.getElementById('creator').textContent = data.creator || '';
-
-  const history = data.history || {};
-
-  if (history.status2) {
-    document.getElementById('status2-info').textContent = history.status2.by + '（' + history.status2.time + '）';
-    document.getElementById('status2-text').value = history.status2.note;
-    document.getElementById('status-to-2').disabled = true;
+  for (const file of files) {
+    const imgRef = ref(storage, `repairs/${repairID}/${Date.now()}-${file.name}`);
+    await uploadBytes(imgRef, file);
   }
 
-  if (history.status3) {
-    document.getElementById('status3-info').textContent = history.status3.by + '（' + history.status3.time + '）';
-    document.getElementById('status3-text').value = history.status3.note;
-    document.getElementById('status-to-3').disabled = true;
-  }
+  loadImages();
+});
 
-  if (history.status4) {
-    document.getElementById('status4-info').textContent = history.status4.by + '（' + history.status4.time + '）';
-    document.getElementById('status-to-4').disabled = true;
-  }
-
-  document.getElementById('status-to-2').addEventListener('click', async () => {
-    const note = document.getElementById('status2-text').value;
-    const now = new Date().toLocaleString();
-    const update = {
-      ['history.status2']: { by: nickname, time: now, note },
-      status: 2
-    };
-    await updateDoc(docRef, update);
-    alert('已更新為「已交付廠商」');
-    location.reload();
-  });
-
-  document.getElementById('status-to-3').addEventListener('click', async () => {
-    const note = document.getElementById('status3-text').value;
-    const now = new Date().toLocaleString();
-    const update = {
-      ['history.status3']: { by: nickname, time: now, note },
-      status: 3
-    };
-    await updateDoc(docRef, update);
-    alert('已更新為「維修完成」');
-    location.reload();
-  });
-
-  document.getElementById('status-to-4').addEventListener('click', async () => {
-    const now = new Date().toLocaleString();
-    const update = {
-      ['history.status4']: { by: nickname, time: now },
-      status: 4
-    };
-    await updateDoc(docRef, update);
-    alert('已更新為「客人已取貨」');
-    location.reload();
-  });
-};
+loadRepair();
