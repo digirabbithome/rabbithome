@@ -50,7 +50,6 @@ window.onload = async () => {
         ? Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
         : '-';
       const shortDescription = (item.description || '').substring(0, 10);
-      const shortSupplier = (item.supplier || '').substring(0, 4);
       const rowClass = daysElapsed > 14 ? 'style="background-color: #ffe0e0;"' : '';
 
       const tr = document.createElement('tr');
@@ -59,7 +58,7 @@ window.onload = async () => {
         <td>${createdStr}</td>
         <td><a href="repair-edit.html?id=${item.repairId}" target="_blank">${item.repairId}</a></td>
         <td>${item.customer || ''}</td>
-        <td>${shortSupplier}</td>
+        <td>${item.supplier || ''}</td>
         <td>${item.product || ''}</td>
         <td>${shortDescription}</td>
         <td>${getStatusText(item.status)}</td>
@@ -101,16 +100,13 @@ window.onload = async () => {
     });
   };
 
-  const makeStepMenu = (id, currentStatus) => {
-    const options = [];
-    for (let i = currentStatus + 1; i <= 4; i++) {
-      options.push(`<option value="${i}">${getStatusText(i)}</option>`);
-    }
-    if (options.length === 0) return '-';
+  const makeStepMenu = (id, status) => {
+    const nextStep = status >= 1 && status < 4 ? status + 1 : null;
+    if (!nextStep) return '-';
     return `
       <select class="step-select" data-id="${id}">
-        <option value="">➡️ 選擇階段</option>
-        ${options.join('')}
+        <option value="">➡️ 下一步</option>
+        <option value="${nextStep}">${getStatusText(nextStep)}</option>
       </select>
     `;
   };
