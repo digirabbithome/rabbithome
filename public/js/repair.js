@@ -1,53 +1,88 @@
-import { auth, db } from '/js/firebase.js';
-import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+
+import { db } from '/js/firebase.js';
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  addDoc,
+  updateDoc,
+  getDoc,
+  serverTimestamp,
+  query,
+  orderBy
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+// 載入廠商資料
+async function loadSuppliers() {
+  const supplierSelect = document.getElementById('supplier-select');
+  const q = query(collection(db, "suppliers"), orderBy("code"));
+  const querySnapshot = await getDocs(q);
+  supplierSelect.innerHTML = '';
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const option = document.createElement('option');
+    option.value = data.shortName || '';
+    option.textContent = `${data.code} - ${data.name}`;
+    supplierSelect.appendChild(option);
+  });
+}
+
+// 自動產生流水號
+function generateRepairID() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `R${yyyy}${mm}${dd}${hh}${mi}${ss}`;
+}
+
+document.getElementById('generate-id').addEventListener('click', () => {
+  document.getElementById('repair-id').value = generateRepairID();
+});
+
+document.getElementById('repair-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const repairId = document.getElementById('repair-id').value.trim();
+  const supplier = document.getElementById('supplier-select').value.trim();
+  const customer = document.getElementById('customer').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const warranty = document.getElementById('warranty-select').value.trim();
+  const product = document.getElementById('product').value.trim();
+  const description = document.getElementById('description').value.trim();
+
+  if (!repairId || !supplier || !customer) {
+    alert("請完整填寫維修單號、廠商與客戶資訊");
+    return;
+  }
+
+  const repairData = {
+    repairId,
+    supplier,
+    customer,
+    address,
+    phone,
+    warranty,
+    product,
+    description,
+    createdAt: serverTimestamp()
+  };
+
+  try {
+    await setDoc(doc(db, "repairs", repairId), repairData);
+    alert("✅ 維修單已成功送出！");
+    document.getElementById('repair-form').reset();
+  } catch (err) {
+    console.error("寫入失敗", err);
+    alert("❌ 維修單送出失敗！");
+  }
+});
 
 window.onload = () => {
-  const repairListDiv = document.getElementById('repair-list');
-  repairListDiv.innerHTML = '🔒 確認登入中...';
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = '/login.html';
-      return;
-    }
-
-    try {
-      const snapshot = await getDocs(collection(db, 'repairs'));
-      if (snapshot.empty) {
-        repairListDiv.innerHTML = '😢 暫無維修資料';
-        return;
-      }
-
-      let html = '<table border="1" cellspacing="0" cellpadding="6">';
-      html += '<tr><th>流水號</th><th>廠商</th><th>狀況</th><th>狀態</th></tr>';
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        html += `
-          <tr>
-            <td><a href="repair-edit.html?id=${doc.id}" target="_blank">${doc.id}</a></td>
-            <td>${data.supplier || ''}</td>
-            <td>${data.description || ''}</td>
-            <td>${getStatusText(data.status)}</td>
-          </tr>
-        `;
-      });
-
-      html += '</table>';
-      repairListDiv.innerHTML = html;
-    } catch (err) {
-      repairListDiv.innerHTML = '❌ 載入失敗：' + err.message;
-    }
-  });
+  loadSuppliers();
 };
-
-function getStatusText(statusCode) {
-  switch (statusCode) {
-    case 1: return '新進維修';
-    case 2: return '已交付廠商';
-    case 3: return '維修完成';
-    case 4: return '客人已取貨';
-    default: return '未知';
-  }
-}
