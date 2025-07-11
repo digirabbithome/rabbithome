@@ -3,9 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <title>維修主頁</title>
+
+  <!-- 共用與維修樣式 -->
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/repair.css" />
+
   <script type="module" src="/js/repair.js"></script>
+  <style>
+    #repair-form {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    #repair-form table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 8px;
+    }
+
+    #repair-form input[type="text"],
+    #repair-form textarea,
+    #repair-form select {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    #repair-form button {
+      padding: 6px 12px;
+      border: none;
+      background-color: #f06292;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #repair-form button:hover {
+      background-color: #ec407a;
+    }
+  </style>
 </head>
 <body>
   <h2>🛠️ 維修主控台</h2>
@@ -20,26 +64,22 @@
           <td><button type="button" id="generate-id">自動產生</button></td>
         </tr>
         <tr>
-          <td>廠商</td>
-          <td colspan="2">
-            <select id="supplier-select"></select>
-          </td>
-        </tr>
-        <tr>
           <td>客人姓名</td>
-          <td colspan="2"><input type="text" id="customer" /></td>
+          <td><input type="text" id="customer" /></td>
+          <td>電話</td>
+          <td><input type="text" id="phone" /></td>
         </tr>
         <tr>
           <td>地址</td>
-          <td colspan="2"><input type="text" id="address" /></td>
+          <td colspan="3"><input type="text" id="address" /></td>
         </tr>
         <tr>
-          <td>電話</td>
-          <td colspan="2"><input type="text" id="phone" /></td>
+          <td>廠商</td>
+          <td colspan="3"><select id="supplier-select"></select></td>
         </tr>
         <tr>
           <td>保固狀況</td>
-          <td colspan="2">
+          <td colspan="3">
             <select id="warranty-select">
               <option value="有保卡（保固內）">有保卡（保固內）</option>
               <option value="有保卡（過保）">有保卡（過保）</option>
@@ -49,18 +89,18 @@
         </tr>
         <tr>
           <td>產品</td>
-          <td colspan="2"><textarea id="product" rows="2" cols="50"></textarea></td>
+          <td colspan="3"><textarea id="product" rows="2" cols="50"></textarea></td>
         </tr>
         <tr>
           <td>狀況</td>
-          <td colspan="2"><textarea id="description" rows="3" cols="50"></textarea></td>
+          <td colspan="3"><textarea id="description" rows="3" cols="50"></textarea></td>
         </tr>
         <tr>
           <td>上傳照片</td>
-          <td colspan="2"><input type="file" id="photo-upload" multiple /></td>
+          <td colspan="3"><input type="file" id="photo-upload" multiple /></td>
         </tr>
         <tr>
-          <td colspan="3"><button type="submit">✅ 完成送出</button></td>
+          <td colspan="4"><button type="submit">✅ 完成送出</button></td>
         </tr>
       </table>
     </form>
