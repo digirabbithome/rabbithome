@@ -1,120 +1,142 @@
 
-import { db, storage } from '/js/firebase.js'
+import { db } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
+  collection, getDocs, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import {
-  ref, uploadBytes, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
-let photoURLs = [];
+window.onload = async () => {
+  const listEl = document.getElementById('repair-list');
+  const searchInput = document.getElementById('search-input');
+  const statusButtons = document.querySelectorAll('.status-filter');
 
-window.onload = () => {
-  // 自動產生維修單號
-  const generateBtn = document.getElementById('generate-id');
-  const repairIdInput = document.getElementById('repair-id');
+  let allData = [];
+  let currentStatus = 'all';
+  let currentPage = 1;
+  const itemsPerPage = 50;
 
-  generateBtn.addEventListener('click', () => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const random = Math.floor(1000 + Math.random() * 9000);
-    const repairId = `R${yyyy}${mm}${dd}${random}`;
-    repairIdInput.value = repairId;
+  const renderTable = (data) => {
+    listEl.innerHTML = '';
+
+    const table = document.createElement('table');
+    table.classList.add('repair-table');
+
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>維修單號</th>
+        <th>客人姓名</th>
+        <th>廠商</th>
+        <th>狀態</th>
+        <th>建立時間</th>
+        <th>維修天數</th>
+        <th>編輯</th>
+      </tr>
+    `;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    data.forEach(item => {
+      const tr = document.createElement('tr');
+      const createdAt = item.createdAt?.toDate?.() || null;
+      const daysElapsed = createdAt
+        ? Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
+        : '-';
+
+      tr.innerHTML = `
+        <td><a href="repair-edit.html?id=${item.repairId}" target="_blank">${item.repairId}</a></td>
+        <td>${item.customer || ''}</td>
+        <td>${item.supplier || ''}</td>
+        <td>${getStatusText(item.status)}</td>
+        <td>${createdAt ? createdAt.toLocaleString() : '-'}</td>
+        <td>${daysElapsed} 天</td>
+        <td><a href="repair-edit.html?id=${item.repairId}" target="_blank">編輯</a></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    listEl.appendChild(table);
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 1: return '新進維修';
+      case 2: return '已交付廠商';
+      case 3: return '維修完成';
+      case 4: return '客人已取貨';
+      default: return '-';
+    }
+  };
+
+  const filterData = () => {
+    let filtered = [...allData];
+    const keyword = searchInput.value.trim().toLowerCase();
+
+    if (currentStatus !== 'all') {
+      filtered = filtered.filter(item => item.status === parseInt(currentStatus));
+    }
+
+    if (keyword) {
+      filtered = filtered.filter(item =>
+        (item.repairId || '').toLowerCase().includes(keyword) ||
+        (item.customer || '').toLowerCase().includes(keyword) ||
+        (item.supplier || '').toLowerCase().includes(keyword)
+      );
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const paginated = filtered.slice(start, start + itemsPerPage);
+
+    renderTable(paginated);
+    renderPagination(filtered.length);
+  };
+
+  const renderPagination = (totalItems) => {
+    const paginationEl = document.getElementById('pagination');
+    paginationEl.innerHTML = '';
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    if (totalPages <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '上一頁';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      currentPage--;
+      filterData();
+    };
+    paginationEl.appendChild(prevBtn);
+
+    const info = document.createElement('span');
+    info.textContent = `第 ${currentPage} 頁 / 共 ${totalPages} 頁`;
+    paginationEl.appendChild(info);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '下一頁';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      currentPage++;
+      filterData();
+    };
+    paginationEl.appendChild(nextBtn);
+  };
+
+  searchInput.addEventListener('input', () => {
+    currentPage = 1;
+    filterData();
   });
 
-  // 撈取廠商列表
-  const supplierSelect = document.getElementById('supplier-select');
-  const suppliersRef = collection(db, 'suppliers');
-  const q = query(suppliersRef, orderBy('code'));
-
-  getDocs(q).then((snapshot) => {
-    supplierSelect.innerHTML = '';
-    const defaultOption = document.createElement('option');
-    defaultOption.textContent = '請選擇廠商';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    supplierSelect.appendChild(defaultOption);
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const code = data.code || '';
-      const shortName = data.shortName || '';
-      const option = document.createElement('option');
-      option.value = shortName || code;
-      option.textContent = `${code} - ${shortName}`;
-      supplierSelect.appendChild(option);
+  statusButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentStatus = btn.dataset.status;
+      currentPage = 1;
+      filterData();
     });
   });
 
-  // 圖片上傳（加入時間戳避免檔名重複）
-  const photoInput = document.getElementById('photo-upload');
-  photoInput.addEventListener('change', async (event) => {
-    const files = event.target.files;
-    photoURLs = [];
+  // 撈資料
+  const q = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  allData = snapshot.docs.map(doc => doc.data());
 
-    for (const file of files) {
-      const timestamp = Date.now();
-      const uniqueName = `${timestamp}_${file.name}`;
-      const storageRef = ref(storage, `repairs/${uniqueName}`);
-      try {
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        photoURLs.push(url);
-      } catch (err) {
-        console.error('❌ 上傳失敗:', err.code, err.message);
-      }
-    }
-  });
-
-  // 表單送出
-  const repairForm = document.getElementById('repair-form');
-  repairForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const repairId = document.getElementById('repair-id').value.trim();
-    const customer = document.getElementById('customer').value.trim();
-    if (!repairId || !customer) {
-      alert('請填寫必填欄位：維修單號與客人姓名');
-      return;
-    }
-
-    const checkDoc = await getDoc(doc(db, 'repairs', repairId));
-    if (checkDoc.exists()) {
-      alert('⚠️ 此維修單號已存在，請更換單號！');
-      return;
-    }
-
-    const phone = document.getElementById('phone').value.trim();
-    const address = document.getElementById('address').value.trim();
-    const product = document.getElementById('product').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const warranty = document.getElementById('warranty-select')?.value || '';
-    const supplier = document.getElementById('supplier-select')?.value || '';
-
-    const data = {
-      repairId,
-      customer,
-      phone,
-      address,
-      product,
-      description,
-      warranty,
-      supplier,
-      createdAt: serverTimestamp(),
-      status: 1,
-      photos: photoURLs
-    };
-
-    try {
-      await setDoc(doc(db, 'repairs', repairId), data);
-      alert('✅ 維修單送出成功！');
-      repairForm.reset();
-      photoURLs = [];
-    } catch (error) {
-      console.error('❌ 寫入失敗:', error);
-      alert('❌ 維修單送出失敗，請稍後再試');
-    }
-  });
+  filterData();
 };
