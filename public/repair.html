@@ -4,11 +4,33 @@
   <meta charset="UTF-8">
   <title>維修清單</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="js/repair.js" defer></script>
+  <script src="/js/firebase.js"></script>
+  <script src="js/repair.js" type="module" defer></script>
 </head>
 <body>
-  <h1>📋 維修清單頁面</h1>
-  <div id="tabs">🔧 分頁按鈕區</div>
-  <div id="repair-list">維修單列表載入中...</div>
+  <h1>📋 維修清單</h1>
+
+  <form id="repair-form" style="margin-bottom: 20px;">
+    <h3>➕ 新增維修單</h3>
+    <input type="text" id="repairID" placeholder="維修單號" required><br>
+    <input type="text" id="supplier" placeholder="廠商"><br>
+    <input type="text" id="contact" placeholder="客人聯絡方式"><br>
+    <input type="text" id="warranty" placeholder="保固狀況"><br>
+    <textarea id="description" placeholder="維修說明" rows="3"></textarea><br>
+    <button type="submit">送出</button>
+  </form>
+
+  <div id="tabs">
+    <label>🔍 狀態篩選：</label>
+    <select id="state-filter">
+      <option value="all">全部</option>
+      <option value="1">新進維修</option>
+      <option value="2">已交付廠商</option>
+      <option value="3">維修完成</option>
+      <option value="4">客人已取貨</option>
+    </select>
+  </div>
+
+  <div id="repair-list" style="margin-top:20px;">載入中...</div>
 </body>
 </html>
