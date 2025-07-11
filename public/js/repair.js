@@ -48,17 +48,17 @@ window.onload = () => {
     });
   });
 
-  // 上傳照片邏輯
+  // 經典圖片上傳（原始檔名 + getDownloadURL 儲存）
   const photoInput = document.getElementById('photo-upload');
   photoInput.addEventListener('change', async (event) => {
     const files = event.target.files;
-    photoURLs = []; // 清空舊的
+    photoURLs = [];
 
     for (const file of files) {
-      const fileRef = ref(storage, `repairs/${file.name}`);
+      const storageRef = ref(storage, `repairs/${file.name}`);
       try {
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
         photoURLs.push(url);
       } catch (err) {
         console.error('上傳失敗:', err);
@@ -73,13 +73,11 @@ window.onload = () => {
 
     const repairId = document.getElementById('repair-id').value.trim();
     const customer = document.getElementById('customer').value.trim();
-
     if (!repairId || !customer) {
       alert('請填寫必填欄位：維修單號與客人姓名');
       return;
     }
 
-    // 檢查是否已存在相同 repairId
     const checkDoc = await getDoc(doc(db, 'repairs', repairId));
     if (checkDoc.exists()) {
       alert('⚠️ 此維修單號已存在，請更換單號！');
