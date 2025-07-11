@@ -1,6 +1,13 @@
 
-import { db } from '/js/firebase.js'
-import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { db, storage } from '/js/firebase.js'
+import {
+  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  ref, uploadBytes, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
+
+let photoURLs = [];
 
 window.onload = () => {
   // 自動產生維修單號
@@ -41,7 +48,25 @@ window.onload = () => {
     });
   });
 
-  // 表單送出邏輯
+  // 上傳照片邏輯
+  const photoInput = document.getElementById('photo-upload');
+  photoInput.addEventListener('change', async (event) => {
+    const files = event.target.files;
+    photoURLs = []; // 清空舊的
+
+    for (const file of files) {
+      const fileRef = ref(storage, `repairs/${file.name}`);
+      try {
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        photoURLs.push(url);
+      } catch (err) {
+        console.error('上傳失敗:', err);
+      }
+    }
+  });
+
+  // 表單送出
   const repairForm = document.getElementById('repair-form');
   repairForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -51,6 +76,13 @@ window.onload = () => {
 
     if (!repairId || !customer) {
       alert('請填寫必填欄位：維修單號與客人姓名');
+      return;
+    }
+
+    // 檢查是否已存在相同 repairId
+    const checkDoc = await getDoc(doc(db, 'repairs', repairId));
+    if (checkDoc.exists()) {
+      alert('⚠️ 此維修單號已存在，請更換單號！');
       return;
     }
 
@@ -71,15 +103,15 @@ window.onload = () => {
       warranty,
       supplier,
       createdAt: serverTimestamp(),
-      status: 1
+      status: 1,
+      photos: photoURLs
     };
 
     try {
       await setDoc(doc(db, 'repairs', repairId), data);
       alert('✅ 維修單送出成功！');
-
-      // 清空表單欄位（不清空 repairId）
       repairForm.reset();
+      photoURLs = [];
     } catch (error) {
       console.error('❌ 寫入失敗:', error);
       alert('❌ 維修單送出失敗，請稍後再試');
