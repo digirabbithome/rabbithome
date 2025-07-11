@@ -1,49 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>維修清單</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="/js/firebase.js"></script>
-  <script src="js/repair.js" type="module" defer></script>
+  <meta charset="UTF-8" />
+  <title>維修系統</title>
+  <script type="module" src="/js/firebase.js"></script>
+  <script type="module" src="/js/repair.js"></script>
 </head>
 <body>
-  <h1>📋 維修清單</h1>
-
-  <form id="repair-form" style="margin-bottom: 20px;">
-    <h3>➕ 新增維修單</h3>
-    <input type="text" id="repairID" placeholder="維修單號" required>
-    <button type="button" id="generate-id">自動取得流水號</button><br>
-    <select id="supplier"><option value="">請選擇廠商</option></select><br>
-    <input type="text" id="contact" placeholder="客人聯絡方式"><br>
-    <input type="text" id="product" placeholder="送修商品／型號"><br>
-    <label>保固狀況：</label>
-    <div class="radio-group">
-      <label><input type="radio" name="warranty" value="有保卡（保固內）" checked> 有保卡（保固內）</label>
-      <label><input type="radio" name="warranty" value="有保卡（過保）"> 有保卡（過保）</label>
-      <label><input type="radio" name="warranty" value="沒有保卡"> 沒有保卡</label>
-    </div>
-    <textarea id="description" placeholder="維修說明" rows="3"></textarea><br>
-    <button type="submit">送出</button>
-  </form>
-
-  <div id="tabs" style="margin-bottom:10px;">
-    🔍 狀態篩選：
-    <select id="state-filter">
-      <option value="all">全部</option>
-      <option value="1">新進維修</option>
-      <option value="2">已交付廠商</option>
-      <option value="3">維修完成</option>
-      <option value="4">客人已取貨</option>
-    </select>
-    <input type="text" id="search" placeholder="搜尋客人、廠商、說明" style="margin-left: 10px;">
-  </div>
-
-  <div id="repair-list">載入中...</div>
-  <div style="margin-top:10px;">
-    <button id="prev-page">上一頁</button>
-    <span id="page-info"></span>
-    <button id="next-page">下一頁</button>
-  </div>
+  <h2>📋 維修清單頁面</h2>
+  <div id="repair-list">🔧 載入中...</div>
 </body>
 </html>
