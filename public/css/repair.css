@@ -1,71 +1,56 @@
 
-body {
-  font-family: "Noto Sans TC", sans-serif;
-  padding: 20px;
-  background: #fff0f5;
-}
-h1, h2 {
-  color: #d63384;
-}
-label {
-  display: block;
-  margin: 8px 0;
-  font-weight: bold;
-  color: #444;
-}
-input, textarea, select {
+#repair-form input[type="text"],
+#repair-form textarea,
+#repair-form select {
+  width: 95%;
   padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  width: 100%;
-  margin-top: 4px;
-  box-sizing: border-box;
-}
-form {
-  background: #ffffff;
-  padding: 16px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(255, 192, 203, 0.3);
-}
-button {
-  background-color: #ff80ab;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-top: 10px;
-  cursor: pointer;
-}
-button:hover {
-  background-color: #ff4081;
-}
-#filter-buttons button {
-  margin: 5px 8px 5px 0;
-  padding: 6px 10px;
-  background-color: #ffc1e3;
-  color: #4a154b;
-  border: 1px solid #ffa4c5;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-#filter-buttons button:hover {
-  background-color: #ff9dc2;
-}
-#repair-list {
-  background: #fff;
-  padding: 12px;
-  margin-top: 16px;
-  border: 1px solid #ddd;
-  min-height: 100px;
-  border-radius: 10px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
+#repair-form table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 8px;
 }
-.full-width {
-  grid-column: 1 / -1;
+
+#repair-form button {
+  padding: 6px 12px;
+  border: none;
+  background-color: #f06292;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#repair-form button:hover {
+  background-color: #ec407a;
+}
+
+#filter-buttons {
+  margin: 10px 0;
+}
+
+#filter-buttons button {
+  margin-right: 6px;
+  padding: 6px 12px;
+  border: none;
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#filter-buttons button:hover {
+  background-color: #d81b60;
+  color: white;
+}
+
+#repair-list {
+  margin-top: 20px;
+}
+
+#pagination {
+  margin-top: 10px;
+  text-align: center;
 }
