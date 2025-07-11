@@ -1,5 +1,42 @@
 
-body { font-family: sans-serif; padding: 20px; background: #fff0f5; }
-h1 { color: #cc3366; }
-button { border-radius: 8px; padding: 6px 12px; background: #ff80ab; color: white; border: none; }
-input, textarea, select { margin: 4px 0; padding: 4px; width: 250px; }
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background-color: #fff8fb;
+  padding: 30px;
+  color: #333;
+}
+h1 {
+  color: #cc3366;
+  margin-bottom: 20px;
+}
+button {
+  background-color: #ff80ab;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+input, textarea, select {
+  margin-top: 6px;
+  margin-bottom: 12px;
+  padding: 6px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 250px;
+}
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  background: #fff0f5;
+  padding: 10px;
+  border-radius: 10px;
+  width: fit-content;
+  margin-bottom: 12px;
+}
+.radio-group label {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
