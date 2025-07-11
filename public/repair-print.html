@@ -1,107 +1,47 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>維修單列印</title>
+  <meta charset="UTF-8" />
+  <title>列印維修單</title>
   <style>
-    @page {
-      size: 100mm 150mm landscape;
-      margin: 5mm;
-    }
     body {
-      font-family: "Noto Sans TC", sans-serif;
-      width: 100mm;
-      height: 150mm;
-      padding: 5mm;
+      width: 150mm;
+      height: 100mm;
       margin: 0;
+      padding: 10mm;
+      font-family: sans-serif;
       box-sizing: border-box;
-      background: white;
     }
-    .box {
-      border: 1px solid #ccc;
-      padding: 6px;
-      font-size: 12px;
-      line-height: 1.4;
+    .repair-sheet {
+      border: 2px solid #333;
+      padding: 10px;
+      height: 100%;
     }
-    .title {
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 6px;
+    h2 {
+      margin: 0 0 10px 0;
     }
     .row {
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
     .label {
-      display: inline-block;
-      width: 70px;
       font-weight: bold;
-    }
-    .footer {
-      text-align: center;
-      font-size: 10px;
-      margin-top: 8px;
-      color: #888;
+      display: inline-block;
+      width: 30mm;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <div class="title">數位小兔 維修單</div>
-    <div class="row"><span class="label">維修單號：</span><span id="repairID"></span></div>
+  <div class="repair-sheet">
+    <h2>🛠️ 維修單</h2>
+    <div class="row"><span class="label">單號：</span><span id="repairID"></span></div>
     <div class="row"><span class="label">廠商：</span><span id="supplier"></span></div>
-    <div class="row"><span class="label">客人聯絡：</span><span id="contact"></span></div>
+    <div class="row"><span class="label">聯絡方式：</span><span id="contact"></span></div>
     <div class="row"><span class="label">商品：</span><span id="product"></span></div>
-    <div class="row"><span class="label">保固狀況：</span><span id="warranty"></span></div>
-    <div class="row"><span class="label">說明：</span><span id="description"></span></div>
+    <div class="row"><span class="label">保固狀態：</span><span id="warranty"></span></div>
+    <div class="row"><span class="label">狀況描述：</span><span id="description"></span></div>
   </div>
 
-  <div class="box" style="margin-top:8px;">
-    <div class="title">維修處理紀錄</div>
-    <div id="history-box"></div>
-  </div>
-
-  <div class="footer">
-    數位小兔 Digital Rabbit｜02-27592006｜LINE：@digirabbit
-  </div>
-
-  <script type="module">
-    import { db } from '/js/firebase.js';
-    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id") || "";
-
-    async function loadData() {
-      if (!id) return alert("無維修單號");
-      const ref = doc(db, "repairs", id);
-      const snap = await getDoc(ref);
-      if (!snap.exists()) return alert("查無資料");
-
-      const d = snap.data();
-      document.getElementById("repairID").textContent = d.repairID || "";
-      document.getElementById("supplier").textContent = d.supplier || "";
-      document.getElementById("contact").textContent = d.contact || "";
-      document.getElementById("warranty").textContent = d.warranty || "";
-      document.getElementById("description").textContent = d.description || "";
-      document.getElementById("product").textContent = d.product || "";
-
-      const history = d.history || {};
-      const box = document.getElementById("history-box");
-      const mapping = {
-        status2: "已交付廠商",
-        status3: "維修完成",
-        status4: "客人已取貨"
-      };
-      for (const key of Object.keys(mapping)) {
-        if (history[key]) {
-          const line = document.createElement("div");
-          line.textContent = `${mapping[key]}｜${history[key].time || ""}｜${history[key].by || ""}｜${history[key].note || ""}`;
-          box.appendChild(line);
-        }
-      }
-    }
-
-    loadData();
-  </script>
+  <script type="module" src="/js/repair-print.js"></script>
 </body>
 </html>
