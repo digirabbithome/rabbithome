@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -7,6 +8,55 @@
   <script type="module" src="/js/repair.js"></script>
 </head>
 <body>
+  <h2>🛠️ 新增維修單</h2>
+  <form id="repair-form">
+    <div>
+      <label>維修單號：</label>
+      <input type="text" id="repair-id" />
+      <button type="button" id="generate-id">自動產生單號</button>
+    </div>
+    <div>
+      <label>廠商：</label>
+      <select id="supplier-select"></select>
+    </div>
+    <div>
+      <label>客戶姓名：</label>
+      <input type="text" id="customer" />
+    </div>
+    <div>
+      <label>地址：</label>
+      <input type="text" id="address" />
+    </div>
+    <div>
+      <label>聯絡電話：</label>
+      <input type="text" id="phone" />
+    </div>
+    <div>
+      <label>保固狀況：</label>
+      <select id="warranty-select">
+        <option value="有保卡（保固內）">有保卡（保固內）</option>
+        <option value="有保卡（過保）">有保卡（過保）</option>
+        <option value="沒有保卡">沒有保卡</option>
+      </select>
+    </div>
+    <div>
+      <label>產品：</label>
+      <textarea id="product"></textarea>
+    </div>
+    <div>
+      <label>狀況描述：</label>
+      <textarea id="description"></textarea>
+    </div>
+    <div>
+      <label>上傳照片（最多3張）：</label>
+      <input type="file" id="photo-upload" multiple />
+    </div>
+    <div>
+      <button type="submit">✅ 送出維修單</button>
+    </div>
+  </form>
+
+  <hr />
   <h2>📋 維修清單頁面</h2>
   <div id="repair-list">🔧 載入中...</div>
 </body>

@@ -1,17 +1,15 @@
 
 import { db } from '/js/firebase.js';
 import {
-  collection,
-  getDocs,
-  doc,
-  setDoc,
-  addDoc,
-  updateDoc,
-  getDoc,
-  serverTimestamp,
-  query,
-  orderBy
+  collection, getDocs, doc, setDoc,
+  serverTimestamp, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
+
+const storage = getStorage();
 
 // 載入廠商資料
 async function loadSuppliers() {
@@ -55,10 +53,23 @@ document.getElementById('repair-form').addEventListener('submit', async (e) => {
   const warranty = document.getElementById('warranty-select').value.trim();
   const product = document.getElementById('product').value.trim();
   const description = document.getElementById('description').value.trim();
+  const files = document.getElementById('photo-upload').files;
 
   if (!repairId || !supplier || !customer) {
     alert("請完整填寫維修單號、廠商與客戶資訊");
     return;
+  }
+
+  const photoURLs = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const fileRef = ref(storage, `repairs/${repairId}/${files[i].name}`);
+      await uploadBytes(fileRef, files[i]);
+      const url = await getDownloadURL(fileRef);
+      photoURLs.push(url);
+    }
+  } catch (err) {
+    console.error("上傳圖片失敗", err);
   }
 
   const repairData = {
@@ -70,6 +81,7 @@ document.getElementById('repair-form').addEventListener('submit', async (e) => {
     warranty,
     product,
     description,
+    photos: photoURLs,
     createdAt: serverTimestamp()
   };
 
