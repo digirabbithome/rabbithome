@@ -4,11 +4,46 @@
   <meta charset="UTF-8">
   <title>維修單編輯</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="/js/firebase.js"></script>
   <script src="js/repair-edit.js" defer></script>
 </head>
 <body>
-  <h1>📝 編輯維修單</h1>
-  <div id="repair-info">顯示單號、廠商、客人聯絡方式</div>
-  <div id="repair-status">狀態流程區塊</div>
+  <h1>📝 維修單編輯頁</h1>
+  <div>
+    <label>維修單號：</label><span id="repair-id">REPAIR123</span><br>
+    <label>廠商：</label><span id="supplier">神牛公司</span><br>
+    <label>客人聯絡方式：</label><span id="contact">阿寶 0912345678</span><br>
+    <label>保固狀況：</label><span id="warranty">保內</span>
+  </div>
+
+  <table border="1" cellpadding="10" style="margin-top: 20px;">
+    <tr>
+      <th>送修狀態</th>
+      <th>負責人/進度時間</th>
+      <th>狀況</th>
+    </tr>
+    <tr>
+      <td>新進送修</td>
+      <td><span id="creator">花花（2025/07/11 09:30）</span></td>
+      <td><span id="description">相機無法開機，客人說前天還可以正常拍攝</span></td>
+    </tr>
+    <tr>
+      <td><button id="status-to-2">變更為「已交付廠商」</button></td>
+      <td><span id="status2-info">（尚未填寫）</span></td>
+      <td><textarea id="status2-text" rows="2" cols="40" placeholder="填寫物流單號、業務收走、報價等"></textarea></td>
+    </tr>
+    <tr>
+      <td><button id="status-to-3">變更為「維修完成」</button></td>
+      <td><span id="status3-info">（尚未填寫）</span></td>
+      <td><textarea id="status3-text" rows="2" cols="40" placeholder="填寫是否已收款等備註"></textarea></td>
+    </tr>
+    <tr>
+      <td><button id="status-to-4">變更為「客人已取貨」</button></td>
+      <td><span id="status4-info">（尚未填寫）</span></td>
+      <td><span>無</span></td>
+    </tr>
+  </table>
+
+  <button onclick="window.location.href='repair.html'" style="margin-top: 20px;">回到維修清單列表</button>
 </body>
 </html>
