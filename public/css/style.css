@@ -1,7 +1,22 @@
 
-body { font-family: "Noto Sans TC", sans-serif; padding: 20px; background: #f8f8ff; }
-h1, h2 { color: #333; }
-label { display: block; margin: 8px 0; }
-input, textarea, select { padding: 4px; margin-left: 4px; }
-form { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
-#repair-list { background: #fff; padding: 12px; margin-top: 16px; border: 1px solid #ddd; min-height: 100px; }
+body {
+  font-family: "Helvetica Neue", sans-serif;
+  padding: 30px;
+}
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+form label {
+  display: inline-block;
+  width: 100px;
+  margin-bottom: 10px;
+}
+input, select, button {
+  font-size: 16px;
+  padding: 6px;
+  margin-bottom: 12px;
+}
+button {
+  cursor: pointer;
+}

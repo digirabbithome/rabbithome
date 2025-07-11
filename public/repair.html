@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>維修系統</title>
+  <link rel="stylesheet" href="/css/style.css" />
   <script type="module" src="/js/firebase.js"></script>
   <script type="module" src="/js/repair.js"></script>
 </head>
@@ -10,21 +11,34 @@
   <h2>📋 維修清單頁面</h2>
   <form>
     <label for="repair-id">維修單號：</label>
-    <input type="text" id="repair-id" name="repair-id" />
-    <button type="button" id="auto-generate">自動取得</button>
-    <br /><br />
+    <input type="text" id="repair-id" />
+    <button type="button" id="auto-generate">自動取得</button><br />
+
+    <label for="customer">客戶名稱：</label>
+    <input type="text" id="customer" /><br />
+
+    <label for="phone">電話：</label>
+    <input type="text" id="phone" /><br />
+
+    <label for="product">商品：</label>
+    <input type="text" id="product" /><br />
 
     <label for="supplier">廠商：</label>
-    <select id="supplier"></select>
-    <br /><br />
+    <select id="supplier"></select><br />
 
     <label for="warranty">保固狀態：</label>
     <select id="warranty">
       <option value="保固內">有保卡（保固內）</option>
       <option value="過保">有保卡（過保）</option>
       <option value="無保">沒有保卡</option>
-    </select>
+    </select><br />
+
+    <label for="desc">維修狀況：</label><br />
+    <textarea id="desc" rows="4" cols="50"></textarea><br />
+
+    <button type="submit" id="submit">送出維修單</button>
   </form>
+
   <div id="repair-list">🔧 維修單列表載入中...</div>
 </body>
 </html>
