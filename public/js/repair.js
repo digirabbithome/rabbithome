@@ -1,65 +1,39 @@
 
-import { db } from '/js/firebase.js';
-import { collection, addDoc, getDocs, doc, getDoc, setDoc, serverTimestamp, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { db } from '/js/firebase.js'
+import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-lite.js'
 
-window.onload = async () => {
-  await loadSuppliers();
+window.onload = () => {
+  // 自動產生維修單號
+  const generateBtn = document.getElementById('generate-id');
+  const repairIdInput = document.getElementById('repair-id');
 
-  document.getElementById('generateID').addEventListener('click', generateRepairID);
-  document.getElementById('repairForm').addEventListener('submit', submitRepairForm);
+  generateBtn.addEventListener('click', () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const random = Math.floor(1000 + Math.random() * 9000);
+    const repairId = `R${yyyy}${mm}${dd}${random}`;
+    repairIdInput.value = repairId;
+  });
+
+  // 撈取廠商列表（suppliers）資料，排序依代號
+  const supplierSelect = document.getElementById('supplier-select');
+  const suppliersRef = collection(db, 'suppliers');
+  const q = query(suppliersRef, orderBy('code'));
+
+  getDocs(q).then((snapshot) => {
+    supplierSelect.innerHTML = '';
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const code = data.code || '';
+      const shortName = data.shortName || '';
+      const option = document.createElement('option');
+      option.value = code;
+      option.textContent = `${code} - ${shortName}`;
+      supplierSelect.appendChild(option);
+    });
+  }).catch((error) => {
+    console.error('載入廠商失敗:', error);
+  });
 };
-
-async function loadSuppliers() {
-  const supplierSelect = document.getElementById('supplier');
-  supplierSelect.innerHTML = '<option value="">載入中...</option>';
-  const snapshot = await getDocs(collection(db, 'suppliers'));
-  supplierSelect.innerHTML = '';
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    supplierSelect.innerHTML += `<option value="${data.name}">${data.code} - ${data.name}</option>`;
-  });
-}
-
-async function generateRepairID() {
-  const snapshot = await getDocs(query(collection(db, 'repairs'), orderBy('createdAt', 'desc'), limit(1)));
-  let newID = 'R0001';
-  if (!snapshot.empty) {
-    const last = snapshot.docs[0].id;
-    const num = parseInt(last.replace('R', '')) + 1;
-    newID = 'R' + num.toString().padStart(4, '0');
-  }
-  document.getElementById('repairID').value = newID;
-}
-
-async function submitRepairForm(e) {
-  e.preventDefault();
-  const id = document.getElementById('repairID').value.trim();
-  const name = document.getElementById('customerName').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const address = document.getElementById('address').value.trim();
-  const product = document.getElementById('product').value.trim();
-  const status = document.getElementById('status').value.trim();
-  const warranty = document.querySelector('input[name="warranty"]:checked')?.value || '';
-  const supplier = document.getElementById('supplier').value;
-
-  if (!id || !name || !phone || !status) {
-    alert('請填寫必填欄位！');
-    return;
-  }
-
-  const ref = doc(db, 'repairs', id);
-  await setDoc(ref, {
-    customerName: name,
-    phone,
-    address,
-    product,
-    warranty,
-    supplier,
-    status,
-    createdAt: serverTimestamp(),
-    currentStatus: 1
-  });
-
-  alert('✅ 維修單已送出');
-  document.getElementById('repairForm').reset();
-}
