@@ -48,20 +48,22 @@ window.onload = () => {
     });
   });
 
-  // 經典圖片上傳（原始檔名 + getDownloadURL 儲存）
+  // 圖片上傳（加入時間戳避免檔名重複）
   const photoInput = document.getElementById('photo-upload');
   photoInput.addEventListener('change', async (event) => {
     const files = event.target.files;
     photoURLs = [];
 
     for (const file of files) {
-      const storageRef = ref(storage, `repairs/${file.name}`);
+      const timestamp = Date.now();
+      const uniqueName = `${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `repairs/${uniqueName}`);
       try {
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
         photoURLs.push(url);
       } catch (err) {
-        console.error('上傳失敗:', err);
+        console.error('❌ 上傳失敗:', err.code, err.message);
       }
     }
   });
