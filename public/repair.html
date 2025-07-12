@@ -2,29 +2,76 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>🔧 維修主控台</title>
+  <title>維修主控台</title>
   <link rel="stylesheet" href="/css/repair.css" />
-  <script type="module" src="/js/repair.js" defer></script>
+  <script type="module" src="/js/repair.js"></script>
 </head>
 <body>
-  <h1>🔧 維修主控台</h1>
-  <div class="top-bar">
-    <button onclick="location.href='repair.html'">➕ 新增維修單</button>
-    <button onclick="location.href='repair.html'">📋 維修單列表</button>
+  <h2>🔧 維修主控台</h2>
+
+  <div id="view-switch" style="margin-bottom: 16px;">
+    <button id="show-form">➕ 新增維修單</button>
+    <button id="show-list">📋 維修單列表</button>
   </div>
 
-  <h2>🛠 <span style="color:#e35">維修單篩選</span> / 搜尋</h2>
-  <div class="filter-bar">
-    <button class="status-filter active" data-status="inprogress">未完成維修</button>
-    <button class="status-filter" data-status="all">全部</button>
-    <button class="status-filter" data-status="new">新進維修</button>
-    <button class="status-filter" data-status="vendor">已交付廠商</button>
-    <button class="status-filter" data-status="done">維修完成</button>
-    <button class="status-filter" data-status="finish">客人已取貨</button>
-    <input type="text" id="search-id" placeholder="🔍 搜尋維修單號" />
-    <input type="text" id="search-keyword" placeholder="🔍 姓名/電話/商品/廠商" />
+  <!-- 新增維修單區域 -->
+  <div id="form-section" style="display: none;">
+    <form id="repair-form">
+      <table>
+        <tr><td>維修單號</td><td><input type="text" id="repair-id" /><button type="button" id="generate-id">產生</button></td></tr>
+        <tr><td>客人姓名</td><td><input type="text" id="customer" /></td></tr>
+        <tr><td>電話</td><td><input type="text" id="phone" /></td></tr>
+        <tr><td>地址</td><td><input type="text" id="address" /></td></tr>
+        <tr><td>商品</td><td><input type="text" id="product" /></td></tr>
+        <tr><td>狀況描述</td><td><textarea id="description"></textarea></td></tr>
+        <tr><td>保固狀況</td>
+            <td>
+              <select id="warranty-select">
+                <option value="內">有保卡（保固內）</option>
+                <option value="過">有保卡（過保）</option>
+                <option value="無">沒有保卡</option>
+              </select>
+            </td></tr>
+        <tr><td>選擇廠商</td><td><select id="supplier-select"></select></td></tr>
+        <tr><td>上傳照片</td><td><input type="file" id="photo-upload" multiple /></td></tr>
+        <tr><td colspan="2"><button type="submit">✅ 送出維修單</button></td></tr>
+      </table>
+    </form>
   </div>
 
-  <div id="repair-list"></div>
+  <!-- 維修列表區 -->
+  <div id="list-section">
+    <h3>🔍 維修單篩選 / 搜尋</h3>
+    <div style="margin-bottom: 16px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+        <button class="status-btn" data-status="all">全部</button>
+        <button class="status-btn" data-status="1">新進維修</button>
+        <button class="status-btn" data-status="2">已交付廠商</button>
+        <button class="status-btn" data-status="3">維修完成</button>
+        <button class="status-btn" data-status="4">客人已取貨</button>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <input id="search-id" type="text" placeholder="🔢 維修單號（模糊）" />
+        <input id="search-keyword" type="text" placeholder="🔍 關鍵字：姓名 / 電話 / 廠商 / 商品 / 狀況" />
+      </div>
+    </div>
+    <div id="repair-list">載入中...</div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const formSection = document.getElementById('form-section');
+      const listSection = document.getElementById('list-section');
+      document.getElementById('show-form').onclick = () => {
+        formSection.style.display = 'block';
+        listSection.style.display = 'none';
+      };
+      document.getElementById('show-list').onclick = () => {
+        formSection.style.display = 'none';
+        listSection.style.display = 'block';
+      };
+      document.getElementById('show-list').click(); // 預設顯示列表
+    });
+  </script>
 </body>
 </html>
