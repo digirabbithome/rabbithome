@@ -12,11 +12,8 @@ let photoURLs = [];
 async function loadRepairList() {
   let listDiv = document.getElementById('repair-list');
   const selectedStatus = window.currentStatusFilter || 'all';
-  const keyword = (
-    document.getElementById('search-id')?.value.trim().toLowerCase() || ''
-  ) + ' ' + (
-    document.getElementById('search-keyword')?.value.trim().toLowerCase() || ''
-  );
+  const keyword1 = document.getElementById('search-id')?.value.trim().toLowerCase() || '';
+  const keyword2 = document.getElementById('search-keyword')?.value.trim().toLowerCase() || '';
 
   const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q2);
@@ -28,18 +25,13 @@ async function loadRepairList() {
 
   snapshot.forEach(docSnap => {
     const d = docSnap.data();
-    const keywordMatch = [
-      d.repairId,
-      d.customer,
-      d.phone,
-      d.address,
-      d.supplier,
-      d.product,
-      d.description
-    ].some(field => field?.toLowerCase().includes(keyword));
 
+    const matchRepairId = d.repairId?.toLowerCase().includes(keyword1);
+    const matchKeyword = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
+      .some(field => field?.toLowerCase().includes(keyword2));
     const statusMatch = selectedStatus === 'all' || String(d.status) === selectedStatus;
-    if (!keywordMatch || !statusMatch) return;
+
+    if (!matchRepairId || !matchKeyword || !statusMatch) return;
 
     let dateStr = '', diffDays = '', dayClass = '';
     if (d.createdAt?.toDate) {
@@ -57,7 +49,7 @@ async function loadRepairList() {
       <td>${dateStr}</td>
       <td>${d.repairId}</td>
       <td>${d.customer}</td>
-      <td>${d.supplier || ''}</td>
+      <td>${(d.supplier || '').substring(0, 4)}</td>
       <td>${d.product || ''}</td>
       <td>${shortDesc}</td>
       <td>${statusText}</td>
