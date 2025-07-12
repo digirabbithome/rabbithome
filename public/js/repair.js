@@ -1,159 +1,139 @@
-import { db } from '/js/firebase.js'
+
+import { db, storage } from '/js/firebase.js'
 import {
-  collection, query, orderBy, getDocs, doc, updateDoc
+  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  ref, uploadBytes, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
-let repairData = []
-let sortField = 'createdAt'
-let sortDirection = 'desc'
-let currentPage = 1
-const pageSize = 50
-let currentFilter = ['2', '3']
+let photoURLs = [];
 
-const nickname = localStorage.getItem('nickname') || '未登入'
+async function loadRepairList() {
+  const listDiv = document.getElementById('repair-list');
+  const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q2);
 
-function renderTable() {
-  const listDiv = document.getElementById('repair-list')
-  const keyword1 = document.getElementById('search-id')?.value.trim().toLowerCase() || ''
-  const keyword2 = document.getElementById('search-keyword')?.value.trim().toLowerCase() || ''
-
-  let filtered = repairData.filter(d => {
-    if (!d.repairId) return false
-    const match1 = d.repairId.toLowerCase().includes(keyword1)
-    const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
-      .some(field => field?.toLowerCase().includes(keyword2))
-    const matchStatus = currentFilter.includes(String(d.status))
-    return match1 && match2 && matchStatus
-  })
-
-  const totalPages = Math.ceil(filtered.length / pageSize)
-  currentPage = Math.min(currentPage, totalPages || 1)
-  const startIdx = (currentPage - 1) * pageSize
-  const paginated = filtered.slice(startIdx, startIdx + pageSize)
-
-  // 排序
-  paginated.sort((a, b) => {
-    let valA = a[sortField], valB = b[sortField]
-    if (valA?.toDate) valA = valA.toDate()
-    if (valB?.toDate) valB = valB.toDate()
-    if (typeof valA === 'string') valA = valA.toLowerCase()
-    if (typeof valB === 'string') valB = valB.toLowerCase()
-    if (valA < valB) return sortDirection === 'asc' ? -1 : 1
-    if (valA > valB) return sortDirection === 'asc' ? 1 : -1
-    return 0
-  })
-
-  const arrow = sortDirection === 'asc' ? '▲' : '▼'
-  let html = `<table><thead><tr>
-    <th data-sort="createdAt">送修時間 ${sortField==='createdAt'?arrow:''}</th>
-    <th data-sort="repairId">維修單號 ${sortField==='repairId'?arrow:''}</th>
-    <th data-sort="customer">姓名 ${sortField==='customer'?arrow:''}</th>
-    <th data-sort="supplier">廠商 ${sortField==='supplier'?arrow:''}</th>
-    <th data-sort="product">商品 ${sortField==='product'?arrow:''}</th>
-    <th data-sort="description">描述 ${sortField==='description'?arrow:''}</th>
-    <th data-sort="status">狀態 ${sortField==='status'?arrow:''}</th>
-    <th data-sort="diff">維修天數 ${sortField==='diff'?arrow:''}</th>
-    <th>編輯</th></tr></thead><tbody>`
-  paginated.forEach(d => {
-    const createdAt = d.createdAt?.toDate?.()
-    const dateStr = createdAt ? `${createdAt.getFullYear()}/${createdAt.getMonth()+1}/${createdAt.getDate()}` : ''
-    const diff = createdAt ? Math.floor((new Date() - createdAt) / (1000*60*60*24)) : 0
-    const redClass = diff > 7 ? 'style="background:#faa"' : ''
-    const desc = d.description?.slice(0,15) + (d.description?.length > 15 ? '…' : '')
-    const statusText = ['❓','新進','已交廠商','完成','已取貨'][d.status] || '❓'
-
-    const iconList = []
-    if (d.status === 1) iconList.push({ icon: '➡️', next: 2 }, { icon: '✅', next: 3 }, { icon: '↩️', next: 3 })
-    else if (d.status === 2) iconList.push({ icon: '✅', next: 3 }, { icon: '↩️', next: 3 })
-    else if (d.status === 3) iconList.push({ icon: '📦', next: 4 })
-
-    let iconHtml = ''
-    iconList.forEach(({ icon, next }) => {
-      iconHtml += `<span class="status-btn" data-id="${d.repairId}" data-next="${next}" style="cursor:pointer">${icon}</span> `
-    })
-
+  let html = '<table border="1" cellpadding="6"><tr><th>維修單號</th><th>客人姓名</th><th>廠商</th><th>狀態</th></tr>';
+  snapshot.forEach(docSnap => {
+    const d = docSnap.data();
     html += `<tr>
-      <td>${dateStr}</td>
       <td>${d.repairId}</td>
       <td>${d.customer}</td>
-      <td>${(d.supplier || '').substring(0,4)}</td>
-      <td>${d.product}</td>
-      <td>${desc}</td>
-      <td>${statusText}</td>
-      <td ${redClass}>${diff}</td>
-      <td>${iconHtml}</td></tr>`
-  })
+      <td>${d.supplier?.substring(0, 4) || ''}</td>
+      <td>${['❓','🆕','🚚','🔧','✅'][d.status] || '❓'}</td>
+    </tr>`;
+  });
+  html += '</table>';
+  listDiv.innerHTML = html;
+}
 
-  html += '</tbody></table>'
+window.onload = () => {
+  const generateBtn = document.getElementById('generate-id');
+  const repairIdInput = document.getElementById('repair-id');
+  generateBtn?.addEventListener('click', () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const random = Math.floor(1000 + Math.random() * 9000);
+    const repairId = `R${yyyy}${mm}${dd}${random}`;
+    repairIdInput.value = repairId;
+  });
 
-  html += `<div style="margin-top:1em;text-align:center">`
-  if (currentPage > 1) html += `<button onclick="changePage(${currentPage-1})">⬅️ 上一頁</button> `
-  html += `第 ${currentPage} / ${totalPages || 1} 頁`
-  if (currentPage < totalPages) html += ` <button onclick="changePage(${currentPage+1})">下一頁 ➡️</button>`
-  html += '</div>'
+  const supplierSelect = document.getElementById('supplier-select');
+  const suppliersRef = collection(db, 'suppliers');
+  const q = query(suppliersRef, orderBy('code'));
+  getDocs(q).then((snapshot) => {
+    supplierSelect.innerHTML = '';
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = '請選擇廠商';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    supplierSelect.appendChild(defaultOption);
 
-  listDiv.innerHTML = html
-  // 排序功能
-  document.querySelectorAll('th[data-sort]').forEach(th => {
-    th.onclick = () => {
-      const field = th.dataset.sort
-      if (sortField === field) {
-        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
-      } else {
-        sortField = field
-        sortDirection = 'asc'
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const code = data.code || '';
+      const shortName = data.shortName || '';
+      const option = document.createElement('option');
+      option.value = shortName;
+      option.textContent = `${code} - ${shortName}`;
+      supplierSelect.appendChild(option);
+    });
+  });
+
+  const photoInput = document.getElementById('photo-upload');
+  photoInput?.addEventListener('change', async (event) => {
+    const files = event.target.files;
+    photoURLs = [];
+
+    for (const file of files) {
+      const storageRef = ref(storage, `repairs/${file.name}`);
+      try {
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        photoURLs.push(url);
+      } catch (err) {
+        console.error('上傳失敗:', err);
       }
-      renderTable()
     }
-  })
+  });
 
-  // 狀態變更功能
-  document.querySelectorAll('.status-btn').forEach(btn => {
-    btn.onclick = async () => {
-      const repairId = btn.dataset.id
-      const newStatus = parseInt(btn.dataset.next)
-      if (!repairId) return alert("⚠️ 此筆資料 repairId 無效，請確認資料庫！")
-      const ref = doc(db, 'repairs', repairId)
-      await updateDoc(ref, {
-        status: newStatus,
-        [`history.${newStatus}`]: {
-          user: nickname,
-          time: new Date().toISOString()
-        }
-      })
-      alert(`✅ 狀態已更新為 ${newStatus}！`)
-      loadData()
+  const repairForm = document.getElementById('repair-form');
+  repairForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const repairId = document.getElementById('repair-id').value.trim();
+    const customer = document.getElementById('customer').value.trim();
+    if (!repairId || !customer) {
+      alert('請填寫必填欄位：維修單號與客人姓名');
+      return;
     }
-  })
-}
 
-window.changePage = p => {
-  currentPage = p
-  renderTable()
-}
-
-window.onload = async () => {
-  document.querySelectorAll('.status-filter').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.status-filter').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-      const s = btn.dataset.status
-      currentFilter = s === 'all' ? ['1','2','3','4'] :
-                      s === 'new' ? ['1'] :
-                      s === 'vendor' ? ['2'] :
-                      s === 'done' ? ['3'] :
-                      s === 'finish' ? ['4'] :
-                      ['2','3']
-      currentPage = 1
-      renderTable()
+    const checkDoc = await getDoc(doc(db, 'repairs', repairId));
+    if (checkDoc.exists()) {
+      alert('⚠️ 此維修單號已存在，請更換單號！');
+      return;
     }
-  })
-  await loadData()
-}
 
-async function loadData() {
-  const q = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'))
-  const snap = await getDocs(q)
-  repairData = snap.docs.map(doc => ({ ...doc.data(), repairId: doc.id }))
-  renderTable()
-}
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const product = document.getElementById('product').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const warranty = document.getElementById('warranty-select')?.value || '';
+    const supplier = document.getElementById('supplier-select')?.value || '';
+
+    const data = {
+      repairId,
+      customer,
+      phone,
+      address,
+      product,
+      description,
+      warranty,
+      supplier,
+      createdAt: serverTimestamp(),
+      status: 1,
+      photos: photoURLs
+    };
+
+    try {
+      await setDoc(doc(db, 'repairs', repairId), data);
+      alert('✅ 維修單送出成功！');
+      repairForm.reset();
+      photoURLs = [];
+
+      // 切回列表視圖
+      document.getElementById('show-list')?.click();
+      // 重新撈資料刷新列表
+      loadRepairList();
+
+    } catch (error) {
+      console.error('❌ 寫入失敗:', error);
+      alert('❌ 維修單送出失敗，請稍後再試');
+    }
+  });
+
+  // 頁面初次載入顯示維修列表
+  loadRepairList();
+};
