@@ -150,6 +150,6 @@ window.onload = async () => {
 async function loadData() {
   const q = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  repairData = snap.docs.map(doc => doc.data())
+  repairData = snap.docs.map(doc => ({ ...doc.data(), repairId: doc.id }))
   renderTable()
 }
