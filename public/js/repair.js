@@ -19,11 +19,12 @@ function renderTable() {
   const selectedStatus = window.currentStatusFilter || 'all';
 
   let rows = repairData.map(d => {
-    const match1 = d.repairId?.toLowerCase().includes(keyword1);
-    const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
+    const keywordMatch = [d.repairId, d.customer, d.phone, d.address, d.supplier, d.product, d.description]
+      .some(field => field?.toLowerCase().includes(keyword1)) &&
+      [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
       .some(field => field?.toLowerCase().includes(keyword2));
     const statusMatch = selectedStatus === 'all' || String(d.status) === selectedStatus;
-    if (!match1 || !match2 || !statusMatch) return null;
+    if (!keywordMatch || !statusMatch) return null;
 
     const date = d.createdAt?.toDate?.();
     const dateStr = date ? `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}` : '';
@@ -108,7 +109,7 @@ async function loadRepairList() {
   renderTable();
 }
 
-window.onload = async () => {
+window.onload = () => {
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
@@ -117,87 +118,7 @@ window.onload = async () => {
       renderTable();
     });
   });
-
   document.getElementById('search-id')?.addEventListener('input', renderTable);
   document.getElementById('search-keyword')?.addEventListener('input', renderTable);
-
-  document.getElementById('generate-id')?.addEventListener('click', () => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const random = Math.floor(1000 + Math.random() * 9000);
-    const repairId = `R${yyyy}${mm}${dd}${random}`;
-    document.getElementById('repair-id').value = repairId;
-  });
-
-  const supplierSelect = document.getElementById('supplier-select');
-  const suppliersRef = collection(db, 'suppliers');
-  const q = query(suppliersRef, orderBy('code'));
-  const suppliersSnap = await getDocs(q);
-  supplierSelect.innerHTML = '<option disabled selected>請選擇廠商</option>';
-  suppliersSnap.forEach(doc => {
-    const d = doc.data();
-    const option = document.createElement('option');
-    option.value = d.shortName || '';
-    option.textContent = `${d.code || ''} - ${d.shortName || ''}`;
-    supplierSelect.appendChild(option);
-  });
-
-  document.getElementById('photo-upload')?.addEventListener('change', async (event) => {
-    const files = event.target.files;
-    photoURLs = [];
-    for (const file of files) {
-      const storageRef = ref(storage, `repairs/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      photoURLs.push(url);
-    }
-  });
-
-  document.getElementById('repair-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const repairId = document.getElementById('repair-id').value.trim();
-    const customer = document.getElementById('customer').value.trim();
-    if (!repairId || !customer) {
-      alert('請填寫維修單號與客人姓名');
-      return;
-    }
-
-    const phone = document.getElementById('phone').value.trim();
-    const address = document.getElementById('address').value.trim();
-    const product = document.getElementById('product').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const warranty = document.getElementById('warranty-select')?.value || '';
-    const supplier = document.getElementById('supplier-select')?.value || '';
-
-    const check = await getDoc(doc(db, 'repairs', repairId));
-    if (check.exists()) {
-      alert('⚠️ 此維修單號已存在，請更換！');
-      return;
-    }
-
-    const data = {
-      repairId,
-      customer,
-      phone,
-      address,
-      product,
-      description,
-      warranty,
-      supplier,
-      createdAt: serverTimestamp(),
-      status: 1,
-      photos: photoURLs
-    };
-
-    await setDoc(doc(db, 'repairs', repairId), data);
-    alert('✅ 維修單送出成功！');
-    document.getElementById('repair-form').reset();
-    photoURLs = [];
-    document.getElementById('show-list')?.click();
-    loadRepairList();
-  });
-
   loadRepairList();
 };
