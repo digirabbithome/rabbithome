@@ -74,6 +74,21 @@
   <!-- 維修列表區 -->
   <div id="list-section">
     <h3>🔍 維修單篩選 / 搜尋</h3>
+    
+<div id="search-bar" style="margin-bottom: 16px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+    <button class="status-btn" data-status="all">全部</button>
+    <button class="status-btn" data-status="1">新進維修</button>
+    <button class="status-btn" data-status="2">已交付廠商</button>
+    <button class="status-btn" data-status="3">維修完成</button>
+    <button class="status-btn" data-status="4">客人已取貨</button>
+  </div>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <input id="search-id" type="text" placeholder="🔢 維修單號搜尋（精準）" />
+    <input id="search-keyword" type="text" placeholder="🔍 姓名 / 電話 / 地址 / 廠商 / 商品 / 狀況..." />
+  </div>
+</div>
+
     <div id="repair-list">載入中...</div>
   </div>
 

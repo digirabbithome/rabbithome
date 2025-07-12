@@ -1,64 +1,22 @@
 
-body {
-  font-family: 'Noto Sans TC', sans-serif;
-  background: #fffafc;
-  color: #333;
-  padding: 20px;
-}
-
-h2, h3 {
-  color: #d45d79;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-th, td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-th {
-  background-color: #ffe6ec;
-  font-weight: bold;
-  color: #333;
-}
-
-tr:hover {
-  background-color: #fff0f5;
-}
-
-button {
-  background-color: #ff8fa3;
+.status-btn {
+  padding: 6px 12px;
   border: none;
-  padding: 8px 16px;
-  color: white;
-  border-radius: 8px;
+  border-radius: 6px;
+  background-color: #eee;
   cursor: pointer;
   font-size: 14px;
 }
-
-button:hover {
-  background-color: #e76e89;
+.status-btn.active {
+  background-color: #ff8fa3;
+  color: white;
 }
-
-#view-switch {
-  margin-bottom: 20px;
-}
-
-textarea, input, select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  margin-bottom: 8px;
+#search-bar input {
+  padding: 6px;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
+}
+td.red-bg {
+  background-color: #ffe5e5;
 }
