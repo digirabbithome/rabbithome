@@ -64,14 +64,14 @@ function renderTable() {
     const desc = d.description?.slice(0,15) + (d.description?.length > 15 ? '…' : '')
     const statusText = ['❓','新進','已交廠商','完成','已取貨'][d.status] || '❓'
 
-    let icons = ''
-    if (d.status === 1) icons = '➡️✅↩️'
-    else if (d.status === 2) icons = '✅↩️'
-    else if (d.status === 3) icons = '📦'
+    const iconList = []
+    if (d.status === 1) iconList.push({ icon: '➡️', next: 2 }, { icon: '✅', next: 3 }, { icon: '↩️', next: 3 })
+    else if (d.status === 2) iconList.push({ icon: '✅', next: 3 }, { icon: '↩️', next: 3 })
+    else if (d.status === 3) iconList.push({ icon: '📦', next: 4 })
 
     let iconHtml = ''
-    icons.split('').forEach(icon => {
-      iconHtml += `<span class="status-btn" data-id="${d.repairId}" data-now="${d.status}" data-icon="${icon}" style="cursor:pointer">${icon}</span> `
+    iconList.forEach(({ icon, next }) => {
+      iconHtml += `<span class="status-btn" data-id="${d.repairId}" data-next="${next}" style="cursor:pointer">${icon}</span> `
     })
 
     html += `<tr>
@@ -111,10 +111,7 @@ function renderTable() {
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
       const repairId = btn.dataset.id
-      const now = parseInt(btn.dataset.now)
-      const icon = btn.dataset.icon
-      const newStatus = icon === '➡️' ? 2 : icon === '✅' ? 3 : icon === '↩️' ? 3 : icon === '📦' ? 4 : now
-      if (newStatus <= now) return alert('狀態無法回復！')
+      const newStatus = parseInt(btn.dataset.next)
       const ref = doc(db, 'repairs', repairId)
       await updateDoc(ref, {
         status: newStatus,
@@ -123,7 +120,7 @@ function renderTable() {
           time: new Date().toISOString()
         }
       })
-      alert(`✅ 已更新狀態為 ${newStatus}`)
+      alert(`✅ 狀態更新為 ${newStatus}！`)
       loadData()
     }
   })
