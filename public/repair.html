@@ -91,5 +91,23 @@
     （這裡之後可以補上新增表單）
    </div>
   </div>
+  <script>
+   document.addEventListener('DOMContentLoaded', () => {
+  const btnAdd = document.getElementById('btn-add');
+  const btnList = document.getElementById('btn-list');
+  const formSection = document.getElementById('form-section');
+  const listSection = document.getElementById('list-section');
+
+  btnAdd.addEventListener('click', () => {
+    formSection.style.display = 'block';
+    listSection.style.display = 'none';
+  });
+
+  btnList.addEventListener('click', () => {
+    formSection.style.display = 'none';
+    listSection.style.display = 'block';
+  });
+});
+  </script>
  </body>
 </html>
