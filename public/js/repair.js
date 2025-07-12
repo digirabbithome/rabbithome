@@ -111,6 +111,9 @@ function renderTable() {
   // 狀態變更
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
+      const repairId = btn.dataset.id;
+      if (!repairId) { alert('⚠️ 無效的 repairId，操作取消！'); return; }
+      console.log('🛠️ 正在更新 repairId:', repairId);
       const repairId = btn.dataset.id
       const newStatus = parseInt(btn.dataset.next)
       const ref = doc(db, 'repairs', repairId)
@@ -151,6 +154,6 @@ window.onload = async () => {
 async function loadData() {
   const q = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  repairData = snap.docs.map(doc => ({ ...doc.data(), repairId: doc.id }))
+  repairData = snap.docs.map(doc => { const data = doc.data(); if (!doc.id) return null; return { ...data, repairId: doc.id }; }).filter(x => x)
   renderTable()
 }
