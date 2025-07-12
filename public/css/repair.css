@@ -1,56 +1,98 @@
 
-#repair-form input[type="text"],
-#repair-form textarea,
-#repair-form select {
-  width: 95%;
-  padding: 6px;
-  border: 1px solid #aaa;
-  border-radius: 4px;
-  font-size: 14px;
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background: #fff4fa;
+  margin: 0;
+  padding: 20px;
 }
 
-#repair-form table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 8px;
+.page-wrapper {
+  max-width: 1200px;
+  margin: auto;
 }
 
-#repair-form button {
-  padding: 6px 12px;
+h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.mode-toggle button {
+  margin-right: 10px;
+  padding: 8px 16px;
   border: none;
-  background-color: #f06292;
-  color: white;
-  border-radius: 6px;
+  background-color: #ffd1dc;
+  border-radius: 8px;
+  font-weight: bold;
   cursor: pointer;
+  font-size: 15px;
 }
 
-#repair-form button:hover {
-  background-color: #ec407a;
-}
-
-#filter-buttons {
-  margin: 10px 0;
-}
-
-#filter-buttons button {
-  margin-right: 6px;
-  padding: 6px 12px;
-  border: none;
-  background-color: #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#filter-buttons button:hover {
-  background-color: #d81b60;
+.mode-toggle button:hover {
+  background-color: #f48fb1;
   color: white;
 }
 
-#repair-list {
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 0 10px #e0e0e0;
   margin-top: 20px;
 }
 
-#pagination {
-  margin-top: 10px;
-  text-align: center;
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.row label {
+  width: 100px;
+}
+
+.row input[type="text"],
+.row textarea,
+.row select {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.row input[type="text"]#repair-id {
+  width: 140px;
+}
+
+.row input[type="text"]#customer {
+  width: 180px;
+}
+
+#generate-id {
+  background-color: #ff80ab;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#generate-id:hover {
+  background-color: #ec407a;
+}
+
+.submit-btn {
+  background-color: #f06292;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background-color: #d81b60;
 }
