@@ -309,4 +309,3 @@ window.onload = async () => {
 
   filterData();
 };
-
