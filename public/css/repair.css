@@ -1,31 +1,22 @@
-body {
-  font-family: sans-serif;
-  background: #fff5f8;
-  padding: 1em;
-}
-h1, h2 { margin-bottom: 0.5em; }
-button {
-  margin: 0.2em;
-  padding: 0.4em 1em;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background: #fff;
+
+.status-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #eee;
   cursor: pointer;
+  font-size: 14px;
 }
-button.active {
-  background: #ffb6c1;
+.status-btn.active {
+  background-color: #ff8fa3;
+  color: white;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1em;
-}
-th, td {
+#search-bar input {
+  padding: 6px;
   border: 1px solid #ccc;
-  padding: 0.5em;
-  text-align: center;
+  border-radius: 6px;
+  font-size: 14px;
 }
-th[data-sort] {
-  cursor: pointer;
-  background: #f9f9f9;
+td.red-bg {
+  background-color: #ffe5e5;
 }
