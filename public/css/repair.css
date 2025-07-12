@@ -1,37 +1,33 @@
 
-#repair-form input[type="text"],
-#repair-form textarea,
-#repair-form select {
-  width: 95%;
-  padding: 6px;
-  border: 1px solid #aaa;
-  border-radius: 4px;
-  font-size: 14px;
+body {
+  font-family: "Segoe UI", sans-serif;
+  background-color: #fdfdfd;
+  color: #333;
+  padding: 20px;
 }
-
-#repair-form table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 8px;
+.page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
 }
-
-#repair-form button {
-  padding: 6px 12px;
+#top-buttons {
+  margin-bottom: 16px;
+}
+#top-buttons button {
+  margin-right: 10px;
+  padding: 8px 14px;
+  background-color: #f8bbd0;
   border: none;
-  background-color: #f06292;
-  color: white;
-  border-radius: 6px;
+  border-radius: 12px;
+  font-size: 16px;
   cursor: pointer;
 }
-
-#repair-form button:hover {
-  background-color: #ec407a;
+#top-buttons button:hover {
+  background-color: #f06292;
+  color: white;
 }
-
 #filter-buttons {
-  margin: 10px 0;
+  margin-bottom: 10px;
 }
-
 #filter-buttons button {
   margin-right: 6px;
   padding: 6px 12px;
@@ -40,17 +36,68 @@
   border-radius: 6px;
   cursor: pointer;
 }
-
 #filter-buttons button:hover {
   background-color: #d81b60;
   color: white;
 }
-
-#repair-list {
-  margin-top: 20px;
+#filter-buttons button.active {
+  background-color: #d81b60;
+  color: white;
 }
-
+#search-bar {
+  margin-bottom: 12px;
+}
+#search-bar input {
+  padding: 6px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #eee;
+  padding: 8px;
+  text-align: left;
+}
+th {
+  background-color: #fce4ec;
+  cursor: pointer;
+}
+th.sort-asc::after {
+  content: " ▲";
+}
+th.sort-desc::after {
+  content: " ▼";
+}
 #pagination {
   margin-top: 10px;
   text-align: center;
+}
+#repair-form {
+  margin-top: 20px;
+}
+#repair-form input, #repair-form textarea, #repair-form select {
+  width: 95%;
+  padding: 6px;
+  margin: 4px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+#repair-form textarea {
+  height: 80px;
+}
+#repair-form button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #f06292;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#repair-form button:hover {
+  background-color: #ec407a;
 }
