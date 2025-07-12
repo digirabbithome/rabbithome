@@ -57,6 +57,7 @@ function renderTable() {
     <th>編輯</th></tr></thead><tbody>`
 
   paginated.forEach(d => {
+    if (!d.repairId) return;
     const createdAt = d.createdAt?.toDate?.()
     const dateStr = createdAt ? `${createdAt.getFullYear()}/${createdAt.getMonth()+1}/${createdAt.getDate()}` : ''
     const diff = createdAt ? Math.floor((new Date() - createdAt) / (1000*60*60*24)) : 0
