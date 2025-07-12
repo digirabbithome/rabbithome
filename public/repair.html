@@ -1,88 +1,63 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>維修主頁</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <title>維修系統</title>
+  <script type="module" src="/js/firebase.js"></script>
   <script type="module" src="/js/repair.js"></script>
 </head>
 <body>
-  <h2>🛠️ 維修主控台</h2>
-
-  <section>
-    <h3>➕ 新增維修單</h3>
-    <form id="repair-form">
-      <table border="0" cellspacing="8">
-        <tr>
-          <td>維修單號</td>
-          <td><input type="text" id="repair-id" /></td>
-          <td><button type="button" id="generate-id">自動產生</button></td>
-        </tr>
-        <tr>
-          <td>廠商</td>
-          <td colspan="2">
-            <select id="supplier-select"></select>
-          </td>
-        </tr>
-        <tr>
-          <td>客人姓名</td>
-          <td colspan="2"><input type="text" id="customer" /></td>
-        </tr>
-        <tr>
-          <td>地址</td>
-          <td colspan="2"><input type="text" id="address" /></td>
-        </tr>
-        <tr>
-          <td>電話</td>
-          <td colspan="2"><input type="text" id="phone" /></td>
-        </tr>
-        <tr>
-          <td>保固狀況</td>
-          <td colspan="2">
-            <select id="warranty-select">
-              <option value="有保卡（保固內）">有保卡（保固內）</option>
-              <option value="有保卡（過保）">有保卡（過保）</option>
-              <option value="沒有保卡">沒有保卡</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td>產品</td>
-          <td colspan="2"><textarea id="product" rows="2" cols="50"></textarea></td>
-        </tr>
-        <tr>
-          <td>狀況</td>
-          <td colspan="2"><textarea id="description" rows="3" cols="50"></textarea></td>
-        </tr>
-        <tr>
-          <td>上傳照片</td>
-          <td colspan="2"><input type="file" id="photo-upload" multiple /></td>
-        </tr>
-        <tr>
-          <td colspan="3"><button type="submit">✅ 完成送出</button></td>
-        </tr>
-      </table>
-    </form>
-  </section>
-
-  <hr/>
-
-  <section>
-    <h3>🔍 維修單篩選 / 搜尋</h3>
-    <input type="text" id="search" placeholder="搜尋流水號、客人、廠商、商品..." />
-    <div id="filter-buttons">
-      <button data-status="all">全部</button>
-      <button data-status="1">新進維修</button>
-      <button data-status="2">已交付廠商</button>
-      <button data-status="3">維修完成</button>
-      <button data-status="4">客人已取貨</button>
+  <h2>🛠️ 新增維修單</h2>
+  <form id="repair-form">
+    <div>
+      <label>維修單號：</label>
+      <input type="text" id="repair-id" />
+      <button type="button" id="generate-id">自動產生單號</button>
     </div>
-  </section>
+    <div>
+      <label>廠商：</label>
+      <select id="supplier-select"></select>
+    </div>
+    <div>
+      <label>客戶姓名：</label>
+      <input type="text" id="customer" />
+    </div>
+    <div>
+      <label>地址：</label>
+      <input type="text" id="address" />
+    </div>
+    <div>
+      <label>聯絡電話：</label>
+      <input type="text" id="phone" />
+    </div>
+    <div>
+      <label>保固狀況：</label>
+      <select id="warranty-select">
+        <option value="有保卡（保固內）">有保卡（保固內）</option>
+        <option value="有保卡（過保）">有保卡（過保）</option>
+        <option value="沒有保卡">沒有保卡</option>
+      </select>
+    </div>
+    <div>
+      <label>產品：</label>
+      <textarea id="product"></textarea>
+    </div>
+    <div>
+      <label>狀況描述：</label>
+      <textarea id="description"></textarea>
+    </div>
+    <div>
+      <label>上傳照片（最多3張）：</label>
+      <input type="file" id="photo-upload" multiple />
+    </div>
+    <div>
+      <button type="submit">✅ 送出維修單</button>
+    </div>
+  </form>
 
-  <section>
-    <h3>📋 維修單列表</h3>
-    <div id="repair-list">載入中...</div>
-    <div id="pagination"></div>
-  </section>
+  <hr />
+  <h2>📋 維修清單頁面</h2>
+  <div id="repair-list">🔧 載入中...</div>
 </body>
 </html>
