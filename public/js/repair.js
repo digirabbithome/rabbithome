@@ -10,7 +10,7 @@ import {
 let photoURLs = [];
 
 async function loadRepairList() {
-  const listDiv = document.getElementById('repair-list');
+  let listDiv = document.getElementById('repair-list');
   const selectedStatus = window.currentStatusFilter || 'all';
   const searchId = document.getElementById('search-id')?.value.trim().toLowerCase() || '';
   const keyword = document.getElementById('search-keyword')?.value.trim().toLowerCase() || '';
