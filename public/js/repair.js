@@ -1,100 +1,129 @@
 
-import { db } from '/js/firebase.js';
+// ✅ 1. 引入 Firebase 與初始化
+import { db, storage } from '/js/firebase.js'
 import {
-  collection, getDocs, doc, setDoc,
-  serverTimestamp, query, orderBy
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-
+  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc, updateDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
+  ref, uploadBytes, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
-const storage = getStorage();
-
-// 載入廠商資料
-async function loadSuppliers() {
-  const supplierSelect = document.getElementById('supplier-select');
-  const q = query(collection(db, "suppliers"), orderBy("code"));
-  const querySnapshot = await getDocs(q);
-  supplierSelect.innerHTML = '';
-  querySnapshot.forEach((docSnap) => {
-    const data = docSnap.data();
-    const option = document.createElement('option');
-    option.value = data.shortName || '';
-    option.textContent = `${data.code} - ${data.name}`;
-    supplierSelect.appendChild(option);
-  });
-}
-
-// 自動產生流水號
-function generateRepairID() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mi = String(now.getMinutes()).padStart(2, '0');
-  const ss = String(now.getSeconds()).padStart(2, '0');
-  return `R${yyyy}${mm}${dd}${hh}${mi}${ss}`;
-}
-
-document.getElementById('generate-id').addEventListener('click', () => {
-  document.getElementById('repair-id').value = generateRepairID();
-});
-
-document.getElementById('repair-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const repairId = document.getElementById('repair-id').value.trim();
-  const supplier = document.getElementById('supplier-select').value.trim();
-  const customer = document.getElementById('customer').value.trim();
-  const address = document.getElementById('address').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const warranty = document.getElementById('warranty-select').value.trim();
-  const product = document.getElementById('product').value.trim();
-  const description = document.getElementById('description').value.trim();
-  const files = document.getElementById('photo-upload').files;
-
-  if (!repairId || !supplier || !customer) {
-    alert("請完整填寫維修單號、廠商與客戶資訊");
-    return;
-  }
-
-  const photoURLs = [];
-  try {
-    for (let i = 0; i < files.length; i++) {
-      const fileRef = ref(storage, `repairs/${repairId}/${files[i].name}`);
-      await uploadBytes(fileRef, files[i]);
-      const url = await getDownloadURL(fileRef);
-      photoURLs.push(url);
-    }
-  } catch (err) {
-    console.error("上傳圖片失敗", err);
-  }
-
-  const repairData = {
-    repairId,
-    supplier,
-    customer,
-    address,
-    phone,
-    warranty,
-    product,
-    description,
-    photos: photoURLs,
-    createdAt: serverTimestamp()
-  };
-
-  try {
-    await setDoc(doc(db, "repairs", repairId), repairData);
-    alert("✅ 維修單已成功送出！");
-    document.getElementById('repair-form').reset();
-  } catch (err) {
-    console.error("寫入失敗", err);
-    alert("❌ 維修單送出失敗！");
-  }
-});
+let photoURLs = [];
 
 window.onload = () => {
-  loadSuppliers();
+  const generateBtn = document.getElementById('generate-id');
+  const repairIdInput = document.getElementById('repair-id');
+  generateBtn?.addEventListener('click', () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const random = Math.floor(1000 + Math.random() * 9000);
+    const repairId = `R${yyyy}${mm}${dd}${random}`;
+    repairIdInput.value = repairId;
+  });
+
+  const supplierSelect = document.getElementById('supplier-select');
+  const suppliersRef = collection(db, 'suppliers');
+  const q = query(suppliersRef, orderBy('code'));
+  getDocs(q).then((snapshot) => {
+    supplierSelect.innerHTML = '';
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = '請選擇廠商';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    supplierSelect.appendChild(defaultOption);
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const code = data.code || '';
+      const shortName = data.shortName || '';
+      const option = document.createElement('option');
+      option.value = shortName;
+      option.textContent = `${code} - ${shortName}`;
+      supplierSelect.appendChild(option);
+    });
+  });
+
+  const photoInput = document.getElementById('photo-upload');
+  photoInput?.addEventListener('change', async (event) => {
+    const files = event.target.files;
+    photoURLs = [];
+
+    for (const file of files) {
+      const storageRef = ref(storage, `repairs/${file.name}`);
+      try {
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        photoURLs.push(url);
+      } catch (err) {
+        console.error('上傳失敗:', err);
+      }
+    }
+  });
+
+  const repairForm = document.getElementById('repair-form');
+  repairForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const repairId = document.getElementById('repair-id').value.trim();
+    const customer = document.getElementById('customer').value.trim();
+    if (!repairId || !customer) {
+      alert('請填寫必填欄位：維修單號與客人姓名');
+      return;
+    }
+
+    const checkDoc = await getDoc(doc(db, 'repairs', repairId));
+    if (checkDoc.exists()) {
+      alert('⚠️ 此維修單號已存在，請更換單號！');
+      return;
+    }
+
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const product = document.getElementById('product').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const warranty = document.getElementById('warranty-select')?.value || '';
+    const supplier = document.getElementById('supplier-select')?.value || '';
+
+    const data = {
+      repairId,
+      customer,
+      phone,
+      address,
+      product,
+      description,
+      warranty,
+      supplier,
+      createdAt: serverTimestamp(),
+      status: 1,
+      photos: photoURLs
+    };
+
+    try {
+      await setDoc(doc(db, 'repairs', repairId), data);
+      alert('✅ 維修單送出成功！');
+      repairForm.reset();
+      photoURLs = [];
+    } catch (error) {
+      console.error('❌ 寫入失敗:', error);
+      alert('❌ 維修單送出失敗，請稍後再試');
+    }
+  });
+
+  const listDiv = document.getElementById('repair-list');
+  const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
+  getDocs(q2).then(snapshot => {
+    let html = '<table border="1" cellpadding="6"><tr><th>維修單號</th><th>客人姓名</th><th>廠商</th><th>狀態</th></tr>';
+    snapshot.forEach(docSnap => {
+      const d = docSnap.data();
+      html += `<tr>
+        <td>${d.repairId}</td>
+        <td>${d.customer}</td>
+        <td>${d.supplier?.substring(0, 4) || ''}</td>
+        <td>${['❓','🆕','🚚','🔧','✅'][d.status] || '❓'}</td>
+      </tr>`;
+    });
+    html += '</table>';
+    listDiv.innerHTML = html;
+  });
 };
