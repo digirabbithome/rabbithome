@@ -93,7 +93,6 @@ document.getElementById('photo-upload')?.addEventListener('change', async (event
 
 // ✅ 以下為維修列表區塊功能（排序、搜尋、狀態變更）
 
-import { db } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
