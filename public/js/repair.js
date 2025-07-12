@@ -87,13 +87,6 @@ if (d.status === 1) {
 }
 
 
-// 下拉式選單移除，改用 icon 按鈕 `<select class="status-select" data-id="${d.repairId}" ${d.status === 4 ? 'disabled' : ''}>
-      <option value="1" ${d.status === 1 ? 'selected' : ''}>新進</option>
-      <option value="2" ${d.status === 2 ? 'selected' : ''}>已交廠商</option>
-      <option value="3" ${d.status === 3 ? 'selected' : ''}>維修完成</option>
-      <option value="31" ${d.status === 31 ? 'selected' : ''}>廠商退回</option>
-      <option value="4" ${d.status === 4 ? 'selected' : ''}>已取貨</option>
-    </select>`;
 
 return {
       statusControl: statusControl,
