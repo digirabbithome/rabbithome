@@ -1,7 +1,6 @@
-
 import { db } from '/js/firebase.js'
 import {
-  collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp
+  collection, query, orderBy, getDocs, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let repairData = []
@@ -19,14 +18,14 @@ function renderTable() {
   const keyword2 = document.getElementById('search-keyword')?.value.trim().toLowerCase() || ''
 
   let filtered = repairData.filter(d => {
-    const match1 = d.repairId?.toLowerCase().includes(keyword1)
+    if (!d.repairId) return false
+    const match1 = d.repairId.toLowerCase().includes(keyword1)
     const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
       .some(field => field?.toLowerCase().includes(keyword2))
     const matchStatus = currentFilter.includes(String(d.status))
     return match1 && match2 && matchStatus
   })
 
-  // 分頁處理
   const totalPages = Math.ceil(filtered.length / pageSize)
   currentPage = Math.min(currentPage, totalPages || 1)
   const startIdx = (currentPage - 1) * pageSize
@@ -55,9 +54,7 @@ function renderTable() {
     <th data-sort="status">狀態 ${sortField==='status'?arrow:''}</th>
     <th data-sort="diff">維修天數 ${sortField==='diff'?arrow:''}</th>
     <th>編輯</th></tr></thead><tbody>`
-
   paginated.forEach(d => {
-    if (!d.repairId) return;
     const createdAt = d.createdAt?.toDate?.()
     const dateStr = createdAt ? `${createdAt.getFullYear()}/${createdAt.getMonth()+1}/${createdAt.getDate()}` : ''
     const diff = createdAt ? Math.floor((new Date() - createdAt) / (1000*60*60*24)) : 0
@@ -89,7 +86,6 @@ function renderTable() {
 
   html += '</tbody></table>'
 
-  // 分頁區塊
   html += `<div style="margin-top:1em;text-align:center">`
   if (currentPage > 1) html += `<button onclick="changePage(${currentPage-1})">⬅️ 上一頁</button> `
   html += `第 ${currentPage} / ${totalPages || 1} 頁`
@@ -97,29 +93,26 @@ function renderTable() {
   html += '</div>'
 
   listDiv.innerHTML = html
-
-  // 點欄位排序
+  // 排序功能
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.onclick = () => {
       const field = th.dataset.sort
-      if (sortField === field) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
-      else { sortField = field; sortDirection = 'asc' }
+      if (sortField === field) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        sortField = field
+        sortDirection = 'asc'
+      }
       renderTable()
     }
   })
 
-  // 狀態變更
-  document.querySelectorAll('.repair-status-btn').forEach(btn => {
+  // 狀態變更功能
+  document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
-      let repairId = btn.dataset.id;
-      if (!repairId || repairId === 'undefined') {
-        alert('⚠️ 此筆資料 repairId 無效，請確認資料庫！')
-        console.warn('❌ 錯誤 repairId：', btn.dataset)
-        return;
-      }
-      console.log('🛠️ 正在更新 repairId:', repairId);
-      repairId = btn.dataset.id
+      const repairId = btn.dataset.id
       const newStatus = parseInt(btn.dataset.next)
+      if (!repairId) return alert("⚠️ 此筆資料 repairId 無效，請確認資料庫！")
       const ref = doc(db, 'repairs', repairId)
       await updateDoc(ref, {
         status: newStatus,
@@ -128,13 +121,16 @@ function renderTable() {
           time: new Date().toISOString()
         }
       })
-      alert(`✅ 狀態更新為 ${newStatus}！`)
+      alert(`✅ 狀態已更新為 ${newStatus}！`)
       loadData()
     }
   })
 }
 
-window.changePage = p => { currentPage = p; renderTable() }
+window.changePage = p => {
+  currentPage = p
+  renderTable()
+}
 
 window.onload = async () => {
   document.querySelectorAll('.status-filter').forEach(btn => {
@@ -147,17 +143,17 @@ window.onload = async () => {
                       s === 'vendor' ? ['2'] :
                       s === 'done' ? ['3'] :
                       s === 'finish' ? ['4'] :
-                      ['1','2']
+                      ['2','3']
       currentPage = 1
       renderTable()
     }
   })
-  currentFilter = ['1','2']; currentPage = 1; await loadData();
+  await loadData()
 }
 
 async function loadData() {
   const q = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  repairData = snap.docs.map(doc => { const data = doc.data(); if (!doc.id) return null; return { ...data, repairId: doc.id }; }).filter(x => x)
+  repairData = snap.docs.map(doc => ({ ...doc.data(), repairId: doc.id }))
   renderTable()
 }
