@@ -92,6 +92,14 @@ function renderTable() {
 
   let html = header;
   rows.forEach(row => {
+    
+    let selectHtml = `<select class="status-select" data-id="${d.repairId}">
+      <option value="1" ${d.status === 1 ? 'selected' : ''}>新進</option>
+      <option value="2" ${d.status === 2 ? 'selected' : ''}>已交廠商</option>
+      <option value="3" ${d.status === 3 ? 'selected' : ''}>維修完成</option>
+      <option value="4" ${d.status === 4 ? 'selected' : ''}>客人已取貨</option>
+    </select>`;
+
     html += `<tr>
       <td style="text-align:left">${row.createdAt.getFullYear()}/${row.createdAt.getMonth()+1}/${row.createdAt.getDate()}</td>
       <td style="text-align:left">${row.repairId}</td>
