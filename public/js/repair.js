@@ -83,7 +83,8 @@ if (d.status === 1) {
 } else if (d.status === 3 || d.status === 31) {
   statusControl = `<button class="repair-status-btn" data-id="${d.repairId}" data-next="4">📦</button>`;
 } else if (d.status === 4) {
-  statusControl = `<span class="done-icon">🆗</span>`;
+  statusControl = `<span class=\"done-icon\">🆗</span>`;
+  console.log('狀態:', d.status, '→', statusControl);
 }
 
 
