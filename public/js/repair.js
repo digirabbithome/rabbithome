@@ -118,7 +118,7 @@ function renderTable() {
         return;
       }
       console.log('🛠️ 正在更新 repairId:', repairId);
-      const repairId = btn.dataset.id
+      repairId = btn.dataset.id
       const newStatus = parseInt(btn.dataset.next)
       const ref = doc(db, 'repairs', repairId)
       await updateDoc(ref, {
