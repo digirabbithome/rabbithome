@@ -51,7 +51,43 @@ function renderTable() {
     const dayClass = diffDays > 7 ? 'red-bg' : '';
     const desc = d.description?.length > 15 ? d.description.slice(0, 15) + '…' : d.description;
 
-    let statusSelect = `<select class="status-select" data-id="${d.repairId}" ${d.status === 4 ? 'disabled' : ''}>
+    
+
+let statusControl = '';
+if (d.status === 1) {
+  statusControl = `<span class="status-gray">🆕</span>`;
+} else if (d.status === 2) {
+  statusControl = `
+    <button class="repair-status-btn status-blue" data-id="${d.repairId}" data-next="3">🚙</button>
+    <button class="repair-status-btn status-red" data-id="${d.repairId}" data-next="31">🚗</button>
+  `;
+} else if (d.status === 3) {
+  statusControl = `<button class="repair-status-btn status-green" data-id="${d.repairId}" data-next="4">🚘</button>`;
+} else if (d.status === 31) {
+  statusControl = `<button class="repair-status-btn status-red" data-id="${d.repairId}" data-next="4">🚗</button>`;
+} else if (d.status === 4) {
+  statusControl = `<span class="done-icon">🧍‍♂️🆗</span>`;
+}
+
+if (d.status === 1) {
+  statusControl = `
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="2">➡️</button>
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="3">✅</button>
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="31">↩️</button>
+  `;
+} else if (d.status === 2) {
+  statusControl = `
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="3">✅</button>
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="31">↩️</button>
+  `;
+} else if (d.status === 3 || d.status === 31) {
+  statusControl = `<button class="repair-status-btn" data-id="${d.repairId}" data-next="4">📦</button>`;
+} else if (d.status === 4) {
+  statusControl = `<span class="done-icon">🆗</span>`;
+}
+
+
+// 下拉式選單移除，改用 icon 按鈕 `<select class="status-select" data-id="${d.repairId}" ${d.status === 4 ? 'disabled' : ''}>
       <option value="1" ${d.status === 1 ? 'selected' : ''}>新進</option>
       <option value="2" ${d.status === 2 ? 'selected' : ''}>已交廠商</option>
       <option value="3" ${d.status === 3 ? 'selected' : ''}>維修完成</option>
@@ -60,7 +96,7 @@ function renderTable() {
     </select>`;
 
 return {
-      statusControl: statusSelect,
+      statusControl: statusControl,
       createdAt: date || new Date(0),
       repairId: d.repairId || '',
       customer: d.customer || '',

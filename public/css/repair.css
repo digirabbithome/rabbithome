@@ -29,3 +29,11 @@ th[data-sort] {
   cursor: pointer;
   background: #f9f9f9;
 }
+
+
+/* 顏色狀態 icon 樣式 */
+.status-blue { color: #3498db; font-size: 20px; }
+.status-green { color: #27ae60; font-size: 20px; }
+.status-red { color: #e74c3c; font-size: 20px; }
+.status-gray { color: #888; font-size: 20px; }
+.done-icon { color: #2c3e50; font-size: 20px; }
