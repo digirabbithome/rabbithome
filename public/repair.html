@@ -88,7 +88,93 @@
     </div>
    </div>
    <div id="form-section" style="display: none;">
-    （這裡之後可以補上新增表單）
+    <form id="repair-form">
+     <table>
+      <tr>
+       <td>
+        維修單號
+       </td>
+       <td>
+        <input id="repair-id" placeholder="例如 R202507123456" type="text"/>
+        <button id="generate-id" type="button">
+         產生
+        </button>
+       </td>
+       <td>
+        姓名
+       </td>
+       <td>
+        <input id="customer" type="text"/>
+       </td>
+      </tr>
+      <tr>
+       <td>
+        電話
+       </td>
+       <td>
+        <input id="phone" type="text"/>
+       </td>
+       <td>
+        地址
+       </td>
+       <td>
+        <input id="address" type="text"/>
+       </td>
+      </tr>
+      <tr>
+       <td>
+        商品
+       </td>
+       <td colspan="3">
+        <input id="product" style="width: 98%;" type="text"/>
+       </td>
+      </tr>
+      <tr>
+       <td>
+        描述
+       </td>
+       <td colspan="3">
+        <textarea id="description" rows="3"></textarea>
+       </td>
+      </tr>
+      <tr>
+       <td>
+        保固狀況
+       </td>
+       <td>
+        <select id="warranty-select">
+         <option value="保內">
+          有保卡（保固內）
+         </option>
+         <option value="過保">
+          有保卡（過保）
+         </option>
+         <option value="無保">
+          沒有保卡
+         </option>
+        </select>
+       </td>
+       <td>
+        廠商
+       </td>
+       <td>
+        <select id="supplier-select">
+        </select>
+       </td>
+      </tr>
+      <tr>
+       <td>
+        上傳照片
+       </td>
+       <td colspan="3">
+        <input id="photo-upload" multiple="" type="file"/>
+       </td>
+      </tr>
+     </table>
+     <button class="submit-btn" type="submit">
+      送出維修單
+     </button>
+    </form>
    </div>
   </div>
   <script>
