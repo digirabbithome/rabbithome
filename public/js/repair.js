@@ -73,15 +73,15 @@ function renderTable() {
   let html = header;
   rows.forEach(row => {
     html += `<tr>
-      <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth()+1}/${row.createdAt.getDate()}</td>
-      <td>${row.repairId}</td>
-      <td>${row.customer}</td>
-      <td>${row.supplier}</td>
-      <td>${row.product}</td>
-      <td>${row.description}</td>
-      <td>${row.statusText}</td>
+      <td style="text-align:left">${row.createdAt.getFullYear()}/${row.createdAt.getMonth()+1}/${row.createdAt.getDate()}</td>
+      <td style="text-align:left">${row.repairId}</td>
+      <td style="text-align:left">${row.customer}</td>
+      <td style="text-align:left">${row.supplier}</td>
+      <td style="text-align:left">${row.product}</td>
+      <td style="text-align:left">${row.description}</td>
+      <td style="text-align:left">${row.statusText}</td>
       <td class="${row.dayClass}">${row.diffDays}</td>
-      <td>${row.icon}</td>
+      <td style="text-align:left">${row.icon}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -201,3 +201,23 @@ window.onload = async () => {
 
   loadRepairList();
 };
+
+
+  // 新增 select 狀態變更監聽
+  document.querySelectorAll('.status-select').forEach(select => {
+    select.onchange = async () => {
+      const repairId = select.dataset.id
+      const newStatus = parseInt(select.value)
+      if (!repairId || !newStatus) return
+      const ref = doc(db, 'repairs', repairId)
+      await updateDoc(ref, {
+        status: newStatus,
+        [`history.${newStatus}`]: {
+          user: nickname,
+          time: new Date().toISOString()
+        }
+      })
+      alert(`✅ 狀態更新為 ${newStatus}！`)
+      loadData()
+    }
+  })
