@@ -10,21 +10,63 @@ import {
 let photoURLs = [];
 
 async function loadRepairList() {
-  const listDiv = document.getElementById('repair-list');
+  let listDiv = document.getElementById('repair-list');
+  const selectedStatus = window.currentStatusFilter || 'all';
+  const keyword = (
+    document.getElementById('search-id')?.value.trim().toLowerCase() || ''
+  ) + ' ' + (
+    document.getElementById('search-keyword')?.value.trim().toLowerCase() || ''
+  );
+
   const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q2);
 
-  let html = '<table border="1" cellpadding="6"><tr><th>維修單號</th><th>客人姓名</th><th>廠商</th><th>狀態</th></tr>';
+  let html = `<table><thead><tr>
+    <th>送修時間</th><th>維修單號</th><th>姓名</th><th>廠商</th>
+    <th>商品</th><th>描述</th><th>狀態</th><th>維修天數</th><th>編輯</th>
+  </tr></thead><tbody>`;
+
   snapshot.forEach(docSnap => {
     const d = docSnap.data();
+    const keywordMatch = [
+      d.repairId,
+      d.customer,
+      d.phone,
+      d.address,
+      d.supplier,
+      d.product,
+      d.description
+    ].some(field => field?.toLowerCase().includes(keyword));
+
+    const statusMatch = selectedStatus === 'all' || String(d.status) === selectedStatus;
+    if (!keywordMatch || !statusMatch) return;
+
+    let dateStr = '', diffDays = '', dayClass = '';
+    if (d.createdAt?.toDate) {
+      const date = d.createdAt.toDate();
+      dateStr = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+      const today = new Date();
+      diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+      if (diffDays > 7) dayClass = 'red-bg';
+    }
+
+    const shortDesc = d.description?.length > 15 ? d.description.slice(0,15) + '...' : d.description || '';
+    const statusText = ['❓','新進','已交廠商','完成','已取貨'][d.status] || '❓';
+
     html += `<tr>
+      <td>${dateStr}</td>
       <td>${d.repairId}</td>
       <td>${d.customer}</td>
-      <td>${d.supplier?.substring(0, 4) || ''}</td>
-      <td>${['❓','🆕','🚚','🔧','✅'][d.status] || '❓'}</td>
+      <td>${d.supplier || ''}</td>
+      <td>${d.product || ''}</td>
+      <td>${shortDesc}</td>
+      <td>${statusText}</td>
+      <td class="${dayClass}">${diffDays}</td>
+      <td>${['➡️','✅','↩️','📦'][d.status] || ''}</td>
     </tr>`;
   });
-  html += '</table>';
+
+  html += '</tbody></table>';
   listDiv.innerHTML = html;
 }
 
@@ -122,18 +164,25 @@ window.onload = () => {
       alert('✅ 維修單送出成功！');
       repairForm.reset();
       photoURLs = [];
-
-      // 切回列表視圖
       document.getElementById('show-list')?.click();
-      // 重新撈資料刷新列表
       loadRepairList();
-
     } catch (error) {
       console.error('❌ 寫入失敗:', error);
       alert('❌ 維修單送出失敗，請稍後再試');
     }
   });
 
-  // 頁面初次載入顯示維修列表
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      window.currentStatusFilter = btn.dataset.status;
+      loadRepairList();
+    });
+  });
+
+  document.getElementById('search-id')?.addEventListener('input', loadRepairList);
+  document.getElementById('search-keyword')?.addEventListener('input', loadRepairList);
+
   loadRepairList();
 };
