@@ -69,18 +69,6 @@ if (d.status === 1) {
   statusControl = `<span class="done-icon">🧍‍♂️🆗</span>`;
 }
 
-if (d.status === 1) {
-  statusControl = `
-    <button class="repair-status-btn" data-id="${d.repairId}" data-next="2">➡️</button>
-    <button class="repair-status-btn" data-id="${d.repairId}" data-next="3">✅</button>
-    <button class="repair-status-btn" data-id="${d.repairId}" data-next="31">↩️</button>
-  `;
-} else if (d.status === 2) {
-  statusControl = `
-    <button class="repair-status-btn" data-id="${d.repairId}" data-next="3">✅</button>
-    <button class="repair-status-btn" data-id="${d.repairId}" data-next="31">↩️</button>
-  `;
-} else if (d.status === 3 || d.status === 31) {
   statusControl = `<button class="repair-status-btn" data-id="${d.repairId}" data-next="4">📦</button>`;
 } else if (d.status === 4) {
   statusControl = `<span class="done-icon">🆗</span>`;
