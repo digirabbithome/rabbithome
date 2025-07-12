@@ -13,6 +13,26 @@ let sortField = 'createdAt';
 let sortDirection = 'desc';
 
 function renderTable() {
+
+  document.querySelectorAll('.status-select').forEach(select => {
+    select.onchange = async () => {
+      const repairId = select.dataset.id
+      const newStatus = parseInt(select.value)
+      if (!repairId || isNaN(newStatus)) return
+      const ref = doc(db, 'repairs', repairId)
+      await updateDoc(ref, {
+        status: newStatus,
+        [`history.${newStatus}`]: {
+          user: nickname,
+          time: new Date().toISOString()
+        }
+      })
+      alert(`✅ 狀態更新為 ${newStatus}！`)
+      loadData()
+    }
+  })
+
+
   const listDiv = document.getElementById('repair-list');
   const keyword1 = document.getElementById('search-id')?.value.trim().toLowerCase() || '';
   const keyword2 = document.getElementById('search-keyword')?.value.trim().toLowerCase() || '';
