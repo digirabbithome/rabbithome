@@ -1,139 +1,118 @@
 
-import { db, storage } from '/js/firebase.js'
+import { db } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
+  collection, query, orderBy, getDocs
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import {
-  ref, uploadBytes, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
-let photoURLs = [];
+let repairData = []
+let sortField = 'createdAt'
+let sortDirection = 'desc'
 
-async function loadRepairList() {
-  const listDiv = document.getElementById('repair-list');
-  const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q2);
+window.onload = async () => {
+  const q = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'))
+  const snapshot = await getDocs(q)
+  repairData = snapshot.docs.map(doc => doc.data())
 
-  let html = '<table border="1" cellpadding="6"><tr><th>維修單號</th><th>客人姓名</th><th>廠商</th><th>狀態</th></tr>';
-  snapshot.forEach(docSnap => {
-    const d = docSnap.data();
-    html += `<tr>
-      <td>${d.repairId}</td>
-      <td>${d.customer}</td>
-      <td>${d.supplier?.substring(0, 4) || ''}</td>
-      <td>${['❓','🆕','🚚','🔧','✅'][d.status] || '❓'}</td>
-    </tr>`;
-  });
-  html += '</table>';
-  listDiv.innerHTML = html;
+  renderTable()
+
+  // 排序
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.dataset.sort
+      if (sortField === field) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        sortField = field
+        sortDirection = 'asc'
+      }
+      renderTable()
+    })
+  })
+
+  // 搜尋
+  document.getElementById('search-id').addEventListener('input', renderTable)
+  document.getElementById('search-keyword').addEventListener('input', renderTable)
+
+  // 狀態篩選
+  document.querySelectorAll('#filter-buttons button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#filter-buttons button').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      renderTable()
+    })
+  })
 }
 
-window.onload = () => {
-  const generateBtn = document.getElementById('generate-id');
-  const repairIdInput = document.getElementById('repair-id');
-  generateBtn?.addEventListener('click', () => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const random = Math.floor(1000 + Math.random() * 9000);
-    const repairId = `R${yyyy}${mm}${dd}${random}`;
-    repairIdInput.value = repairId;
-  });
+function renderTable() {
+  const tbody = document.getElementById('repair-list')
+  let rows = [...repairData]
 
-  const supplierSelect = document.getElementById('supplier-select');
-  const suppliersRef = collection(db, 'suppliers');
-  const q = query(suppliersRef, orderBy('code'));
-  getDocs(q).then((snapshot) => {
-    supplierSelect.innerHTML = '';
-    const defaultOption = document.createElement('option');
-    defaultOption.textContent = '請選擇廠商';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    supplierSelect.appendChild(defaultOption);
+  // 搜尋與篩選
+  const idVal = document.getElementById('search-id').value.trim()
+  const keyword = document.getElementById('search-keyword').value.trim().toLowerCase()
+  const activeStatus = document.querySelector('#filter-buttons .active')?.dataset.status || 'all'
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const code = data.code || '';
-      const shortName = data.shortName || '';
-      const option = document.createElement('option');
-      option.value = shortName;
-      option.textContent = `${code} - ${shortName}`;
-      supplierSelect.appendChild(option);
-    });
-  });
+  rows = rows.filter(item => {
+    const matchId = idVal ? item.repairId.includes(idVal) : true
+    const matchKeyword = keyword
+      ? (item.customer + item.phone + item.supplier + item.description).toLowerCase().includes(keyword)
+      : true
+    const matchStatus = activeStatus === 'all' ? true : String(item.status) === activeStatus
+    return matchId && matchKeyword && matchStatus
+  })
 
-  const photoInput = document.getElementById('photo-upload');
-  photoInput?.addEventListener('change', async (event) => {
-    const files = event.target.files;
-    photoURLs = [];
+  // 排序
+  rows.sort((a, b) => {
+    const aVal = a[sortField] || ''
+    const bVal = b[sortField] || ''
+    if (sortDirection === 'asc') return aVal > bVal ? 1 : -1
+    else return aVal < bVal ? 1 : -1
+  })
 
-    for (const file of files) {
-      const storageRef = ref(storage, `repairs/${file.name}`);
-      try {
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        photoURLs.push(url);
-      } catch (err) {
-        console.error('上傳失敗:', err);
-      }
+  // 標題箭頭
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc')
+    if (th.dataset.sort === sortField) {
+      th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc')
     }
-  });
+  })
 
-  const repairForm = document.getElementById('repair-form');
-  repairForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const repairId = document.getElementById('repair-id').value.trim();
-    const customer = document.getElementById('customer').value.trim();
-    if (!repairId || !customer) {
-      alert('請填寫必填欄位：維修單號與客人姓名');
-      return;
-    }
+  // 限制前 50 筆
+  rows = rows.slice(0, 50)
 
-    const checkDoc = await getDoc(doc(db, 'repairs', repairId));
-    if (checkDoc.exists()) {
-      alert('⚠️ 此維修單號已存在，請更換單號！');
-      return;
-    }
+  tbody.innerHTML = rows.map(item => {
+    const created = item.createdAt?.toDate().toISOString().split('T')[0] || ''
+    const desc = item.description?.slice(0, 10) || ''
+    const days = calcDays(item.createdAt?.toDate())
+    return `
+      <tr>
+        <td>${created}</td>
+        <td>${item.repairId || ''}</td>
+        <td>${item.customer || ''}</td>
+        <td>${item.supplier?.slice(0, 4) || ''}</td>
+        <td>${item.product || ''}</td>
+        <td>${desc}</td>
+        <td>${statusText(item.status)}</td>
+        <td>${days}</td>
+        <td>🛠️</td>
+      </tr>
+    `
+  }).join('')
+}
 
-    const phone = document.getElementById('phone').value.trim();
-    const address = document.getElementById('address').value.trim();
-    const product = document.getElementById('product').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const warranty = document.getElementById('warranty-select')?.value || '';
-    const supplier = document.getElementById('supplier-select')?.value || '';
+function statusText(status) {
+  switch (status) {
+    case 1: return '新進'
+    case 2: return '已交付'
+    case 3: return '完成'
+    case 4: return '已取件'
+    default: return ''
+  }
+}
 
-    const data = {
-      repairId,
-      customer,
-      phone,
-      address,
-      product,
-      description,
-      warranty,
-      supplier,
-      createdAt: serverTimestamp(),
-      status: 1,
-      photos: photoURLs
-    };
-
-    try {
-      await setDoc(doc(db, 'repairs', repairId), data);
-      alert('✅ 維修單送出成功！');
-      repairForm.reset();
-      photoURLs = [];
-
-      // 切回列表視圖
-      document.getElementById('show-list')?.click();
-      // 重新撈資料刷新列表
-      loadRepairList();
-
-    } catch (error) {
-      console.error('❌ 寫入失敗:', error);
-      alert('❌ 維修單送出失敗，請稍後再試');
-    }
-  });
-
-  // 頁面初次載入顯示維修列表
-  loadRepairList();
-};
+function calcDays(date) {
+  if (!date) return ''
+  const now = new Date()
+  const diff = Math.floor((now - date) / (1000 * 60 * 60 * 24))
+  return diff
+}

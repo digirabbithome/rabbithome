@@ -1,55 +1,57 @@
 
-#repair-form input[type="text"],
-#repair-form textarea,
-#repair-form select {
-  width: 95%;
-  padding: 6px;
-  border: 1px solid #aaa;
-  border-radius: 4px;
-  font-size: 14px;
+body {
+  font-family: "Segoe UI", sans-serif;
+  background-color: #fdfdfd;
+  color: #333;
+  padding: 20px;
 }
-
-#repair-form table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 8px;
+.page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
 }
-
-#repair-form button {
-  padding: 6px 12px;
-  border: none;
-  background-color: #f06292;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#repair-form button:hover {
-  background-color: #ec407a;
-}
-
 #filter-buttons {
-  margin: 10px 0;
+  margin-bottom: 10px;
 }
-
 #filter-buttons button {
   margin-right: 6px;
   padding: 6px 12px;
   border: none;
-  background-color: #e0e0e0;
+  background-color: #f8bbd0;
   border-radius: 6px;
   cursor: pointer;
 }
-
 #filter-buttons button:hover {
-  background-color: #d81b60;
+  background-color: #f06292;
   color: white;
 }
-
-#repair-list {
-  margin-top: 20px;
+#search-bar {
+  margin-bottom: 12px;
 }
-
+#search-bar input {
+  padding: 6px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #eee;
+  padding: 8px;
+  text-align: left;
+}
+th {
+  background-color: #fce4ec;
+  cursor: pointer;
+}
+th.sort-asc::after {
+  content: " ▲";
+}
+th.sort-desc::after {
+  content: " ▼";
+}
 #pagination {
   margin-top: 10px;
   text-align: center;
