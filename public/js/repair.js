@@ -111,7 +111,7 @@ function renderTable() {
   // 狀態變更
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
-      const repairId = btn.dataset.id;
+      let repairId = btn.dataset.id;
       if (!repairId || repairId === 'undefined') {
         alert('⚠️ 此筆資料 repairId 無效，請確認資料庫！')
         console.warn('❌ 錯誤 repairId：', btn.dataset)
