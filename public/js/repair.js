@@ -109,7 +109,7 @@ function renderTable() {
   })
 
   // 狀態變更
-  document.querySelectorAll('.status-btn').forEach(btn => {
+  document.querySelectorAll('.repair-status-btn').forEach(btn => {
     btn.onclick = async () => {
       let repairId = btn.dataset.id;
       if (!repairId || repairId === 'undefined') {
@@ -152,7 +152,7 @@ window.onload = async () => {
       renderTable()
     }
   })
-  await loadData()
+  currentFilter = ['1','2']; currentPage = 1; await loadData();
 }
 
 async function loadData() {
