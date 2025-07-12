@@ -1,49 +1,95 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8" />
-  <title>維修主控台</title>
-  <link rel="stylesheet" href="/css/repair.css" />
-  <script type="module" src="/js/repair.js" defer></script>
-</head>
-<body>
+ <head>
+  <meta charset="utf-8"/>
+  <title>
+   維修主控台
+  </title>
+  <link href="/css/repair.css" rel="stylesheet"/>
+  <script defer="" src="/js/repair.js" type="module">
+  </script>
+ </head>
+ <body>
   <div class="page-wrapper">
-    <h2>🔧 維修主控台</h2>
-
+   <h2>
+    🔧 維修主控台
+   </h2>
+   <div class="button-group">
+    <button class="tab-btn" id="btn-add">
+     ➕ 新增維修單
+    </button>
+    <button class="tab-btn" id="btn-list">
+     📋 維修單列表
+    </button>
+   </div>
+   <div id="list-section" style="display: block;">
     <div id="filter-buttons">
-      <button data-status="all">全部</button>
-      <button data-status="1">新進維修</button>
-      <button data-status="2">已交付廠商</button>
-      <button data-status="3">維修完成</button>
-      <button data-status="4">客人已取貨</button>
+     <button data-status="all">
+      全部
+     </button>
+     <button data-status="1">
+      新進維修
+     </button>
+     <button data-status="2">
+      已交付廠商
+     </button>
+     <button data-status="3">
+      維修完成
+     </button>
+     <button data-status="4">
+      客人已取貨
+     </button>
     </div>
-
     <div id="search-bar">
-      <input type="text" id="search-id" placeholder="🔍 維修單號">
-      <input type="text" id="search-keyword" placeholder="🔍 姓名／電話／廠商／狀況">
+     <input id="search-id" placeholder="🔍 維修單號" type="text"/>
+     <input id="search-keyword" placeholder="🔍 姓名／電話／廠商／狀況" type="text"/>
     </div>
-
     <table id="repair-table">
-      <thead>
-        <tr>
-          <th data-sort="createdAt">送修時間</th>
-          <th data-sort="repairId">維修單號</th>
-          <th data-sort="customer">姓名</th>
-          <th data-sort="supplier">廠商</th>
-          <th data-sort="product">商品</th>
-          <th data-sort="description">描述</th>
-          <th data-sort="status">狀態</th>
-          <th data-sort="days">維修天數</th>
-          <th>編輯</th>
-        </tr>
-      </thead>
-      <tbody id="repair-list">
-        <tr><td colspan="9">🔄 載入中...</td></tr>
-      </tbody>
+     <thead>
+      <tr>
+       <th data-sort="createdAt">
+        送修時間
+       </th>
+       <th data-sort="repairId">
+        維修單號
+       </th>
+       <th data-sort="customer">
+        姓名
+       </th>
+       <th data-sort="supplier">
+        廠商
+       </th>
+       <th data-sort="product">
+        商品
+       </th>
+       <th data-sort="description">
+        描述
+       </th>
+       <th data-sort="status">
+        狀態
+       </th>
+       <th data-sort="days">
+        維修天數
+       </th>
+       <th>
+        編輯
+       </th>
+      </tr>
+     </thead>
+     <tbody id="repair-list">
+      <tr>
+       <td colspan="9">
+        🔄 載入中...
+       </td>
+      </tr>
+     </tbody>
     </table>
-
-    <div id="pagination"></div>
+    <div id="pagination">
+    </div>
+   </div>
+   <div id="form-section" style="display: none;">
+    （這裡之後可以補上新增表單）
+   </div>
   </div>
-</body>
+ </body>
 </html>
