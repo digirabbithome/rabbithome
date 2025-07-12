@@ -1,14 +1,32 @@
 
-// ✅ 1. 引入 Firebase 與初始化
 import { db, storage } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc, updateDoc
+  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import {
   ref, uploadBytes, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
 let photoURLs = [];
+
+async function loadRepairList() {
+  const listDiv = document.getElementById('repair-list');
+  const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q2);
+
+  let html = '<table border="1" cellpadding="6"><tr><th>維修單號</th><th>客人姓名</th><th>廠商</th><th>狀態</th></tr>';
+  snapshot.forEach(docSnap => {
+    const d = docSnap.data();
+    html += `<tr>
+      <td>${d.repairId}</td>
+      <td>${d.customer}</td>
+      <td>${d.supplier?.substring(0, 4) || ''}</td>
+      <td>${['❓','🆕','🚚','🔧','✅'][d.status] || '❓'}</td>
+    </tr>`;
+  });
+  html += '</table>';
+  listDiv.innerHTML = html;
+}
 
 window.onload = () => {
   const generateBtn = document.getElementById('generate-id');
@@ -104,26 +122,18 @@ window.onload = () => {
       alert('✅ 維修單送出成功！');
       repairForm.reset();
       photoURLs = [];
+
+      // 切回列表視圖
+      document.getElementById('show-list')?.click();
+      // 重新撈資料刷新列表
+      loadRepairList();
+
     } catch (error) {
       console.error('❌ 寫入失敗:', error);
       alert('❌ 維修單送出失敗，請稍後再試');
     }
   });
 
-  const listDiv = document.getElementById('repair-list');
-  const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'));
-  getDocs(q2).then(snapshot => {
-    let html = '<table border="1" cellpadding="6"><tr><th>維修單號</th><th>客人姓名</th><th>廠商</th><th>狀態</th></tr>';
-    snapshot.forEach(docSnap => {
-      const d = docSnap.data();
-      html += `<tr>
-        <td>${d.repairId}</td>
-        <td>${d.customer}</td>
-        <td>${d.supplier?.substring(0, 4) || ''}</td>
-        <td>${['❓','🆕','🚚','🔧','✅'][d.status] || '❓'}</td>
-      </tr>`;
-    });
-    html += '</table>';
-    listDiv.innerHTML = html;
-  });
+  // 頁面初次載入顯示維修列表
+  loadRepairList();
 };
