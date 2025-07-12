@@ -112,7 +112,11 @@ function renderTable() {
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
       const repairId = btn.dataset.id;
-      if (!repairId) { alert('⚠️ 無效的 repairId，操作取消！'); return; }
+      if (!repairId || repairId === 'undefined') {
+        alert('⚠️ 此筆資料 repairId 無效，請確認資料庫！')
+        console.warn('❌ 錯誤 repairId：', btn.dataset)
+        return;
+      }
       console.log('🛠️ 正在更新 repairId:', repairId);
       const repairId = btn.dataset.id
       const newStatus = parseInt(btn.dataset.next)
@@ -143,7 +147,7 @@ window.onload = async () => {
                       s === 'vendor' ? ['2'] :
                       s === 'done' ? ['3'] :
                       s === 'finish' ? ['4'] :
-                      ['2','3']
+                      ['1','2']
       currentPage = 1
       renderTable()
     }
