@@ -8,7 +8,7 @@
 <script src="js/repair.js" type="module"></script>
 </head>
 <body>
-<h2>🔧 維修主控台</h2>
+
 <div id="view-switch" style="margin-bottom: 16px;">
 <button id="show-form">➕ 新增維修單</button>
 <button id="show-list">📋 維修單列表</button>
@@ -38,9 +38,7 @@
 </form>
 </div>
 <!-- 維修列表區 -->
-<div id="list-section">
-<h3>🔍 維修單篩選 / 搜尋</h3>
-<div style="margin-bottom: 16px;">
+<div id="list-section"><div id="repair-header" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;"><div style="margin-bottom: 16px;">
 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
 <button class="status-btn" data-status="all">全部</button>
 <button class="status-btn" data-status="1">新進維修</button>
@@ -52,7 +50,9 @@
 <input id="search-id" placeholder="🔢 維修單號（模糊）" type="text"/>
 <input id="search-keyword" placeholder="🔍 關鍵字：姓名 / 電話 / 廠商 / 商品 / 狀況" type="text"/>
 </div>
-</div>
+</div></div>
+
+
 <div id="repair-list">載入中...</div>
 </div>
 <script>
