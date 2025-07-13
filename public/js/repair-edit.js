@@ -1,3 +1,4 @@
+
 import { db, storage } from '/js/firebase.js'
 import {
   doc, getDoc, updateDoc
@@ -105,7 +106,10 @@ window.onload = async () => {
       const next = btn.dataset.next;
       if (!confirm(`是否將狀態更新為「${next}」？`)) return;
       const now = new Date().toISOString();
-      await updateDoc(docRef, { [`history.${next}`]: { user: nickname, time: now } });
+      await updateDoc(docRef, {
+        [`history.${next}`]: { user: nickname, time: now },
+        status: Number(next)
+      });
       alert('✅ 狀態已更新！');
       location.reload();
     };
