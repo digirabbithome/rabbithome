@@ -1,10 +1,10 @@
 
 import { db, storage } from '/js/firebase.js'
 import {
-  doc, getDoc, updateDoc, serverTimestamp
+  doc, getDoc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import {
-  ref, uploadBytes, getDownloadURL, listAll
+  ref, uploadBytes, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
 const nickname = localStorage.getItem('nickname') || '不明使用者';
@@ -12,83 +12,97 @@ const nickname = localStorage.getItem('nickname') || '不明使用者';
 window.onload = async () => {
   const params = new URLSearchParams(location.search);
   const repairId = params.get('id');
-  if (!repairId) {
-    document.getElementById('edit-section').innerHTML = '❌ 無效的維修單號';
-    return;
-  }
+  if (!repairId) return document.getElementById('edit-section').innerHTML = '❌ 無效的維修單號';
 
   const docRef = doc(db, 'repairs', repairId);
   const snapshot = await getDoc(docRef);
-
-  if (!snapshot.exists()) {
-    document.getElementById('edit-section').innerHTML = '❌ 查無此筆資料';
-    return;
-  }
+  if (!snapshot.exists()) return document.getElementById('edit-section').innerHTML = '❌ 查無此筆資料';
 
   const d = snapshot.data();
-  const date = d.createdAt?.toDate?.();
-  const dateStr = date ? `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}` : '';
+  const section = document.getElementById('edit-section');
 
-  // 狀態切換按鈕
-  let statusBtn = '';
-  const current = d.status || 1;
-  if (current === 1) {
-    statusBtn = `<button data-next="2">➡️交付廠商</button> <button data-next="3">✅完成</button> <button data-next="31">↩️退回</button>`;
-  } else if (current === 2) {
-    statusBtn = `<button data-next="3">✅完成</button> <button data-next="31">↩️退回</button>`;
-  } else if (current === 3 || current === 31) {
-    statusBtn = `<button data-next="4">📦已取貨</button>`;
-  }
-
-  // 圖片顯示與補上傳
-  const imgHTML = (d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
-  const historyHTML = Object.entries(d.history || {}).map(([k, v]) => {
-    return `<div>狀態 ${k} ➜ ${v.user} @ ${new Date(v.time).toLocaleString()}</div>`;
-  }).join('');
-
-  const html = `
-    <table>
-      <tr><td>維修單號</td><td><b>${d.repairId}</b></td></tr>
-      <tr><td>姓名</td><td>${d.customer}</td></tr>
-      <tr><td>電話</td><td>${d.phone}</td></tr>
-      <tr><td>地址</td><td>${d.address}</td></tr>
-      <tr><td>商品</td><td>${d.product}</td></tr>
-      <tr><td>描述</td><td>${d.description}</td></tr>
-      <tr><td>保固</td><td>${d.warranty}</td></tr>
-      <tr><td>廠商</td><td>${d.supplier}</td></tr>
-      <tr><td>送修日期</td><td>${dateStr}</td></tr>
-      <tr><td>目前狀態</td><td>${current}</td></tr>
-      <tr><td>狀態操作</td><td>${statusBtn}</td></tr>
-      <tr><td>歷程紀錄</td><td>${historyHTML}</td></tr>
-      <tr><td>現有圖片</td><td>${imgHTML}</td></tr>
-      <tr><td>補上傳照片</td><td><input type="file" id="upload-photo" multiple /></td></tr>
+  // 上方資訊組裝
+  const topHTML = `
+    <table class="repair-info">
+      <tr>
+        <td><b>維修單號：</b>${d.repairId}</td>
+        <td><b>保固：</b>${d.warranty || ''}</td>
+        <td><b>廠商：</b>${d.supplier || ''}</td>
+      </tr>
+      ${d.customer ? `<tr><td colspan="3"><b>聯絡資訊：</b>${d.customer} ${d.phone || ''} ${d.address || ''}</td></tr>` : ''}
+      <tr><td colspan="3"><b>送修商品：</b>${d.product || ''}　　<b>維修內容：</b>${d.description || ''}</td></tr>
+      <tr><td colspan="3">
+        <b>商品圖片：</b><br>
+        ${(d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('')}
+        <br><input type="file" id="upload-photo" multiple />
+      </td></tr>
     </table>
   `;
 
-  document.getElementById('edit-section').innerHTML = html;
+  // 狀態區塊產生器
+  function renderStatusBlock(statusCode, title, noteLabel) {
+    const history = d.history?.[statusCode];
+    const noteVal = d.notes?.[statusCode] || '';
+    return `
+      <div class="status-block" data-status="${statusCode}">
+        <h3>${title}</h3>
+        ${history ? `<div>👤 ${history.user}　🕒 ${new Date(history.time).toLocaleString()}</div>` 
+                  : `<button class="status-btn" data-next="${statusCode}">➡️ 開始此階段</button>`}
+        ${noteLabel ? `<label>${noteLabel}</label><textarea data-note="${statusCode}">${noteVal}</textarea>` : ''}
+      </div>
+    `;
+  }
 
-  document.querySelectorAll('button[data-next]').forEach(btn => {
+  // 狀態區 HTML
+  const statusHTML = `
+    ${renderStatusBlock(1, '1. 已收送修', '')}
+    ${renderStatusBlock(2, '2. 已送廠商', '物流單號／寄送說明')}
+    ${renderStatusBlock(3, '3. 維修完成', '維修完成內容說明')}
+    ${renderStatusBlock(31, '3-1. 廠商退回', '退回原因')}
+    ${renderStatusBlock(4, '4. 客人已取回', '客戶回饋或交貨說明')}
+  `;
+
+  // 下方按鈕
+  const finalButtons = `
+    <div id="final-actions">
+      <button onclick="window.open('/repair-print.html?id=${repairId}')">📄 列印維修單</button>
+      <button onclick="window.open('/print.html?id=${repairId}')">✉️ 列印送修信封</button>
+      <button onclick="window.open('/print-reply.html?id=${repairId}')">✉️ 列印廠商信封</button>
+      <button data-next="4" class="status-btn">✅ 結案</button>
+    </div>
+  `;
+
+  section.innerHTML = topHTML + statusHTML + finalButtons;
+
+  // 綁定狀態更新按鈕
+  document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
-      const next = parseInt(btn.dataset.next);
-      const confirmMsg = `是否要將狀態更新為 ${next}？`;
-      if (!confirm(confirmMsg)) return;
-
-      await updateDoc(docRef, {
-        status: next,
-        [`history.${next}`]: {
-          user: nickname,
-          time: new Date().toISOString()
-        }
-      });
+      const next = btn.dataset.next;
+      if (!confirm(`是否將狀態更新為「${next}」？`)) return;
+      const now = new Date().toISOString();
+      const update = {
+        [`history.${next}`]: { user: nickname, time: now }
+      };
+      await updateDoc(docRef, update);
       alert('✅ 狀態已更新！');
       location.reload();
-    }
+    };
   });
 
+  // 備註輸入變更即時儲存
+  document.querySelectorAll('textarea[data-note]').forEach(area => {
+    area.addEventListener('change', async () => {
+      const code = area.dataset.note;
+      const value = area.value;
+      await updateDoc(docRef, { [`notes.${code}`]: value });
+      console.log(`已儲存備註 ${code}`);
+    });
+  });
+
+  // 圖片上傳
   document.getElementById('upload-photo')?.addEventListener('change', async (e) => {
     const files = e.target.files;
     if (!files.length) return;
-
     const urls = d.photos || [];
     for (const file of files) {
       const storageRef = ref(storage, `repairs/${repairId}/${file.name}`);
@@ -96,7 +110,6 @@ window.onload = async () => {
       const url = await getDownloadURL(storageRef);
       urls.push(url);
     }
-
     await updateDoc(docRef, { photos: urls });
     alert('✅ 照片已上傳！');
     location.reload();
