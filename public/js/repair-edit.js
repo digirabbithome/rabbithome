@@ -16,9 +16,7 @@ function updateStatusInfo(status) {
 }
 
 
-
-
-  box.textContent = text
+box.textContent = text
 }
 
 
