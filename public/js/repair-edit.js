@@ -40,7 +40,20 @@ window.onload = async () => {
   `;
 
   // 狀態區塊產生器
+
   function renderStatusBlock(statusCode, title, noteLabel) {
+    if (statusCode === 1) {
+      const user = d.user || '未知使用者';
+      const created = d.createdAt?.toDate?.();
+      const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
+      return `
+        <div class="status-block" data-status="1">
+          <h3>1. 已收送修</h3>
+          <div>👤 ${user}　🕒 ${timeStr}</div>
+        </div>
+      `;
+    }
+
     const history = d.history?.[statusCode];
     const noteVal = d.notes?.[statusCode] || '';
     return `
