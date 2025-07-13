@@ -43,3 +43,27 @@ th[data-sort] {
 #repair-form textarea {
   text-align: left;
 }
+
+
+#repair-form table {
+  margin-left: 0;
+  width: auto;
+}
+
+#repair-form td {
+  text-align: left;
+  padding: 4px 8px;
+  vertical-align: top;
+}
+
+#repair-form input[type="text"],
+#repair-form select,
+#repair-form textarea {
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+#repair-form textarea {
+  height: 80px;
+}
