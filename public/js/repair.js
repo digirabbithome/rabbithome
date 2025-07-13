@@ -71,8 +71,7 @@ function renderTable() {
   let html = header
   
   rows.forEach(row => {
-    const rowClass = row.dayClass ? ` class="${row.dayClass}"` : "";
-
+    const rowClass = row.dayClass ? ' class="red-bg"' : '';
     html += `<tr${rowClass}>
       <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth() + 1}/${row.createdAt.getDate()}</td>
       <td><a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
@@ -81,10 +80,9 @@ function renderTable() {
       <td>${row.product}</td>
       <td>${row.description}</td>
       <td>${row.statusText}</td>
-      <td class="${row.dayClass}">${row.diffDays > 7 ? "⚠️ " : ""}${row.diffDays}</td>
-    </tr>`
-  })
-  html += '</tbody></table>'
+      <td>${row.diffDays > 7 ? "⚠️ " : ""}${row.diffDays}</td>
+    </tr>`;
+html += '</tbody></table>'
   listDiv.innerHTML = html
 
   document.querySelectorAll('th[data-sort]').forEach(th => {
