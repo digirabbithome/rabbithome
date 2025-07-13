@@ -135,6 +135,7 @@ window.onload = async () => {
         if (d.notes?.[code] !== value) {
           await updateDoc(docRef, { [`notes.${code}`]: value });
           showSavedHint();
+      }
       }, 1500);
     });
   });
@@ -269,6 +270,7 @@ window.onload = async () => {
         if (d.notes?.[code] !== value) {
           await updateDoc(docRef, { [`notes.${code}`]: value });
           showSavedHint();
+      }
         }
       }, 1500);
     });
