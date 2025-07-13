@@ -29,24 +29,24 @@ const nickname = localStorage.getItem('nickname') || '不明使用者';
 
 function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
-    const user = d.user || '未知使用者';
+    const nickname = d.user || '未知使用者';
     const created = d.createdAt?.toDate?.();
     const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
       <div class="status-block" data-status="1">
-        <h3>1. 已收送修　🐰 ${user}　🕒 ${timeStr}</h3>
+        <h3>1. 已收送修　🐰 ${nickname}　🕒 ${timeStr}</h3>
       </div>
     `;
 
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
-  const user = history?.user || '';
+  const nickname = history?.user || '';
   const timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
 
   return `
     <div class="status-block" data-status="${statusCode}">
       ${!history ? `<button class="status-btn" data-next="${statusCode}">${title}</button>` 
-                  : `<h3>${title}　🐰 ${user}　🕒 ${timeStr}</h3>`}
+                  : `<h3>${title}　🐰 ${nickname}　🕒 ${timeStr}</h3>`}
       <textarea data-note="${statusCode}" placeholder="${placeholder || ''}">${noteVal}</textarea>
     </div>
   `;
@@ -159,25 +159,25 @@ const nickname = localStorage.getItem('nickname') || '不明使用者';
 
 function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
-    const user = d.user || '未知使用者';
+    const nickname = d.user || '未知使用者';
     const created = d.createdAt?.toDate?.();
     const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
       <div class="status-block" data-status="1">
-        <h3>1. 已收送修　🐰 ${user}　🕒 ${timeStr}</h3>
+        <h3>1. 已收送修　🐰 ${nickname}　🕒 ${timeStr}</h3>
       </div>
     `;
   }
 
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
-  const user = history?.user || '';
+  const nickname = history?.user || '';
   const timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
 
   return `
     <div class="status-block" data-status="${statusCode}">
       ${!history ? `<button class="status-btn" data-next="${statusCode}">${title}</button>` 
-                  : `<h3>${title}　🐰 ${user}　🕒 ${timeStr}</h3>`}
+                  : `<h3>${title}　🐰 ${nickname}　🕒 ${timeStr}</h3>`}
       <textarea data-note="${statusCode}" placeholder="${placeholder || ''}">${noteVal}</textarea>
     </div>
   `;
