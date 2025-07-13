@@ -1,3 +1,11 @@
+import { db, storage } from '/js/firebase.js'
+import {
+  doc, getDoc, updateDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  ref, uploadBytes, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
+
 
 function updateStatusInfo(status) {
   const box = document.getElementById('status-info-box');
@@ -18,11 +26,8 @@ function updateStatusInfo(status) {
 
 
 
-import { db, storage } from '/js/firebase.js'
-import {
   doc, getDoc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import {
   ref, uploadBytes, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
