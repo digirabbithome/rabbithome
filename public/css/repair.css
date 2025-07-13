@@ -29,3 +29,17 @@ th[data-sort] {
   cursor: pointer;
   background: #f9f9f9;
 }
+
+/* Custom layout for improved spacing */
+.wide-input {
+  width: 90%;
+}
+.tall-textarea {
+  width: 90%;
+  height: 80px;
+}
+#repair-form input[type="text"],
+#repair-form select,
+#repair-form textarea {
+  text-align: left;
+}
