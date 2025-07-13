@@ -1,16 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <title>維修主控台</title>
-  <link rel="stylesheet" href="/css/repair.css" />
-  <script type="module" src="/js/repair.js"></script>
+  <link rel="stylesheet" href="css/repair.css" />
+  <script type="module" src="js/repair.js"></script>
 </head>
 <body>
   <h2>🔧 維修主控台</h2>
 
-  <div id="view-switch">
+  <div id="view-switch" style="margin-bottom: 16px;">
     <button id="show-form">➕ 新增維修單</button>
     <button id="show-list">📋 維修單列表</button>
   </div>
@@ -22,9 +21,9 @@
         <tr><td>維修單號</td><td><input type="text" id="repair-id" /><button type="button" id="generate-id">產生</button></td></tr>
         <tr><td>客人姓名</td><td><input type="text" id="customer" /></td></tr>
         <tr><td>電話</td><td><input type="text" id="phone" /></td></tr>
-        <tr><td>地址</td><td><input type="text" id="address" style="width: 90%;" /></td></tr>
+        <tr><td>地址</td><td><input type="text" id="address" /></td></tr>
         <tr><td>商品</td><td><input type="text" id="product" /></td></tr>
-        <tr><td>狀況描述</td><td><textarea id="description" style="width: 90%; height: 60px;"></textarea></td></tr>
+        <tr><td>狀況描述</td><td><textarea id="description"></textarea></td></tr>
         <tr><td>保固狀況</td>
             <td>
               <select id="warranty-select">
@@ -71,7 +70,7 @@
         formSection.style.display = 'none';
         listSection.style.display = 'block';
       };
-      document.getElementById('show-list').click(); // 預設顯示列表
+      document.getElementById('show-list').click();
     });
   </script>
 </body>
