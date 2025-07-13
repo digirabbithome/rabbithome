@@ -185,7 +185,8 @@ window.onload = async () => {
       supplier,
       createdAt: serverTimestamp(),
       status: 1,
-      photos: photoURLs
+      photos: photoURLs,
+      user: localStorage.getItem('nickname') || '未知使用者'
     }
 
     await setDoc(doc(db, 'repairs', repairId), data)
