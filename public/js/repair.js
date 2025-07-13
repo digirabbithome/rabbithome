@@ -69,12 +69,31 @@ if (d.status === 1) {
   statusControl = `<span class="done-icon">🧍‍♂️🆗</span>`;
 }
 
+if (d.status === 1) {
+  statusControl = `
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="2">➡️</button>
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="3">✅</button>
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="31">↩️</button>
+  `;
+} else if (d.status === 2) {
+  statusControl = `
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="3">✅</button>
+    <button class="repair-status-btn" data-id="${d.repairId}" data-next="31">↩️</button>
+  `;
+} else if (d.status === 3 || d.status === 31) {
   statusControl = `<button class="repair-status-btn" data-id="${d.repairId}" data-next="4">📦</button>`;
 } else if (d.status === 4) {
   statusControl = `<span class="done-icon">🆗</span>`;
 }
 
 
+// 下拉式選單移除，改用 icon 按鈕 `<select class="status-select" data-id="${d.repairId}" ${d.status === 4 ? 'disabled' : ''}>
+      <option value="1" ${d.status === 1 ? 'selected' : ''}>新進</option>
+      <option value="2" ${d.status === 2 ? 'selected' : ''}>已交廠商</option>
+      <option value="3" ${d.status === 3 ? 'selected' : ''}>維修完成</option>
+      <option value="31" ${d.status === 31 ? 'selected' : ''}>廠商退回</option>
+      <option value="4" ${d.status === 4 ? 'selected' : ''}>已取貨</option>
+    </select>`;
 
 return {
       statusControl: statusControl,
@@ -269,21 +288,17 @@ window.onload = async () => {
   })
 
 
-  // popmenu 修改狀態
-  document.querySelectorAll('.status-popmenu').forEach(menu => {
-    menu.onchange = async () => {
-      const repairId = menu.dataset.id
-      const newStatus = parseInt(menu.value)
-      if (!repairId || repairId.length < 5) return
-      const ref = doc(db, 'repairs', repairId)
-      await updateDoc(ref, {
-        status: newStatus,
-        [`history.${newStatus}`]: {
-          user: nickname,
-          time: new Date().toISOString()
-        }
-      })
-      alert(`✅ 狀態已更新為 ${['', '新進', '已交廠商', '完成', '已取貨'][newStatus]}`)
-      loadData()
-    }
-  })
+// 監聽狀態變更
+document.addEventListener("change", async (e) => {
+  if (e.target.classList.contains("status-select")) {
+    const repairId = e.target.dataset.id;
+    const newStatus = e.target.value;
+
+    const docRef = doc(db, "repairs", repairId);
+    await updateDoc(docRef, {
+      status: newStatus
+    });
+    alert("狀態已更新！");
+    location.reload();
+  }
+});
