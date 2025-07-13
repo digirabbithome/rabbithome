@@ -31,7 +31,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
     let tempUser = d.user || '未知使用者';
     const created = d.createdAt?.toDate?.();
-    const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
+    let timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
       <div class="status-block" data-status="1">
         <h3>1. 已收送修　🐰 ${tempUser}　🕒 ${timeStr}</h3>
@@ -41,7 +41,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
   tempUser = history?.user || '';
-  const timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
+  timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
 
   return `
     <div class="status-block" data-status="${statusCode}">
@@ -161,7 +161,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
     tempUser = d.user || '未知使用者';
     const created = d.createdAt?.toDate?.();
-    const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
+    timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
       <div class="status-block" data-status="1">
         <h3>1. 已收送修　🐰 ${tempUser}　🕒 ${timeStr}</h3>
@@ -172,7 +172,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
   tempUser = history?.user || '';
-  const timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
+  timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
 
   return `
     <div class="status-block" data-status="${statusCode}">
