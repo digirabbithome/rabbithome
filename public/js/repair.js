@@ -57,7 +57,7 @@ function renderTable() {
 
   const arrow = sortDirection === 'asc' ? '▲' : '▼'
   const header = `
-  <table><thead><tr${rowClass}>
+  <table><thead><tr>
     <th data-sort="createdAt">送修時間 ${sortField==='createdAt'?arrow:''}</th>
     <th data-sort="repairId">維修單號 ${sortField==='repairId'?arrow:''}</th>
     <th data-sort="customer">姓名 ${sortField==='customer'?arrow:''}</th>
@@ -69,21 +69,19 @@ function renderTable() {
   </tr></thead><tbody>`
 
   let html = header
-  
   rows.forEach(row => {
-const rowClass = row.dayClass ? ' class="red-bg"' : '';
-const dateStr = row.createdAt.getFullYear() + '/' + (row.createdAt.getMonth() + 1) + '/' + row.createdAt.getDate();
-html += '<tr' + rowClass + '>' +
-  '<td>' + dateStr + '</td>' +
-  '<td><a href="repair-edit.html?id=' + row.repairId + '">' + row.repairId + '</a></td>' +
-  '<td>' + row.customer + '</td>' +
-  '<td>' + row.supplier + '</td>' +
-  '<td>' + row.product + '</td>' +
-  '<td>' + row.description + '</td>' +
-  '<td>' + row.statusText + '</td>' +
-  '<td>' + (row.diffDays > 7 ? "⚠️ " : "") + row.diffDays + '</td>' +
-'</tr>';
-html += '</tbody></table>'
+    html += `<tr>
+      <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth() + 1}/${row.createdAt.getDate()}</td>
+      <td><a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
+      <td>${row.customer}</td>
+      <td>${row.supplier}</td>
+      <td>${row.product}</td>
+      <td>${row.description}</td>
+      <td>${row.statusText}</td>
+      <td class="${row.dayClass}">${row.diffDays}</td>
+    </tr>`
+  })
+  html += '</tbody></table>'
   listDiv.innerHTML = html
 
   document.querySelectorAll('th[data-sort]').forEach(th => {
