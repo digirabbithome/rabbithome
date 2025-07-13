@@ -16,7 +16,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
     const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
       <div class="status-block" data-status="1">
-        <h3>1. 已收送修　👤 ${user}　🕒 ${timeStr}</h3>
+        <h3>1. 已收送修　🐰 ${user}　🕒 ${timeStr}</h3>
       </div>
     `;
   }
@@ -29,7 +29,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   return `
     <div class="status-block" data-status="${statusCode}">
       ${!history ? `<button class="status-btn" data-next="${statusCode}">${title}</button>` 
-                  : `<h3>${title}　👤 ${user}　🕒 ${timeStr}</h3>`}
+                  : `<h3>${title}　🐰 ${user}　🕒 ${timeStr}</h3>`}
       <textarea data-note="${statusCode}" placeholder="${placeholder || ''}">${noteVal}</textarea>
     </div>
   `;
