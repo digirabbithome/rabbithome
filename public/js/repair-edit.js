@@ -153,7 +153,6 @@ window.onload = async () => {
     await updateDoc(docRef, { photos: urls });
     alert('✅ 照片已上傳！');
     location.reload();
-  });
 };
 
 tempUser = localStorage.getItem('nickname') || '不明使用者';
@@ -290,5 +289,4 @@ window.onload = async () => {
     await updateDoc(docRef, { photos: urls });
     alert('✅ 照片已上傳！');
     location.reload();
-  });
 };
