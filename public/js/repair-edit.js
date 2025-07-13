@@ -1,4 +1,3 @@
-
 import { db, storage } from '/js/firebase.js'
 import {
   doc, getDoc, updateDoc
@@ -9,26 +8,6 @@ import {
 
 const nickname = localStorage.getItem('nickname') || '不明使用者';
 
-function updateStatusInfo(status) {
-  const textMap = {
-    1: '已收到維修尚未寄送廠商',
-    2: '已收到維修且寄送廠商了',
-    3: '已送修 且修復完畢',
-    31: '已送修 但無法處理或遭退件',
-    4: '本維修單已處理完成結案'
-  };
-  const message = textMap[status] || '尚無狀態資料';
-
-  const infoBox = document.createElement('div');
-  infoBox.id = 'status-info-box';
-  infoBox.className = 'status-info';
-  infoBox.innerHTML = `🐰 目前狀況：${message}`;
-
-  const editSection = document.getElementById('edit-section');
-  const table = editSection.querySelector('.repair-info');
-  table.insertAdjacentElement('afterend', infoBox);
-}
-
 function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
     const user = d.user || '未知使用者';
@@ -36,7 +15,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
     const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
       <div class="status-block" data-status="1">
-        <h3>1. 已收送修　👤 ${user}　🕒 ${timeStr}</h3>
+        <h3>1. 已收送修　🐰 ${user}　🕒 ${timeStr}</h3>
       </div>
     `;
   }
@@ -49,10 +28,26 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   return `
     <div class="status-block" data-status="${statusCode}">
       ${!history ? `<button class="status-btn" data-next="${statusCode}">${title}</button>` 
-                  : `<h3>${title}　👤 ${user}　🕒 ${timeStr}</h3>`}
+                  : `<h3>${title}　🐰 ${user}　🕒 ${timeStr}</h3>`}
       <textarea data-note="${statusCode}" placeholder="${placeholder || ''}">${noteVal}</textarea>
     </div>
   `;
+}
+
+function updateStatusInfo(status) {
+  const box = document.createElement('div');
+  box.id = 'status-info-box';
+  let text = '⏳ 目前狀況：';
+  switch (status) {
+    case 1:  text += '已收到維修尚未寄送廠商'; break;
+    case 2:  text += '已收到維修且寄送廠商了'; break;
+    case 3:  text += '已送修 且修復完畢'; break;
+    case 31: text += '已送修 但無法處理或遭退件'; break;
+    case 4:  text += '本維修單已處理完成結案'; break;
+    default: text += '尚無狀態資料'; break;
+  }
+  box.textContent = text;
+  document.querySelector('.repair-info')?.insertAdjacentElement('afterend', box);
 }
 
 const statusHTML = (d) => `
@@ -79,8 +74,6 @@ window.onload = async () => {
   }
 
   const d = snapshot.data();
-  updateStatusInfo(d.status);
-
   const imgHTML = (d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
 
   const html = `
@@ -104,18 +97,15 @@ window.onload = async () => {
       <button data-next="4" class="status-btn">✅ 結案</button>
     </div>
   `;
-
   document.getElementById('edit-section').innerHTML = html;
+  updateStatusInfo(d.status);
 
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
       const next = btn.dataset.next;
       if (!confirm(`是否將狀態更新為「${next}」？`)) return;
       const now = new Date().toISOString();
-      const update = {
-        [`history.${next}`]: { user: nickname, time: now }
-      };
-      await updateDoc(docRef, update);
+      await updateDoc(docRef, { [`history.${next}`]: { user: nickname, time: now } });
       alert('✅ 狀態已更新！');
       location.reload();
     };
