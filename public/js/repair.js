@@ -72,16 +72,17 @@ function renderTable() {
   
   rows.forEach(row => {
     const rowClass = row.dayClass ? ' class="red-bg"' : '';
-    html += `<tr${rowClass}>
-      <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth() + 1}/${row.createdAt.getDate()}</td>
-      <td><a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
-      <td>${row.customer}</td>
-      <td>${row.supplier}</td>
-      <td>${row.product}</td>
-      <td>${row.description}</td>
-      <td>${row.statusText}</td>
-      <td>${row.diffDays > 7 ? "⚠️ " : ""}${row.diffDays}</td>
-    </tr>`;
+    const dateStr = row.createdAt.getFullYear() + '/' + (row.createdAt.getMonth() + 1) + '/' + row.createdAt.getDate();
+    html += '<tr' + rowClass + '>' +
+      '<td>' + dateStr + '</td>' +
+      '<td><a href="repair-edit.html?id=' + row.repairId + '">' + row.repairId + '</a></td>' +
+      '<td>' + row.customer + '</td>' +
+      '<td>' + row.supplier + '</td>' +
+      '<td>' + row.product + '</td>' +
+      '<td>' + row.description + '</td>' +
+      '<td>' + row.statusText + '</td>' +
+      '<td>' + (row.diffDays > 7 ? "⚠️ " : "") + row.diffDays + '</td>' +
+      '</tr>';
 html += '</tbody></table>'
   listDiv.innerHTML = html
 
