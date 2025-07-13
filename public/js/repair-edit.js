@@ -89,15 +89,32 @@ window.onload = async () => {
     };
   });
 
-  // 備註輸入變更即時儲存
+  
+  // 儲存提示浮出
+  const showSavedHint = () => {
+    let div = document.createElement('div');
+    div.textContent = '✅ 已儲存';
+    div.style.cssText = 'position:fixed;top:10px;right:20px;background:#4caf50;color:white;padding:6px 12px;border-radius:6px;z-index:9999;font-size:14px;';
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 2000);
+  };
+
+  // 備註輸入 debounce 儲存
+  const debounceTimers = {};
   document.querySelectorAll('textarea[data-note]').forEach(area => {
-    area.addEventListener('change', async () => {
-      const code = area.dataset.note;
-      const value = area.value;
-      await updateDoc(docRef, { [`notes.${code}`]: value });
-      console.log(`已儲存備註 ${code}`);
+    const code = area.dataset.note;
+    area.addEventListener('input', () => {
+      clearTimeout(debounceTimers[code]);
+      debounceTimers[code] = setTimeout(async () => {
+        const value = area.value;
+        if (d.notes?.[code] !== value) {
+          await updateDoc(docRef, { [`notes.${code}`]: value });
+          showSavedHint();
+        }
+      }, 1500);
     });
   });
+
 
   // 圖片上傳
   document.getElementById('upload-photo')?.addEventListener('change', async (e) => {
