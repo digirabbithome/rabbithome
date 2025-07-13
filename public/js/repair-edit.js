@@ -1,6 +1,8 @@
 
 function updateStatusInfo(status) {
   const box = document.getElementById('status-info-box')
+  if (!box) return;
+  const box = document.getElementById('status-info-box')
   let text = '⏳ 目前狀況：'
   switch (status) {
     case 1:
