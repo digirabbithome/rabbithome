@@ -9,6 +9,26 @@ import {
 
 const nickname = localStorage.getItem('nickname') || '不明使用者';
 
+function updateStatusInfo(status) {
+  const textMap = {
+    1: '已收到維修尚未寄送廠商',
+    2: '已收到維修且寄送廠商了',
+    3: '已送修 且修復完畢',
+    31: '已送修 但無法處理或遭退件',
+    4: '本維修單已處理完成結案'
+  };
+  const message = textMap[status] || '尚無狀態資料';
+
+  const infoBox = document.createElement('div');
+  infoBox.id = 'status-info-box';
+  infoBox.className = 'status-info';
+  infoBox.innerHTML = `🐰 目前狀況：${message}`;
+
+  const editSection = document.getElementById('edit-section');
+  const table = editSection.querySelector('.repair-info');
+  table.insertAdjacentElement('afterend', infoBox);
+}
+
 function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
     const user = d.user || '未知使用者';
@@ -59,8 +79,8 @@ window.onload = async () => {
   }
 
   const d = snapshot.data();
+  updateStatusInfo(d.status);
 
-  // 顯示圖片
   const imgHTML = (d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
 
   const html = `
@@ -87,7 +107,6 @@ window.onload = async () => {
 
   document.getElementById('edit-section').innerHTML = html;
 
-  // 按鈕更新狀態
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.onclick = async () => {
       const next = btn.dataset.next;
@@ -102,7 +121,6 @@ window.onload = async () => {
     };
   });
 
-  // 自動儲存備註
   const debounceTimers = {};
   const showSavedHint = () => {
     let div = document.createElement('div');
@@ -126,7 +144,6 @@ window.onload = async () => {
     });
   });
 
-  // 上傳照片
   document.getElementById('upload-photo')?.addEventListener('change', async (e) => {
     const files = e.target.files;
     if (!files.length) return;
