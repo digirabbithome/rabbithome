@@ -1,25 +1,19 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>編輯維修單</title>
   <link rel="stylesheet" href="/css/repair.css" />
-  <script type="module" src="/js/repair-edit.js" defer></script>
+  <script type="module" src="/js/repair-edit.js"></script>
 </head>
 <body>
-  <div class="top-nav">
-    <a href="repair-new.html">➕ 新增維修單</a>
-    <a href="repair.html">📋 維修單列表</a>
+  <h2>🛠️ 編輯維修單</h2>
+
+  <div id="view-switch" style="margin-bottom: 16px;">
+    <a href="/repair.html#form"><button>➕ 新增維修單</button></a>
+    <a href="/repair.html#list"><button>📋 維修單列表</button></a>
   </div>
 
-  <div id="repair-info">（維修資料顯示區）</div>
-
-  <!-- 狀態提示說明區 -->
-  <div id="status-info-box" class="status-info-box">
-    ⏳ 目前狀況：資料載入中...
-  </div>
-
-  <div id="status-flow">（狀態階段顯示區）</div>
+  <div id="edit-section">載入中...</div>
 </body>
 </html>
