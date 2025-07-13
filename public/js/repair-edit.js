@@ -40,7 +40,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
 
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
-  let tempUser = history?.user || '';
+  tempUser = history?.user || '';
   const timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
 
   return `
@@ -155,11 +155,11 @@ window.onload = async () => {
   });
 };
 
-let tempUser = localStorage.getItem('nickname') || '不明使用者';
+tempUser = localStorage.getItem('nickname') || '不明使用者';
 
 function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
   if (statusCode === 1) {
-    let tempUser = d.user || '未知使用者';
+    tempUser = d.user || '未知使用者';
     const created = d.createdAt?.toDate?.();
     const timeStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()} ${created.getHours()}:${created.getMinutes().toString().padStart(2,'0')}` : '';
     return `
@@ -171,7 +171,7 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
 
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
-  let tempUser = history?.user || '';
+  tempUser = history?.user || '';
   const timeStr = history?.time ? new Date(history.time).toLocaleString() : '';
 
   return `
