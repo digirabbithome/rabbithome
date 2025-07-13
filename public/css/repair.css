@@ -30,40 +30,10 @@ th[data-sort] {
   background: #f9f9f9;
 }
 
-/* Custom layout for improved spacing */
-.wide-input {
-  width: 90%;
-}
-.tall-textarea {
-  width: 90%;
-  height: 80px;
-}
-#repair-form input[type="text"],
-#repair-form select,
-#repair-form textarea {
-  text-align: left;
-}
 
-
-#repair-form table {
-  margin-left: 0;
-  width: auto;
-}
-
-#repair-form td {
-  text-align: left;
-  padding: 4px 8px;
-  vertical-align: top;
-}
-
-#repair-form input[type="text"],
-#repair-form select,
-#repair-form textarea {
-  width: 100%;
-  max-width: 320px;
-  box-sizing: border-box;
-}
-
-#repair-form textarea {
-  height: 80px;
-}
+/* 顏色狀態 icon 樣式 */
+.status-blue { color: #3498db; font-size: 20px; }
+.status-green { color: #27ae60; font-size: 20px; }
+.status-red { color: #e74c3c; font-size: 20px; }
+.status-gray { color: #888; font-size: 20px; }
+.done-icon { color: #2c3e50; font-size: 20px; }
