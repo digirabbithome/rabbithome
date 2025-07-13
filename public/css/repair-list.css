@@ -1,0 +1,66 @@
+
+/* repair-list.css - 專供 repair.html 使用 */
+
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background-color: #fffafc;
+  margin: 2em;
+}
+
+h2, h3 {
+  color: #e85b9c;
+}
+
+button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #ffd6e8;
+  color: #b3004f;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #ffc0de;
+}
+
+button.active {
+  background-color: #ff8abe;
+  color: white;
+}
+
+input[type="text"], select, textarea {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+  background: white;
+}
+
+th, td {
+  padding: 8px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+th {
+  background-color: #fff0f6;
+  color: #b3004f;
+  cursor: pointer;
+}
+
+tr:nth-child(even) {
+  background-color: #fff6fa;
+}
+
+.red-bg {
+  background-color: #ffcccc;
+}
