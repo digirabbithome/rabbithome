@@ -11,14 +11,9 @@ function updateStatusInfo(status) {
     case 31: text += '已送修 但無法處理或遭退件'; break;
     case 4:  text += '本維修單已處理完成結案'; break;
     default: text += '尚無狀態資料';
-  }
-  box.textContent = text;
-}
 
 
 
-box.textContent = text
-}
 
 
 
@@ -42,7 +37,6 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
         <h3>1. 已收送修　🐰 ${user}　🕒 ${timeStr}</h3>
       </div>
     `;
-  }
 
   const history = d.history?.[statusCode];
   const noteVal = d.notes?.[statusCode] || '';
@@ -56,7 +50,6 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
       <textarea data-note="${statusCode}" placeholder="${placeholder || ''}">${noteVal}</textarea>
     </div>
   `;
-}
 
 const statusHTML = (d) => `
   ${renderStatusBlock(1, '1. 已收送修', '', '', d)}
@@ -72,14 +65,12 @@ window.onload = async () => {
   if (!repairId) {
     document.getElementById('edit-section').innerHTML = '❌ 無效的維修單號';
     return;
-  }
 
   const docRef = doc(db, 'repairs', repairId);
   const snapshot = await getDoc(docRef);
   if (!snapshot.exists()) {
     document.getElementById('edit-section').innerHTML = '❌ 查無此筆資料';
     return;
-  }
 
   const d = snapshot.data();
 
@@ -144,7 +135,6 @@ window.onload = async () => {
         if (d.notes?.[code] !== value) {
           await updateDoc(docRef, { [`notes.${code}`]: value });
           showSavedHint();
-        }
       }, 1500);
     });
   });
@@ -159,7 +149,6 @@ window.onload = async () => {
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       urls.push(url);
-    }
     await updateDoc(docRef, { photos: urls });
     alert('✅ 照片已上傳！');
     location.reload();
