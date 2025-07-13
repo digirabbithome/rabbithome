@@ -1,28 +1,23 @@
 
 function updateStatusInfo(status) {
-  const box = document.getElementById('status-info-box')
+  const box = document.getElementById('status-info-box');
   if (!box) return;
-  const box = document.getElementById('status-info-box')
-  let text = '⏳ 目前狀況：'
+
+  let text = '⏳ 目前狀況：';
   switch (status) {
-    case 1:
-      text += '已收到維修尚未寄送廠商'
-      break
-    case 2:
-      text += '已收到維修且寄送廠商了'
-      break
-    case 3:
-      text += '已送修 且修復完畢'
-      break
-    case 31:
-      text += '已送修 但無法處理或遭退件'
-      break
-    case 4:
-      text += '本維修單已處理完成結案'
-      break
-    default:
-      text += '尚無狀態資料'
+    case 1:  text += '已收到維修尚未寄送廠商'; break;
+    case 2:  text += '已收到維修且寄送廠商了'; break;
+    case 3:  text += '已送修 且修復完畢'; break;
+    case 31: text += '已送修 但無法處理或遭退件'; break;
+    case 4:  text += '本維修單已處理完成結案'; break;
+    default: text += '尚無狀態資料';
   }
+  box.textContent = text;
+}
+
+
+
+
   box.textContent = text
 }
 
