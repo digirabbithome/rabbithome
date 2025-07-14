@@ -75,7 +75,7 @@ window.onload = async () => {
   }
 
   const d = snapshot.data();
-  const imgHTML = (d.photos || []).map(url => `<img src="${url}" class="thumbnail-hover">`).join('');
+  const imgHTML = (d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
 
   const html = `
     <table class="repair-info">
@@ -153,3 +153,29 @@ window.onload = async () => {
     location.reload();
   });
 };
+
+// 圖片 hover 放大預覽
+document.addEventListener("DOMContentLoaded", () => {
+  const preview = document.getElementById("imagePreview");
+
+  document.body.addEventListener("mouseover", (e) => {
+    if (e.target.tagName === "IMG" && e.target.classList.contains("thumbnail")) {
+      const imgUrl = e.target.src;
+      preview.style.display = "block";
+      preview.style.backgroundImage = `url('${imgUrl}')`;
+    }
+  });
+
+  document.body.addEventListener("mousemove", (e) => {
+    if (preview.style.display === "block") {
+      preview.style.top = `${e.clientY + 10}px`;
+      preview.style.left = `${e.clientX + 20}px`;
+    }
+  });
+
+  document.body.addEventListener("mouseout", (e) => {
+    if (e.target.tagName === "IMG" && e.target.classList.contains("thumbnail")) {
+      preview.style.display = "none";
+    }
+  });
+});
