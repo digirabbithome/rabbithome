@@ -1,62 +1,76 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>維修系統</title>
-  <link rel="stylesheet" href="/css/repair.css" />
-  <script type="module" src="/js/repair.js"></script>
+<meta charset="utf-8"/>
+<title>維修主控台</title>
+<link href="css/repair-list.css" rel="stylesheet"/>
+<script src="js/repair.js" type="module"></script>
 </head>
 <body>
-  <div id="form-section">
-    <table>
-      <tr>
-        <td>維修單號</td>
-        <td><input type="text" id="repair-id" /></td>
-      </tr>
-      <tr>
-        <td>客人姓名</td>
-        <td><input type="text" id="customer" placeholder="姓名（Line名稱）" /></td>
-      </tr>
-      <tr>
-        <td>LINE 名稱</td>
-        <td><input type="text" id="line" placeholder="Line 名稱" /></td>
-      </tr>
-      <tr>
-        <td>電話</td>
-        <td><input type="text" id="phone" /></td>
-      </tr>
-      <tr>
-        <td>地址</td>
-        <td><input type="text" id="address" /></td>
-      </tr>
-      <tr>
-        <td>商品</td>
-        <td><input type="text" id="product" /></td>
-      </tr>
-      <tr>
-        <td>狀況描述</td>
-        <td><textarea id="description"></textarea></td>
-      </tr>
-      <tr>
-        <td>保固狀況</td>
-        <td>
-          <select id="warranty">
-            <option>有保卡（保固內）</option>
-            <option>有保卡（過保）</option>
-            <option>沒有保卡</option>
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <td>選擇廠商</td>
-        <td><select id="supplier"><option>請選擇廠商</option></select></td>
-      </tr>
-      <tr>
-        <td>上傳照片</td>
-        <td><input type="file" id="photo" /></td>
-      </tr>
-    </table>
-    <button id="submit-repair">✅ 送出維修單</button>
-  </div>
+
+<div id="view-switch" style="margin-bottom: 16px;">
+<button id="show-form">➕ 新增維修單</button>
+<button id="show-list">📋 維修單列表</button>
+</div>
+<!-- 新增維修單區域 -->
+<div id="form-section" style="display: none;">
+<form id="repair-form">
+<table>
+<tr><td>維修單號</td><td><input id="repair-id" type="text"/><button id="generate-id" type="button">產生</button></td></tr>
+<tr><td>客人姓名</td><td><input id="customer" type="text"/ placeholder="姓名（Line名稱）"></td></tr>
+<tr><td>LINE 名稱</td><td><input id="line" type="text" placeholder="Line 名稱"></td></tr>
+<tr><td>電話</td><td><input id="phone" type="text"/></td></tr>
+<tr><td>地址</td><td><input id="address" type="text"/></td></tr>
+<tr><td>商品</td><td><input id="product" type="text"/></td></tr>
+<tr><td>狀況描述</td><td><textarea id="description"></textarea></td></tr>
+<tr><td>保固狀況</td>
+<td>
+<select id="warranty-select">
+<option value="內">有保卡（保固內）</option>
+<option value="過">有保卡（過保）</option>
+<option value="無">沒有保卡</option>
+</select>
+</td></tr>
+<tr><td>選擇廠商</td><td><select id="supplier-select"></select></td></tr>
+<tr><td>上傳照片</td><td><input id="photo-upload" multiple="" type="file"/></td></tr>
+<tr><td colspan="2"><button type="submit">✅ 送出維修單</button></td></tr>
+</table>
+</form>
+</div>
+<!-- 維修列表區 -->
+<div id="list-section"><div id="repair-header" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;"><div style="margin-bottom: 16px;">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+<button class="status-btn" data-status="all">全部</button>
+<button class="status-btn" data-status="1">新進維修</button>
+<button class="status-btn" data-status="2">已交付廠商</button>
+<button class="status-btn" data-status="3">維修完成</button>
+<button class="status-btn" data-status="4">客人已取貨</button>
+<button class="status-btn" data-status="priority">⭐️ 優先處理</button>
+</div>
+<div style="display: flex; gap: 12px; flex-wrap: wrap;">
+<input id="search-id" placeholder="🔢 維修單號（模糊）" type="text"/>
+<input id="search-keyword" placeholder="🔍 關鍵字：姓名 / 電話 / 廠商 / 商品 / 狀況" type="text"/>
+</div>
+</div></div>
+
+
+<div id="repair-list">載入中...</div>
+</div>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const formSection = document.getElementById('form-section');
+      const listSection = document.getElementById('list-section');
+      document.getElementById('show-form').onclick = () => {
+        formSection.style.display = 'block';
+        listSection.style.display = 'none';
+      };
+      document.getElementById('show-list').onclick = () => {
+        formSection.style.display = 'none';
+        listSection.style.display = 'block';
+      };
+      document.getElementById('show-list').click();
+    });
+  </script>
 </body>
 </html>
