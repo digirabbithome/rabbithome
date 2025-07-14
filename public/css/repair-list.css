@@ -11,21 +11,22 @@ h2, h3 {
   color: #e85b9c;
 }
 
-button {
-  padding: 6px 12px;
+button, .btn-pink {
+  padding: 6px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   background-color: #ffd6e8;
   color: #b3004f;
   cursor: pointer;
   font-weight: bold;
+  transition: background-color 0.2s ease;
 }
 
-button:hover {
+button:hover, .btn-pink:hover {
   background-color: #ffc0de;
 }
 
-button.active {
+button.active, .btn-pink.active {
   background-color: #ff8abe;
   color: white;
 }
