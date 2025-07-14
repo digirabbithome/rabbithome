@@ -87,8 +87,6 @@ window.onload = async () => {
     if (d.address) contact += ` ${d.address}`;
     contactRow = `<tr><td colspan="3"><b>聯絡資訊：</b>${contact}</td></tr>`;
   }
-    <table class="repair-info">
-      ${contactRow}
       <tr>
         <td><b>維修單號：</b>${d.repairId}</td>
         <td><b>保固：</b>${d.warranty || ''}</td>
