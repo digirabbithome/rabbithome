@@ -35,6 +35,7 @@ function renderTable() {
     const desc = d.description?.length > 15 ? d.description.slice(0, 15) + '…' : d.description
 
     return {
+      priority: d.priority === true,
       createdAt: date || new Date(0),
       repairId: d.repairId || '',
       customer: d.customer || '',
@@ -82,7 +83,7 @@ function renderTable() {
   rows.forEach(row => {
     html += `<tr>
       <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth() + 1}/${row.createdAt.getDate()}</td>
-      <td><a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
+      <td><span class="priority-star" data-id="${row.repairId}" style="cursor:pointer;">${row.priority ? "⭐️" : "☆"}</span> <a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
       <td>${row.customer}</td>
       <td>${row.supplier}</td>
       <td>${row.product}</td>
@@ -93,6 +94,22 @@ function renderTable() {
   })
   html += '</tbody></table>'
   listDiv.innerHTML = html
+// 綁定星星 click 事件
+  document.querySelectorAll('.priority-star').forEach(star => {
+    star.onclick = async () => {
+      const id = star.dataset.id;
+      const isActive = star.textContent === '⭐️';
+      const newStatus = !isActive;
+
+      // 更新 Firestore
+      await setDoc(doc(db, 'repairs', id), {
+        priority: newStatus
+      }, { merge: true });
+
+      // 重新載入資料
+      loadRepairList();
+    };
+  });
 
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.onclick = () => {
