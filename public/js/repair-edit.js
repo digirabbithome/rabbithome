@@ -75,7 +75,7 @@ window.onload = async () => {
   }
 
   const d = snapshot.data();
-  const imgHTML = (d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
+  const imgHTML = (d.photos || []).map(url => `<img src="${url}" class="thumbnail-hover">`).join('');
 
   const html = `
     <table class="repair-info">
