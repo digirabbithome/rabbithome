@@ -23,6 +23,8 @@ function renderTable() {
     const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
       .some(field => field?.toLowerCase().includes(keyword2))
     const statusMatch =
+  selectedStatus === 'priority' ? d.priority === true :
+const statusMatch =
       selectedStatus === 'all' ||
       (Array.isArray(selectedStatus)
         ? selectedStatus.includes(String(d.status))
