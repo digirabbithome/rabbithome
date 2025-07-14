@@ -20,7 +20,7 @@ function renderTable() {
 
   let rows = repairData.map(d => {
     const match1 = d.repairId?.toLowerCase().includes(keyword1)
-    const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
+    const match2 = [d.customer, d.phone, d.supplier, d.product, d.desc, d.line]
       .some(field => field?.toLowerCase().includes(keyword2))
     const statusMatch =
   selectedStatus === 'priority' ? d.priority === true :
