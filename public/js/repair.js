@@ -206,7 +206,9 @@ window.onload = async () => {
     }
 
 
-    const phone = document.getElementById('phone').value.trim();
+    const line = document.getElementById('line')?.value.trim() || '';
+const line = document.getElementById('line')?.value.trim() || '';
+const phone = document.getElementById('phone').value.trim();
     const address = document.getElementById('address').value.trim();
     const product = document.getElementById('product').value.trim();
     const description = document.getElementById('description').value.trim();
@@ -221,6 +223,8 @@ window.onload = async () => {
     }
 
     const data = {
+      line,
+      line,
       repairId,
       customer,
       phone,
