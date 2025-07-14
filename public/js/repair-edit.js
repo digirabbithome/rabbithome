@@ -75,6 +75,7 @@ window.onload = async () => {
   }
 
   const d = snapshot.data();
+  const line = d.line || '';
   const imgHTML = (d.photos || []).map(url => `<img src="${url}" class="thumbnail" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
 
   const html = `
@@ -84,7 +85,15 @@ window.onload = async () => {
         <td><b>保固：</b>${d.warranty || ''}</td>
         <td><b>廠商：</b>${d.supplier || ''}</td>
       </tr>
-      ${d.customer ? `<tr><td colspan="3"><b>聯絡資訊：</b>${d.customer} ${d.phone || ''} ${d.address || ''}</td></tr>` : ''}
+  if (d.customer || line || d.phone || d.address) {
+    let contact = ''
+    if (d.customer) contact += d.customer
+    if (line) contact += `（LINE: ${line}）`
+    if (d.phone) contact += ` ${d.phone}`
+    if (d.address) contact += ` ${d.address}`
+    const contactRow = `<tr><td colspan="3"><b>聯絡資訊：</b>${contact}</td></tr>`
+    html += contactRow
+  }
       <tr><td colspan="3"><b>送修商品：</b>${d.product || ''}　　<b>維修內容：</b>${d.description || ''}</td></tr>
       <tr><td colspan="3"><b>商品圖片：</b><br>${imgHTML}<br><input type="file" id="upload-photo" multiple /></td></tr>
     </table>
