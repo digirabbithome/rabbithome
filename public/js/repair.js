@@ -176,7 +176,10 @@ window.onload = async () => {
     const product = document.getElementById('product').value.trim();
     const description = document.getElementById('description').value.trim();
     const warranty = document.getElementById('warranty-select')?.value || '';
-    const supplier = document.getElementById('supplier-select')?.value || '';
+    const supplierSelect = document.getElementById('supplier-select');
+    const supplier = supplierSelect && supplierSelect.selectedIndex > 0
+      ? supplierSelect.value
+      : '';;
 
     const check = await getDoc(doc(db, 'repairs', repairId));
     if (check.exists()) {
