@@ -225,7 +225,6 @@ window.onload = async () => {
       return;
     }
 
-    const line = document.getElementById('line').value.trim();
 
     const data = {
       repairId,
