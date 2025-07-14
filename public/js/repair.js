@@ -203,7 +203,10 @@ window.onload = async () => {
     e.preventDefault();
     const repairId = document.getElementById('repair-id').value.trim();
     const customer = document.getElementById('customer').value.trim();
-    if (!repairId || !customer) {
+    const line = document.getElementById('line').value.trim();
+    if (!repairId || (!customer && !line)) {
+      alert('請填寫維修單號，並至少填寫姓名或 LINE 名稱');
+      return;
       alert('請填寫維修單號與客人姓名');
       return;
     }
