@@ -14,8 +14,8 @@ h2, h3 {
 button, .btn-pink {
   padding: 6px 16px;
   border: none;
-  border-radius: 999px;
-  background-color: #ffd6e8;
+  border-radius: 12px;
+  background-color: #ffb2cf;
   color: white;
   cursor: pointer;
   font-weight: bold;
@@ -23,11 +23,11 @@ button, .btn-pink {
 }
 
 button:hover, .btn-pink:hover {
-  background-color: #ffc0de;
+  background-color: #ff9fc4;
 }
 
 button.active, .btn-pink.active {
-  background-color: #ff8abe;
+  background-color: #ff78ae;
   color: white;
 }
 
