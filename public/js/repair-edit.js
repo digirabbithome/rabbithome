@@ -75,7 +75,7 @@ window.onload = async () => {
   }
 
   const d = snapshot.data();
-  const imgHTML = (d.photos || []).map(url => `<img src="${url}" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
+  const imgHTML = (d.photos || []).map(url => `<img src="${url}" class="thumbnail" style="max-height:100px;margin:6px;border:1px solid #ccc">`).join('');
 
   const html = `
     <table class="repair-info">
@@ -112,7 +112,23 @@ window.onload = async () => {
       });
       alert('✅ 狀態已更新！');
       location.reload();
-    };
+    }
+
+  document.querySelectorAll('img.thumbnail').forEach(img => {
+    img.addEventListener("mouseover", () => {
+      const rect = img.getBoundingClientRect();
+      const preview = document.getElementById("imagePreview");
+      preview.style.left = rect.right + 10 + "px";
+      preview.style.top = rect.top + "px";
+      preview.style.backgroundImage = `url(${img.src})`;
+      preview.style.display = "block";
+    });
+    img.addEventListener("mouseout", () => {
+      const preview = document.getElementById("imagePreview");
+      preview.style.display = "none";
+    });
+  });
+;
   });
 
   const debounceTimers = {};
