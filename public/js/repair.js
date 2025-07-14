@@ -113,6 +113,9 @@ async function loadRepairList() {
 }
 
 window.onload = async () => {
+  // 預設只顯示狀態 1 與 2
+  window.currentStatusFilter = '12';
+
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'))
