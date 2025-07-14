@@ -218,6 +218,7 @@ window.onload = async () => {
     }
 
     const data = {
+    line: document.getElementById('line')?.value.trim() || '',
       repairId,
       customer,
       phone,
