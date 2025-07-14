@@ -1,13 +1,6 @@
-
 import { db, storage } from '/js/firebase.js'
-import {
-  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import {
-  ref, uploadBytes, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
-
-let photoURLs = []
+import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 let repairData = []
 let sortField = 'createdAt'
 let sortDirection = 'desc'
