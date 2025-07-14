@@ -22,7 +22,11 @@ function renderTable() {
     const match1 = d.repairId?.toLowerCase().includes(keyword1)
     const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
       .some(field => field?.toLowerCase().includes(keyword2))
-    const statusMatch = selectedStatus === 'all' || String(d.status) === selectedStatus
+    const statusMatch =
+    selectedStatus === 'all' ||
+    (Array.isArray(selectedStatus)
+      ? selectedStatus.includes(String(d.status))
+      : String(d.status) === selectedStatus)
     if (!match1 || !match2 || !statusMatch) return null
 
     const date = d.createdAt?.toDate?.()
@@ -39,14 +43,7 @@ function renderTable() {
       product: d.product || '',
       description: desc || '',
       status: d.status || 0,
-      statusText: (
-  d.status === 1 ? '新進維修' :
-  d.status === 2 ? '已交付廠商' :
-  d.status === 3 ? '維修完成' :
-  d.status === 4 ? '客人已取回' :
-  d.status === 3.1 ? '廠商退回' :
-  '❓'
-),
+      statusText: ['❓','新進','已交廠商','完成','已取貨'][d.status] || '❓',
       diffDays,
       dayClass
     }
@@ -113,9 +110,6 @@ async function loadRepairList() {
 }
 
 window.onload = async () => {
-  // 預設只顯示狀態 1 與 2
-  window.currentStatusFilter = '12';
-
   document.querySelectorAll('.status-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'))
