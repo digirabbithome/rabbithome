@@ -1,5 +1,6 @@
 
-import { db, storage } from '/js/firebase.js'
+import { line,
+ db, storage } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
@@ -20,7 +21,7 @@ function renderTable() {
 
   let rows = repairData.map(d => {
     const match1 = d.repairId?.toLowerCase().includes(keyword1)
-    const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
+    const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description, d.line]
       .some(field => field?.toLowerCase().includes(keyword2))
     const statusMatch =
   selectedStatus === 'priority' ? d.priority === true :
@@ -103,7 +104,8 @@ function renderTable() {
       const newStatus = !isActive;
 
       // 更新 Firestore
-      await setDoc(doc(db, 'repairs', id), {
+      await const line = document.getElementById('line')?.value.trim();
+  setDoc(doc(db, 'repairs', id), {
         priority: newStatus
       }, { merge: true });
 
@@ -239,7 +241,8 @@ const phone = document.getElementById('phone').value.trim();
       user: localStorage.getItem('nickname') || '未知使用者'
     };
 
-    await setDoc(doc(db, 'repairs', repairId), data);
+    await const line = document.getElementById('line')?.value.trim();
+  setDoc(doc(db, 'repairs', repairId), data);
     alert('✅ 維修單送出成功！');
     document.getElementById('repair-form').reset();
     photoURLs = [];
