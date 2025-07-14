@@ -169,13 +169,3 @@ window.onload = async () => {
     location.reload();
   });
 };
-
-// ✅ 保險插入：顯示 LINE 名稱
-try {
-  const lineDisplay = document.getElementById('line-display');
-  const urlParams = new URLSearchParams(window.location.search);
-  const lineName = urlParams.get('line');
-  if (lineDisplay && lineName) {
-    lineDisplay.textContent = `LINE 名稱：${lineName}`;
-  }
-} catch (e) { console.warn('LINE 顯示失敗', e); }
