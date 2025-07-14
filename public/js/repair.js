@@ -20,6 +20,10 @@ function renderTable() {
   const selectedStatus = window.currentStatusFilter || 'all'
 
   let rows = repairData.map(d => {
+  const nameDisplay =
+    d.customer && d.line ? `${d.customer} / ${d.line}` :
+    d.line ? d.line :
+    d.customer || '';
     const match1 = d.repairId?.toLowerCase().includes(keyword1)
     const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description, d.line]
       .some(field => field?.toLowerCase().includes(keyword2))
@@ -37,6 +41,7 @@ function renderTable() {
     const desc = d.description?.length > 15 ? d.description.slice(0, 15) + '…' : d.description
 
     return {
+    nameDisplay,
       priority: d.priority === true,
       createdAt: date || new Date(0),
       repairId: d.repairId || '',
@@ -104,7 +109,6 @@ function renderTable() {
       const newStatus = !isActive;
 
       // 更新 Firestore
-      await const line = document.getElementById('line')?.value.trim();
   setDoc(doc(db, 'repairs', id), {
         priority: newStatus
       }, { merge: true });
@@ -201,15 +205,12 @@ window.onload = async () => {
     const repairId = document.getElementById('repair-id').value.trim();
     const customer = document.getElementById('customer').value.trim();
 
-    const line = document.getElementById('line')?.value.trim();
     if (!repairId || (!customer && !line)) {
       alert('請填寫維修單號，並填寫客人姓名或 LINE 名稱其中之一');
       return;
     }
 
 
-    const line = document.getElementById('line')?.value.trim() || '';
-const line = document.getElementById('line')?.value.trim() || '';
 const phone = document.getElementById('phone').value.trim();
     const address = document.getElementById('address').value.trim();
     const product = document.getElementById('product').value.trim();
@@ -241,7 +242,6 @@ const phone = document.getElementById('phone').value.trim();
       user: localStorage.getItem('nickname') || '未知使用者'
     };
 
-    await const line = document.getElementById('line')?.value.trim();
   setDoc(doc(db, 'repairs', repairId), data);
     alert('✅ 維修單送出成功！');
     document.getElementById('repair-form').reset();
