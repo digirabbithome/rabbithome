@@ -83,13 +83,13 @@ window.onload = async () => {
     e.preventDefault();
     const repairId = document.getElementById('repair-id').value.trim();
     const customer = document.getElementById('customer').value.trim();
-    if (!repairId || !customer) {
-      alert('請填寫維修單號與客人姓名');
+    const line = document.getElementById('line')?.value.trim() || '';
+    if (!repairId || (!customer && !line)) {
+      alert('請填寫維修單號與姓名或 LINE 名稱');
       return;
     }
 
     const phone = document.getElementById('phone').value.trim();
-    const line = document.getElementById('line')?.value.trim() || '';
     const address = document.getElementById('address').value.trim();
     const product = document.getElementById('product').value.trim();
     const description = document.getElementById('description').value.trim();
