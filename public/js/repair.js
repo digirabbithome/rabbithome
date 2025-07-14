@@ -1,5 +1,5 @@
 
- db, storage } from '/js/firebase.js'
+import { db, storage } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
