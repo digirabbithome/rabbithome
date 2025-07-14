@@ -12,7 +12,119 @@ let repairData = []
 let sortField = 'createdAt'
 let sortDirection = 'desc'
 
+function renderTable() {
+  const listDiv = document.getElementById('repair-list')
+  const keyword1 = document.getElementById('search-id')?.value.trim().toLowerCase() || ''
+  const keyword2 = document.getElementById('search-keyword')?.value.trim().toLowerCase() || ''
+  const selectedStatus = window.currentStatusFilter || 'all'
 
+  let rows = repairData.map(d => {
+    const match1 = d.repairId?.toLowerCase().includes(keyword1)
+    const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description]
+      .some(field => field?.toLowerCase().includes(keyword2))
+    const statusMatch =
+  selectedStatus === 'priority' ? d.priority === true :
+      selectedStatus === 'all' ||
+      (Array.isArray(selectedStatus)
+        ? selectedStatus.includes(String(d.status))
+        : String(d.status) === selectedStatus)
+    if (!match1 || !match2 || !statusMatch) return null
+
+    const date = d.createdAt?.toDate?.()
+    const diffDays = date ? Math.floor((new Date() - date) / (1000 * 60 * 60 * 24)) : 0
+    const dayClass = diffDays > 7 ? 'red-bg' : ''
+    const desc = d.description?.length > 15 ? d.description.slice(0, 15) + '…' : d.description
+
+    return {
+      priority: d.priority === true,
+      createdAt: date || new Date(0),
+      repairId: d.repairId || '',
+      customer: d.customer || '',
+      supplier: (d.supplier || '').substring(0, 4),
+      product: d.product || '',
+      description: desc || '',
+      status: d.status || 0,
+      statusText: (
+        d.status === 1 ? '新進維修' :
+        d.status === 2 ? '已交付廠商' :
+        d.status === 3 ? '維修完成' :
+        d.status === 4 ? '客人已取回' :
+        d.status === 3.1 ? '廠商退回' :
+        '❓'
+      ),
+      diffDays,
+      dayClass
+    }
+  }).filter(r => r !== null)
+
+  rows.sort((a, b) => {
+    let valA = a[sortField]
+    let valB = b[sortField]
+    if (typeof valA === 'string') valA = valA.toLowerCase()
+    if (typeof valB === 'string') valB = valB.toLowerCase()
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  const arrow = sortDirection === 'asc' ? '▲' : '▼'
+  const header = `
+  <table><thead><tr>
+    <th data-sort="createdAt">送修時間 ${sortField==='createdAt'?arrow:''}</th>
+    <th data-sort="repairId">維修單號 ${sortField==='repairId'?arrow:''}</th>
+    <th data-sort="customer">姓名 ${sortField==='customer'?arrow:''}</th>
+    <th data-sort="supplier">廠商 ${sortField==='supplier'?arrow:''}</th>
+    <th data-sort="product">商品 ${sortField==='product'?arrow:''}</th>
+    <th data-sort="description">描述 ${sortField==='description'?arrow:''}</th>
+    <th data-sort="status">狀態 ${sortField==='status'?arrow:''}</th>
+    <th data-sort="diffDays">維修天數 ${sortField==='diffDays'?arrow:''}</th>
+  </tr></thead><tbody>`
+
+  let html = header
+  rows.forEach(row => {
+    html += `<tr>
+      <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth() + 1}/${row.createdAt.getDate()}</td>
+      <td><span class="priority-star" data-id="${row.repairId}" style="cursor:pointer;">${row.priority ? "⭐️" : "☆"}</span> <a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
+      <td>${row.customer}</td>
+      <td>${row.supplier}</td>
+      <td>${row.product}</td>
+      <td>${row.description}</td>
+      <td>${row.statusText}</td>
+      <td class="${row.dayClass}">${row.diffDays}</td>
+    </tr>`
+  })
+  html += '</tbody></table>'
+  listDiv.innerHTML = html
+// 綁定星星 click 事件
+  document.querySelectorAll('.priority-star').forEach(star => {
+    star.onclick = async () => {
+      const id = star.dataset.id;
+      const isActive = star.textContent === '⭐️';
+      const newStatus = !isActive;
+
+      // 更新 Firestore
+      await setDoc(doc(db, 'repairs', id), {
+        priority: newStatus
+      }, { merge: true });
+
+      // 重新載入資料
+      loadRepairList();
+    };
+  });
+
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.onclick = () => {
+      const field = th.dataset.sort
+      if (sortField === field) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        sortField = field
+        sortDirection = 'asc'
+      }
+      renderTable()
+    }
+  })
+}
 
 async function loadRepairList() {
   const q2 = query(collection(db, 'repairs'), orderBy('createdAt', 'desc'))
@@ -129,32 +241,4 @@ window.onload = async () => {
   });
 
   loadRepairList();
-}
-
-
-
-function renderTable() {
-  const keyword = document.getElementById('search-keyword')?.value.trim().toLowerCase() || '';
-  const listSection = document.getElementById('list-section');
-  listSection.innerHTML = '';
-
-  repairData.forEach(d => {
-    const match = [d.customer, d.phone, d.address, d.line, d.description].some(field =>
-      field?.toLowerCase().includes(keyword)
-    );
-    if (!match) return;
-
-    let nameDisplay = '';
-    if (d.customer && d.line) {
-      nameDisplay = `${d.customer} / ${d.line}`;
-    } else if (d.customer) {
-      nameDisplay = d.customer;
-    } else if (d.line) {
-      nameDisplay = d.line;
-    }
-
-    const row = document.createElement('div');
-    row.textContent = `${d.repairId} - ${nameDisplay}`;
-    listSection.appendChild(row);
-  });
 }
