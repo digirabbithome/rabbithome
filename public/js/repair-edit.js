@@ -17,7 +17,6 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
     return `
       <div class="status-block" data-status="1">
         <h3>1. 已收送修　🐰 ${user}　🕒 ${timeStr}</h3>
-      </div>
     `;
   }
 
@@ -28,11 +27,8 @@ function renderStatusBlock(statusCode, title, noteLabel, placeholder, d) {
 
   return `
     <div class="status-block" data-status="${statusCode}">
-      ${!history ? `<button class="status-btn" data-next="${statusCode}">${title}</button>` 
                   : `<h3>${title}　🐰 ${user}　🕒 ${timeStr}</h3>`}
       <textarea data-note="${statusCode}" placeholder="${placeholder || ''}">${noteVal}</textarea>
-    </div>
-  `;
 }
 
 function updateStatusInfo(status) {
@@ -57,7 +53,6 @@ const statusHTML = (d) => `
   ${renderStatusBlock(3, '3. 維修完成', '維修說明', '請輸入處理狀況', d)}
   ${renderStatusBlock(31, '3-1. 廠商退回', '退回原因', '請輸入退回說明', d)}
   ${renderStatusBlock(4, '4. 客人已取回', '客戶回饋', '請填寫交貨說明或客戶回饋', d)}
-`;
 
 window.onload = async () => {
   const params = new URLSearchParams(location.search);
@@ -95,17 +90,15 @@ window.onload = async () => {
       <tr><td colspan="3"><b>送修商品：</b>${d.product || ''}　　<b>維修內容：</b>${d.description || ''}</td></tr>
       <tr><td colspan="3"><b>商品圖片：</b><br>${imgHTML}<br><input type="file" id="upload-photo" multiple /></td></tr>
     </table>
-
-    ${statusHTML(d)}
-  `;
-
     <div id="final-actions">
       <button onclick="window.open('/repair-print.html?id=${repairId}')">📄 列印維修單</button>
       <button onclick="window.open('/print.html?id=${repairId}')">✉️ 列印送修信封</button>
       <button onclick="window.open('/print-reply.html?id=${repairId}')">✉️ 列印廠商信封</button>
       <button data-next="4" class="status-btn">✅ 結案</button>
     </div>
-  `;
+
+    ${statusHTML(d)}
+
   document.getElementById('edit-section').innerHTML = html;
   updateStatusInfo(d.status);
 
