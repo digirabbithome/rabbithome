@@ -97,6 +97,7 @@ window.onload = async () => {
     </table>
 
     ${statusHTML(d)}
+  `;
 
     <div id="final-actions">
       <button onclick="window.open('/repair-print.html?id=${repairId}')">📄 列印維修單</button>
