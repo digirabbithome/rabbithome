@@ -1,6 +1,13 @@
+
 import { db, storage } from '/js/firebase.js'
-import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
+import {
+  collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, getDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  ref, uploadBytes, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
+
+let photoURLs = []
 let repairData = []
 let sortField = 'createdAt'
 let sortDirection = 'desc'
@@ -12,10 +19,10 @@ function renderTable() {
   const selectedStatus = window.currentStatusFilter || 'all'
 
   let rows = repairData.map(d => {
-  const nameDisplay =
-    d.customer && d.line ? `${d.customer} / ${d.line}` :
-    d.line ? d.line :
-    d.customer || '';
+    const nameDisplay =
+      d.customer && d.line ? `${d.customer} / ${d.line}` :
+      d.line ? d.line :
+      d.customer || '';
     const match1 = d.repairId?.toLowerCase().includes(keyword1)
     const match2 = [d.customer, d.phone, d.address, d.supplier, d.product, d.description, d.line]
       .some(field => field?.toLowerCase().includes(keyword2))
@@ -33,8 +40,8 @@ function renderTable() {
     const desc = d.description?.length > 15 ? d.description.slice(0, 15) + '…' : d.description
 
     return {
-    nameDisplay,
       priority: d.priority === true,
+      nameDisplay,
       createdAt: date || new Date(0),
       repairId: d.repairId || '',
       customer: d.customer || '',
@@ -83,7 +90,7 @@ function renderTable() {
     html += `<tr>
       <td>${row.createdAt.getFullYear()}/${row.createdAt.getMonth() + 1}/${row.createdAt.getDate()}</td>
       <td><span class="priority-star" data-id="${row.repairId}" style="cursor:pointer;">${row.priority ? "⭐️" : "☆"}</span> <a href="repair-edit.html?id=${row.repairId}">${row.repairId}</a></td>
-      <td>${row.customer}</td>
+      <td>${row.nameDisplay}</td>
       <td>${row.supplier}</td>
       <td>${row.product}</td>
       <td>${row.description}</td>
@@ -101,7 +108,7 @@ function renderTable() {
       const newStatus = !isActive;
 
       // 更新 Firestore
-  setDoc(doc(db, 'repairs', id), {
+      await setDoc(doc(db, 'repairs', id), {
         priority: newStatus
       }, { merge: true });
 
@@ -196,14 +203,12 @@ window.onload = async () => {
     e.preventDefault();
     const repairId = document.getElementById('repair-id').value.trim();
     const customer = document.getElementById('customer').value.trim();
-
-    if (!repairId || (!customer && !line)) {
-      alert('請填寫維修單號，並填寫客人姓名或 LINE 名稱其中之一');
+    if (!repairId || !customer) {
+      alert('請填寫維修單號與客人姓名');
       return;
     }
 
-
-const phone = document.getElementById('phone').value.trim();
+    const phone = document.getElementById('phone').value.trim();
     const address = document.getElementById('address').value.trim();
     const product = document.getElementById('product').value.trim();
     const description = document.getElementById('description').value.trim();
@@ -217,10 +222,11 @@ const phone = document.getElementById('phone').value.trim();
       return;
     }
 
+    const line = document.getElementById('line').value.trim();
+
     const data = {
-      line,
-      line,
       repairId,
+      line,
       customer,
       phone,
       address,
@@ -234,7 +240,7 @@ const phone = document.getElementById('phone').value.trim();
       user: localStorage.getItem('nickname') || '未知使用者'
     };
 
-  setDoc(doc(db, 'repairs', repairId), data);
+    await setDoc(doc(db, 'repairs', repairId), data);
     alert('✅ 維修單送出成功！');
     document.getElementById('repair-form').reset();
     photoURLs = [];
