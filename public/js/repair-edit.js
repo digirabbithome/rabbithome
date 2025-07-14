@@ -156,6 +156,21 @@ window.onload = async () => {
 
 // 圖片 hover 放大預覽
 document.addEventListener("DOMContentLoaded", () => {
+  // 縮圖 hover 預覽大圖
+  const preview = document.getElementById("imagePreview");
+  document.querySelectorAll("img.thumbnail").forEach(img => {
+    img.addEventListener("mouseover", e => {
+      const rect = img.getBoundingClientRect();
+      preview.style.left = rect.right + 10 + "px";
+      preview.style.top = rect.top + "px";
+      preview.style.backgroundImage = `url(${img.src})`;
+      preview.style.display = "block";
+    });
+    img.addEventListener("mouseout", () => {
+      preview.style.display = "none";
+    });
+  });
+
   const preview = document.getElementById("imagePreview");
 
   document.body.addEventListener("mouseover", (e) => {
