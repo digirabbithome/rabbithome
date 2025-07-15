@@ -1,30 +1,34 @@
 
 import { db } from '/js/firebase.js'
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  collection, query, where, getDocs
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 window.onload = async () => {
+  const nickname = localStorage.getItem('nickname') || '（未登入）'
+  document.getElementById('handler').innerText = nickname
+
   const params = new URLSearchParams(window.location.search)
-  const repairId = params.get('id')
+  const repairId = params.get('id') || ''
   if (!repairId) return
 
-  const docRef = doc(db, 'repairs', repairId)
-  const docSnap = await getDoc(docRef)
-  if (!docSnap.exists()) return
+  const q = query(collection(db, 'repairs'), where('repairId', '==', repairId))
+  const snapshot = await getDocs(q)
+  if (snapshot.empty) return
 
-  const data = docSnap.data()
-  document.getElementById('repairId').textContent = repairId
-  const created = data.createdAt?.toDate?.()
-  const dateStr = created ? `${created.getFullYear()}/${created.getMonth()+1}/${created.getDate()}` : ''
-  document.getElementById('repairDate').textContent = `填單日期：${dateStr}`
+  const d = snapshot.docs[0].data()
 
-  const customerLine = data.line ? `(${data.line})` : ''
-  const customerPhone = data.phone ? `(${data.phone})` : ''
-  const customerAddr = data.address ? `
-${data.address}` : ''
-  document.getElementById('customerInfo').textContent = `${data.customer}${customerLine}${customerPhone}${customerAddr}`
+  document.title = `維修單 ${repairId}`
+  document.getElementById('repairId').innerText = repairId
+  document.getElementById('warranty').innerText = d.warranty || ''
+  document.getElementById('product').innerText = d.product || ''
+  document.getElementById('description').innerText = d.description || ''
 
-  document.getElementById('productName').textContent = data.product || ''
-  document.getElementById('warranty').textContent = data.warranty || ''
-  document.getElementById('description').textContent = data.description || ''
-  document.getElementById('handler').textContent = data.nickname || ''
+  const line = d.line ? `（LINE: ${d.line}）` : ''
+  const customerText = [
+    `<span class='label'>姓名：</span>${d.customer || ''} ${line}<br>`,
+    `<span class='label'>電話：</span>${d.phone || ''}<br>`,
+    `<span class='label'>地址：</span>${d.address || ''}`
+  ].filter(x => x).join('')
+  document.getElementById('customerInfo').innerHTML = customerText
 }
