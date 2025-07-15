@@ -6,7 +6,7 @@ import {
 
 window.onload = async () => {
   const nickname = localStorage.getItem('nickname') || '（未登入）'
-  document.getElementById('handler').innerText = nickname
+  const handlerDiv = document.getElementById('handler'); if (handlerDiv) handlerDiv.innerText = nickname
 
   const params = new URLSearchParams(window.location.search)
   const repairId = params.get('id') || ''
