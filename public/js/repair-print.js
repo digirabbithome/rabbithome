@@ -1,24 +1,37 @@
 
-import { db } from '/js/firebase.js';
+import { db } from '/js/firebase.js'
 import {
   doc, getDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-const params = new URLSearchParams(window.location.search);
-const repairID = params.get("id") || "";
+window.onload = async () => {
+  const params = new URLSearchParams(window.location.search)
+  const repairId = params.get('id') || ''
+  if (!repairId) return
 
-async function loadPrint() {
-  const refDoc = doc(db, "repairs", repairID);
-  const snap = await getDoc(refDoc);
-  if (!snap.exists()) return alert("查無資料");
+  document.getElementById('repairId').innerText = repairId
 
-  const d = snap.data();
-  document.getElementById("repairID").textContent = d.repairID || "";
-  document.getElementById("supplier").textContent = d.supplier || "";
-  document.getElementById("contact").textContent = d.contact || "";
-  document.getElementById("warranty").textContent = d.warranty || "";
-  document.getElementById("product").textContent = d.product || "";
-  document.getElementById("description").textContent = d.description || "";
+  const snap = await getDoc(doc(db, 'repairs', repairId))
+  if (!snap.exists()) return
+  const d = snap.data()
+
+  const date = d.createdAt?.toDate?.()
+  if (date) {
+    document.getElementById('createdAt').innerText = 
+      `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`
+  }
+
+  document.getElementById('warranty').innerText = d.warranty || ''
+  document.getElementById('product').innerText = d.product || ''
+  document.getElementById('description').innerText = d.description || ''
+
+  const line = d.line ? `（LINE: ${d.line}）` : ''
+  const customerText = [
+    `${d.customer || ''}${line}`,
+    d.phone || '',
+    d.address || ''
+  ].filter(x => x).join('<br>')
+  document.getElementById('customerInfo').innerHTML = customerText
+
+  window.print()
 }
-
-window.onload = loadPrint;

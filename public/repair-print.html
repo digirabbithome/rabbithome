@@ -3,45 +3,48 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>列印維修單</title>
-  <style>
-    body {
-      width: 150mm;
-      height: 100mm;
-      margin: 0;
-      padding: 10mm;
-      font-family: sans-serif;
-      box-sizing: border-box;
-    }
-    .repair-sheet {
-      border: 2px solid #333;
-      padding: 10px;
-      height: 100%;
-    }
-    h2 {
-      margin: 0 0 10px 0;
-    }
-    .row {
-      margin-bottom: 5px;
-    }
-    .label {
-      font-weight: bold;
-      display: inline-block;
-      width: 30mm;
-    }
-  </style>
+  <title>維修單列印</title>
+  <link rel="stylesheet" href="/css/repair-print.css" />
+  <script type="module" src="/js/repair-print.js"></script>
 </head>
 <body>
-  <div class="repair-sheet">
-    <h2>🛠️ 維修單</h2>
-    <div class="row"><span class="label">單號：</span><span id="repairID"></span></div>
-    <div class="row"><span class="label">廠商：</span><span id="supplier"></span></div>
-    <div class="row"><span class="label">聯絡方式：</span><span id="contact"></span></div>
-    <div class="row"><span class="label">商品：</span><span id="product"></span></div>
-    <div class="row"><span class="label">保固狀態：</span><span id="warranty"></span></div>
-    <div class="row"><span class="label">狀況描述：</span><span id="description"></span></div>
-  </div>
+  <div class="print-wrapper">
+    <div class="header">
+      <img src="/img/logo.png" class="logo" />
+      <div class="company-info">
+        <div class="title">數位小兔攝影週邊器材行</div>
+        <div class="info">110 台北市信義區大道路74巷1號</div>
+        <div class="info">TEL：(02)2759-2013　(02)2759-2006</div>
+      </div>
+      <div class="repair-id-block">
+        <div class="repair-label">維修單號：</div>
+        <div class="repair-id" id="repairId">載入中...</div>
+      </div>
+    </div>
 
-  <script type="module" src="/js/repair-print.js"></script>
+    <div class="section">
+      <div><b>填單日期：</b><span id="createdAt"></span></div>
+      <div><b>保固：</b><span id="warranty"></span></div>
+    </div>
+
+    <div class="section">
+      <div><b>客戶資訊：</b></div>
+      <div id="customerInfo"></div>
+    </div>
+
+    <div class="section">
+      <div><b>維修項目：</b><span id="product"></span></div>
+    </div>
+
+    <div class="section">
+      <div><b>備註：</b></div>
+      <div id="description" class="description"></div>
+    </div>
+
+    <div class="footer">
+      <div class="sign-label">經手人簽名：</div>
+      <div class="qrcode-label">官方LineID: @digirabbit</div>
+    </div>
+  </div>
 </body>
 </html>
