@@ -7,7 +7,7 @@ body {
   font-family: 'Arial', sans-serif;
   width: 450px;
   margin: 0 auto;
-  padding: 20px 20px 30px 30px; /* 左邊額外多加 padding */
+  padding: 20px 20px 30px 30px;
 }
 
 .header {
@@ -38,10 +38,10 @@ body {
   margin: 20px 0;
   padding: 10px;
   border: 2px solid black;
-  color: black;
   font-size: 18px;
   font-weight: bold;
   text-align: center;
+  letter-spacing: 0.3em; /* 每字中間留空格 */
 }
 
 .section {
@@ -56,14 +56,21 @@ body {
   font-size: 16px;
 }
 
-hr {
-  border: none;
-  border-top: 1px dashed #ccc;
-  margin: 20px 0;
+.underline {
+  display: inline-block;
+  border-bottom: 1px solid black;
+  min-width: 200px;
+  line-height: 1.6;
 }
 
-.footer-note {
-  font-size: 14px;
-  margin-top: 40px;
-  line-height: 1.6;
+hr {
+  border: none;
+  border-top: 2px dashed #000;
+  margin: 25px 0;
+}
+
+.extra-lines {
+  border-bottom: 1px solid black;
+  height: 24px;
+  margin-top: 6px;
 }
