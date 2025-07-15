@@ -19,7 +19,6 @@ body {
 .header {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
 }
 
 .header img {
@@ -30,7 +29,7 @@ body {
 .header-text {
   font-size: 12px;
   line-height: 1.2;
-  margin-bottom: 2px;
+  margin-left: 6px;
 }
 
 h1.black-bar {
