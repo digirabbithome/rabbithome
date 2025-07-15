@@ -6,7 +6,8 @@ import {
 
 window.onload = async () => {
   const nickname = localStorage.getItem('nickname') || '（未登入）'
-  document.getElementById('handler').innerText = nickname
+  const handlerEl = document.getElementById('staffNickname')
+  if (handlerEl) handlerEl.innerText = nickname
 
   const params = new URLSearchParams(window.location.search)
   const repairId = params.get('id') || ''
@@ -18,17 +19,30 @@ window.onload = async () => {
 
   const d = snapshot.docs[0].data()
 
+  // 維修單號顯示
   document.title = `維修單 ${repairId}`
-  document.getElementById('repairId').innerText = repairId
-  document.getElementById('warranty').innerText = d.warranty || ''
+  const repairIdText = document.getElementById('repairIdText')
+  if (repairIdText) repairIdText.innerText = repairId
+
+  // 顯示 填單日期 + 保固狀態
+  const repairDateWarrantyEl = document.getElementById("repairDateWarranty")
+  if (d.createdAt && d.warrantyStatus && repairDateWarrantyEl) {
+    const date = d.createdAt.toDate()
+    const dateStr = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
+    repairDateWarrantyEl.textContent = `${dateStr}　${d.warrantyStatus}`
+  }
+
+  // 顯示 客戶資料 單行
+  const ciEl = document.getElementById("customerInfo")
+  if (ciEl) {
+    const name = d.customer || ""
+    const phone = d.phone || ""
+    const address = d.address || ""
+    const line = d.line ? `（LINE: ${d.line}）` : ""
+    ciEl.textContent = `${name} ${line} ${phone} ${address}`.trim()
+  }
+
+  // 顯示商品與描述
   document.getElementById('product').innerText = d.product || ''
   document.getElementById('description').innerText = d.description || ''
-
-  const line = d.line ? `（LINE: ${d.line}）` : ''
-  const customerText = [
-    `<span class='label'>姓名：</span>${d.customer || ''} ${line}<br>`,
-    `<span class='label'>電話：</span>${d.phone || ''}<br>`,
-    `<span class='label'>地址：</span>${d.address || ''}`
-  ].filter(x => x).join('')
-  document.getElementById('customerInfo').innerHTML = customerText
 }
