@@ -1,40 +1,39 @@
 @page { margin: 0; }
 body {
-  font-family: sans-serif;
   width: 450px;
+  font-family: "Arial", sans-serif;
   margin: 0 auto;
+  padding: 10px;
+  color: #000;
+  font-size: 14px;
 }
 .logo {
   width: 80px;
 }
-.header-table {
+.header {
   width: 100%;
+  margin-bottom: 10px;
 }
 .company-info {
-  font-size: 14px;
   padding-left: 10px;
+  vertical-align: top;
 }
-.company-name-bold {
+.company-title {
   font-weight: bold;
   font-size: 16px;
 }
-.title-box {
-  border: 1px solid #000;
+.form-title {
   text-align: center;
   margin: 12px 0;
-  padding: 8px;
   font-weight: bold;
-  letter-spacing: 6px;
+  letter-spacing: 0.5em;
 }
 .section {
-  margin: 10px 0;
-}
-.section div {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 .footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
   margin-top: 20px;
-}
-.right-align {
-  text-align: right;
 }
