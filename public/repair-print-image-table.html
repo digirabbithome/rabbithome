@@ -3,10 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <title>列印維修單</title>
-  <link rel="stylesheet" href="/css/repair.css" />
+  <style>
+    body { margin: 0; font-family: sans-serif; width: 320px; height: 520px; }
+    .bar {
+      background: black;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+      padding: 6px 0;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-  <div id="print-container"></div>
-  <script type="module" src="/js/repair-print-image-table.js"></script>
+  <div class="bar" id="form-title">產品維修單</div>
+  <!-- 其他內容可插入 -->
+  <script type="module" src="js/repair-print-image-table.js"></script>
 </body>
 </html>
