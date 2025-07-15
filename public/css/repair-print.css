@@ -1,42 +1,52 @@
 
-@page { margin: 0; }
 body {
-  font-family: Arial, sans-serif;
+  margin: 0;
+  font-family: "微軟正黑體", sans-serif;
   width: 450px;
-  margin: 0 auto;
 }
+
 .print-wrapper {
   padding: 12px;
 }
+
 .logo {
-  height: 60px;
+  width: 80px;
 }
+
 .header {
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
+
 .company-info {
-  font-size: 12px;
-  padding-left: 8px;
+  padding-left: 10px;
+  font-size: 14px;
   vertical-align: top;
 }
+
 .company-title {
+  font-size: 18px;
   font-weight: bold;
-  font-size: 16px;
+  margin-bottom: 4px;
 }
+
 .form-title {
   text-align: center;
-  font-size: 16px;
   font-weight: bold;
-  margin: 8px 0;
+  margin: 10px 0;
 }
+
 .bordered {
-  border: 1px solid #000;
-  padding: 4px;
-  display: inline-block;
-  letter-spacing: 0.5em;
+  border: 1px solid black;
+  padding: 6px 0;
 }
+
 .section {
-  margin-top: 8px;
-  font-size: 14px;
+  margin: 10px 0;
+  font-size: 15px;
+}
+
+.indent {
+  display: inline-block;
+  margin-left: 88px;
 }
