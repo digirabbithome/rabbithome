@@ -15,7 +15,23 @@ window.onload = async () => {
     document.getElementById('repairId').innerText = data.repairId || ''
     document.getElementById('createdAt').innerText = data.createdAt?.toDate().toLocaleString('zh-TW') || ''
     document.getElementById('handler').innerText = data.user || ''
-    document.getElementById('warranty').innerText = data.warranty || ''
+
+    let warrantyText = ''
+    switch (data.warranty) {
+      case '內':
+        warrantyText = '有保卡（保固內）'
+        break
+      case '外':
+        warrantyText = '有保卡（過保）'
+        break
+      case '無':
+        warrantyText = '沒有保卡'
+        break
+      default:
+        warrantyText = data.warranty || ''
+    }
+    document.getElementById('warranty').innerText = warrantyText
+
     document.getElementById('contactInfo').innerText = `${data.customer || ''}　${data.phone || ''}　${data.line || ''}`
     document.getElementById('addressLine').innerText = data.address || ''
     document.getElementById('product').innerText = data.product || ''
