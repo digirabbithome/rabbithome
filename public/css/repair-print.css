@@ -10,16 +10,21 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 20px;
 }
 
 .logo {
-  width: 100px;
+  width: 200px;
+  height: auto;
+  flex-shrink: 0;
 }
 
 .company-info {
-  text-align: right;
+  flex-grow: 1;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
+  text-align: right;
+  word-break: break-word;
 }
 
 .title-bar {

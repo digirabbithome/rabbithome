@@ -17,7 +17,6 @@ window.onload = async () => {
 
   document.title = `維修單 ${repairId}`
   document.getElementById('repairId').innerText = repairId
-  document.getElementById('company').innerHTML = d.senderCompany || ''
   document.getElementById('warranty').innerText = d.warranty || ''
   document.getElementById('product').innerText = d.product || ''
   document.getElementById('description').innerText = d.description || ''
