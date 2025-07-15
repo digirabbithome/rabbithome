@@ -6,11 +6,11 @@
   <link rel="stylesheet" href="css/repair-print.css" />
 </head>
 <body>
-  <div class="print-container">
+  <div class="container">
     <div class="header">
-      <img src="/logo-black.png" alt="Logo" class="logo" />
+      <img src="img/logo-black.png" class="logo" />
       <div class="company-info">
-        <div>數位小兔</div>
+        <div class="cname">數位小兔攝影週邊器材行</div>
         <div>Digital Rabbit</div>
         <div>110 台北市信義區大道路74巷1號</div>
         <div>TEL：02-2759-2006</div>
@@ -18,26 +18,23 @@
     </div>
     <h2 class="title">數 位 小 兔 產 品 維 修 單</h2>
     <div class="section">
-      <div><strong>維修單號：</strong><span id="repairId"></span></div>
-      <div><strong>填單日期：</strong><span id="createdAt"></span></div>
-      <div><strong>聯絡資訊：</strong><span id="contactInfo"></span></div>
-      <div id="addressLine" style="display:none;"><strong>地址：</strong><span id="address"></span></div>
+      <div>維修單號：<span id="repairId"></span></div>
+      <div>填單日期：<span id="createdDate"></span></div>
+      <div>聯絡資訊：<span id="contactInfo"></span></div>
+      <div id="addressRow">地址：<span id="address"></span></div>
     </div>
-    <hr />
     <div class="section">
-      <div><strong>保固狀況：</strong><span id="warranty"></span></div>
+      <div>保固狀況：<span id="warrantyStatus"></span></div>
     </div>
-    <hr />
     <div class="section">
-      <div><strong>產品名稱：</strong><span id="product"></span></div>
-      <div><strong>問題描述：</strong><span id="description"></span></div>
+      <div>產品名稱：<span id="product"></span></div>
+      <div>問題描述：<span id="description"></span></div>
     </div>
-    <hr />
     <div class="section">
-      <div><strong>經手人：</strong><span id="nickname"></span></div>
-      <div><strong>官方 LINE：</strong>@digirabbit</div>
+      <div>經手人：<span id="handler"></span></div>
+      <div>官方 LINE：@digirabbit</div>
     </div>
   </div>
-  <script type="module" src="js/repair-print.js"></script>
 </body>
+<script src="js/repair-print.js" type="module"></script>
 </html>
