@@ -45,7 +45,7 @@ window.onload = async () => {
   const canvas = await html2canvas(capture, { scale: 2 })
   const img = new Image()
   img.src = canvas.toDataURL("image/png")
-  img.style.width = "320px"; img.style.height = "520px"
+  img.style.width = "100%"
   img.onload = () => {
     document.body.innerHTML = ""
     document.body.appendChild(img)
