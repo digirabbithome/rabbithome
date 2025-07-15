@@ -2,17 +2,31 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>維修單</title>
+  <link rel="stylesheet" href="css/repair-print.css" />
 </head>
 <body>
-  <div id="capture">
-    <div>維修單號：<span id="repairId"></span></div>
-    <div>公司：<span id="company"></span></div>
-    <div>保固狀況：<span id="warranty"></span></div>
-    <div>商品：<span id="product"></span></div>
-    <div>描述：<span id="description"></span></div>
-    <div>顧客資訊：<div id="customerInfo"></div></div>
+  <div class="header">
+    <img src="logo-black.png" class="logo" alt="Logo" />
+    <div class="company-info" id="company">數位小兔<br>Digital Rabbit<br>110 台北市信義區大道路74巷1號<br>TEL：02-2759-2006</div>
+  </div>
+
+  <div class="title-bar">數位小兔產品維修單</div>
+
+  <div class="section">
+    <span class="label">維修單號：</span><span id="repairId"></span>
+  </div>
+  <div class="section" id="customerInfo"></div>
+  <hr>
+  <div class="section">
+    <span class="label">保固狀況：</span><span id="warranty"></span>
+  </div>
+  <div class="section">
+    <span class="label">產品名稱：</span><span id="product"></span>
+  </div>
+  <div class="section">
+    <span class="label">問題描述：</span><span id="description"></span>
   </div>
 
   <script type="module" src="js/repair-print.js"></script>

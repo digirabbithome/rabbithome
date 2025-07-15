@@ -17,16 +17,16 @@ window.onload = async () => {
 
   document.title = `維修單 ${repairId}`
   document.getElementById('repairId').innerText = repairId
-  document.getElementById('company').innerText = d.senderCompany || ''
+  document.getElementById('company').innerHTML = d.senderCompany || ''
   document.getElementById('warranty').innerText = d.warranty || ''
   document.getElementById('product').innerText = d.product || ''
   document.getElementById('description').innerText = d.description || ''
 
   const line = d.line ? `（LINE: ${d.line}）` : ''
   const customerText = [
-    `${d.customer || ''} ${line}`,
-    d.phone || '',
-    d.address || ''
-  ].filter(x => x).join('<br>')
+    `<span class='label'>姓名：</span>${d.customer || ''} ${line}<br>`,
+    `<span class='label'>電話：</span>${d.phone || ''}<br>`,
+    `<span class='label'>地址：</span>${d.address || ''}`
+  ].filter(x => x).join('')
   document.getElementById('customerInfo').innerHTML = customerText
 }
