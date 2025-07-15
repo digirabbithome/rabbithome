@@ -1,54 +1,46 @@
-@page { margin: 0; }
+
 body {
-  width: 450px;
-  font-family: "Arial", sans-serif;
-  margin: 0 auto;
-  padding: 10px;
-  color: #000;
-  font-size: 14px;
+  margin: 0;
+  font-family: "Noto Sans TC", sans-serif;
 }
-.logo {
-  width: 80px;
+.print-wrapper {
+  width: 450px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 .header {
   width: 100%;
-  margin-bottom: 10px;
+}
+.logo {
+  height: 80px;
 }
 .company-info {
   padding-left: 10px;
-  vertical-align: top;
 }
 .company-title {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 18px;
+}
+.company-detail {
+  font-size: 12px;
+  line-height: 1.5;
 }
 .form-title {
   text-align: center;
-  margin: 12px 0;
+  margin: 10px 0;
   font-weight: bold;
-  letter-spacing: 0.5em;
+  font-size: 16px;
+}
+.bordered {
+  border: 2px solid black;
+  padding: 4px;
+  display: inline-block;
 }
 .section {
+  font-size: 14px;
+  line-height: 1.6;
   margin-bottom: 10px;
 }
-.footer {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  margin-top: 20px;
-}
-
-body {
-  max-width: 450px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-h2.title-box {
-  border: 2px solid black;
-  padding: 10px;
-  text-align: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  font-size: 20px;
+.section strong {
+  font-weight: bold;
 }
