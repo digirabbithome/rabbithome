@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>維修單列印（表格+圖片）</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script type="module" src="/js/repair-print-image-table.js"></script>
+  <style>
+    body { margin: 0; font-family: "Noto Sans TC", sans-serif; }
+    #capture {
+      width: 340px;
+      padding: 16px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      background: #fff;
+      font-size: 14pt;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .logo {
+      width: 50px;
+    }
+    .title { font-weight: bold; font-size: 16pt; }
+    .section { padding: 4px 0; }
+    .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 12pt; }
+    .line-id { font-size: 12pt; }
+  </style>
+</head>
+<body>
+  <div id="capture">
+    <table>
+      <tr>
+        <td colspan="2"><img src="/img/logo.png" class="logo" /></td>
+      </tr>
+      <tr>
+        <td class="title" colspan="2">數位小兔攝影週邊器材行</td>
+      </tr>
+      <tr>
+        <td colspan="2">台北市信義區大道路74巷1號<br>TEL：(02)2759-2013 / (02)2759-2006</td>
+      </tr>
+      <tr>
+        <td class="section"><b>維修單號：</b><span id="repairId"></span></td>
+        <td class="section" style="text-align: right;"><b>填單日期：</b><span id="createdAt"></span></td>
+      </tr>
+      <tr>
+        <td class="section" colspan="2"><b>保固：</b><span id="warranty"></span></td>
+      </tr>
+      <tr>
+        <td class="section" colspan="2"><b>客戶資訊：</b><div id="customerInfo"></div></td>
+      </tr>
+      <tr>
+        <td class="section" colspan="2"><b>維修項目：</b><span id="product"></span></td>
+      </tr>
+      <tr>
+        <td class="section" colspan="2"><b>備註：</b><div id="description"></div></td>
+      </tr>
+    </table>
+    <div class="footer">
+      <div>經手人：<span id="nickname"></span></div>
+      <div class="line-id">官方LineID: @digirabbit</div>
+    </div>
+  </div>
+</body>
+</html>
