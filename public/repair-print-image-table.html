@@ -1,146 +1,24 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>維修單列印</title>
+  <title>列印維修單</title>
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-    }
-    .container {
-      width: 320px;
-      height: 520px;
-      padding: 16px;
-      box-sizing: border-box;
-      border: 1px solid #aaa;
-    }
-    .header-table {
-      width: 100%;
-      margin-bottom: 4px;
-    }
-    .logo {
-      height: 50px;
-    }
-    .company-info {
-      font-size: 11px;
-      line-height: 1.3;
-      padding-left: 8px;
-    }
-    .title-bar {
-      background: #000;
-      color: #fff;
+    body { margin: 0; font-family: sans-serif; width: 320px; height: 520px; }
+    .bar {
+      background: black;
+      color: white;
       text-align: center;
       font-weight: bold;
-      margin: 6px 0;
-      padding: 2px 0;
-      letter-spacing: 4px;
-      font-size: 14px;
-    }
-    .section {
-      font-size: 12px;
-      margin-bottom: 6px;
-    }
-    .label {
-      font-weight: bold;
-      display: inline-block;
-      min-width: 60px;
-    }
-    .value {
-      font-size: 12px;
-    }
-    .field {
-      margin-bottom: 3px;
-    }
-    .lines {
-      margin-top: 6px;
-      margin-bottom: 6px;
-    }
-    .line {
-      border-bottom: 1px solid #999;
-      height: 14px;
-    }
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      margin-top: 10px;
+      padding: 6px 0;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <table class="header-table">
-      <tr>
-        <td style="width:60px;"><img src="/images/rabbit-logo.png" class="logo" /></td>
-        <td class="company-info">
-          <div>數位小兔攝影週邊器材行</div>
-          <div>台北市信義區大道路74巷1號</div>
-          <div>TEL：(02)2759-2013 / (02)2759-2006</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="title-bar">數 位 小 兔 維 修 單</div>
-
-    <div class="section">
-      <div class="field"><span class="label">維修單號：</span><span class="value" id="repair-id"></span></div>
-      <div class="field"><span class="label">填單日期：</span><span class="value" id="repair-date"></span></div>
-    </div>
-
-    <div class="section">
-      <div class="field"><span class="label">保固：</span><span class="value" id="warranty"></span></div>
-    </div>
-
-    <div class="section">
-      <div class="field"><span class="label">客戶資訊：</span></div>
-      <div class="value" id="customer-info"></div>
-    </div>
-
-    <div class="section">
-      <div class="field"><span class="label">維修項目：</span><span class="value" id="product"></span></div>
-      <div class="lines">
-        <div class="line"></div>
-        <div class="line"></div>
-        <div class="line"></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="field"><span class="label">備註：</span></div>
-      <div class="value" id="desc"></div>
-      <div class="lines">
-        <div class="line"></div>
-        <div class="line"></div>
-        <div class="line"></div>
-      </div>
-    </div>
-
-    <div class="footer">
-      <div>經手人：<span id="staff"></span></div>
-      <div>官方LineID: @digirabbit</div>
-    </div>
-  </div>
-
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
-
-    fetch(`/data/repair/${id}.json`)
-      .then((res) => res.json())
-      .then((data) => {
-        document.getElementById("repair-id").textContent = id;
-        document.getElementById("repair-date").textContent = data.date || "";
-        document.getElementById("warranty").textContent = data.warranty || "";
-        document.getElementById("product").textContent = data.product || "";
-        document.getElementById("desc").textContent = data.desc || "";
-        document.getElementById("staff").textContent = data.nickname || "";
-
-        const contact = [data.customer, data.line, data.phone, data.address]
-          .filter(Boolean)
-          .join("\n");
-        document.getElementById("customer-info").textContent = contact;
-      });
-  </script>
+  <div class="bar" id="form-title">產品維修單</div>
+  <!-- 其他內容可插入 -->
+  <script type="module" src="repair-print-image-table.js"></script>
 </body>
 </html>
