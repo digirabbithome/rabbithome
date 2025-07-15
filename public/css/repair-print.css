@@ -1,41 +1,40 @@
-.print-wrapper {
+@page { margin: 0; }
+body {
+  font-family: sans-serif;
   width: 450px;
-  padding: 24px;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  margin: 0 auto;
 }
-.top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.logo {
+  width: 80px;
 }
-.logo img {
-  height: 60px;
+.header-table {
+  width: 100%;
 }
 .company-info {
-  text-align: right;
-  font-size: 13px;
+  font-size: 14px;
+  padding-left: 10px;
 }
-.company-info .title {
+.company-name-bold {
   font-weight: bold;
   font-size: 16px;
 }
-.section {
-  margin-top: 16px;
-}
-.content-line {
-  margin-top: 4px;
+.title-box {
+  border: 1px solid #000;
+  text-align: center;
+  margin: 12px 0;
+  padding: 8px;
   font-weight: bold;
+  letter-spacing: 6px;
 }
-.empty-line {
-  height: 24px;
+.section {
+  margin: 10px 0;
 }
-.right {
-  float: right;
+.section div {
+  margin-bottom: 6px;
 }
-.last-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.footer {
+  margin-top: 20px;
+}
+.right-align {
+  text-align: right;
 }

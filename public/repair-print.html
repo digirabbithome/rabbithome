@@ -3,42 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <title>維修單列印</title>
-  <link rel="stylesheet" href="css/repair-print.css" />
-  <style>@page { margin: 0; }</style>
+  <link rel="stylesheet" href="/css/repair-print.css" />
 </head>
 <body>
-  <div class="print-wrapper">
-    <div class="top-row">
-      <div class="logo"><img src="logo-black.png" /></div>
-      <div class="company-info">
-        <div class="title">數位小兔攝影週邊器材行</div>
-        <div>Digital Rabbit</div>
-        <div>110 台北市信義區大道路74巷1號</div>
-        <div>TEL：02-2759-2006 / 02-2759-2010</div>
-      </div>
-    </div>
-    <div class="section" id="repair-meta">
-      <div>
-        維修單號：<span id="repairId"></span>
-        <span class="right">填單日期：<span id="createdAt"></span>　保固狀況：<span id="warranty"></span></span>
-      </div>
+  <div class="container">
+    <table class="header-table">
+      <tr>
+        <td><img src="/logo-black.png" alt="logo" class="logo"></td>
+        <td class="company-info">
+          <div class="company-name-bold">數位小兔攝影週邊器材行</div>
+          <div>Digital Rabbit</div>
+          <div>110 台北市信義區大道路74巷1號</div>
+          <div>TEL：02-2759-2006 / 02-2759-2010</div>
+        </td>
+      </tr>
+    </table>
+    <div class="title-box">數　位　小　兔　產　品　維　修　單</div>
+    <div class="section">
+      <div><b>維修單號：</b><span id="repairId"></span></div>
+      <div><b>填單日期：</b><span id="fillDate"></span>　<b>保固狀況：</b><span id="warranty"></span></div>
     </div>
     <div class="section">
-      聯絡資訊：<div id="customerInfo"></div>
+      <div><b>聯絡資訊：</b></div>
+      <div><span id="phone"></span></div>
+      <div><span id="address"></span></div>
     </div>
     <div class="section">
-      商品名稱：<div id="product" class="content-line"></div>
-      <div class="empty-line"></div><div class="empty-line"></div>
+      <div><b>商品名稱：</b></div>
+      <div><span id="product"></span></div>
     </div>
     <div class="section">
-      問題描述：<div id="description" class="content-line"></div>
-      <div class="empty-line"></div><div class="empty-line"></div><div class="empty-line"></div><div class="empty-line"></div>
+      <div><b>問題描述：</b></div>
+      <div><span id="description"></span></div>
     </div>
-    <div class="section last-row">
-      <div>經手人：<span id="handler"></span></div>
-      <div class="right">官方：@digirabbit</div>
+    <div class="section footer">
+      <div><b>經手人：</b><span id="handler"></span></div>
+      <div class="right-align">官方 LINE ID：@digirabbit</div>
     </div>
   </div>
-  <script type="module" src="js/repair-print.js"></script>
+  <script type="module" src="/js/repair-print.js"></script>
 </body>
 </html>
