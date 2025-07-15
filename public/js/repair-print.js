@@ -14,7 +14,7 @@ window.onload = async () => {
     const data = docSnap.data()
     document.getElementById('repairId').innerText = data.repairId || ''
     document.getElementById('createdAt').innerText = data.createdAt?.toDate().toLocaleString('zh-TW') || ''
-    document.getElementById('handler').innerText = data.nickname || ''
+    document.getElementById('handler').innerText = data.user || ''
     document.getElementById('warranty').innerText = data.warranty || ''
     document.getElementById('contactInfo').innerText = `${data.customer || ''}　${data.phone || ''}　${data.line || ''}`
     document.getElementById('addressLine').innerText = data.address || ''
