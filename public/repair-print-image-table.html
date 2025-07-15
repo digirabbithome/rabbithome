@@ -3,7 +3,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>維修單列印（微調版）</title>
+  <title>維修單列印（強化版）</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="/js/repair-print-image-table.js"></script>
   <style>
@@ -25,22 +25,31 @@
       border-collapse: collapse;
     }
     .logo {
-      width: 50px;
+      width: 70px;
     }
     .title { font-weight: bold; font-size: 15px; }
     .section { padding: 4px 0; }
-    .customerInfo { font-size: 18px; line-height: 1.5; font-weight: bold; }
+    .label { font-weight: bold; font-size: 16px; }
+    .value { font-size: 13px; border-bottom: 1px solid #000; min-height: 18px; line-height: 16px; padding-bottom: 2px; }
+    .double-line .value {
+      display: block;
+      height: 36px;
+      border-bottom: none;
+      background: repeating-linear-gradient(transparent, transparent 16px, #000 16px, #000 17px);
+    }
+    .multi-line .value {
+      display: block;
+      height: 85px;
+      border-bottom: none;
+      background: repeating-linear-gradient(transparent, transparent 16px, #000 16px, #000 17px);
+    }
     .footer {
-      margin-top: 16px;
+      margin-top: 12px;
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
+      font-size: 12px;
     }
-    .line-id { font-size: 13px; }
-    .desc-lines {
-      height: 60px;
-      background: repeating-linear-gradient(transparent, transparent 12px, #ccc 12px, #ccc 13px);
-    }
+    .line-id { font-size: 11px; }
   </style>
 </head>
 <body>
@@ -56,24 +65,24 @@
         <td colspan="2" style="font-size: 12px;">台北市信義區大道路74巷1號<br>TEL：(02)2759-2013 / (02)2759-2006</td>
       </tr>
       <tr>
-        <td class="section"><b>維修單號：</b><span id="repairId"></span></td>
-        <td class="section" style="text-align: right;"><b>填單日期：</b><span id="createdAt"></span></td>
+        <td class="section"><span class="label">維修單號：</span><span id="repairId" class="value"></span></td>
+        <td class="section" style="text-align: right;"><span class="label">填單日期：</span><span id="createdAt" class="value"></span></td>
       </tr>
       <tr>
-        <td class="section" colspan="2"><b>保固：</b><span id="warranty"></span></td>
+        <td class="section" colspan="2"><span class="label">保固：</span><span id="warranty" class="value"></span></td>
       </tr>
-      <tr>
-        <td class="section" colspan="2"><b>客戶資訊：</b><div id="customerInfo" class="customerInfo"></div></td>
+      <tr class="section">
+        <td colspan="2"><span class="label">客戶資訊：</span><div id="customerInfo" class="value"></div></td>
       </tr>
-      <tr>
-        <td class="section" colspan="2"><b>維修項目：</b><span id="product"></span></td>
+      <tr class="section double-line">
+        <td colspan="2"><span class="label">維修項目：</span><div id="product" class="value"></div></td>
       </tr>
-      <tr>
-        <td class="section" colspan="2"><b>備註：</b><div id="description"></div><div id="descLines" class="desc-lines"></div></td>
+      <tr class="section multi-line">
+        <td colspan="2"><span class="label">備註：</span><div id="description" class="value"></div></td>
       </tr>
     </table>
     <div class="footer">
-      <div>經手人：<span id="nickname"></span></div>
+      <div>經手人：<span id="nickname" class="value"></span></div>
       <div class="line-id">官方LineID: @digirabbit</div>
     </div>
   </div>
