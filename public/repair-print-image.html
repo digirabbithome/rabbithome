@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>維修單列印（圖像）</title>
+  <link rel="stylesheet" href="/css/repair-print.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script type="module" src="/js/repair-print-image.js"></script>
+</head>
+<body>
+  <div id="capture" class="print-wrapper">
+    <div class="header">
+      <img src="/img/logo.png" class="logo" />
+      <div class="company-info">
+        <div class="title">數位小兔攝影週邊器材行</div>
+        <div class="info">110 台北市信義區大道路74巷1號</div>
+        <div class="info">TEL：(02)2759-2013　(02)2759-2006</div>
+      </div>
+    </div>
+
+    <div class="top-right">
+      <div><b>維修單號：</b><span id="repairId"></span></div>
+      <div><b>填單日期：</b><span id="createdAt"></span></div>
+    </div>
+
+    <div class="section"><b>保固：</b><span id="warranty"></span></div>
+    <div class="section"><b>客戶資訊：</b><div id="customerInfo"></div></div>
+    <div class="section"><b>維修項目：</b><span id="product"></span></div>
+    <div class="section"><b>備註：</b><div id="description" class="description"></div></div>
+
+    <div class="footer">
+      <div>經手人簽名：<span id="nickname"></span></div>
+      <div class="line-id">官方LineID: @digirabbit</div>
+    </div>
+  </div>
+
+  <div id="rendered" style="display:none;"></div>
+</body>
+</html>
