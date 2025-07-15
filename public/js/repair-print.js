@@ -5,6 +5,9 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 window.onload = async () => {
+  const nickname = localStorage.getItem('nickname') || '（未登入）'
+  document.getElementById('handler').innerText = nickname
+
   const params = new URLSearchParams(window.location.search)
   const repairId = params.get('id') || ''
   if (!repairId) return
