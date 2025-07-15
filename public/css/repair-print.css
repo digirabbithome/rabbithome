@@ -1,13 +1,12 @@
 
 @page {
-  size: 100mm 150mm landscape;
-  margin: 0;
+  size: 95mm 135mm portrait;
+  margin: 8mm;
 }
 body {
   font-family: "Noto Sans TC", sans-serif;
-  font-size: 12pt;
+  font-size: 14pt;
   margin: 0;
-  padding: 12px;
 }
 .print-wrapper {
   width: 100%;
@@ -18,26 +17,29 @@ body {
 }
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  margin-bottom: 10px;
 }
 .company-info {
-  flex: 1;
   margin-left: 10px;
 }
-.repair-id-block {
+.top-right {
   text-align: right;
+  margin-bottom: 10px;
 }
 .section {
-  margin-top: 10px;
+  margin-bottom: 8px;
 }
 .description {
-  border: 1px solid #999;
-  padding: 6px;
+  border: 1px solid #000;
   min-height: 36px;
+  padding: 4px;
 }
 .footer {
-  margin-top: 20px;
   display: flex;
   justify-content: space-between;
+  margin-top: 20px;
+}
+.line-id {
+  font-size: 12pt;
 }

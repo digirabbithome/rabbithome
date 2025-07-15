@@ -9,7 +9,10 @@ window.onload = async () => {
   const repairId = params.get('id') || ''
   if (!repairId) return
 
+  const nickname = localStorage.getItem('nickname') || '🐰'
+
   document.getElementById('repairId').innerText = repairId
+  document.getElementById('nickname').innerText = nickname
 
   const snap = await getDoc(doc(db, 'repairs', repairId))
   if (!snap.exists()) return
@@ -17,8 +20,8 @@ window.onload = async () => {
 
   const date = d.createdAt?.toDate?.()
   if (date) {
-    document.getElementById('createdAt').innerText = 
-      `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`
+    document.getElementById('createdAt').innerText =
+      `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
   }
 
   document.getElementById('warranty').innerText = d.warranty || ''
