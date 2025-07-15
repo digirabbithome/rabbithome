@@ -6,7 +6,7 @@ import {
 
 window.onload = async () => {
   const nickname = localStorage.getItem('nickname') || '（未登入）'
-  const handlerDiv = document.getElementById('handler'); if (handlerDiv) handlerDiv.innerText = nickname
+  document.getElementById('handler').innerText = nickname
 
   const params = new URLSearchParams(window.location.search)
   const repairId = params.get('id') || ''
@@ -24,11 +24,11 @@ window.onload = async () => {
   document.getElementById('product').innerText = d.product || ''
   document.getElementById('description').innerText = d.description || ''
 
-  const line = d.line ? `（LINE: ${d.line}）` : ''
-  const customerText = [
-    `<span class='label'>姓名：</span>${d.customer || ''} ${line}<br>`,
-    `<span class='label'>電話：</span>${d.phone || ''}<br>`,
-    `<span class='label'>地址：</span>${d.address || ''}`
-  ].filter(x => x).join('')
-  document.getElementById('customerInfo').innerHTML = customerText
+  
+  const line = d.line ? `（LINE: ${d.line}）` : '';
+  const phone = d.phone ? `（${d.phone}）` : '';
+  const address = d.address || '';
+  const nameLinePhone = [d.customer || '', line, phone].filter(x => x).join(' ')
+  const customerText = `${nameLinePhone}<br>${address}`;
+  document.getElementById('customerInfo').innerHTML = customerText;
 }
