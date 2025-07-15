@@ -2,7 +2,7 @@
 body {
   font-family: 'Arial', sans-serif;
   padding: 20px;
-  width: 600px;
+  max-width: 500px;
   margin: auto;
 }
 
@@ -14,7 +14,7 @@ body {
 }
 
 .logo {
-  width: 200px;
+  width: 100px;
   height: auto;
   flex-shrink: 0;
 }
@@ -52,4 +52,13 @@ hr {
   border: none;
   border-top: 1px dashed #ccc;
   margin: 20px 0;
+}
+
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 500px;
+  }
 }
