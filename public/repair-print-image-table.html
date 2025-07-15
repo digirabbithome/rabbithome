@@ -1,90 +1,79 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>維修單列印（強化版）</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script type="module" src="/js/repair-print-image-table.js"></script>
+  <title>列印維修單</title>
   <style>
-    body { margin: 0; font-family: "Noto Sans TC", sans-serif; }
-    #capture {
-      width: 320px;
-      height: 520px;
-      padding: 12px;
-      margin: 0 auto;
-      border: 1px solid #ccc;
-      background: #fff;
+    body { margin: 0; font-family: sans-serif; width: 320px; height: 520px; }
+    .bar {
+      background: black;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+      padding: 6px 0;
       font-size: 16px;
-      line-height: 1.4;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
     }
     .logo {
-      width: 70px;
+      width: 60px;
+      vertical-align: top;
     }
-    .title { font-weight: bold; font-size: 15px; }
-    .section { padding: 4px 0; }
-    .label { font-weight: bold; font-size: 16px; }
-    .value { font-size: 13px; border-bottom: 1px solid #000; min-height: 18px; line-height: 16px; padding-bottom: 2px; }
-    .double-line .value {
-      display: block;
-      height: 36px;
-      border-bottom: none;
-      background: repeating-linear-gradient(transparent, transparent 16px, #000 16px, #000 17px);
+    .header {
+      display: flex;
+      align-items: flex-start;
+      padding-left: 10px;
     }
-    .multi-line .value {
-      display: block;
-      height: 85px;
-      border-bottom: none;
-      background: repeating-linear-gradient(transparent, transparent 16px, #000 16px, #000 17px);
+    .company-info {
+      margin-left: 8px;
+      font-size: 12px;
+    }
+    .company-info .title {
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .meta {
+      font-size: 13px;
+      margin-top: 10px;
     }
     .footer {
-      margin-top: 12px;
       display: flex;
       justify-content: space-between;
       font-size: 12px;
+      margin-top: 20px;
     }
-    .line-id { font-size: 11px; }
   </style>
 </head>
 <body>
-  <div id="capture">
-    <table>
-      <tr>
-        <td colspan="2"><img src="/img/logo.png" class="logo" /></td>
-      </tr>
-      <tr>
-        <td class="title" colspan="2">數位小兔攝影週邊器材行</td>
-      </tr>
-      <tr>
-        <td colspan="2" style="font-size: 12px;">台北市信義區大道路74巷1號<br>TEL：(02)2759-2013 / (02)2759-2006</td>
-      </tr>
-      <tr>
-        <td class="section"><span class="label">維修單號：</span><span id="repairId" class="value"></span></td>
-        <td class="section" style="text-align: right;"><span class="label">填單日期：</span><span id="createdAt" class="value"></span></td>
-      </tr>
-      <tr>
-        <td class="section" colspan="2"><span class="label">保固：</span><span id="warranty" class="value"></span></td>
-      </tr>
-      <tr class="section">
-        <td colspan="2"><span class="label">客戶資訊：</span><div id="customerInfo" class="value"></div></td>
-      </tr>
-      <tr class="section double-line">
-        <td colspan="2"><span class="label">維修項目：</span><div id="product" class="value"></div></td>
-      </tr>
-      <tr class="section multi-line">
-        <td colspan="2"><span class="label">備註：</span><div id="description" class="value"></div></td>
-      </tr>
-    </table>
-    <div class="footer">
-      <div>經手人：<span id="nickname" class="value"></span></div>
-      <div class="line-id">官方LineID: @digirabbit</div>
+  <div class="header">
+    <img src="/img/logo-black.png" class="logo" />
+    <div class="company-info">
+      <div class="title">數位小兔攝影週邊器材行</div>
+      <div>台北市信義區大道路74巷1號</div>
+      <div>TEL：(02)2759-2013 / (02)2759-2006</div>
     </div>
   </div>
+
+  <div class="bar" id="form-title">數位小兔產品維修單</div> <!-- 反黑條標題 -->
+
+  <div class="meta">
+    <div>維修單號：<span id="repairId"></span></div>
+    <div>填單日期：<span id="createdAt"></span></div>
+    <div>保固：<span id="warranty"></span></div>
+    <div>客戶資訊：<span id="customerInfo"></span></div>
+    <div>維修項目：<span id="product"></span></div>
+    <div>備註：<span id="description"></span></div>
+  </div>
+
+  <div class="footer">
+    <div>經手人：<span id="nickname"></span></div>
+    <div>官方LineID: @digirabbit</div>
+  </div>
+
+  <script>
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const formTitle = params.get('type') || '數位小兔產品維修單';  // 默認標題
+      document.getElementById('form-title').innerText = formTitle;  // 反黑條文字改變
+    };
+  </script>
 </body>
 </html>

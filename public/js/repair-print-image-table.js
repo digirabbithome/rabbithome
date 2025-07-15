@@ -1,9 +1,3 @@
-
-import { db } from '/js/firebase.js'
-import {
-  doc, getDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-
 window.onload = async () => {
   const params = new URLSearchParams(window.location.search)
   const repairId = params.get('id') || ''
@@ -25,6 +19,7 @@ window.onload = async () => {
 
   document.getElementById('warranty').innerText = d.warranty || ''
   document.getElementById('product').innerText = d.product || ''
+  document.getElementById('description').innerText = d.description || ''
 
   const line = d.line ? `（LINE: ${d.line}）` : ''
   const customerText = [
@@ -33,21 +28,4 @@ window.onload = async () => {
     d.address || ''
   ].filter(x => x).join('<br>')
   document.getElementById('customerInfo').innerHTML = customerText
-
-  if (d.description) {
-    document.getElementById('description').innerText = d.description
-    document.getElementById('descLines').style.display = 'none'
-  } else {
-    document.getElementById('descLines').style.display = 'block'
-  }
-
-  const capture = document.getElementById('capture')
-  const canvas = await html2canvas(capture, { scale: 2 })
-  const img = new Image()
-  img.src = canvas.toDataURL("image/png")
-  img.style.width = "100%"
-  img.onload = () => {
-    document.body.innerHTML = ""
-    document.body.appendChild(img)
-  }
 }
