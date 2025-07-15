@@ -22,15 +22,15 @@ window.onload = async () => {
   document.getElementById('repairId').innerText = repairId
   document.getElementById('warranty').innerText = d.warranty || ''
   document.getElementById('product').innerText = d.product || ''
-  document.getElementById('description').innerText = d.description || '';
-  document.getElementById('createdAt').innerText = d.createdAt?.toDate?.().toLocaleDateString?.('zh-Hant') || ''
+  document.getElementById('description').innerText = d.description || ''
+  document.getElementById('createdAt').innerText = d.createdAt?.toDate?.().toLocaleDateString?.() || ''
 
-  const line = d.line ? `（LINE: ${d.line}）` : ''
-  const customerText = [
-    `聯絡資訊：${d.customer || ''} ${line}（${d.phone || ''})`,
-    d.address || '', `<span class='label'>姓名：</span>${d.customer || ''} ${line}<br>`,
-    `<span class='label'>電話：</span>${d.phone || ''}<br>`,
-    `<span class='label'>地址：</span>${d.address || ''}`
-  ].filter(x => x).join('')
-  document.getElementById('customerInfo').innerHTML = customerText
+  const name = d.customer || ''
+  const phone = d.phone || ''
+  const line = d.line ? `LINE: @${d.line}` : ''
+  const address = d.address || ''
+  const row1 = [name, line, phone].filter(x => x).join('　')
+  const row2 = address ? `地址：${address}` : ''
+  document.getElementById('contactInfo1').innerText = row1
+  document.getElementById('contactInfo2').innerText = row2
 }
