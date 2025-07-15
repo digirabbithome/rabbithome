@@ -3,7 +3,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>維修單列印（固定尺寸）</title>
+  <title>維修單列印（微調版）</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="/js/repair-print-image-table.js"></script>
   <style>
@@ -27,8 +27,9 @@
     .logo {
       width: 50px;
     }
-    .title { font-weight: bold; font-size: 18px; }
+    .title { font-weight: bold; font-size: 15px; }
     .section { padding: 4px 0; }
+    .customerInfo { font-size: 18px; line-height: 1.5; font-weight: bold; }
     .footer {
       margin-top: 16px;
       display: flex;
@@ -36,6 +37,10 @@
       font-size: 14px;
     }
     .line-id { font-size: 13px; }
+    .desc-lines {
+      height: 60px;
+      background: repeating-linear-gradient(transparent, transparent 12px, #ccc 12px, #ccc 13px);
+    }
   </style>
 </head>
 <body>
@@ -48,7 +53,7 @@
         <td class="title" colspan="2">數位小兔攝影週邊器材行</td>
       </tr>
       <tr>
-        <td colspan="2">台北市信義區大道路74巷1號<br>TEL：(02)2759-2013 / (02)2759-2006</td>
+        <td colspan="2" style="font-size: 12px;">台北市信義區大道路74巷1號<br>TEL：(02)2759-2013 / (02)2759-2006</td>
       </tr>
       <tr>
         <td class="section"><b>維修單號：</b><span id="repairId"></span></td>
@@ -58,13 +63,13 @@
         <td class="section" colspan="2"><b>保固：</b><span id="warranty"></span></td>
       </tr>
       <tr>
-        <td class="section" colspan="2"><b>客戶資訊：</b><div id="customerInfo"></div></td>
+        <td class="section" colspan="2"><b>客戶資訊：</b><div id="customerInfo" class="customerInfo"></div></td>
       </tr>
       <tr>
         <td class="section" colspan="2"><b>維修項目：</b><span id="product"></span></td>
       </tr>
       <tr>
-        <td class="section" colspan="2"><b>備註：</b><div id="description"></div></td>
+        <td class="section" colspan="2"><b>備註：</b><div id="description"></div><div id="descLines" class="desc-lines"></div></td>
       </tr>
     </table>
     <div class="footer">

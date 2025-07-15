@@ -25,7 +25,6 @@ window.onload = async () => {
 
   document.getElementById('warranty').innerText = d.warranty || ''
   document.getElementById('product').innerText = d.product || ''
-  document.getElementById('description').innerText = d.description || ''
 
   const line = d.line ? `（LINE: ${d.line}）` : ''
   const customerText = [
@@ -35,6 +34,13 @@ window.onload = async () => {
   ].filter(x => x).join('<br>')
   document.getElementById('customerInfo').innerHTML = customerText
 
+  if (d.description) {
+    document.getElementById('description').innerText = d.description
+    document.getElementById('descLines').style.display = 'none'
+  } else {
+    document.getElementById('descLines').style.display = 'block'
+  }
+
   const capture = document.getElementById('capture')
   const canvas = await html2canvas(capture, { scale: 2 })
   const img = new Image()
@@ -43,6 +49,5 @@ window.onload = async () => {
   img.onload = () => {
     document.body.innerHTML = ""
     document.body.appendChild(img)
-    window.print()
   }
 }
