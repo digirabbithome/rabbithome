@@ -1,76 +1,39 @@
-
-* {
-  box-sizing: border-box;
-}
-
-body {
+.print-container {
   font-family: 'Arial', sans-serif;
-  width: 450px;
-  margin: 0 auto;
-  padding: 20px 20px 30px 30px;
+  width: 700px;
+  margin: auto;
+  padding: 20px;
 }
-
-.header {
-  display: table;
-  width: 100%;
-}
-
 .logo {
-  display: table-cell;
-  width: 100px;
-  vertical-align: top;
+  height: 60px;
 }
-
-.logo img {
-  width: 100px;
+.header {
+  display: flex;
+  justify-content: space-between;
 }
-
 .company-info {
-  display: table-cell;
+  text-align: right;
   font-size: 14px;
   line-height: 1.5;
-  text-align: right;
-  padding-left: 20px;
-  vertical-align: top;
 }
-
-.title-bar {
-  margin: 20px 0;
-  padding: 10px;
+.title {
   border: 2px solid black;
-  font-size: 18px;
-  font-weight: bold;
+  padding: 10px;
   text-align: center;
-  letter-spacing: 0.3em; /* 每字中間留空格 */
+  font-size: 20px;
+  letter-spacing: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
-
-.section {
-  margin-bottom: 18px;
+.info {
+  margin: 10px 0;
   font-size: 16px;
 }
-
-.section span.label {
-  display: inline-block;
-  width: 100px;
-  font-weight: bold;
+.divider {
+  border-top: 2px solid #000;
+  margin: 20px 0;
+}
+.footer {
+  margin-top: 30px;
   font-size: 16px;
-}
-
-.underline {
-  display: inline-block;
-  border-bottom: 1px solid black;
-  min-width: 200px;
-  line-height: 1.6;
-}
-
-hr {
-  border: none;
-  border-top: 2px dashed #000;
-  margin: 25px 0;
-}
-
-.extra-lines {
-  border-bottom: 1px solid black;
-  height: 24px;
-  margin-top: 6px;
 }
