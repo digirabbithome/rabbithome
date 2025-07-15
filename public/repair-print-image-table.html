@@ -3,18 +3,22 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>維修單列印（表格+圖片）</title>
+  <title>維修單列印（固定尺寸）</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="/js/repair-print-image-table.js"></script>
   <style>
     body { margin: 0; font-family: "Noto Sans TC", sans-serif; }
     #capture {
-      width: 340px;
-      padding: 16px;
+      width: 320px;
+      height: 520px;
+      padding: 12px;
       margin: 0 auto;
       border: 1px solid #ccc;
       background: #fff;
-      font-size: 14pt;
+      font-size: 16px;
+      line-height: 1.4;
+      box-sizing: border-box;
+      overflow: hidden;
     }
     table {
       width: 100%;
@@ -23,10 +27,15 @@
     .logo {
       width: 50px;
     }
-    .title { font-weight: bold; font-size: 16pt; }
+    .title { font-weight: bold; font-size: 18px; }
     .section { padding: 4px 0; }
-    .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 12pt; }
-    .line-id { font-size: 12pt; }
+    .footer {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    .line-id { font-size: 13px; }
   </style>
 </head>
 <body>
