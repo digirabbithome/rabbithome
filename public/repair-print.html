@@ -2,54 +2,55 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>維修單</title>
-  <link rel="stylesheet" href="css/repair-print.css" />
+  <meta charset="UTF-8" />
+  <title>維修單列印</title>
+  <link rel="stylesheet" href="/css/repair-print.css" />
 </head>
 <body>
-  <div class="header">
-    <div class="logo"><img src="logo-black.png" alt="Logo" /></div>
-    <div class="company-info">
-      數位小兔<br>
-      Digital Rabbit<br>
-      110 台北市信義區大道路74巷1號<br>
-      TEL：02-2759-2006
+  <div class="wrapper">
+    <div class="header">
+      <img src="/img/logo.png" class="logo" />
+      <div class="company-info">
+        <div class="company-title">數位小兔攝影周邊器材行</div>
+        <div>Digital Rabbit Co., Ltd</div>
+        <div>110 台北市信義區大道路74巷1號</div>
+        <div>TEL：02-2759-2006 / 02-2759-2016</div>
+        <div>LINE：@rabbit.tw</div>
+      </div>
+    </div>
+    <div class="divider">數　位　小　兔　產　品　維　修　單</div>
+
+    <table class="info-table">
+      <tr>
+        <td class="label">客戶資訊：</td>
+        <td><span id="customerInfo"></span></td>
+      </tr>
+      <tr>
+        <td class="label">維修單號：</td>
+        <td>
+          <span id="repairId"></span>
+          <span id="repairDate" style="margin-left: 24px;">填單日期：</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">維修項目：</td>
+        <td><span id="productName"></span></td>
+      </tr>
+      <tr>
+        <td class="label">保固狀況：</td>
+        <td><span id="warranty"></span></td>
+      </tr>
+      <tr>
+        <td class="label">產品描述：</td>
+        <td><span id="description"></span></td>
+      </tr>
+    </table>
+
+    <div class="note-block">
+      <div>經手人：<span id="handler"></span></div>
+      <div>官方LINE：@rabbit.tw / ID：@rabbit.tw</div>
     </div>
   </div>
-
-  <div class="title-bar">數 位 小 兔 產 品 維 修 單</div>
-
-  <div class="section">
-    <span class="label">維修單號：</span><span id="repairId" class="underline"></span>
-  </div>
-  <div class="section" id="customerInfo"></div>
-
-  <hr>
-
-  <div class="section">
-    <span class="label">保固狀況：</span><span id="warranty" class="underline"></span>
-  </div>
-
-  <hr>
-
-  <div class="section">
-    <span class="label">產品名稱：</span><span id="product" class="underline"></span>
-    <div class="extra-lines"></div>
-  </div>
-
-  <div class="section">
-    <span class="label">問題描述：</span><span id="description" class="underline"></span>
-    <div class="extra-lines"></div>
-    <div class="extra-lines"></div>
-  </div>
-
-  <hr>
-
-  <div class="footer-note">
-    <div><strong>經手人：</strong><span id="handler" class="underline"></span></div>
-    <div><strong>官方 LINE：</strong>@digirabbit</div>
-  </div>
-
-  <script type="module" src="js/repair-print.js"></script>
+  <script type="module" src="/js/repair-print.js"></script>
 </body>
 </html>
