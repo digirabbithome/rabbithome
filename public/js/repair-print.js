@@ -11,10 +11,7 @@ window.onload = async () => {
 
   const q = query(collection(db, 'repairs'), where('repairId', '==', repairId))
   const snapshot = await getDocs(q)
-  if (snapshot.empty) {
-    document.body.innerHTML = `❌ 查無維修單：${repairId}`
-    return
-  }
+  if (snapshot.empty) return
 
   const d = snapshot.docs[0].data()
 

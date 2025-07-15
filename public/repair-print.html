@@ -1,79 +1,20 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>列印維修單</title>
-  <style>
-    body { margin: 0; font-family: sans-serif; width: 320px; height: 520px; }
-    .bar {
-      background: black;
-      color: white;
-      text-align: center;
-      font-weight: bold;
-      padding: 6px 0;
-      font-size: 16px;
-    }
-    .logo {
-      width: 60px;
-      vertical-align: top;
-    }
-    .header {
-      display: flex;
-      align-items: flex-start;
-      padding-left: 10px;
-    }
-    .company-info {
-      margin-left: 8px;
-      font-size: 12px;
-    }
-    .company-info .title {
-      font-weight: bold;
-      font-size: 14px;
-    }
-    .meta {
-      font-size: 13px;
-      margin-top: 10px;
-    }
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-top: 20px;
-    }
-  </style>
+  <title>維修單</title>
 </head>
 <body>
-  <div class="header">
-    <img src="/img/logo-black.png" class="logo" />
-    <div class="company-info">
-      <div class="title">數位小兔攝影週邊器材行</div>
-      <div>台北市信義區大道路74巷1號</div>
-      <div>TEL：(02)2759-2013 / (02)2759-2006</div>
-    </div>
-  </div>
-
-  <div class="bar" id="form-title">數位小兔產品維修單</div> <!-- 反黑條標題 -->
-
-  <div class="meta">
+  <div id="capture">
     <div>維修單號：<span id="repairId"></span></div>
-    <div>填單日期：<span id="createdAt"></span></div>
-    <div>保固：<span id="warranty"></span></div>
-    <div>客戶資訊：<span id="customerInfo"></span></div>
-    <div>維修項目：<span id="product"></span></div>
-    <div>備註：<span id="description"></span></div>
+    <div>公司：<span id="company"></span></div>
+    <div>保固狀況：<span id="warranty"></span></div>
+    <div>商品：<span id="product"></span></div>
+    <div>描述：<span id="description"></span></div>
+    <div>顧客資訊：<div id="customerInfo"></div></div>
   </div>
 
-  <div class="footer">
-    <div>經手人：<span id="nickname"></span></div>
-    <div>官方LineID: @digirabbit</div>
-  </div>
-
-  <script>
-    window.onload = () => {
-      const params = new URLSearchParams(window.location.search);
-      const formTitle = params.get('type') || '數位小兔產品維修單';  // 默認標題
-      document.getElementById('form-title').innerText = formTitle;  // 反黑條文字改變
-    };
-  </script>
+  <script type="module" src="js/repair-print.js"></script>
 </body>
 </html>
