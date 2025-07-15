@@ -22,13 +22,15 @@ window.onload = async () => {
   document.getElementById('repairId').innerText = repairId
   document.getElementById('warranty').innerText = d.warranty || ''
   document.getElementById('product').innerText = d.product || ''
-  document.getElementById('description').innerText = d.description || ''
+  document.getElementById('description').innerText = d.description || '';
+  document.getElementById('createdAt').innerText = d.createdAt?.toDate?.().toLocaleDateString?.('zh-Hant') || ''
 
-  
-  const line = d.line ? `（LINE: ${d.line}）` : '';
-  const phone = d.phone ? `（${d.phone}）` : '';
-  const address = d.address || '';
-  const nameLinePhone = [d.customer || '', line, phone].filter(x => x).join(' ')
-  const customerText = `${nameLinePhone}<br>${address}`;
-  document.getElementById('customerInfo').innerHTML = customerText;
+  const line = d.line ? `（LINE: ${d.line}）` : ''
+  const customerText = [
+    `聯絡資訊：${d.customer || ''} ${line}（${d.phone || ''})`,
+    d.address || '', `<span class='label'>姓名：</span>${d.customer || ''} ${line}<br>`,
+    `<span class='label'>電話：</span>${d.phone || ''}<br>`,
+    `<span class='label'>地址：</span>${d.address || ''}`
+  ].filter(x => x).join('')
+  document.getElementById('customerInfo').innerHTML = customerText
 }
