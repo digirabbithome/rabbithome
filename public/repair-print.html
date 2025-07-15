@@ -4,37 +4,41 @@
   <meta charset="UTF-8" />
   <title>維修單列印</title>
   <link rel="stylesheet" href="css/repair-print.css" />
+  <style>@page { margin: 0; }</style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <img src="img/logo-black.png" class="logo" />
+  <div class="print-wrapper">
+    <div class="top-row">
+      <div class="logo"><img src="logo-black.png" /></div>
       <div class="company-info">
-        <div class="cname">數位小兔攝影週邊器材行</div>
+        <div class="title">數位小兔攝影週邊器材行</div>
         <div>Digital Rabbit</div>
         <div>110 台北市信義區大道路74巷1號</div>
-        <div>TEL：02-2759-2006</div>
+        <div>TEL：02-2759-2006 / 02-2759-2010</div>
       </div>
     </div>
-    <h2 class="title">數 位 小 兔 產 品 維 修 單</h2>
-    <div class="section">
-      <div>維修單號：<span id="repairId"></span></div>
-      <div>填單日期：<span id="createdDate"></span></div>
-      <div>聯絡資訊：<span id="contactInfo"></span></div>
-      <div id="addressRow">地址：<span id="address"></span></div>
+    <div class="section" id="repair-meta">
+      <div>
+        維修單號：<span id="repairId"></span>
+        <span class="right">填單日期：<span id="createdAt"></span>　保固狀況：<span id="warranty"></span></span>
+      </div>
     </div>
     <div class="section">
-      <div>保固狀況：<span id="warrantyStatus"></span></div>
+      聯絡資訊：<div id="customerInfo"></div>
     </div>
     <div class="section">
-      <div>產品名稱：<span id="product"></span></div>
-      <div>問題描述：<span id="description"></span></div>
+      商品名稱：<div id="product" class="content-line"></div>
+      <div class="empty-line"></div><div class="empty-line"></div>
     </div>
     <div class="section">
+      問題描述：<div id="description" class="content-line"></div>
+      <div class="empty-line"></div><div class="empty-line"></div><div class="empty-line"></div><div class="empty-line"></div>
+    </div>
+    <div class="section last-row">
       <div>經手人：<span id="handler"></span></div>
-      <div>官方 LINE：@digirabbit</div>
+      <div class="right">官方：@digirabbit</div>
     </div>
   </div>
+  <script type="module" src="js/repair-print.js"></script>
 </body>
-<script src="js/repair-print.js" type="module"></script>
 </html>
