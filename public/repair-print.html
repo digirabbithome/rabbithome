@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <title>維修單列印</title>
   <link rel="stylesheet" href="css/repair-print.css" />
-  <script type="module" src="js/repair-print.js"></script>
 </head>
 <body>
   <div class="print-container">
     <div class="header">
-      <img src="https://i.imgur.com/9C6GvWy.png" alt="Logo" class="logo" />
+      <img src="/logo-black.png" alt="Logo" class="logo" />
       <div class="company-info">
         <div>數位小兔</div>
         <div>Digital Rabbit</div>
@@ -18,23 +17,27 @@
       </div>
     </div>
     <h2 class="title">數 位 小 兔 產 品 維 修 單</h2>
-
-    <div class="info"><strong>維修單號：</strong><span id="repairId"></span></div>
-    <div class="info"><strong>填單日期：</strong><span id="createdAt"></span></div>
-    <div class="info"><strong>聯絡資訊：</strong><span id="contactInfo"></span></div>
-    <div class="info" id="addressBlock" style="display: none;"><strong>地址：</strong><span id="address"></span></div>
-
-    <div class="divider"></div>
-    <div class="info"><strong>保固狀況：</strong><span id="warranty"></span></div>
-    <div class="divider"></div>
-    <div class="info"><strong>產品名稱：</strong><span id="product"></span></div>
-    <div class="info"><strong>問題描述：</strong><span id="description"></span></div>
-    <div class="divider"></div>
-
-    <div class="footer">
-      <div><strong>經手人：</strong><span id="staff"></span></div>
+    <div class="section">
+      <div><strong>維修單號：</strong><span id="repairId"></span></div>
+      <div><strong>填單日期：</strong><span id="createdAt"></span></div>
+      <div><strong>聯絡資訊：</strong><span id="contactInfo"></span></div>
+      <div id="addressLine" style="display:none;"><strong>地址：</strong><span id="address"></span></div>
+    </div>
+    <hr />
+    <div class="section">
+      <div><strong>保固狀況：</strong><span id="warranty"></span></div>
+    </div>
+    <hr />
+    <div class="section">
+      <div><strong>產品名稱：</strong><span id="product"></span></div>
+      <div><strong>問題描述：</strong><span id="description"></span></div>
+    </div>
+    <hr />
+    <div class="section">
+      <div><strong>經手人：</strong><span id="nickname"></span></div>
       <div><strong>官方 LINE：</strong>@digirabbit</div>
     </div>
   </div>
+  <script type="module" src="js/repair-print.js"></script>
 </body>
 </html>
