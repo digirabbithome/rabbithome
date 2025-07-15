@@ -13,11 +13,21 @@ html, body {
   box-sizing: border-box;
 }
 
+body * {
+  box-sizing: border-box;
+}
+
+.center-frame {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .wrapper {
+  width: 320px;
+  height: 520px;
   padding: 12px;
   box-sizing: border-box;
-  width: 100%;
-  height: 100%;
 }
 
 .header {
@@ -29,6 +39,7 @@ html, body {
   width: 56px;
   height: 56px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .header-text {
@@ -61,20 +72,19 @@ h2 {
   justify-content: space-between;
   margin-bottom: 6px;
   border-bottom: 1px dashed #999;
-  box-sizing: border-box;
+  width: 100%;
 }
 
 .row div:first-child {
   width: 40%;
   border-right: 1px solid #ccc;
   padding-right: 6px;
-  box-sizing: border-box;
 }
 
 .row div:last-child {
   width: 60%;
   padding-left: 6px;
-  box-sizing: border-box;
+  word-wrap: break-word;
 }
 
 .bold {
