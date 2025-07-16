@@ -19,11 +19,13 @@ window.onload = async () => {
   snapshot.forEach(doc => {
     const d = doc.data()
     const targets = d.visibleTo || ['未知']
-    const content = d.content?.join?.('\n') || ''
+    const contentList = d.content?.join?.('\n') || ''
+    const nickname = d.nickname || '匿名者'
+    const displayText = nickname + '：' + contentList
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push(content)
+      grouped[group].push(displayText)
     })
   })
 
@@ -35,9 +37,9 @@ window.onload = async () => {
     title.textContent = groupMap[group] || group
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(content => {
+    grouped[group].forEach(displayText => {
       const p = document.createElement('p')
-      p.textContent = content
+      p.textContent = displayText
       groupDiv.appendChild(p)
     })
 
