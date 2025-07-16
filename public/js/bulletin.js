@@ -18,9 +18,13 @@ window.onload = async () => {
 
   snapshot.forEach(doc => {
     const d = doc.data()
-    const group = d.group || '未分類'
-    if (!grouped[group]) grouped[group] = []
-    grouped[group].push(d)
+    const targets = d.visibleTo || ['未知']
+    const content = d.content?.join?.('\n') || ''
+
+    targets.forEach(group => {
+      if (!grouped[group]) grouped[group] = []
+      grouped[group].push(content)
+    })
   })
 
   const container = document.getElementById('bulletin-board')
@@ -31,9 +35,9 @@ window.onload = async () => {
     title.textContent = groupMap[group] || group
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(item => {
+    grouped[group].forEach(content => {
       const p = document.createElement('p')
-      p.textContent = item.content?.join?.('\n') || ''
+      p.textContent = content
       groupDiv.appendChild(p)
     })
 
