@@ -1,20 +1,4 @@
 
-body {
-  font-family: 'Helvetica Neue', sans-serif;
-  padding: 20px;
-  background-color: #fff;
-  color: #111;
-}
-h2 {
-  font-size: 22px;
-  margin-bottom: 10px;
-}
-h3 {
-  color: #b00;
-  margin-top: 20px;
-  font-weight: bold;
-}
-.msg-line {
-  margin: 4px 0;
-  line-height: 1.4;
-}
+body { font-family: sans-serif; }
+h3 { margin-top: 1em; color: #c00; }
+.msg-line { margin-left: 1em; }

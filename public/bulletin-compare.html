@@ -1,100 +1,30 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>📢 公告牆比較</title>
+  <meta charset="UTF-8" />
+  <title>📢 公告牆顯示版本比較</title>
   <link rel="stylesheet" href="/css/bulletin.css">
   <style>
-    .compare-container { display: flex; gap: 40px; }
-    .compare-column { flex: 1; border: 1px solid #ccc; padding: 1em; border-radius: 8px; background: #fffdf6; }
-    h2 { margin-bottom: 0.2em; }
+    body { font-family: sans-serif; margin: 2em; }
+    .container { display: flex; justify-content: space-between; gap: 2em; }
+    .box { border: 1px solid #ccc; padding: 1em; background: #fffdf7; flex: 1; border-radius: 10px; }
+    h1 { font-size: 2em; margin-bottom: 1em; }
+    h2 { font-size: 1.5em; }
+    iframe { width: 100%; height: 600px; border: none; background: #fff; }
   </style>
 </head>
 <body>
   <h1>📢 公告牆顯示版本比較</h1>
-  <div class="compare-container">
-    <div class="compare-column">
-      <h2>🧾 舊版（display.js）</h2>
-      <div id="old-bulletin"></div>
+  <div class="container">
+    <div class="box">
+      <h2>舊版（display.js）</h2>
+      <iframe src="bulletin-display.html"></iframe>
     </div>
-    <div class="compare-column">
+    <div class="box">
       <h2>✨ 新版（bulletin.js）</h2>
-      <div id="new-bulletin"></div>
+      <iframe src="bulletin-standalone.html"></iframe>
     </div>
   </div>
-
-  <script type="module">
-    import { db } from '/js/firebase.js'
-    import {
-      collection, getDocs, query, orderBy
-    } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-
-    const groupMap = {
-      '外場': '📌 外場',
-      '內場': '📌 內場',
-      '出貨': '📌 出貨',
-      '美編': '📌 美編',
-      '行銷': '📌 行銷'
-    }
-
-    async function renderOldVersion() {
-      const q = query(collection(db, 'bulletin'), orderBy('createdAt', 'desc'))
-      const snapshot = await getDocs(q)
-      const grouped = {}
-
-      snapshot.forEach(doc => {
-        const d = doc.data()
-        const lines = d.content.split('\n')
-        const group = d.targetGroup || '未分類'
-        if (!grouped[group]) grouped[group] = []
-        grouped[group].push({ nickname: d.nickname, lines })
-      })
-
-      const container = document.getElementById('old-bulletin')
-      Object.keys(grouped).forEach(group => {
-        const title = groupMap[group] || `📌 ${group}`
-        const section = document.createElement('div')
-        section.innerHTML = `<h3>${title}</h3>`
-        grouped[group].forEach(msg => {
-          const html = msg.lines.map((line, i) => i === 0
-            ? `<strong>${msg.nickname}</strong>: ${line}`
-            : `<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${line}`).join('')
-          section.innerHTML += `<div class="msg-line">${html}</div><br>`
-        })
-        container.appendChild(section)
-      })
-    }
-
-    async function renderNewVersion() {
-      const q = query(collection(db, 'bulletin'), orderBy('createdAt', 'desc'))
-      const snapshot = await getDocs(q)
-      const grouped = {}
-
-      snapshot.forEach(doc => {
-        const d = doc.data()
-        const lines = d.content.split('\n')
-        const group = d.targetGroup || '未分類'
-        if (!grouped[group]) grouped[group] = []
-        grouped[group].push({ nickname: d.nickname, lines })
-      })
-
-      const container = document.getElementById('new-bulletin')
-      Object.keys(grouped).forEach(group => {
-        const groupTitle = groupMap[group] || `📌 ${group}`
-        const section = document.createElement('div')
-        section.innerHTML = `<h3>${groupTitle}</h3>`
-        grouped[group].forEach(msg => {
-          const first = msg.lines[0]
-          const rest = msg.lines.slice(1).map(l => `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${l}`).join('<br>')
-          const entry = `<div class="msg-line">🔹 <strong>${msg.nickname}</strong>: ${first}<br>${rest}</div>`
-          section.innerHTML += entry
-        })
-        container.appendChild(section)
-      })
-    }
-
-    renderOldVersion()
-    renderNewVersion()
-  </script>
 </body>
 </html>
