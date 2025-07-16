@@ -10,8 +10,8 @@
 <body>
 
 <div id="view-switch" style="margin-bottom: 16px;">
-<button id="show-form">➕ 新增維修單</button>
-<button id="show-list">📋 維修單列表</button>
+<button id="show-form" class="cute-btn">➕ 新增維修單</button>
+<button id="show-list" class="cute-btn">📋 維修單列表</button>
 </div>
 <!-- 新增維修單區域 -->
 <div id="form-section" style="display: none;">
@@ -34,19 +34,19 @@
 </td></tr>
 <tr><td>選擇廠商</td><td><select id="supplier-select"></select></td></tr>
 <tr><td>上傳照片</td><td><input id="photo-upload" multiple="" type="file"/></td></tr>
-<tr><td colspan="2"><button type="submit">✅ 送出維修單</button></td></tr>
+<tr><td colspan="2"><button type="submit" class="cute-btn">✅ 送出維修單</button></td></tr>
 </table>
 </form>
 </div>
 <!-- 維修列表區 -->
 <div id="list-section"><div id="repair-header" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;"><div style="margin-bottom: 16px;">
 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-<button class="status-btn" data-status="all">全部</button>
-<button class="status-btn" data-status="1">新進維修</button>
-<button class="status-btn" data-status="2">已交付廠商</button>
-<button class="status-btn" data-status="3">維修完成</button>
-<button class="status-btn" data-status="4">客人已取貨</button>
-<button class="status-btn" data-status="priority">⭐️ 優先處理</button>
+<button class="status-btn cute-btn" data-status="all">全部</button>
+<button class="status-btn cute-btn" data-status="1">新進維修</button>
+<button class="status-btn cute-btn" data-status="2">已交付廠商</button>
+<button class="status-btn cute-btn" data-status="3">維修完成</button>
+<button class="status-btn cute-btn" data-status="4">客人已取貨</button>
+<button class="status-btn cute-btn" data-status="priority">⭐️ 優先處理</button>
 </div>
 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
 <input id="search-id" placeholder="🔢 維修單號（模糊）" type="text"/>

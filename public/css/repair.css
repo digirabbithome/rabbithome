@@ -10,3 +10,19 @@ body {
   padding: 6px 0;
   font-size: 16px;
 }
+
+.cute-btn {
+  background-color: #fff;
+  border: 1px solid #ff99bb;
+  color: #ff2d6f;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.cute-btn:hover {
+  background-color: #ffe0ec;
+}
