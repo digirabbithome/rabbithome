@@ -38,3 +38,23 @@ p {
   line-height: 1.6;
   word-break: break-word;
 }
+
+
+.date-toolbar {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: #fdf2f6;
+  border: 1px solid #eee;
+  justify-content: center;
+}
+.date-toolbar button, .date-toolbar input {
+  padding: 0.4rem 0.8rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
