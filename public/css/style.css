@@ -1,1 +1,46 @@
-/* CSS styles */
+
+body {
+  display: flex;
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.sidebar {
+  width: 240px;
+  background-color: #ffffff;
+  padding: 20px;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+  border-right: 1px solid #eee;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #ff6699;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #fff0f5;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sidebar li:hover {
+  background-color: #ffe6ec;
+  color: #d6336c;
+}
+
+.main-content {
+  flex-grow: 1;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 0;
+}
