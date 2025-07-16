@@ -51,7 +51,9 @@ p {
   border: 1px solid #eee;
   justify-content: center;
 }
-.date-toolbar button, .date-toolbar input {
+
+.date-toolbar button,
+.date-toolbar input {
   padding: 0.4rem 0.8rem;
   border-radius: 5px;
   border: 1px solid #ccc;
