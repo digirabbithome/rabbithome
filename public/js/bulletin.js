@@ -1,3 +1,4 @@
+
 import { db } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy
@@ -11,8 +12,10 @@ const groupMap = {
   '行銷': '📌 行銷'
 }
 
+const groupOrder = ['外場', '內場', '出貨', '美編', '行銷', '未分類']
+
 window.onload = async () => {
-  const q = query(collection(db, 'bulletins'), orderBy('createdAt', 'desc'))  // ← 修正這行 collection 名稱為 bulletins
+  const q = query(collection(db, 'bulletins'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   const grouped = {}
 
@@ -24,7 +27,8 @@ window.onload = async () => {
   })
 
   const container = document.getElementById('bulletin-board')
-  for (const group in grouped) {
+  groupOrder.forEach(group => {
+    if (!grouped[group]) return
     const groupDiv = document.createElement('div')
     groupDiv.className = 'group-block'
     const title = document.createElement('h3')
@@ -33,10 +37,12 @@ window.onload = async () => {
 
     grouped[group].forEach(item => {
       const p = document.createElement('p')
-      p.textContent = item.content?.join?.('\n') || ''
+      p.textContent = Array.isArray(item.content)
+        ? item.content.join('\n')
+        : item.content || ''
       groupDiv.appendChild(p)
     })
 
     container.appendChild(groupDiv)
-  }
+  })
 }
