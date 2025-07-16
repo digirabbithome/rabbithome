@@ -1,6 +1,7 @@
+// bulletin.js
 import { db } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy, updateDoc, doc
+  collection, getDocs, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 const groupMap = {
@@ -11,64 +12,70 @@ const groupMap = {
   '行銷': '📌 行銷'
 }
 
-const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
+const getNDaysAgo = (n) => {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
 
 window.onload = async () => {
+  const toolbar = document.querySelector('.date-toolbar')
+  const picker = document.getElementById('datePicker')
+  const buttons = {
+    'prev-day': 1,
+    'prev-3days': 3,
+    'prev-week': 7,
+    'prev-month': 30
+  }
+
+  for (const id in buttons) {
+    document.getElementById(id)?.addEventListener('click', () => {
+      const date = getNDaysAgo(buttons[id])
+      renderBulletins(date)
+    })
+  }
+
+  picker?.addEventListener('change', () => {
+    const selected = new Date(picker.value)
+    selected.setHours(0, 0, 0, 0)
+    renderBulletins(selected)
+  })
+
+  renderBulletins(getNDaysAgo(3))
+}
+
+async function renderBulletins(minDate) {
   const q = query(collection(db, 'bulletins'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   const grouped = {}
 
-  const docs = []
-  snapshot.forEach(docSnap => {
-    const d = docSnap.data()
-    d._id = docSnap.id
-    docs.push(d)
-  })
-
-  docs.forEach(d => {
-    const targets = d.visibleTo || ['未知']
-    const contentList = d.content?.join?.('\n') || ''
-    const nickname = d.createdBy || d.nickname || '匿名者'
-    const displayText = nickname + '：' + contentList
-
-    targets.forEach(group => {
+  snapshot.forEach(doc => {
+    const d = doc.data()
+    const created = d.createdAt?.toDate?.()
+    if (!created || created < minDate) return
+    const groups = d.visibleTo || ['未分類']
+    const content = d.content?.join?.('\n') || ''
+    const nickname = d.nickname || '匿名'
+    groups.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred })
+      grouped[group].push(`🔹 <strong>${nickname}</strong>: ${content}`)
     })
   })
 
   const container = document.getElementById('bulletin-board')
-  let colorIndex = 0
-
-  for (const group in grouped) {
-    const groupDiv = document.createElement('div')
-    groupDiv.className = 'group-block'
-    const title = document.createElement('h3')
-    title.textContent = groupMap[group] || group
-    title.style.backgroundColor = pastelColors[colorIndex % pastelColors.length]
-    colorIndex++
-
-    groupDiv.appendChild(title)
-
-    grouped[group].forEach(({ text, id, isStarred }) => {
+  container.innerHTML = ''
+  Object.keys(grouped).forEach((group, i) => {
+    const section = document.createElement('div')
+    section.className = 'group-block'
+    const h3 = document.createElement('h3')
+    h3.textContent = groupMap[group] || `📌 ${group}`
+    section.appendChild(h3)
+    grouped[group].forEach(msg => {
       const p = document.createElement('p')
-
-      const star = document.createElement('span')
-      star.textContent = isStarred ? '⭐' : '☆'
-      star.style.cursor = 'pointer'
-      star.style.marginRight = '0.5rem'
-      star.addEventListener('click', async () => {
-        const newStatus = star.textContent === '☆'
-        star.textContent = newStatus ? '⭐' : '☆'
-        const ref = doc(db, 'bulletins', id)
-        await updateDoc(ref, { isStarred: newStatus })
-      })
-
-      p.appendChild(star)
-      p.appendChild(document.createTextNode(text))
-      groupDiv.appendChild(p)
+      p.innerHTML = msg
+      section.appendChild(p)
     })
-
-    container.appendChild(groupDiv)
-  }
+    container.appendChild(section)
+  })
 }

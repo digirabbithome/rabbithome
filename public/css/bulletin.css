@@ -1,3 +1,4 @@
+
 body {
   font-family: "Noto Sans TC", sans-serif;
   background: #fffafc;
@@ -24,7 +25,6 @@ h3 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  padding: 0 1rem;
 }
 
 .group-block {
