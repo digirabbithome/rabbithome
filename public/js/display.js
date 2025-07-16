@@ -1,21 +1,13 @@
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'
+import { db } from '/js/firebase.js'
 import {
-  getFirestore, collection, getDocs, query, orderBy
+  collection, getDocs, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-const firebaseConfig = {
-  apiKey: "test", authDomain: "test.firebaseapp.com",
-  projectId: "test-id", storageBucket: "test.appspot.com",
-  messagingSenderId: "000000000", appId: "1:test:web:test"
-}
-const app = initializeApp(firebaseConfig)
-const db = getFirestore(app)
-
 const groupMap = {
-  '外場': '📌 外場', '內場': '📌 內場',
-  '出貨': '📌 出貨', '美編': '📌 美編',
-  '行銷': '📌 行銷', '系統': '📌 系統'
+  '外場': '外場', '內場': '內場',
+  '出貨': '出貨', '美編': '美編',
+  '行銷': '行銷'
 }
 
 window.onload = async () => {
@@ -25,24 +17,32 @@ window.onload = async () => {
 
   snapshot.forEach(doc => {
     const d = doc.data()
-    const lines = d.content?.join?.('<br>') || ''
-    const targets = d.visibleTo || ['未知']
+    const targets = d.visibleTo || ['未分類']
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ nickname: d.createdBy, lines })
+      grouped[group].push({ nickname: d.nickname, content: d.content })
     })
   })
 
   const container = document.getElementById('bulletin-board')
-  Object.keys(grouped).forEach(group => {
-    const groupTitle = groupMap[group] || `📌 ${group}`
-    const section = document.createElement('div')
-    section.className = 'group-block'
-    section.innerHTML = `<h3>${groupTitle}</h3>`
-    grouped[group].forEach(msg => {
-      const entry = `<div class="msg-line">🔹 <strong>${msg.nickname}</strong>: ${msg.lines}</div>`
-      section.innerHTML += entry
+  container.innerHTML = '<div class="columns"><div class="col"></div><div class="col"></div></div>'
+  const cols = container.querySelectorAll('.col')
+  const keys = Object.keys(grouped)
+  keys.forEach((group, index) => {
+    const box = document.createElement('div')
+    box.className = 'group-box group-' + group
+    const title = document.createElement('div')
+    title.className = 'group-title'
+    title.textContent = groupMap[group] || group
+    box.appendChild(title)
+
+    grouped[group].forEach(item => {
+      const msg = document.createElement('div')
+      msg.className = 'msg-line'
+      msg.innerHTML = `<strong>${item.nickname}</strong>:<br>${item.content.replaceAll('\n', '<br>')}`
+      box.appendChild(msg)
     })
-    container.appendChild(section)
+
+    cols[index % 2].appendChild(box)
   })
 }

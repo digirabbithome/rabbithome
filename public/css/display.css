@@ -1,0 +1,44 @@
+
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background: #fff7f8;
+  margin: 20px;
+}
+
+.columns {
+  display: flex;
+  gap: 20px;
+}
+
+.col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.group-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+.group-title {
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.group-外場 .group-title { background: #ffe5e5; }
+.group-內場 .group-title { background: #e5f2ff; }
+.group-出貨 .group-title { background: #e5ffe5; }
+.group-美編 .group-title { background: #fce5ff; }
+.group-行銷 .group-title { background: #fff5cc; }
+
+.msg-line {
+  padding: 4px 0;
+  border-bottom: 1px dotted #ccc;
+  line-height: 1.4;
+}
