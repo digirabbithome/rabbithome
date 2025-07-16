@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -5,12 +6,34 @@
   <title>📌 公布欄</title>
   <link rel="stylesheet" href="css/bulletin.css" />
   <script type="module" src="js/bulletin.js" defer></script>
+  <script type="module" src="js/bulletin-marker-firebase.js" defer></script>
 </head>
 <body>
   <div class="page-wrapper">
     <h2>📌 公布欄</h2>
+
     <div id="edict-section"></div>
-    <div id="bulletin-list"></div>
+
+    <!-- 模擬公告內容（可以標記） -->
+    <div id="bulletin-content">
+      <p>📦 ZITAY 電池已到貨，請各部門安排動作。</p>
+      <p>🧰 美編：明天下午 3 點前完成拍照</p>
+      <p>📞 外場：通知預約客戶可以取件</p>
+      <p>🗃️ 出貨：備妥包裝並貼上到貨日期標籤</p>
+    </div>
+
+    <!-- 標記工具列 -->
+    <div class="toolbar" style="margin-top: 1rem;">
+      <strong>✍️ 我要標記：</strong>
+      <button data-color="#ffff66">🟨 黃色</button>
+      <button data-color="#ccffcc">🟩 綠色</button>
+      <button data-color="#cce5ff">🟦 藍色</button>
+      <button data-color="#e0ccff">🟪 紫色</button>
+      <input type="color" id="customColor" title="自訂顏色" />
+      <button id="clear">❌ 清除模擬區</button>
+    </div>
+
+    <div id="marked-preview" style="margin-top: 1rem;"></div>
   </div>
 </body>
 </html>
