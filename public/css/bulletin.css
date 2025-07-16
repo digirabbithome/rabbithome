@@ -1,4 +1,21 @@
-
-body { font-family: sans-serif; }
-h3 { margin-top: 1em; color: #c00; }
-.msg-line { margin-left: 1em; }
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background: #fffafc;
+  margin: 2rem;
+}
+h3 {
+  margin-top: 2rem;
+  color: #444;
+  font-size: 1.5rem;
+}
+.group-block {
+  margin-bottom: 2rem;
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
