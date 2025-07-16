@@ -9,32 +9,30 @@ window.onload = async () => {
 
   const docRef = doc(db, 'repairs', id)
   const docSnap = await getDoc(docRef)
+  if (!docSnap.exists()) return
 
-  if (docSnap.exists()) {
-    const data = docSnap.data()
-    document.getElementById('repairId').innerText = data.repairId || ''
-    document.getElementById('createdAt').innerText = data.createdAt?.toDate().toLocaleString('zh-TW') || ''
-    document.getElementById('handler').innerText = data.user || ''
+  const data = docSnap.data()
+  document.getElementById('repairId').innerText = data.repairId || ''
+  document.getElementById('createdAt').innerText = data.createdAt?.toDate().toLocaleString('zh-TW') || ''
+  document.getElementById('handler').innerText = data.user || ''
+  document.getElementById('warranty').innerText = data.warranty || ''
+  document.getElementById('contactInfo').innerText = `${data.customer || ''}　${data.phone || ''}　${data.line || ''}`
+  document.getElementById('addressLine').innerText = data.address || ''
+  document.getElementById('product').innerText = data.product || ''
+  document.getElementById('description').innerText = data.description || ''
 
-    let warrantyText = ''
-    switch (data.warranty) {
-      case '內':
-        warrantyText = '有保卡（保固內）'
-        break
-      case '外':
-        warrantyText = '有保卡（過保）'
-        break
-      case '無':
-        warrantyText = '沒有保卡'
-        break
-      default:
-        warrantyText = data.warranty || ''
-    }
-    document.getElementById('warranty').innerText = warrantyText
-
-    document.getElementById('contactInfo').innerText = `${data.customer || ''}　${data.phone || ''}　${data.line || ''}`
-    document.getElementById('addressLine').innerText = data.address || ''
-    document.getElementById('product').innerText = data.product || ''
-    document.getElementById('description').innerText = data.description || ''
+  // 自動轉成圖片下載
+  if (urlParams.get('download') === '1') {
+    setTimeout(() => {
+      import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(() => {
+        const el = document.querySelector('.print-wrapper')
+        html2canvas(el).then(canvas => {
+          const link = document.createElement('a')
+          link.href = canvas.toDataURL('image/png')
+          link.download = `${data.repairId || 'repair'}.png`
+          link.click()
+        })
+      })
+    }, 800)
   }
 }
