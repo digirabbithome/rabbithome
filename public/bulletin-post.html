@@ -2,25 +2,24 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>📣 發佈公告</title>
+  <title>📢 發佈公告</title>
+  <link rel="stylesheet" href="/css/bulletin.css" />
+  <script type="module" src="/js/bulletin-post.js" defer></script>
 </head>
 <body>
-  <h2>📣 發佈公告</h2>
+  <h2>📢 發佈公告</h2>
   <form id="post-form">
-    <label for="content">公告內容：</label><br>
-    <textarea id="content" rows="6" cols="60" required></textarea><br><br>
+    <label for="content">公告內容：</label><br />
+    <textarea id="content" rows="8" cols="50" required></textarea><br /><br />
 
-    <fieldset>
-      <legend>交付群組：</legend>
-      <label><input type="checkbox" value="外場"> 外場</label>
-      <label><input type="checkbox" value="內場"> 內場</label>
-      <label><input type="checkbox" value="美編"> 美編</label>
-      <label><input type="checkbox" value="出貨"> 出貨</label>
-      <label><input type="checkbox" value="行銷"> 行銷</label>
-    </fieldset><br>
+    <label>交付群組：</label><br />
+    <label><input type="checkbox" value="外場" /> 外場</label>
+    <label><input type="checkbox" value="內場" /> 內場</label>
+    <label><input type="checkbox" value="出貨" /> 出貨</label>
+    <label><input type="checkbox" value="美編" /> 美編</label>
+    <label><input type="checkbox" value="行銷" /> 行銷</label><br /><br />
 
-    <button type="submit">發佈</button>
+    <button type="submit">發佈公告</button>
   </form>
-  <script type="module" src="/js/bulletin-post.js"></script>
 </body>
 </html>

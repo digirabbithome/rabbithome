@@ -1,4 +1,5 @@
-import { db as dbMarker } from '/js/firebase-marker.js'
+
+import { db } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
@@ -12,7 +13,7 @@ const groupMap = {
 }
 
 window.onload = async () => {
-  const q = query(collection(dbMarker, 'bulletin'), orderBy('createdAt', 'desc'))
+  const q = query(collection(db, 'bulletin'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   const grouped = {}
 
@@ -30,9 +31,11 @@ window.onload = async () => {
     const section = document.createElement('div')
     section.innerHTML = `<h3>${groupTitle}</h3>`
     grouped[group].forEach(msg => {
-      const first = msg.lines[0]
-      const rest = msg.lines.slice(1).map(l => `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${l}`).join('<br>')
-      const entry = `<div class="msg-line">🔹 <strong>${msg.nickname}</strong>: ${first}<br>${rest}</div>`
+      const full = msg.lines.map((line, i) => {
+        const prefix = i === 0 ? `🔹 <strong>${msg.nickname}</strong>：` : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+        return prefix + line
+      }).join('<br>')
+      const entry = `<div class="msg-line">${full}</div>`
       section.innerHTML += entry
     })
     container.appendChild(section)
