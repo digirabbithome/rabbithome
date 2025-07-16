@@ -2,26 +2,23 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>✍️ 發佈公告</title>
-  <link rel="stylesheet" href="css/bulletin.css" />
-  <script type="module" src="js/bulletin-post.js" defer></script>
+  <title>發佈公告</title>
 </head>
 <body>
-  <div class="page-wrapper">
-    <h2>✍️ 發佈公告</h2>
-    <form id="post-form">
-      <label>標題：<input type="text" id="title" required /></label><br>
-      <label>內容（每行為一段）：<br><textarea id="content" rows="8" required></textarea></label><br>
-      <label>顯示對象群組：<br>
-        <label><input type="checkbox" value="外場" /> 外場</label>
-        <label><input type="checkbox" value="內場" /> 內場</label>
-        <label><input type="checkbox" value="美編" /> 美編</label>
-        <label><input type="checkbox" value="出貨" /> 出貨</label>
-        <label><input type="checkbox" value="行銷" /> 行銷</label>
-        <label><input type="checkbox" value="全部" /> 全部</label>
-      </label><br>
-      <button type="submit">✅ 發佈</button>
-    </form>
-  </div>
+  <h2>📢 發佈公告</h2>
+  <form id="post-form">
+    <label>標題：<br><input type="text" id="title" required></label><br><br>
+    <label>內容（每行一段）：<br><textarea id="content" rows="10" cols="50" required></textarea></label><br><br>
+    <fieldset>
+      <legend>可見群組：</legend>
+      <label><input type="checkbox" value="內場">內場</label>
+      <label><input type="checkbox" value="外場">外場</label>
+      <label><input type="checkbox" value="美編">美編</label>
+      <label><input type="checkbox" value="出貨">出貨</label>
+      <label><input type="checkbox" value="行銷">行銷</label>
+    </fieldset><br>
+    <button type="submit">發佈公告</button>
+  </form>
+  <script type="module" src="/js/bulletin-post.js"></script>
 </body>
 </html>
