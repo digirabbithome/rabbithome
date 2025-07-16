@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>📢 公告牆（依群組分類）</title>
-  <link rel="stylesheet" href="css/bulletin.css" />
-  <script type="module" src="js/bulletin.js"></script>
+  <meta charset="UTF-8">
+  <title>📢 公告牆</title>
+  <link rel="stylesheet" href="/css/bulletin.css">
+  <script type="module" src="/js/bulletin.js" defer></script>
 </head>
 <body>
+  <h2>📢 公告牆（依群組分類）</h2>
+
+  <div class="date-toolbar">
+    <button id="prev-day">前一天</button>
+    <button id="prev-3days">前三天</button>
+    <button id="prev-week">前一週</button>
+    <button id="prev-month">前一月</button>
+    <input type="date" id="datePicker">
+  </div>
+
   <div id="bulletin-board" class="board-container"></div>
 </body>
 </html>

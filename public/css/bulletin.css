@@ -3,38 +3,36 @@ body {
   background: #fffafc;
   margin: 2rem;
 }
-
-h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
 h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  font-size: 1.2rem;
-  color: #fff;
-  background-color: #ff88aa;
-  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  padding: 0.5rem;
   border-radius: 6px;
+  color: #000;
+  font-size: 1.2rem;
 }
-
-#bulletin-board {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
 .group-block {
+  width: 48%;
+  display: inline-block;
+  vertical-align: top;
   background: #fff;
   border-radius: 10px;
   padding: 1rem;
-  box-shadow: 0 0 6px rgba(0,0,0,0.08);
+  margin: 1%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
+.group-block:nth-child(1) h3 { background: #ffecec; }
+.group-block:nth-child(2) h3 { background: #e0f7ff; }
+.group-block:nth-child(3) h3 { background: #f5ffe0; }
+.group-block:nth-child(4) h3 { background: #e5f0ff; }
+.group-block:nth-child(5) h3 { background: #fff4e5; }
 
+.date-toolbar {
+  margin-bottom: 1rem;
+}
+.date-toolbar button {
+  margin-right: 0.5rem;
+}
 p {
-  margin: 0.2rem 0;
+  margin: 0.5rem 0;
   line-height: 1.6;
-  word-break: break-word;
 }
