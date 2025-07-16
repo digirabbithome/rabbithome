@@ -1,6 +1,6 @@
 import { db } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy
+  collection, getDocs, query, orderBy, updateDoc, doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 const groupMap = {
@@ -18,8 +18,14 @@ window.onload = async () => {
   const snapshot = await getDocs(q)
   const grouped = {}
 
-  snapshot.forEach(doc => {
-    const d = doc.data()
+  const docs = []
+  snapshot.forEach(docSnap => {
+    const d = docSnap.data()
+    d._id = docSnap.id
+    docs.push(d)
+  })
+
+  docs.forEach(d => {
     const targets = d.visibleTo || ['未知']
     const contentList = d.content?.join?.('\n') || ''
     const nickname = d.createdBy || d.nickname || '匿名者'
@@ -27,7 +33,7 @@ window.onload = async () => {
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push(displayText)
+      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred })
     })
   })
 
@@ -44,9 +50,22 @@ window.onload = async () => {
 
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(displayText => {
+    grouped[group].forEach(({ text, id, isStarred }) => {
       const p = document.createElement('p')
-      p.textContent = displayText
+
+      const star = document.createElement('span')
+      star.textContent = isStarred ? '⭐' : '☆'
+      star.style.cursor = 'pointer'
+      star.style.marginRight = '0.5rem'
+      star.addEventListener('click', async () => {
+        const newStatus = star.textContent === '☆'
+        star.textContent = newStatus ? '⭐' : '☆'
+        const ref = doc(db, 'bulletins', id)
+        await updateDoc(ref, { isStarred: newStatus })
+      })
+
+      p.appendChild(star)
+      p.appendChild(document.createTextNode(text))
       groupDiv.appendChild(p)
     })
 
