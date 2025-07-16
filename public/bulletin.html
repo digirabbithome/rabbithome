@@ -1,12 +1,66 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>📢 公告牆（依群組分類）</title>
-  <link rel="stylesheet" href="css/bulletin.css" />
-  <script type="module" src="js/bulletin.js"></script>
+  <meta charset="UTF-8">
+  <title>📢 公告牆</title>
+  <link rel="stylesheet" href="/css/bulletin.css">
+  <style>
+    .two-column {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .group-block {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      width: calc(50% - 0.75rem);
+      box-sizing: border-box;
+    }
+    .group-block h3 {
+      margin-top: 0;
+      padding: 0.5rem;
+      color: #000;
+      font-size: 1.2rem;
+      border-radius: 8px;
+    }
+    .group-block:nth-child(5n+1) h3 { background: #ffe0e6; }
+    .group-block:nth-child(5n+2) h3 { background: #e0f0ff; }
+    .group-block:nth-child(5n+3) h3 { background: #eaffea; }
+    .group-block:nth-child(5n+4) h3 { background: #fff7cc; }
+    .group-block:nth-child(5n+5) h3 { background: #f0e5ff; }
+    .date-toolbar {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .date-toolbar button, .date-toolbar input {
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      cursor: pointer;
+    }
+    .date-toolbar input {
+      border: 1px solid #aaa;
+    }
+  </style>
+  <script type="module" src="/js/bulletin.js" defer></script>
 </head>
 <body>
-  <div id="bulletin-board" class="board-container"></div>
+  <h2>📢 公告牆（依群組分類）</h2>
+
+  <div class="date-toolbar">
+    <button id="prev-day">前一天</button>
+    <button id="prev-3days">前三天</button>
+    <button id="prev-week">前一週</button>
+    <button id="prev-month">前一月</button>
+    <input type="date" id="datePicker">
+  </div>
+
+  <div id="bulletin-board" class="two-column"></div>
 </body>
 </html>
