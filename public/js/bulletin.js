@@ -1,7 +1,7 @@
 
 import { db } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy, updateDoc, doc, where
+  collection, getDocs, query, orderBy, updateDoc, doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 const groupMap = {
@@ -42,9 +42,9 @@ async function renderBulletins(endDateStr, rangeDays) {
   const container = document.getElementById('bulletin-board')
   container.innerHTML = ''
 
-  const dateTitle = document.createElement('h3')
-  dateTitle.textContent = `📅 公布欄：${endDateStr}（往前${rangeDays}天）`
-  container.appendChild(dateTitle)
+  // 更新最上方 h2 標題
+  const titleEl = document.getElementById('date-title')
+  titleEl.textContent = `📌 公布欄：${endDateStr}（往前${rangeDays}天）`
 
   const endDate = new Date(endDateStr)
   const startDate = new Date(endDate)
