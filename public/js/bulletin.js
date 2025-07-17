@@ -13,42 +13,43 @@ const groupMap = {
 }
 
 const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
-let currentStartDate = getDateString(new Date())
+let currentRangeDays = 3
 
 window.onload = async () => {
-  document.getElementById('datePicker').value = currentStartDate
+  const now = new Date()
+  document.getElementById('datePicker').value = now.toISOString().split('T')[0]
+
   document.getElementById('prev-day').addEventListener('click', () => updateRange(1))
   document.getElementById('prev-3days').addEventListener('click', () => updateRange(3))
   document.getElementById('prev-week').addEventListener('click', () => updateRange(7))
   document.getElementById('prev-month').addEventListener('click', () => updateRange(30))
   document.getElementById('datePicker').addEventListener('change', (e) => {
-    currentStartDate = e.target.value
-    renderBulletins(currentStartDate, 1)
+    const selected = new Date(e.target.value)
+    renderBulletins(selected, 1)
   })
 
-  renderBulletins(currentStartDate, 3)
-}
-
-function getDateString(date) {
-  return date.toISOString().split('T')[0]
+  renderBulletins(new Date(), currentRangeDays)
 }
 
 function updateRange(days) {
-  currentStartDate = getDateString(new Date())
-  renderBulletins(currentStartDate, days)
+  currentRangeDays = days
+  renderBulletins(new Date(), days)
 }
 
-async function renderBulletins(endDateStr, rangeDays) {
+async function renderBulletins(endDate, rangeDays) {
   const container = document.getElementById('bulletin-board')
   container.innerHTML = ''
 
-  // 更新最上方 h2 標題
+  const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
-  titleEl.textContent = `📌 公布欄：${endDateStr}（往前${rangeDays}天）`
+  titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
 
-  const endDate = new Date(endDateStr)
-  const startDate = new Date(endDate)
+  const endDateFull = new Date(endDate)
+  endDateFull.setHours(23, 59, 59, 999)
+
+  const startDate = new Date(endDateFull)
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
+  startDate.setHours(0, 0, 0, 0)
 
   const q = query(collection(db, 'bulletins'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
@@ -58,7 +59,7 @@ async function renderBulletins(endDateStr, rangeDays) {
     const d = docSnap.data()
     const createdAt = d.createdAt?.toDate?.()
     if (!createdAt) return
-    if (createdAt < startDate || createdAt > endDate) return
+    if (createdAt < startDate || createdAt > endDateFull) return
 
     d._id = docSnap.id
     const targets = d.visibleTo || ['未知']
