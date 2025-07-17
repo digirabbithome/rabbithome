@@ -66,9 +66,21 @@ async function renderBulletins(endDate, rangeDays) {
 
   const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
-  titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
+  
+const format = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+const dateRangeText = `📌 公告區間：${format(startDate)} ～ ${format(endDateFull)}`;
 
-  const endDateFull = new Date(endDate)
+  titleEl.textContent = dateRangeText;
+
+  
+const now = new Date()
+const endDateFull = new Date(now)
+endDateFull.setHours(6, 0, 0, 0) // 今天 6:00 AM
+
+const startDate = new Date(endDateFull)
+startDate.setDate(startDate.getDate() - rangeDays)
+startDate.setHours(6, 0, 0, 0) // 起始日也設為 6:00 AM
+
   endDateFull.setHours(23, 59, 59, 999)
 
   const startDate = new Date(endDateFull)
@@ -138,7 +150,7 @@ async function renderBulletins(endDate, rangeDays) {
       })
 
       const pencil = document.createElement('span')
-      pencil.textContent = '🖍️'
+      pencil.textContent = '🖊️'
       pencil.style.cursor = 'pointer'
       pencil.style.marginRight = '0.5rem'
       pencil.addEventListener('click', async () => {
