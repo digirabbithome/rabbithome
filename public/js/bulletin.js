@@ -79,8 +79,6 @@ async function renderBulletins(endDate, rangeDays) {
   const dateNote = document.createElement('p');
   dateNote.textContent = dateRangeTextPlain;
   titleEl.insertAdjacentElement('afterend', dateNote);
-  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
-  const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
   const dateNote = document.createElement('p');
   dateNote.textContent = dateRangeTextPlain;
   titleEl.insertAdjacentElement('afterend', dateNote);
