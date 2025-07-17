@@ -40,10 +40,21 @@ category.addEventListener('change', () => {
   }
 });
 
-// 簽名邏輯
+// ⬇️ Canvas 簽名邏輯（支援 mouse 與 touch）
 const canvas = document.getElementById('signaturePad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
+
+function getPos(e) {
+  if (e.touches && e.touches.length > 0) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  }
+  return { x: e.offsetX, y: e.offsetY };
+}
 
 canvas.addEventListener('mousedown', e => {
   drawing = true;
@@ -58,6 +69,24 @@ canvas.addEventListener('mousemove', e => {
 });
 canvas.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('mouseleave', () => drawing = false);
+
+// 📱 Touch 支援
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const pos = getPos(e);
+  drawing = true;
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (drawing) {
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+});
+canvas.addEventListener('touchend', () => drawing = false);
 
 document.getElementById('clear').addEventListener('click', () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
