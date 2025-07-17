@@ -64,26 +64,18 @@ async function renderBulletins(endDate, rangeDays) {
   const container = document.getElementById('bulletin-board')
   container.innerHTML = ''
 
-  const dateStr = endDate.toISOString().split('T')[0]
-  const titleEl = document.getElementById('date-title')
   
-const format = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-const dateRangeText = `📌 公告區間：${format(startDate)} ～ ${format(endDateFull)}`;
+  const now = new Date();
+  const endDateFull = new Date(now);
+  endDateFull.setHours(6, 0, 0, 0); // 今天早上 6:00
 
+  const startDate = new Date(endDateFull);
+  startDate.setDate(startDate.getDate() - rangeDays);
+  startDate.setHours(6, 0, 0, 0); // 起始日也設為早上 6:00
+
+  const format = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  const dateRangeText = `📌 公告區間：${format(startDate)} ～ ${format(endDateFull)}`;
   titleEl.textContent = dateRangeText;
-
-  
-const now = new Date()
-const endDateFull = new Date(now)
-endDateFull.setHours(6, 0, 0, 0) // 今天 6:00 AM
-
-let startDate = new Date(endDateFull)
-startDate.setDate(startDate.getDate() - rangeDays)
-startDate.setHours(6, 0, 0, 0) // 起始日也設為 6:00 AM
-
-  endDateFull.setHours(23, 59, 59, 999)
-
-  let startDate = new Date(endDateFull)
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
   startDate.setHours(0, 0, 0, 0)
 
