@@ -2,22 +2,27 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>📢 公告欄</title>
-  <link rel="stylesheet" href="css/bulletin.css" />
+  <meta charset="UTF-8">
+  <title>📢 公布欄</title>
+  <link rel="stylesheet" href="css/bulletin.css">
+  <script type="module" src="js/bulletin.js"></script>
 </head>
 <body>
-  <h2 id="date-title">📅 公告日期</h2>
-  <div class="toolbar">
-    <button data-range="1">前一天</button>
-    <button data-range="3">前三天</button>
-    <button data-range="7">前一週</button>
-    <button data-range="30">前一月</button>
-    <input type="date" id="datePicker" />
-    <input type="text" id="searchInput" placeholder="搜尋內容或暱稱" />
-    <label><input type="checkbox" id="showHidden" /> 顯示所有公告</label>
+  <div class="page-wrapper">
+    <h2 id="date-title">📅 公告日期：<span id="dateRange"></span></h2>
+
+    <div class="toolbar">
+      <div class="date-nav">
+        <button id="prev-day">前一天</button>
+        <button id="prev-3days">前三天</button>
+        <button id="prev-week">前一週</button>
+        <input type="date" id="datePicker" />
+        <button id="show-all">顯示所有公告</button>
+      </div>
+      <input type="text" id="searchBox" placeholder="🔍 搜尋內容或留言人..." />
+    </div>
+
+    <div id="bulletin-container" class="bulletin-grid"></div>
   </div>
-  <div id="bulletin-board"></div>
-  <script type="module" src="js/bulletin.js"></script>
 </body>
 </html>

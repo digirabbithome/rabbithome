@@ -1,38 +1,62 @@
 
 body {
-  font-family: Arial, sans-serif;
-  background: #fdfdfd;
-  padding: 20px;
+  font-family: "Noto Sans TC", sans-serif;
+  background: #fffafc;
+  margin: 2rem;
 }
+
 h2 {
-  margin-bottom: 10px;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
-.toolbar {
-  margin-bottom: 20px;
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  color: #fff;
+  background-color: #ff88aa;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
 }
-.task-card {
+
+#bulletin-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.group-block {
   background: #fff;
-  padding: 10px;
-  border-radius: 12px;
-  margin: 8px 0;
-  box-shadow: 0 0 5px rgba(0,0,0,0.05);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 0 6px rgba(0,0,0,0.08);
 }
-.group-column {
-  display: inline-block;
-  width: 30%;
-  vertical-align: top;
-  padding: 0 10px;
+
+p {
+  margin: 0.2rem 0;
+  line-height: 1.6;
+  word-break: break-word;
 }
-.yellow-highlight {
-  background-color: yellow;
+
+.date-toolbar {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: #fdf2f6;
+  border: 1px solid #eee;
+  justify-content: center;
 }
-.hidden-entry {
-  display: none;
-}
-.star {
+
+.date-toolbar button,
+.date-toolbar input {
+  padding: 0.4rem 0.8rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: #fff;
   cursor: pointer;
-}
-.pencil {
-  cursor: pointer;
-  margin-left: 8px;
 }
