@@ -66,16 +66,15 @@ async function renderBulletins(endDate, rangeDays) {
 
   const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
+  const startDate = new Date(endDateFull);
+  startDate.setDate(startDate.getDate() - (rangeDays - 1));
+  startDate.setHours(0, 0, 0, 0);
   const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
-  titleEl.textContent = `📌 公告欄：${dateOnly(startDate)} ~ ${dateOnly(endDateFull)}`
+  titleEl.textContent = `📌 公告欄：${dateOnly(startDate)} ~ ${dateOnly(endDateFull)}`;
 
   const endDateFull = new Date(endDate)
   endDateFull.setHours(23, 59, 59, 999)
 
-  const startDate = new Date(endDateFull)
-  startDate.setDate(startDate.getDate() - (rangeDays - 1))
-  startDate.setHours(0, 0, 0, 0)
-  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
   const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
   const dateNote = document.createElement('p');
   dateNote.textContent = dateRangeTextPlain;
