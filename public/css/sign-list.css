@@ -1,0 +1,29 @@
+
+body {
+  font-family: "Arial", sans-serif;
+  background: #fff8f0;
+  padding: 20px;
+}
+.page-wrapper {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.record {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+.record img {
+  width: 120px;
+  height: auto;
+  border: 1px solid #ccc;
+}
+.info {
+  flex: 1;
+}
