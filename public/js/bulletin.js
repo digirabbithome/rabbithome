@@ -67,11 +67,6 @@ async function renderBulletins(endDate, rangeDays) {
   const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
   titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
-  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
-  const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
-  const dateNote = document.createElement('p');
-  dateNote.textContent = dateRangeTextPlain;
-  titleEl.insertAdjacentElement('afterend', dateNote);
 
   const endDateFull = new Date(endDate)
   endDateFull.setHours(23, 59, 59, 999)
@@ -79,6 +74,16 @@ async function renderBulletins(endDate, rangeDays) {
   const startDate = new Date(endDateFull)
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
   startDate.setHours(0, 0, 0, 0)
+  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+  const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
+  const dateNote = document.createElement('p');
+  dateNote.textContent = dateRangeTextPlain;
+  titleEl.insertAdjacentElement('afterend', dateNote);
+  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+  const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
+  const dateNote = document.createElement('p');
+  dateNote.textContent = dateRangeTextPlain;
+  titleEl.insertAdjacentElement('afterend', dateNote);
 
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
   const showAll = document.getElementById('showAll')?.checked
