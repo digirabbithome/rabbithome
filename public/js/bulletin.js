@@ -66,7 +66,7 @@ async function renderBulletins(endDate, rangeDays) {
 
   const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
-  titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
+  titleEl.textContent = `📌 公告欄：${dateOnly(startDate)} ~ ${dateOnly(endDateFull)}`
 
   const endDateFull = new Date(endDate)
   endDateFull.setHours(23, 59, 59, 999)
