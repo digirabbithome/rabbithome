@@ -64,18 +64,14 @@ async function renderBulletins(endDate, rangeDays) {
   const container = document.getElementById('bulletin-board')
   container.innerHTML = ''
 
-  
-  const now = new Date();
-  const endDateFull = new Date(now);
-  endDateFull.setHours(6, 0, 0, 0); // 今天早上 6:00
+  const dateStr = endDate.toISOString().split('T')[0]
+  const titleEl = document.getElementById('date-title')
+  titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
 
-  const startDate = new Date(endDateFull);
-  startDate.setDate(startDate.getDate() - rangeDays);
-  startDate.setHours(6, 0, 0, 0); // 起始日也設為早上 6:00
+  const endDateFull = new Date(endDate)
+  endDateFull.setHours(23, 59, 59, 999)
 
-  const format = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-  const dateRangeText = `📌 公告區間：${format(startDate)} ～ ${format(endDateFull)}`;
-  titleEl.textContent = dateRangeText;
+  const startDate = new Date(endDateFull)
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
   startDate.setHours(0, 0, 0, 0)
 
@@ -118,16 +114,12 @@ async function renderBulletins(endDate, rangeDays) {
       const p = document.createElement('p')
       p.dataset.state = state
 
-      const contentSpan = document.createElement('span')
-      contentSpan.textContent = text
       if (state === 'highlight') {
-        contentSpan.style.backgroundColor = '#fffbbd'
-      }
-
-      if (state === 'hidden' && !showAll) {
+        p.style.backgroundColor = 'yellow'
+      } else if (state === 'hidden' && !showAll) {
         return
       } else if (state === 'hidden' && showAll) {
-        p.style.opacity = 0.4
+        p.style.opacity = 0.4; p.style.color = '#999'
       }
 
       const star = document.createElement('span')
@@ -148,15 +140,15 @@ async function renderBulletins(endDate, rangeDays) {
       pencil.addEventListener('click', async () => {
         let newState = 'none'
         if (p.dataset.state === 'none') {
-          contentSpan.style.backgroundColor = '#fffbbd'
+          p.style.backgroundColor = 'yellow'
+          p.style.display = ''
           p.style.opacity = 1
           newState = 'highlight'
         } else if (p.dataset.state === 'highlight') {
-          contentSpan.style.backgroundColor = ''
           p.style.display = 'none'
           newState = 'hidden'
         } else {
-          contentSpan.style.backgroundColor = ''
+          p.style.backgroundColor = ''
           p.style.display = ''
           p.style.opacity = 1
           newState = 'none'
@@ -168,7 +160,7 @@ async function renderBulletins(endDate, rangeDays) {
 
       p.appendChild(pencil)
       p.appendChild(star)
-      p.appendChild(contentSpan)
+      p.appendChild(document.createTextNode(text))
       groupDiv.appendChild(p)
     })
 
