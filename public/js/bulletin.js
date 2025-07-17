@@ -31,16 +31,10 @@ window.onload = async () => {
 
   document.getElementById('searchBox').addEventListener('input', () => {
     renderBulletins(new Date(), currentRangeDays)
-  document.getElementById('showHidden').addEventListener('change', () => {
-    renderBulletins(new Date(), currentRangeDays)
-  })
   })
 
   await preloadAllDocsWithinOneYear()
   renderBulletins(new Date(), currentRangeDays)
-  document.getElementById('showHidden').addEventListener('change', () => {
-    renderBulletins(new Date(), currentRangeDays)
-  })
 }
 
 async function preloadAllDocsWithinOneYear() {
@@ -99,7 +93,7 @@ async function renderBulletins(endDate, rangeDays) {
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, highlightStatus: d.highlightStatus || '' })
+      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, state: d.markState || 'none' })
     })
   })
 
@@ -114,27 +108,7 @@ async function renderBulletins(endDate, rangeDays) {
 
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(({ text, id, isStarred, highlightStatus }) => {
-      const p = document.createElement('p')
-      p.classList.add('bulletin-text')
-      if (highlightStatus === 'highlight') p.classList.add('highlight')
-      else if (highlightStatus === 'hidden') p.classList.add('hidden')
-
-      const pencil = document.createElement('span')
-      pencil.textContent = '🖉'
-      pencil.style.cursor = 'pointer'
-      pencil.style.marginRight = '0.5rem'
-      pencil.addEventListener('click', async () => {
-        const nextStatus = highlightStatus === '' ? 'highlight'
-                           : highlightStatus === 'highlight' ? 'hidden'
-                           : ''
-        p.classList.remove('highlight', 'hidden')
-        if (nextStatus) p.classList.add(nextStatus)
-        highlightStatus = nextStatus
-        const ref = doc(db, 'bulletins', id)
-        await updateDoc(ref, { highlightStatus: nextStatus })
-      })
-      p.appendChild(pencil)
+    grouped[group].forEach(({ text, id, isStarred }) => {
       const p = document.createElement('p')
 
       const star = document.createElement('span')
@@ -148,6 +122,30 @@ async function renderBulletins(endDate, rangeDays) {
         await updateDoc(ref, { isStarred: newStatus })
       })
 
+      
+      const pencil = document.createElement('span')
+      pencil.textContent = '🖊️'
+      pencil.style.cursor = 'pointer'
+      pencil.style.marginRight = '0.5rem'
+      pencil.addEventListener('click', async () => {
+        let newState = 'none'
+        if (p.dataset.state === 'none') {
+          p.style.backgroundColor = 'yellow'
+          newState = 'highlight'
+        } else if (p.dataset.state === 'highlight') {
+          p.style.display = 'none'
+          newState = 'hidden'
+        } else {
+          p.style.backgroundColor = ''
+          p.style.display = ''
+          newState = 'none'
+        }
+        p.dataset.state = newState
+        const ref = doc(db, 'bulletins', id)
+        await updateDoc(ref, { markState: newState })
+      })
+
+      p.appendChild(pencil)
       p.appendChild(star)
       p.appendChild(document.createTextNode(text))
       groupDiv.appendChild(p)
