@@ -1,62 +1,39 @@
 
 body {
-  font-family: "Noto Sans TC", sans-serif;
+  font-family: sans-serif;
   background: #fffafc;
-  margin: 2rem;
+  padding: 20px;
 }
-
 h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
+  font-size: 24px;
+  color: #d16ba5;
 }
-
-h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  font-size: 1.2rem;
-  color: #fff;
-  background-color: #ff88aa;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+textarea {
+  width: 100%;
+  height: 80px;
+  font-size: 16px;
+  margin-top: 10px;
 }
-
-#bulletin-board {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+button {
+  padding: 8px 20px;
+  background-color: #ffc0cb;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
-
 .group-block {
   background: #fff;
   border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 0 6px rgba(0,0,0,0.08);
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  padding: 10px;
+  margin-bottom: 20px;
 }
-
-p {
-  margin: 0.2rem 0;
-  line-height: 1.6;
-  word-break: break-word;
+.comment {
+  padding: 5px 10px;
+  margin: 5px 0;
+  background: #f9f9f9;
+  border-left: 4px solid #ffd1dc;
 }
-
-.date-toolbar {
-  margin-bottom: 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 10px;
-  background: #fdf2f6;
-  border: 1px solid #eee;
-  justify-content: center;
-}
-
-.date-toolbar button,
-.date-toolbar input {
-  padding: 0.4rem 0.8rem;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
+.comment small {
+  color: #666;
 }
