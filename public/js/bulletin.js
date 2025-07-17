@@ -115,7 +115,12 @@ async function renderBulletins(endDate, rangeDays) {
       p.dataset.state = state
 
       if (state === 'highlight') {
-        p.style.backgroundColor = 'yellow'
+        
+const span = document.createElement('span');
+span.textContent = text;
+span.style.backgroundColor = '#fffbbd';
+p.replaceChildren(pencil, star, span);
+
       } else if (state === 'hidden' && !showAll) {
         return
       } else if (state === 'hidden' && showAll) {
@@ -140,7 +145,12 @@ async function renderBulletins(endDate, rangeDays) {
       pencil.addEventListener('click', async () => {
         let newState = 'none'
         if (p.dataset.state === 'none') {
-          p.style.backgroundColor = 'yellow'
+          
+const span = document.createElement('span');
+span.textContent = text;
+span.style.backgroundColor = '#fffbbd';
+p.replaceChildren(pencil, star, span);
+
           p.style.display = ''
           p.style.opacity = 1
           newState = 'highlight'
@@ -160,7 +170,11 @@ async function renderBulletins(endDate, rangeDays) {
 
       p.appendChild(pencil)
       p.appendChild(star)
-      p.appendChild(document.createTextNode(text))
+      
+const textSpan = document.createElement('span');
+textSpan.textContent = text;
+p.appendChild(textSpan);
+
       groupDiv.appendChild(p)
     })
 
