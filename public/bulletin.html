@@ -3,22 +3,20 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>📌 公告畫筆互動系統</title>
+  <title>📌 公告訊息</title>
   <link rel="stylesheet" href="css/bulletin.css" />
 </head>
 <body>
-  <h2 id="date-title">📌 公告欄：畫筆互動版</h2>
-
-  <div class="tools">
-    ✏️ 畫筆：
-    <button onclick="setColor('yellow')">黃</button>
-    <button onclick="setColor('pink')">粉</button>
-    <button onclick="setColor('red')">紅</button>
-    <button onclick="setColor('white')">橡皮擦</button>
+  <h2 id="date-title">📌 公告訊息</h2>
+  <div class="date-toolbar">
+    <input type="text" id="searchBox" placeholder="搜尋公告或填寫人..." />
+    <button id="prev-day">前一天</button>
+    <button id="prev-3days">前三天</button>
+    <button id="prev-week">前一週</button>
+    <button id="prev-month">前一月</button>
+    <input type="date" id="datePicker" />
   </div>
-
-  <div class="group-container" id="bulletin-board"></div>
-
+  <div id="bulletin-board"></div>
   <script type="module" src="js/bulletin.js"></script>
 </body>
 </html>
