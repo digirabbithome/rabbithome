@@ -79,7 +79,6 @@ async function renderBulletins(endDate, rangeDays) {
   const dateNote = document.createElement('p');
   dateNote.textContent = dateRangeTextPlain;
   titleEl.insertAdjacentElement('afterend', dateNote);
-  const dateNote = document.createElement('p');
   dateNote.textContent = dateRangeTextPlain;
   titleEl.insertAdjacentElement('afterend', dateNote);
 
