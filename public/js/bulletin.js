@@ -138,7 +138,7 @@ async function renderBulletins(endDate, rangeDays) {
       })
 
       const pencil = document.createElement('span')
-      pencil.textContent = '🖊️'
+      pencil.textContent = '🖍️'
       pencil.style.cursor = 'pointer'
       pencil.style.marginRight = '0.5rem'
       pencil.addEventListener('click', async () => {
