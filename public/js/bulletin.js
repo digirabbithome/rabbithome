@@ -1,4 +1,3 @@
-
 import { db } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy, updateDoc, doc
@@ -28,8 +27,10 @@ window.onload = async () => {
     const selected = new Date(e.target.value)
     renderBulletins(selected, 1)
   })
-
   document.getElementById('searchBox').addEventListener('input', () => {
+    renderBulletins(new Date(), currentRangeDays)
+  })
+  document.getElementById('showAll').addEventListener('change', () => {
     renderBulletins(new Date(), currentRangeDays)
   })
 
@@ -75,6 +76,7 @@ async function renderBulletins(endDate, rangeDays) {
   startDate.setHours(0, 0, 0, 0)
 
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
+  const showAll = document.getElementById('showAll')?.checked
 
   const filtered = allDocs.filter(d => {
     if (!d._createdAt || d._createdAt < startDate || d._createdAt > endDateFull) return false
@@ -108,8 +110,17 @@ async function renderBulletins(endDate, rangeDays) {
 
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(({ text, id, isStarred }) => {
+    grouped[group].forEach(({ text, id, isStarred, state }) => {
       const p = document.createElement('p')
+      p.dataset.state = state
+
+      if (state === 'highlight') {
+        p.style.backgroundColor = 'yellow'
+      } else if (state === 'hidden' && !showAll) {
+        return
+      } else if (state === 'hidden' && showAll) {
+        p.style.opacity = 0.4
+      }
 
       const star = document.createElement('span')
       star.textContent = isStarred ? '⭐' : '☆'
@@ -122,7 +133,6 @@ async function renderBulletins(endDate, rangeDays) {
         await updateDoc(ref, { isStarred: newStatus })
       })
 
-      
       const pencil = document.createElement('span')
       pencil.textContent = '🖊️'
       pencil.style.cursor = 'pointer'
@@ -131,6 +141,8 @@ async function renderBulletins(endDate, rangeDays) {
         let newState = 'none'
         if (p.dataset.state === 'none') {
           p.style.backgroundColor = 'yellow'
+          p.style.display = ''
+          p.style.opacity = 1
           newState = 'highlight'
         } else if (p.dataset.state === 'highlight') {
           p.style.display = 'none'
@@ -138,6 +150,7 @@ async function renderBulletins(endDate, rangeDays) {
         } else {
           p.style.backgroundColor = ''
           p.style.display = ''
+          p.style.opacity = 1
           newState = 'none'
         }
         p.dataset.state = newState
