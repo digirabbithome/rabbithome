@@ -20,16 +20,21 @@ window.onload = async () => {
   const now = new Date()
   document.getElementById('datePicker').value = now.toISOString().split('T')[0]
 
-  document.getElementById('prev-day').addEventListener('click', () => updateRange(1))
-  document.getElementById('prev-3days').addEventListener('click', () => updateRange(3))
-  document.getElementById('prev-week').addEventListener('click', () => updateRange(7))
-  document.getElementById('prev-month').addEventListener('click', () => updateRange(30))
+  document.querySelector('[data-range="1"]').addEventListener('click', () => updateRange(1))
+  document.querySelector('[data-range="3"]').addEventListener('click', () => updateRange(3))
+  document.querySelector('[data-range="7"]').addEventListener('click', () => updateRange(7))
+  document.querySelector('[data-range="30"]').addEventListener('click', () => updateRange(30))
+
   document.getElementById('datePicker').addEventListener('change', (e) => {
     const selected = new Date(e.target.value)
     renderBulletins(selected, 1)
   })
 
-  document.getElementById('searchBox').addEventListener('input', () => {
+  document.getElementById('searchInput').addEventListener('input', () => {
+    renderBulletins(new Date(), currentRangeDays)
+  })
+
+  document.getElementById('showHidden').addEventListener('change', () => {
     renderBulletins(new Date(), currentRangeDays)
   })
 
@@ -74,7 +79,7 @@ async function renderBulletins(endDate, rangeDays) {
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
   startDate.setHours(0, 0, 0, 0)
 
-  const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
+  const keyword = document.getElementById('searchInput')?.value.trim().toLowerCase() || ''
 
   const filtered = allDocs.filter(d => {
     if (!d._createdAt || d._createdAt < startDate || d._createdAt > endDateFull) return false
