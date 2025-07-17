@@ -80,7 +80,6 @@ async function renderBulletins(endDate, rangeDays) {
   dateNote.textContent = dateRangeTextPlain;
   titleEl.insertAdjacentElement('afterend', dateNote);
   dateNote.textContent = dateRangeTextPlain;
-  titleEl.insertAdjacentElement('afterend', dateNote);
 
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
   const showAll = document.getElementById('showAll')?.checked
