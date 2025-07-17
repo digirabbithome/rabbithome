@@ -30,14 +30,12 @@ window.onload = async () => {
   document.getElementById('searchBox').addEventListener('input', () => {
     renderBulletins(new Date(), currentRangeDays)
   })
-  const showAllToggle = document.getElementById('showAll');
-  if (showAllToggle) {
-    showAllToggle.addEventListener('change', () => {
-      const showAll = showAllToggle.checked;
-      localStorage.setItem('showAllBulletins', showAll ? 'true' : 'false');
-      renderBulletins();
-    });
-  }
+  document.getElementById('showAll').addEventListener('change', () => {
+    renderBulletins(new Date(), currentRangeDays)
+  })
+
+  await preloadAllDocsWithinOneYear()
+  renderBulletins(new Date(), currentRangeDays)
 }
 
 async function preloadAllDocsWithinOneYear() {
@@ -68,19 +66,14 @@ async function renderBulletins(endDate, rangeDays) {
 
   const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
-  const startDate = new Date(endDateFull);
-  startDate.setDate(startDate.getDate() - (rangeDays - 1));
-  startDate.setHours(0, 0, 0, 0);
-  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
-  titleEl.textContent = `📌 公告欄：${dateOnly(startDate)} ~ ${dateOnly(endDateFull)}`;
+  titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
 
   const endDateFull = new Date(endDate)
   endDateFull.setHours(23, 59, 59, 999)
 
-  const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
-  const dateNote = document.createElement('p');
-  dateNote.textContent = dateRangeTextPlain;
-  dateNote.textContent = dateRangeTextPlain;
+  const startDate = new Date(endDateFull)
+  startDate.setDate(startDate.getDate() - (rangeDays - 1))
+  startDate.setHours(0, 0, 0, 0)
 
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
   const showAll = document.getElementById('showAll')?.checked
@@ -130,7 +123,8 @@ async function renderBulletins(endDate, rangeDays) {
       if (state === 'hidden' && !showAll) {
         return
       } else if (state === 'hidden' && showAll) {
-        p.style.opacity = 0.4
+        p.style.opacity = 0.4;
+        contentSpan.style.color = '#999'
       }
 
       const star = document.createElement('span')
