@@ -3,19 +3,18 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>📢 公告欄</title>
+  <title>📌 公告訊息</title>
   <link rel="stylesheet" href="css/bulletin.css" />
 </head>
 <body>
-  <h2 id="date-title">📅 公告日期</h2>
-  <div class="toolbar">
-    <button id="prev-day" data-range="1">前一天</button>
-    <button id="prev-3days" data-range="3">前三天</button>
-    <button id="prev-week" data-range="7">前一週</button>
-    <button id="prev-month" data-range="30">前一月</button>
+  <h2 id="date-title">📌 公告訊息</h2>
+  <div class="date-toolbar">
+    <input type="text" id="searchBox" placeholder="搜尋公告或填寫人..." />
+    <button id="prev-day">前一天</button>
+    <button id="prev-3days">前三天</button>
+    <button id="prev-week">前一週</button>
+    <button id="prev-month">前一月</button>
     <input type="date" id="datePicker" />
-    <input type="text" id="searchBox" placeholder="搜尋內容或暱稱" />
-    <label><input type="checkbox" id="showHidden" /> 顯示所有公告</label>
   </div>
   <div id="bulletin-board"></div>
   <script type="module" src="js/bulletin.js"></script>

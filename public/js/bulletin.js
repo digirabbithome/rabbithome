@@ -93,7 +93,7 @@ async function renderBulletins(endDate, rangeDays) {
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred })
+      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, state: d.markState || 'none' })
     })
   })
 
@@ -122,6 +122,30 @@ async function renderBulletins(endDate, rangeDays) {
         await updateDoc(ref, { isStarred: newStatus })
       })
 
+      
+      const pencil = document.createElement('span')
+      pencil.textContent = '🖊️'
+      pencil.style.cursor = 'pointer'
+      pencil.style.marginRight = '0.5rem'
+      pencil.addEventListener('click', async () => {
+        let newState = 'none'
+        if (p.dataset.state === 'none') {
+          p.style.backgroundColor = 'yellow'
+          newState = 'highlight'
+        } else if (p.dataset.state === 'highlight') {
+          p.style.display = 'none'
+          newState = 'hidden'
+        } else {
+          p.style.backgroundColor = ''
+          p.style.display = ''
+          newState = 'none'
+        }
+        p.dataset.state = newState
+        const ref = doc(db, 'bulletins', id)
+        await updateDoc(ref, { markState: newState })
+      })
+
+      p.appendChild(pencil)
       p.appendChild(star)
       p.appendChild(document.createTextNode(text))
       groupDiv.appendChild(p)
