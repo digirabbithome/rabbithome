@@ -60,3 +60,14 @@ p {
   background: #fff;
   cursor: pointer;
 }
+
+
+/* 螢光筆效果 */
+.highlight {
+  background-color: #ffff99;
+}
+
+/* 隱藏狀態 */
+.hidden {
+  display: none;
+}

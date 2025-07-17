@@ -31,10 +31,16 @@ window.onload = async () => {
 
   document.getElementById('searchBox').addEventListener('input', () => {
     renderBulletins(new Date(), currentRangeDays)
+  document.getElementById('showHidden').addEventListener('change', () => {
+    renderBulletins(new Date(), currentRangeDays)
+  })
   })
 
   await preloadAllDocsWithinOneYear()
   renderBulletins(new Date(), currentRangeDays)
+  document.getElementById('showHidden').addEventListener('change', () => {
+    renderBulletins(new Date(), currentRangeDays)
+  })
 }
 
 async function preloadAllDocsWithinOneYear() {
@@ -93,7 +99,7 @@ async function renderBulletins(endDate, rangeDays) {
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred })
+      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, highlightStatus: d.highlightStatus || '' })
     })
   })
 
@@ -108,7 +114,27 @@ async function renderBulletins(endDate, rangeDays) {
 
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(({ text, id, isStarred }) => {
+    grouped[group].forEach(({ text, id, isStarred, highlightStatus }) => {
+      const p = document.createElement('p')
+      p.classList.add('bulletin-text')
+      if (highlightStatus === 'highlight') p.classList.add('highlight')
+      else if (highlightStatus === 'hidden') p.classList.add('hidden')
+
+      const pencil = document.createElement('span')
+      pencil.textContent = '🖉'
+      pencil.style.cursor = 'pointer'
+      pencil.style.marginRight = '0.5rem'
+      pencil.addEventListener('click', async () => {
+        const nextStatus = highlightStatus === '' ? 'highlight'
+                           : highlightStatus === 'highlight' ? 'hidden'
+                           : ''
+        p.classList.remove('highlight', 'hidden')
+        if (nextStatus) p.classList.add(nextStatus)
+        highlightStatus = nextStatus
+        const ref = doc(db, 'bulletins', id)
+        await updateDoc(ref, { highlightStatus: nextStatus })
+      })
+      p.appendChild(pencil)
       const p = document.createElement('p')
 
       const star = document.createElement('span')
