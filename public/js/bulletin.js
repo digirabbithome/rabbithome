@@ -1,11 +1,12 @@
 
 import { db } from '/js/firebase.js'
 import {
-  collection, getDocs, query, orderBy, updateDoc, doc, getDoc, setDoc, serverTimestamp
+  updateDoc, doc, getDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
+const params = new URLSearchParams(location.search)
+const bulletinId = params.get("id") || "main"
 const nickname = localStorage.getItem('nickname') || '匿名者'
-const bulletinId = 'main'  // 可改為從 URL 帶入 ID
 
 function formatMarkup(text) {
   return text
@@ -17,7 +18,10 @@ function formatMarkup(text) {
 window.onload = async () => {
   const ref = doc(db, 'bulletins', bulletinId)
   const snap = await getDoc(ref)
-  if (!snap.exists()) return
+  if (!snap.exists()) {
+    document.getElementById('bulletin-board').innerHTML = '<p style="color:red">找不到此公告：' + bulletinId + '</p>'
+    return
+  }
 
   const d = snap.data()
   const board = document.getElementById('bulletin-board')
