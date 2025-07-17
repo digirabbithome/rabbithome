@@ -123,7 +123,8 @@ async function renderBulletins(endDate, rangeDays) {
       if (state === 'hidden' && !showAll) {
         return
       } else if (state === 'hidden' && showAll) {
-        p.style.opacity = 0.4
+        p.style.opacity = 0.4;
+        contentSpan.style.color = '#999'
       }
 
       const star = document.createElement('span')
