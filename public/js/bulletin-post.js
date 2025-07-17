@@ -19,14 +19,16 @@ window.onload = () => {
     }
 
     const contentLines = content.split('\n').map(line => line.trim()).filter(line => line)
-    await addDoc(collection(db, 'bulletins'), {
-      content: contentLines,
-      createdAt: serverTimestamp(),
-      createdBy: nickname,
-      email,
-      group,
-      visibleTo
-    })
+    for (const line of contentLines) {
+      await addDoc(collection(db, 'bulletins'), {
+        content: [line],
+        createdAt: serverTimestamp(),
+        createdBy: nickname,
+        email,
+        group,
+        visibleTo
+      })
+    }
 
     alert('📢 公告已成功發佈！')
     document.getElementById('post-form').reset()
