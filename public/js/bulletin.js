@@ -30,12 +30,14 @@ window.onload = async () => {
   document.getElementById('searchBox').addEventListener('input', () => {
     renderBulletins(new Date(), currentRangeDays)
   })
-  document.getElementById('showAll').addEventListener('change', () => {
-    renderBulletins(new Date(), currentRangeDays)
-  })
-
-  await preloadAllDocsWithinOneYear()
-  renderBulletins(new Date(), currentRangeDays)
+  const showAllToggle = document.getElementById('showAll');
+  if (showAllToggle) {
+    showAllToggle.addEventListener('change', () => {
+      const showAll = showAllToggle.checked;
+      localStorage.setItem('showAllBulletins', showAll ? 'true' : 'false');
+      renderBulletins();
+    });
+  }
 }
 
 async function preloadAllDocsWithinOneYear() {
