@@ -77,13 +77,13 @@ const now = new Date()
 const endDateFull = new Date(now)
 endDateFull.setHours(6, 0, 0, 0) // 今天 6:00 AM
 
-const startDate = new Date(endDateFull)
+startDate = new Date(endDateFull)
 startDate.setDate(startDate.getDate() - rangeDays)
 startDate.setHours(6, 0, 0, 0) // 起始日也設為 6:00 AM
 
   endDateFull.setHours(23, 59, 59, 999)
 
-  const startDate = new Date(endDateFull)
+  startDate = new Date(endDateFull)
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
   startDate.setHours(0, 0, 0, 0)
 
