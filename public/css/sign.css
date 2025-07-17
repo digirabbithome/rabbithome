@@ -8,7 +8,7 @@ body {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 0 8px rgba(0,0,0,0.1);
-  max-width: 400px;
+  max-width: 420px;
   margin: auto;
   padding: 20px;
 }
@@ -18,6 +18,14 @@ input, select, textarea, button {
   padding: 8px;
   border-radius: 6px;
   border: 1px solid #ddd;
+}
+.btn-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.btn-row button {
+  width: 48%;
 }
 button {
   background: #ff8eb3;
