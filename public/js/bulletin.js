@@ -78,7 +78,6 @@ async function renderBulletins(endDate, rangeDays) {
   const dateRangeTextPlain = `📅 公告日期範圍：${dateOnly(startDate)} ～ ${dateOnly(endDateFull)}`;
   const dateNote = document.createElement('p');
   dateNote.textContent = dateRangeTextPlain;
-  titleEl.insertAdjacentElement('afterend', dateNote);
   dateNote.textContent = dateRangeTextPlain;
 
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
