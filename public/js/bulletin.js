@@ -66,6 +66,7 @@ async function renderBulletins(endDate, rangeDays) {
 
   const dateStr = endDate.toISOString().split('T')[0]
   const titleEl = document.getElementById('date-title')
+  const dateOnly = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
   titleEl.textContent = `📌 公告欄：${dateOnly(startDate)} ~ ${dateOnly(endDateFull)}`
 
   const endDateFull = new Date(endDate)
