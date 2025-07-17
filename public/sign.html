@@ -1,0 +1,47 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>簽收簽名</title>
+  <link rel="stylesheet" href="/css/sign.css">
+</head>
+<body>
+  <div class="container">
+    <h2>📦 簽收簽名系統</h2>
+    <form id="signForm">
+      <label>收件人姓名：</label>
+      <input type="text" id="name" required><br>
+
+      <label>金額：</label>
+      <input type="number" id="amount" min="0" step="1"><br>
+
+      <label>身份分類：</label>
+      <select id="category">
+        <option value="">請選擇</option>
+        <option value="供應商">供應商</option>
+        <option value="物流">物流</option>
+        <option value="其他">其他</option>
+      </select><br>
+
+      <div id="subCategoryContainer" style="display:none;">
+        <label id="subCategoryLabel">細分類：</label>
+        <select id="subCategory" style="display:none;"></select>
+        <input type="text" id="otherInput" style="display:none;" placeholder="請輸入身份">
+      </div>
+
+      <label>備註：</label>
+      <textarea id="notes" rows="2"></textarea><br>
+
+      <label>簽名：</label><br>
+      <canvas id="signaturePad" width="300" height="150" style="border:1px solid #ccc;"></canvas><br>
+      <button type="button" id="clear">清除簽名</button><br><br>
+
+      <button type="submit">✅ 確認送出</button>
+    </form>
+  </div>
+
+  <script type="module" src="/js/sign.js"></script>
+</body>
+</html>
