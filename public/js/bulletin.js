@@ -14,6 +14,7 @@ const groupMap = {
 
 const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
 let currentRangeDays = 3
+let allDocs = []
 
 window.onload = async () => {
   const now = new Date()
@@ -28,7 +29,29 @@ window.onload = async () => {
     renderBulletins(selected, 1)
   })
 
+  document.getElementById('searchBox').addEventListener('input', () => {
+    renderBulletins(new Date(), currentRangeDays)
+  })
+
+  await preloadAllDocsWithinOneYear()
   renderBulletins(new Date(), currentRangeDays)
+}
+
+async function preloadAllDocsWithinOneYear() {
+  const oneYearAgo = new Date()
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+  const q = query(collection(db, 'bulletins'), orderBy('createdAt', 'desc'))
+  const snapshot = await getDocs(q)
+  allDocs = []
+  snapshot.forEach(docSnap => {
+    const d = docSnap.data()
+    const createdAt = d.createdAt?.toDate?.()
+    if (!createdAt || createdAt < oneYearAgo) return
+    d._id = docSnap.id
+    d._createdAt = createdAt
+    allDocs.push(d)
+  })
 }
 
 function updateRange(days) {
@@ -51,17 +74,18 @@ async function renderBulletins(endDate, rangeDays) {
   startDate.setDate(startDate.getDate() - (rangeDays - 1))
   startDate.setHours(0, 0, 0, 0)
 
-  const q = query(collection(db, 'bulletins'), orderBy('createdAt', 'desc'))
-  const snapshot = await getDocs(q)
+  const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
+
+  const filtered = allDocs.filter(d => {
+    if (!d._createdAt || d._createdAt < startDate || d._createdAt > endDateFull) return false
+    if (!keyword) return true
+    const content = (d.content || []).join(' ').toLowerCase()
+    const name = (d.createdBy || d.nickname || '').toLowerCase()
+    return content.includes(keyword) || name.includes(keyword)
+  })
+
   const grouped = {}
-
-  snapshot.forEach(docSnap => {
-    const d = docSnap.data()
-    const createdAt = d.createdAt?.toDate?.()
-    if (!createdAt) return
-    if (createdAt < startDate || createdAt > endDateFull) return
-
-    d._id = docSnap.id
+  filtered.forEach(d => {
     const targets = d.visibleTo || ['未知']
     const contentList = d.content?.join?.('\n') || ''
     const nickname = d.createdBy || d.nickname || '匿名者'
