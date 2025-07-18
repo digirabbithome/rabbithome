@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -10,40 +9,83 @@
     import { db } from '/js/firebase.js';
     import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-    async function loadSuppliers() {
+    let allSuppliers = [];
+
+    async function loadAllSuppliers() {
       const snap = await getDocs(collection(db, 'suppliers'));
-      let options = '';
+      allSuppliers = [];
       snap.forEach(doc => {
         const d = doc.data();
         if (d.code && d.shortName) {
           const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
-          options += `<option>${d.code} - ${name}</option>`;
+          allSuppliers.push(d.code + ' - ' + name);
         }
       });
-      document.getElementById('type2-container').innerHTML = '<select id="type2">' + options + '</select>';
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function renderFilteredList(keyword) {
+      const list = document.getElementById('type2-list');
+      list.innerHTML = '';
+      if (!keyword.trim()) return;
+      const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
+      matches.forEach(m => {
+        const li = document.createElement('li');
+        li.textContent = m;
+        li.onclick = () => {
+          document.getElementById('type2-search').value = m;
+          list.innerHTML = '';
+        };
+        list.appendChild(li);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadAllSuppliers();
+
       const type1 = document.getElementById('type1');
       const container = document.getElementById('type2-container');
+
       type1.addEventListener('change', () => {
         if (type1.value === '供應商') {
-          loadSuppliers();
+          container.innerHTML = `
+            <input type="text" id="type2-search" placeholder="搜尋供應商" required />
+            <ul id="type2-list" class="popup-list"></ul>
+          `;
+          const searchBox = document.getElementById('type2-search');
+          searchBox.addEventListener('input', () => renderFilteredList(searchBox.value));
         } else if (type1.value === '物流') {
           container.innerHTML = `
-            <select id="type2">
+            <select id="type2" required>
               <option>新竹</option><option>黑貓</option><option>大榮</option>
               <option>宅配通</option><option>順豐</option>
               <option>Uber</option><option>LALA</option><option>其他</option>
             </select>`;
         } else {
-          container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱">';
+          container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
         }
       });
     });
   </script>
   <style>
-    canvas { touch-action: none; }
+    canvas { touch-action: none; max-width: 100%; height: auto; }
+    .popup-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid #ccc;
+      max-height: 160px;
+      overflow-y: auto;
+      background: white;
+      position: relative;
+      z-index: 10;
+    }
+    .popup-list li {
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .popup-list li:hover {
+      background: #ffe0ec;
+    }
   </style>
 </head>
 <body>
@@ -67,7 +109,7 @@
       <textarea id="note" rows="3"></textarea>
 
       <label>簽名：</label>
-      <canvas id="signature" width="600" height="200" width="300" height="150" style="border:1px solid #ccc;"></canvas>
+      <canvas id="signature" width="600" height="200" style="border:1px solid #ccc;"></canvas>
 
       <div class="btn-row">
         <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
@@ -77,7 +119,6 @@
   </div>
 
   <script>
-    // 支援滑鼠與觸控繪圖
     const canvas = document.getElementById('signature');
     const ctx = canvas.getContext('2d');
     let drawing = false;
@@ -97,7 +138,7 @@
       ctx.stroke();
     }
 
-    function endDraw(e) {
+    function endDraw() {
       drawing = false;
     }
 
@@ -115,7 +156,6 @@
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', endDraw);
     canvas.addEventListener('mouseout', endDraw);
-
     canvas.addEventListener('touchstart', startDraw);
     canvas.addEventListener('touchmove', draw);
     canvas.addEventListener('touchend', endDraw);
