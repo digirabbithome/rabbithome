@@ -23,7 +23,17 @@ window.onload = () => {
     const amount = document.getElementById('amount').value;
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
-    const type2 = document.getElementById('type2')?.value || '';
+
+    // 安全抓取 type2 值，不論是 input 或 select
+    const searchInput = document.getElementById('type2-search');
+    const selectInput = document.getElementById('type2');
+    let type2 = '';
+    if (searchInput) {
+      type2 = searchInput.value.trim();
+    } else if (selectInput) {
+      type2 = selectInput.value.trim();
+    }
+
     const canvas = document.getElementById('signature');
     const imageData = canvas.toDataURL('image/png');
 
