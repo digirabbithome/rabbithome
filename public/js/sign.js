@@ -8,12 +8,14 @@ onAuthStateChanged(auth, user => {
     window.location.href = `/login.html?redirect=${redirectUrl}`
   } else {
     const nickname = localStorage.getItem('nickname') || '未登入'
-    document.getElementById('nickname').innerText = nickname
+    const nicknameSpan = document.getElementById('nickname')
+    if (nicknameSpan) nicknameSpan.innerText = nickname
   }
 })
 
 window.onload = () => {
   const canvas = document.getElementById('signature')
+  if (!canvas) return
   const ctx = canvas.getContext('2d')
   let drawing = false
 
@@ -64,8 +66,10 @@ window.onload = () => {
   canvas.addEventListener('touchmove', draw)
   canvas.addEventListener('touchend', stopDrawing)
 
-  // 清除按鈕
-  document.getElementById('clear').addEventListener('click', () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-  })
+  const clearBtn = document.getElementById('clear')
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    })
+  }
 }
