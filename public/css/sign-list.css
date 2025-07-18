@@ -1,8 +1,42 @@
-body { font-family: sans-serif; padding: 1em; }
-.date-buttons { margin-bottom: 1em; }
-#monthSelector { margin: 1em 0; display: flex; flex-direction: column; align-items: center; }
-#monthSelector .year-row { display: flex; align-items: center; margin-bottom: 0.5em; }
-#monthSelector .months-grid { display: grid; grid-template-columns: repeat(4, 4em); gap: 0.5em; }
-.month-cell { padding: 0.5em; border: 1px solid #ccc; text-align: center; cursor: pointer; border-radius: 6px; }
-.month-cell:hover { background: #ffe0e0; }
-.month-cell.active { background: #ffb6c1; font-weight: bold; }
+
+body {
+  font-family: sans-serif;
+  background: #fff0f5;
+  margin: 0;
+  padding: 2em;
+}
+.page-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 2em;
+}
+#search-bar input {
+  width: 300px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+th {
+  cursor: pointer;
+}
+.thumb {
+  height: 40px;
+  border-radius: 4px;
+  transition: transform 0.2s;
+}
+.thumb:hover {
+  transform: scale(2);
+  z-index: 99;
+  position: relative;
+}

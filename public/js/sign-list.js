@@ -1,47 +1,63 @@
-import { db } from '/js/firebase.js';
 
-const tableBody = document.querySelector('#resultTable tbody');
-const monthSelector = document.querySelector('#monthSelector');
-const currentYear = new Date().getFullYear();
-let selectedMonth = null;
+import { db } from '/js/firebase.js'
+import { collection, query, getDocs, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-function renderMonthSelector(year = currentYear) {
-  const container = document.createElement('div');
-  container.innerHTML = `
-    <div class="year-row">
-      <button onclick="changeYear(-1)">⬅️</button>
-      <strong style="margin: 0 1em;">${year}</strong>
-      <button onclick="changeYear(1)">➡️</button>
-    </div>
-    <div class="months-grid">
-      ${Array.from({ length: 12 }, (_, i) => `<div class="month-cell" data-month="${year}-${(i+1).toString().padStart(2,'0')}">${i+1}月</div>`).join('')}
-    </div>
-  `;
-  monthSelector.innerHTML = '';
-  monthSelector.appendChild(container);
+let signData = []
 
-  document.querySelectorAll('.month-cell').forEach(el => {
-    el.onclick = () => {
-      document.querySelectorAll('.month-cell').forEach(m => m.classList.remove('active'));
-      el.classList.add('active');
-      selectedMonth = el.dataset.month;
-      loadData();
-    };
-  });
+function renderTable(data) {
+  const tbody = document.getElementById("sign-body")
+  tbody.innerHTML = data.map(d => `
+    <tr>
+      <td>${new Date(d.createdAt?.seconds * 1000).toLocaleDateString()}</td>
+      <td>${d.type2 || ""}</td>
+      <td>${d.note || ""}</td>
+      <td>${d.amount || ""}</td>
+      <td>${d.nickname || ""}</td>
+      <td><img src="${d.signatureUrl}" class="thumb" /></td>
+    </tr>
+  `).join("")
 }
 
-window.changeYear = (delta) => {
-  const yearText = document.querySelector('.year-row strong');
-  const newYear = parseInt(yearText.textContent) + delta;
-  renderMonthSelector(newYear);
-};
+function applySearch() {
+  const keyword = document.getElementById("search-input")?.value.trim().toLowerCase()
+  if (!keyword) return renderTable(signData)
 
-function loadData() {
-  tableBody.innerHTML = '';
-  console.log('載入月份', selectedMonth);
-  // Fetch data from Firebase with selectedMonth
+  const filtered = signData.filter(d => {
+    const fields = [d.type2, d.note, d.amount, d.nickname]
+    return fields.some(f => (f || "").toString().toLowerCase().includes(keyword))
+  })
+  renderTable(filtered)
 }
 
-window.onload = () => {
-  renderMonthSelector();
-};
+window.onload = async () => {
+  const snapshot = await getDocs(query(collection(db, "signs"), orderBy("createdAt", "desc")))
+  signData = snapshot.docs.map(doc => doc.data())
+  renderTable(signData)
+
+  document.getElementById("search-input")?.addEventListener("input", applySearch)
+}
+
+
+
+document.getElementById('searchBtn')?.addEventListener('click', () => {
+  const year = document.getElementById('yearSelect')?.value;
+  const month = document.getElementById('monthSelect')?.value;
+  if (!year || !month) return;
+  const monthStart = new Date(`${year}-${month}-01T00:00:00`);
+  const monthEnd = new Date(monthStart);
+  monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+  querySignsByMonth(monthStart, monthEnd);
+});
+
+// 查詢該月份所有簽收資料
+async function querySignsByMonth(startDate, endDate) {
+  const q = query(
+    collection(db, "signs"),
+    where("createdAt", ">=", startDate),
+    where("createdAt", "<", endDate),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  renderTable(snapshot.docs.map(doc => doc.data()));
+}
