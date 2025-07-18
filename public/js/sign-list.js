@@ -38,16 +38,16 @@ window.onload = async () => {
 
 
 
-let currentPage = 1;
-const itemsPerPage = 20;
 
 
 
 
 
 
-let currentPage = 1;
-const itemsPerPage = 20;
+
+
+
+
 
 
 
