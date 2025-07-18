@@ -1,35 +1,77 @@
 
 body {
   font-family: 'Arial', sans-serif;
-  background: #fff5f7;
-  padding: 20px;
+  margin: 0;
+  padding: 1rem;
+  background: #fff6f8;
 }
-.container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
-  max-width: 420px;
-  margin: auto;
-  padding: 20px;
+
+h2 {
+  margin-top: 0;
+  color: #d63384;
 }
-input, select, textarea, button {
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 1rem;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
   width: 100%;
-  margin-bottom: 12px;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  padding: 0.6rem;
+  margin-top: 0.2rem;
+  box-sizing: border-box;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
 }
-.btn-row {
+
+textarea {
+  min-height: 80px;
+}
+
+canvas {
+  width: 100% !important;
+  height: 250px;
+  border: 2px dashed #ccc;
+  border-radius: 1rem;
+  background-color: #fff;
+  touch-action: none;
+}
+
+.button-row {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  margin-top: 1rem;
+  gap: 1rem;
 }
-.btn-row button {
-  width: 48%;
-}
+
 button {
-  background: #ff8eb3;
+  flex: 1;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.6rem;
+  background-color: #ff87b2;
   color: white;
   font-weight: bold;
-  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #ff629b;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 0.8rem;
+  }
+
+  canvas {
+    height: 300px;
+  }
 }
