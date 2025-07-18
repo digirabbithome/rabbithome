@@ -2,27 +2,58 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>新增簽收單</title>
-  <link rel="stylesheet" href="/css/sign.css" />
+  <meta charset="UTF-8" />
+  <title>Rabbithome 主頁</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script type="module" src="js/main.js" defer></script>
 </head>
 <body>
-  <div class="card">
-    <h2>📝 新增簽收單（花花）</h2>
-    <form>
-      <label>身份分類：</label>
-      <select><option>請選擇</option></select>
-      <label>金額：</label>
-      <input type="number" />
-      <label>備註：</label>
-      <textarea></textarea>
-      <label>簽名：</label>
-      <canvas width="300" height="150"></canvas>
-      <div class="button-row">
-        <button type="button">🩹 清除簽名</button>
-        <button type="submit">✅ 確認送出</button>
+  <div class="container">
+    <div class="sidebar">
+      <h2>Rabbithome 🐰</h2>
+
+      <div class="menu-section">
+        <div class="menu-header" id="nickname-display">🙋‍♂️ 使用者：使用者</div>
       </div>
-    </form>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('daily')">📁 小兔工作</div>
+        <div class="menu-items" id="daily">
+          <button onclick="navigate('daily.html')">📋 每日任務</button>
+          <button onclick="navigate('bulletin.html')">📌 公布欄</button>
+          <button onclick="navigate('bulletin-post.html')">✍️ 發佈公告</button>
+          <button onclick="navigate('progress.html')">🗂️ 盤點進度</button>
+          <button onclick="navigate('repair.html')">🔧 維修管理</button>
+          <button onclick="navigate('envelop-print.html')">✉️ 列印信封</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('competitor')">📁 競品偵查</div>
+        <div class="menu-items" id="competitor">
+          <button onclick="navigate('competitor.html')">📊 競品偵查</button>
+          <button onclick="navigate('https://rabbit-daily-news.vercel.app/auto-news.html')">📰 每日貼文</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('tools')">📁 工具功能</div>
+        <div class="menu-items" id="tools">
+          <button onclick="navigate('new_account.html')">👤 新增帳號</button>
+          <button onclick="navigate('user-manage.html')">👥 會員管理</button>
+          <button onclick="navigate('workitems.html')">🛠️ 工作項目</button>
+          <button onclick="navigate('add_supplier.html')">🏪 新增供應商</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-header" onclick="logout()">🚪 登出</div>
+      </div>
+
+    </div>
+    <div class="main-content">
+      <iframe id="content-frame" src="bulletin.html"></iframe>
+    </div>
   </div>
 </body>
 </html>
