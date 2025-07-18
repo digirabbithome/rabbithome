@@ -41,7 +41,6 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadAllSuppliers();
-
       const type1 = document.getElementById('type1');
       const container = document.getElementById('type2-container');
 
@@ -66,27 +65,6 @@
       });
     });
   </script>
-  <style>
-    canvas { touch-action: none; max-width: 100%; height: auto; }
-    .popup-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      border: 1px solid #ccc;
-      max-height: 160px;
-      overflow-y: auto;
-      background: white;
-      position: relative;
-      z-index: 10;
-    }
-    .popup-list li {
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-    .popup-list li:hover {
-      background: #ffe0ec;
-    }
-  </style>
 </head>
 <body>
   <div class="container">
@@ -109,7 +87,7 @@
       <textarea id="note" rows="3"></textarea>
 
       <label>簽名：</label>
-      <canvas id="signature" width="600" height="200" style="border:1px solid #ccc;"></canvas>
+      <canvas id="signature" style="border:1px solid #ccc;"></canvas>
 
       <div class="btn-row">
         <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
@@ -122,6 +100,14 @@
     const canvas = document.getElementById('signature');
     const ctx = canvas.getContext('2d');
     let drawing = false;
+
+    function resizeCanvasToMatchContainer() {
+      const containerWidth = canvas.parentElement.clientWidth;
+      const desiredHeight = 200;
+      canvas.width = containerWidth;
+      canvas.height = desiredHeight;
+    }
+    resizeCanvasToMatchContainer();
 
     function startDraw(e) {
       e.preventDefault();

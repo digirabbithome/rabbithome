@@ -42,7 +42,6 @@ window.onload = () => {
     }
 
     try {
-      // 建立簽收紀錄
       const docRef = await addDoc(collection(db, 'signs'), {
         amount,
         note,
@@ -52,14 +51,9 @@ window.onload = () => {
         createdAt: serverTimestamp()
       });
 
-      console.log('🟢 新增成功的 docRef 路徑:', docRef.path);  // 調試用
-
-      // 上傳簽名圖
       const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
       await uploadString(imageRef, imageData, 'data_url');
       const imageUrl = await getDownloadURL(imageRef);
-
-      // 正確使用 docRef，不包裹多餘 doc()
       await updateDoc(docRef, { signatureUrl: imageUrl });
 
       alert('簽收紀錄已送出！');

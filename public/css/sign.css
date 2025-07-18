@@ -33,3 +33,27 @@ button {
   font-weight: bold;
   border: none;
 }
+canvas {
+  touch-action: none;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+.popup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #ccc;
+  max-height: 160px;
+  overflow-y: auto;
+  background: white;
+  position: relative;
+  z-index: 10;
+}
+.popup-list li {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.popup-list li:hover {
+  background: #ffe0ec;
+}
