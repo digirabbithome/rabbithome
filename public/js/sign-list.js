@@ -1,50 +1,47 @@
+import { db } from '/js/firebase.js';
 
-import { db } from '/js/firebase.js'
+const tableBody = document.querySelector('#resultTable tbody');
+const monthSelector = document.querySelector('#monthSelector');
+const currentYear = new Date().getFullYear();
+let selectedMonth = null;
 
-document.addEventListener("DOMContentLoaded", () => {
-  initMonthSelector();
-  renderTable();
-});
+function renderMonthSelector(year = currentYear) {
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div class="year-row">
+      <button onclick="changeYear(-1)">⬅️</button>
+      <strong style="margin: 0 1em;">${year}</strong>
+      <button onclick="changeYear(1)">➡️</button>
+    </div>
+    <div class="months-grid">
+      ${Array.from({ length: 12 }, (_, i) => `<div class="month-cell" data-month="${year}-${(i+1).toString().padStart(2,'0')}">${i+1}月</div>`).join('')}
+    </div>
+  `;
+  monthSelector.innerHTML = '';
+  monthSelector.appendChild(container);
 
-function initMonthSelector() {
-  const grid = document.getElementById("month-grid");
-  if (!grid) return;
-
-  const now = new Date();
-  let currentYear = now.getFullYear();
-
-  const yearSpan = document.getElementById("currentYear");
-  const prevYearBtn = document.getElementById("prevYear");
-  const nextYearBtn = document.getElementById("nextYear");
-
-  function renderMonths() {
-    grid.innerHTML = "";
-    yearSpan.textContent = currentYear;
-    for (let m = 0; m < 12; m++) {
-      const cell = document.createElement("div");
-      cell.className = "month-cell";
-      cell.textContent = `${m + 1} 月`;
-      cell.onclick = () => {
-        const monthStr = `${currentYear}-${(m + 1).toString().padStart(2, "0")}`;
-        // 在這裡觸發篩選邏輯
-        console.log("篩選月份", monthStr);
-      };
-      grid.appendChild(cell);
-    }
-  }
-
-  prevYearBtn.onclick = () => {
-    currentYear--;
-    renderMonths();
-  };
-  nextYearBtn.onclick = () => {
-    currentYear++;
-    renderMonths();
-  };
-
-  renderMonths();
+  document.querySelectorAll('.month-cell').forEach(el => {
+    el.onclick = () => {
+      document.querySelectorAll('.month-cell').forEach(m => m.classList.remove('active'));
+      el.classList.add('active');
+      selectedMonth = el.dataset.month;
+      loadData();
+    };
+  });
 }
 
-function renderTable() {
-  console.log("表格渲染功能尚未補上");
+window.changeYear = (delta) => {
+  const yearText = document.querySelector('.year-row strong');
+  const newYear = parseInt(yearText.textContent) + delta;
+  renderMonthSelector(newYear);
+};
+
+function loadData() {
+  tableBody.innerHTML = '';
+  console.log('載入月份', selectedMonth);
+  // Fetch data from Firebase with selectedMonth
 }
+
+window.onload = () => {
+  renderMonthSelector();
+};
