@@ -1,5 +1,5 @@
 
-import { db } from '/js/firebase-sign.js'
+import { db } from '/js/firebase.js'
 import { collection, query, getDocs, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 window.onload = async () => {
