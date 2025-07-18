@@ -10,16 +10,24 @@
 <body>
   <div class="page-wrapper">
     <h2>📋 簽收查詢系統</h2>
-    <div id="search-bar">
-      <input type="text" id="search-input" placeholder="搜尋供應商、簽收人、金額、備註…" />
-      <div id="autocomplete-container"></div>
+
+    <div class="toolbar">
+      <div class="left">
+        <input type="text" id="searchInput" placeholder="搜尋供應商、簽收人、金額、備註..." />
+        <a href="sign.html" class="return-link">🔙 返回填寫頁面</a>
+      </div>
+      <div class="right">
+        <button onclick="filterToday()">今日</button>
+        <button onclick="filterWeek()">本週</button>
+        <button onclick="filterMonth()">本月</button>
+        <select id="monthSelector" onchange="filterByMonth()">
+          <option value="2025-07">2025年07月</option>
+          <option value="2025-06">2025年06月</option>
+          <option value="2025-05">2025年05月</option>
+        </select>
+      </div>
     </div>
-    <div id="filter-controls">
-      <button class="range-btn" data-range="today">今日</button>
-      <button class="range-btn" data-range="week">本週</button>
-      <button class="range-btn" data-range="month">本月</button>
-      <select id="month-select"></select>
-    </div>
+
     <table id="sign-table">
       <thead>
         <tr>
@@ -35,5 +43,10 @@
     </table>
     <div id="pagination"></div>
   </div>
+
+  <script>
+    let currentPage = 1;
+    const itemsPerPage = 50;
+  </script>
 </body>
 </html>
