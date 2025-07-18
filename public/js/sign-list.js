@@ -1,4 +1,7 @@
 
+import { db } from '/js/firebase.js'
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+
 let currentPage = 1;
 const itemsPerPage = 5;
 let sortField = 'createdAt';
@@ -69,7 +72,7 @@ function renderTable() {
 }
 
 window.onload = async () => {
-  const snapshot = await firebase.firestore().collection('signs').get();
+  const snapshot = await getDocs(collection(db, 'signs'));
   window.signData = snapshot.docs.map(doc => doc.data());
   renderTable();
 
