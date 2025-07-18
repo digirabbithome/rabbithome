@@ -1,66 +1,93 @@
 
-#search-bar {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1em;
-  margin-bottom: 1em;
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background-color: #fff;
+  margin: 0;
+  padding: 20px;
+  color: #333;
 }
-#search-input {
+h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+h1::before {
+  content: "📋";
+  margin-right: 10px;
+}
+button, select, input[type="text"] {
   padding: 6px 12px;
-  font-size: 16px;
-  border-radius: 8px;
+  margin: 5px;
   border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+button:hover {
+  background-color: #f8e1e9;
 }
 #filter-bar {
   display: flex;
-  flex-direction: row;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 0.5em;
-  margin-bottom: 1em;
+  align-items: center;
+  margin-bottom: 16px;
 }
-.range-btn {
-  padding: 4px 10px;
-  border: 1px solid #aaa;
-  border-radius: 6px;
-  background: white;
-  cursor: pointer;
+#monthSelector {
+  margin-left: 8px;
 }
-.range-btn:hover {
-  background: #ffe0f0;
+#monthPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
 }
-#month-selector {
-  display: inline-block;
-  border: 1px solid #aaa;
-  border-radius: 6px;
-  padding: 6px;
-  background: white;
-}
-#month-grid {
+.month-grid {
   display: grid;
   grid-template-columns: repeat(4, 60px);
   gap: 8px;
-  margin-top: 8px;
+  justify-content: center;
 }
-.month-cell {
-  padding: 6px;
-  text-align: center;
-  border-radius: 4px;
-  cursor: pointer;
+.month-grid button {
+  padding: 8px;
+  border-radius: 6px;
   background: #f2f2f2;
+  cursor: pointer;
 }
-.month-cell:hover {
-  background: #ffdee5;
-}
-.month-cell.active {
-  background: #ff93a6;
-  color: white;
-}
-.year-control {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.month-grid button.active {
+  background-color: #ffc0cb;
   font-weight: bold;
-  margin-bottom: 5px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+th, td {
+  border-bottom: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th.sortable {
+  cursor: pointer;
+}
+th.sortable::after {
+  content: " ⬍";
+  font-size: 12px;
+  color: #aaa;
+}
+img.signature-thumb {
+  max-width: 100px;
+  max-height: 80px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+img.signature-thumb:hover {
+  transform: scale(2);
+}
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
