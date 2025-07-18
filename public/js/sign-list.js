@@ -1,102 +1,50 @@
 
 import { db } from '/js/firebase.js'
-import {
-  collection, query, getDocs, orderBy
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-let signData = []
-let currentSortField = 'createdAt'
-let currentSortDirection = 'desc'
-
-function renderTable(data) {
-  const tbody = document.getElementById("sign-body")
-  tbody.innerHTML = data.map(d => `
-    <tr>
-      <td>${new Date(d.createdAt?.seconds * 1000).toLocaleDateString()}</td>
-      <td>${d.type2 || ""}</td>
-      <td>${d.note || ""}</td>
-      <td>${d.amount || ""}</td>
-      <td>${d.nickname || ""}</td>
-      <td><img src="${d.signatureUrl}" class="thumb" /></td>
-    </tr>
-  `).join("")
-}
-
-function applySearchAndRender() {
-  const keyword = document.getElementById("search-input")?.value.trim().toLowerCase()
-  const monthFilter = document.getElementById("month-select")?.value
-
-  let filtered = [...signData]
-
-  // 搜尋欄位
-  if (keyword) {
-    filtered = filtered.filter(d => {
-      const fields = [d.type2, d.note, d.amount, d.nickname]
-      return fields.some(f => (f || "").toString().toLowerCase().includes(keyword))
-    })
-  }
-
-  // 月份篩選
-  if (monthFilter && monthFilter !== 'all') {
-    filtered = filtered.filter(d => {
-      const date = new Date(d.createdAt?.seconds * 1000)
-      const m = (date.getMonth() + 1).toString().padStart(2, '0')
-      const y = date.getFullYear().toString()
-      return `${y}-${m}` === monthFilter
-    })
-  }
-
-  // 排序
-  filtered.sort((a, b) => {
-    const valA = a[currentSortField]
-    const valB = b[currentSortField]
-    if (currentSortDirection === 'asc') {
-      return valA > valB ? 1 : -1
-    } else {
-      return valA < valB ? 1 : -1
-    }
-  })
-
-  renderTable(filtered)
-}
+document.addEventListener("DOMContentLoaded", () => {
+  initMonthSelector();
+  renderTable();
+});
 
 function initMonthSelector() {
-  const select = document.getElementById("month-select")
-  const months = new Set()
-  signData.forEach(d => {
-    const date = new Date(d.createdAt?.seconds * 1000)
-    const m = (date.getMonth() + 1).toString().padStart(2, '0')
-    const y = date.getFullYear().toString()
-    months.add(`${y}-${m}`)
-  })
+  const grid = document.getElementById("month-grid");
+  if (!grid) return;
 
-  const sortedMonths = Array.from(months).sort().reverse()
-  select.innerHTML = `<option value="all">全部月份</option>` +
-    sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("")
+  const now = new Date();
+  let currentYear = now.getFullYear();
 
-  select.addEventListener("change", applySearchAndRender)
+  const yearSpan = document.getElementById("currentYear");
+  const prevYearBtn = document.getElementById("prevYear");
+  const nextYearBtn = document.getElementById("nextYear");
+
+  function renderMonths() {
+    grid.innerHTML = "";
+    yearSpan.textContent = currentYear;
+    for (let m = 0; m < 12; m++) {
+      const cell = document.createElement("div");
+      cell.className = "month-cell";
+      cell.textContent = `${m + 1} 月`;
+      cell.onclick = () => {
+        const monthStr = `${currentYear}-${(m + 1).toString().padStart(2, "0")}`;
+        // 在這裡觸發篩選邏輯
+        console.log("篩選月份", monthStr);
+      };
+      grid.appendChild(cell);
+    }
+  }
+
+  prevYearBtn.onclick = () => {
+    currentYear--;
+    renderMonths();
+  };
+  nextYearBtn.onclick = () => {
+    currentYear++;
+    renderMonths();
+  };
+
+  renderMonths();
 }
 
-window.onload = async () => {
-  const snapshot = await getDocs(query(collection(db, "signs"), orderBy("createdAt", "desc")))
-  signData = snapshot.docs.map(doc => doc.data())
-
-  initMonthSelector()
-  applySearchAndRender()
-
-  document.getElementById("search-input")?.addEventListener("input", applySearchAndRender)
-
-  // 排序邏輯
-  document.querySelectorAll("th[data-sort]").forEach(th => {
-    th.addEventListener("click", () => {
-      const field = th.dataset.sort
-      if (currentSortField === field) {
-        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc'
-      } else {
-        currentSortField = field
-        currentSortDirection = 'asc'
-      }
-      applySearchAndRender()
-    })
-  })
+function renderTable() {
+  console.log("表格渲染功能尚未補上");
 }
