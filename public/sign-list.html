@@ -20,22 +20,19 @@
       <button class="range-btn" data-range="month">本月</button>
       <select id="month-select"></select>
     </div>
-    
-<table>
-  <thead>
-    <tr>
-      <th class="sortable" data-field="createdAt">簽收日期</th>
-      <th class="sortable" data-field="type2">公司</th>
-      <th>備註</th>
-      <th class="sortable" data-field="amount">金額</th>
-      <th>負責人</th>
-      <th>簽名</th>
-    </tr>
-  </thead>
-  <tbody id="sign-list"></tbody>
-</table>
-<div id="pager" style="margin-top: 1em;"></div>
-<div id="pager" style="margin-top: 1em;"></div>
+    <table id="sign-table">
+      <thead>
+        <tr>
+          <th data-sort="createdAt">簽收日期</th>
+          <th data-sort="shortName">公司</th>
+          <th data-sort="note">備註</th>
+          <th data-sort="amount">金額</th>
+          <th data-sort="nickname">負責人</th>
+          <th>簽名</th>
+        </tr>
+      </thead>
+      <tbody id="sign-body"></tbody>
+    </table>
     <div id="pagination"></div>
   </div>
 </body>
