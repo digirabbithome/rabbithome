@@ -2,40 +2,65 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>新增簽收單</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/css/sign.css" />
+  <link rel="stylesheet" href="/css/sign.css">
   <script type="module" src="/js/sign.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h2 id="form-title">📝 新增簽收單（登入中...）</h2>
-    <form>
+  <div class="container">
+    <h2>新增簽收單（<span id="nickname"></span>）</h2>
+    <form id="sign-form">
       <label>身份分類：</label>
-      <select id="identity-type">
+      <select id="type1" required>
         <option value="">請選擇</option>
         <option value="供應商">供應商</option>
         <option value="物流">物流</option>
         <option value="其他">其他</option>
       </select>
 
-      <div id="identity-detail-block"></div>
+      <div id="type2-container">
+        <!-- 第二層選項動態生成 -->
+      </div>
 
-      <label>金額：</label>
-      <input type="number" id="amount" />
+      <label for="amount">金額：</label>
+      <input type="number" id="amount" required />
 
-      <label>備註：</label>
-      <textarea id="note"></textarea>
+      <label for="note">備註：</label>
+      <textarea id="note" rows="3"></textarea>
 
       <label>簽名：</label>
-      <canvas id="signature" width="300" height="150"></canvas>
+      <canvas id="signature" width="300" height="150" style="border:1px solid #ccc;"></canvas>
 
-      <div class="button-row">
-        <button type="button" id="clear">🩹 清除簽名</button>
-        <button type="submit" id="submit">✅ 確認送出</button>
+      <div class="btn-row">
+        <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
+        <button type="submit">✅ 確認送出</button>
       </div>
     </form>
   </div>
+
+  <script>
+    function clearCanvas() {
+      const canvas = document.getElementById('signature');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const type1 = document.getElementById('type1');
+      const container = document.getElementById('type2-container');
+      type1.addEventListener('change', () => {
+        let html = '';
+        if (type1.value === '供應商') {
+          html = '<select id="type2"><option>數位小兔</option><option>聚焦數位</option><option>免睡攝影</option><option>其他</option></select>';
+        } else if (type1.value === '物流') {
+          html = '<select id="type2"><option>新竹</option><option>黑貓</option><option>大榮</option><option>宅配通</option><option>順豐</option><option>Uber</option><option>LALA</option><option>其他</option></select>';
+        } else {
+          html = '<input type="text" id="type2" placeholder="請填寫名稱">';
+        }
+        container.innerHTML = html;
+      });
+    });
+  </script>
 </body>
 </html>
