@@ -1,95 +1,86 @@
 
-let signData = [];
-let currentSortField = 'createdAt';
-let currentSortDirection = 'desc';
 let currentPage = 1;
 const itemsPerPage = 5;
+let sortField = 'createdAt';
+let sortDirection = 'desc';
 
-// 排序與分頁渲染
-function renderTable() {
-  const listEl = document.getElementById('sign-body');
-  listEl.innerHTML = '';
+function sortData(data) {
+  return data.sort((a, b) => {
+    let aVal = a[sortField];
+    let bVal = b[sortField];
 
-  const sorted = [...signData].sort((a, b) => {
-    let valA = a[currentSortField];
-    let valB = b[currentSortField];
-    if (currentSortField === 'createdAt' && valA?.toDate) {
-      valA = valA.toDate();
-      valB = valB.toDate();
+    if (sortField === 'createdAt') {
+      aVal = aVal?.toDate?.() || new Date(0);
+      bVal = bVal?.toDate?.() || new Date(0);
     }
-    if (typeof valA === 'string') valA = valA.toLowerCase();
-    if (typeof valB === 'string') valB = valB.toLowerCase();
-    if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
-    if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
-
-  const start = (currentPage - 1) * itemsPerPage;
-  const pageItems = sorted.slice(start, start + itemsPerPage);
-
-  for (const d of pageItems) {
-    const date = d.createdAt?.toDate?.().toLocaleDateString() || '';
-    const name = d.type2 || '';
-    const note = d.note || '';
-    const amount = d.amount || '';
-    const nickname = d.nickname || '';
-    const sigImg = d.signatureUrl ? `<img src="${d.signatureUrl}" style="height:40px;" onmouseover="this.style.height='120px'" onmouseout="this.style.height='40px'">` : '';
-    const tr = `<tr><td>${date}</td><td>${name}</td><td>${note}</td><td>${amount}</td><td>${nickname}</td><td>${sigImg}</td></tr>`;
-    listEl.innerHTML += tr;
-  }
-
-  renderPagination(sorted.length);
 }
 
 function renderPagination(totalItems) {
-  const pager = document.getElementById('pager');
-  pager.innerHTML = '';
+  const pagination = document.getElementById('pagination');
+  if (!pagination) return;
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  pagination.innerHTML = '';
+
   if (totalPages <= 1) return;
-  const prev = document.createElement('button');
-  prev.textContent = '«';
-  prev.disabled = currentPage === 1;
-  prev.onclick = () => { currentPage--; renderTable(); };
-  pager.appendChild(prev);
 
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i;
-    btn.disabled = i === currentPage;
-    btn.onclick = () => { currentPage = i; renderTable(); };
-    pager.appendChild(btn);
-  }
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '上一頁';
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => { currentPage--; renderTable(); };
+  pagination.appendChild(prevBtn);
 
-  const next = document.createElement('button');
-  next.textContent = '»';
-  next.disabled = currentPage === totalPages;
-  next.onclick = () => { currentPage++; renderTable(); };
-  pager.appendChild(next);
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = '下一頁';
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => { currentPage++; renderTable(); };
+  pagination.appendChild(nextBtn);
 }
 
-function fetchData() {
-  import('/js/firebase.js').then(({ db }) => {
-    import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js').then(module => {
-      const { collection, getDocs, query, orderBy } = module;
-      const q = query(collection(db, 'signs'), orderBy('createdAt', 'desc'));
-      getDocs(q).then(snapshot => {
-        signData = snapshot.docs.map(doc => doc.data());
-        renderTable();
-      });
-    });
+function renderTable() {
+  const tbody = document.getElementById('sign-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const filteredData = sortData(window.signData || []);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
+
+  paginatedData.forEach(d => {
+    const tr = document.createElement('tr');
+    const date = d.createdAt?.toDate?.().toLocaleDateString?.() || '';
+    tr.innerHTML = `
+      <td>${date}</td>
+      <td>${d.shortName || ''}</td>
+      <td>${d.note || ''}</td>
+      <td>${d.amount || ''}</td>
+      <td>${d.nickname || ''}</td>
+      <td>${d.signatureUrl ? `<img src="${d.signatureUrl}" style="height:40px;">` : ''}</td>
+    `;
+    tbody.appendChild(tr);
   });
+
+  renderPagination(filteredData.length);
 }
 
-window.onload = () => {
-  fetchData();
-  document.querySelectorAll('th.sortable').forEach(th => {
+window.onload = async () => {
+  const snapshot = await firebase.firestore().collection('signs').get();
+  window.signData = snapshot.docs.map(doc => doc.data());
+  renderTable();
+
+  document.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
-      const field = th.dataset.field;
-      if (currentSortField === field) {
-        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+      const field = th.dataset.sort;
+      if (sortField === field) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
       } else {
-        currentSortField = field;
-        currentSortDirection = 'asc';
+        sortField = field;
+        sortDirection = 'asc';
       }
       renderTable();
     });
