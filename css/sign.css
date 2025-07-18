@@ -1,0 +1,35 @@
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: #fff5f7;
+  padding: 20px;
+}
+.container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  max-width: 420px;
+  margin: auto;
+  padding: 20px;
+}
+input, select, textarea, button {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+.btn-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.btn-row button {
+  width: 48%;
+}
+button {
+  background: #ff8eb3;
+  color: white;
+  font-weight: bold;
+  border: none;
+}

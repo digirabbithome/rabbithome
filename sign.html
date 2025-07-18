@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>新增簽收單</title>
+  <link rel="stylesheet" href="/css/sign.css">
+  <script type="module" src="/js/sign.js"></script>
+  <script type="module">
+    import { db } from '/js/firebase.js';
+    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+    async function loadSuppliers() {
+      const snap = await getDocs(collection(db, 'suppliers'));
+      let options = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.code && d.shortName) {
+          const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
+          options += `<option>${d.code} - ${name}</option>`;
+        }
+      });
+      document.getElementById('type2-container').innerHTML = '<select id="type2">' + options + '</select>';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const type1 = document.getElementById('type1');
+      const container = document.getElementById('type2-container');
+      type1.addEventListener('change', () => {
+        if (type1.value === '供應商') {
+          loadSuppliers();
+        } else if (type1.value === '物流') {
+          container.innerHTML = `
+            <select id="type2">
+              <option>新竹</option><option>黑貓</option><option>大榮</option>
+              <option>宅配通</option><option>順豐</option>
+              <option>Uber</option><option>LALA</option><option>其他</option>
+            </select>`;
+        } else {
+          container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱">';
+        }
+      });
+    });
+  </script>
+  <style>
+    canvas { touch-action: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>新增簽收單（<span id="nickname"></span>）</h2>
+    <form id="sign-form">
+      <label>身份分類：</label>
+      <select id="type1" required>
+        <option value="">請選擇</option>
+        <option value="供應商">供應商</option>
+        <option value="物流">物流</option>
+        <option value="其他">其他</option>
+      </select>
+
+      <div id="type2-container"></div>
+
+      <label for="amount">金額：</label>
+      <input type="number" id="amount" required />
+
+      <label for="note">備註：</label>
+      <textarea id="note" rows="3"></textarea>
+
+      <label>簽名：</label>
+      <canvas id="signature" width="600" height="200" width="300" height="150" style="border:1px solid #ccc;"></canvas>
+
+      <div class="btn-row">
+        <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
+        <button type="submit">✅ 確認送出</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // 支援滑鼠與觸控繪圖
+    const canvas = document.getElementById('signature');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function startDraw(e) {
+      e.preventDefault();
+      drawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function endDraw(e) {
+      drawing = false;
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: x - rect.left,
+        y: y - rect.top
+      };
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseout', endDraw);
+
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDraw);
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+</body>
+</html>
