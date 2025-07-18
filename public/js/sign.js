@@ -1,93 +1,63 @@
 
-const category = document.getElementById('category');
-const subCategory = document.getElementById('subCategory');
-const otherInput = document.getElementById('otherInput');
-const subContainer = document.getElementById('subCategoryContainer');
-const label = document.getElementById('subCategoryLabel');
+import { db, storage } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  ref, uploadString, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-category.addEventListener('change', () => {
-  const value = category.value;
-  subCategory.innerHTML = '';
-  subCategory.style.display = 'none';
-  otherInput.style.display = 'none';
-
-  if (!value) {
-    subContainer.style.display = 'none';
+window.onload = () => {
+  const nickname = localStorage.getItem('nickname');
+  if (!nickname) {
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
     return;
   }
 
-  subContainer.style.display = 'block';
+  document.getElementById('nickname').textContent = nickname;
 
-  if (value === '供應商') {
-    label.textContent = '供應商名稱：';
-    ['數位小兔', '聚焦數位', '免睡攝影', '其他'].forEach(opt => {
-      const o = document.createElement('option');
-      o.value = o.textContent = opt;
-      subCategory.appendChild(o);
-    });
-    subCategory.style.display = 'inline';
-  } else if (value === '物流') {
-    label.textContent = '物流公司：';
-    ['新竹貨運', '黑貓', '大榮', '宅配通', '其他'].forEach(opt => {
-      const o = document.createElement('option');
-      o.value = o.textContent = opt;
-      subCategory.appendChild(o);
-    });
-    subCategory.style.display = 'inline';
-  } else {
-    label.textContent = '請輸入身份：';
-    otherInput.style.display = 'inline';
-  }
-});
+  const form = document.getElementById('sign-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-// ⬇️ Canvas 簽名邏輯（支援 mouse 與 touch）
-const canvas = document.getElementById('signaturePad');
-const ctx = canvas.getContext('2d');
-let drawing = false;
+    const amount = document.getElementById('amount').value;
+    const note = document.getElementById('note').value;
+    const type1 = document.getElementById('type1').value;
+    const type2 = document.getElementById('type2').value;
+    const canvas = document.getElementById('signature');
+    const imageData = canvas.toDataURL('image/png');
 
-function getPos(e) {
-  if (e.touches && e.touches.length > 0) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: e.touches[0].clientX - rect.left,
-      y: e.touches[0].clientY - rect.top
-    };
-  }
-  return { x: e.offsetX, y: e.offsetY };
-}
+    if (!amount || !imageData || type1 === '') {
+      alert('請填寫金額、選擇身份分類並簽名');
+      return;
+    }
 
-canvas.addEventListener('mousedown', e => {
-  drawing = true;
-  ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
-});
-canvas.addEventListener('mousemove', e => {
-  if (drawing) {
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.stroke();
-  }
-});
-canvas.addEventListener('mouseup', () => drawing = false);
-canvas.addEventListener('mouseleave', () => drawing = false);
+    try {
+      const docRef = await addDoc(collection(db, 'signs'), {
+        amount,
+        note,
+        type1,
+        type2,
+        nickname,
+        createdAt: serverTimestamp()
+      });
 
-// 📱 Touch 支援
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const pos = getPos(e);
-  drawing = true;
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-});
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (drawing) {
-    const pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-  }
-});
-canvas.addEventListener('touchend', () => drawing = false);
+      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
+      await uploadString(imageRef, imageData, 'data_url');
+      const imageUrl = await getDownloadURL(imageRef);
 
-document.getElementById('clear').addEventListener('click', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
+      // 寫入簽名圖 URL
+      await addDoc(collection(db, 'signs-update'), {
+        id: docRef.id,
+        signatureUrl: imageUrl
+      });
+
+      alert('簽收紀錄已送出！');
+      window.location.reload();
+    } catch (err) {
+      console.error('寫入錯誤', err);
+      alert('送出失敗，請稍後再試');
+    }
+  });
+};
