@@ -1,38 +1,98 @@
 
 import { db } from '/js/firebase.js'
-import { collection, query, getDocs, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  collection, getDocs, query, orderBy
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-let signData = []
+let allData = []
+let currentPage = 1
+let pageSize = 50
+let currentSortField = 'createdAt'
+let currentSortDirection = 'desc'
 
-function renderTable(data) {
-  const tbody = document.getElementById("sign-body")
-  tbody.innerHTML = data.map(d => `
-    <tr>
-      <td>${new Date(d.createdAt?.seconds * 1000).toLocaleDateString()}</td>
-      <td>${d.type2 || ""}</td>
-      <td>${d.note || ""}</td>
-      <td>${d.amount || ""}</td>
-      <td>${d.nickname || ""}</td>
-      <td><img src="${d.signatureUrl}" class="thumb" /></td>
-    </tr>
-  `).join("")
+async function fetchData() {
+  const q = query(collection(db, 'signs'))
+  const snapshot = await getDocs(q)
+  allData = snapshot.docs.map(doc => doc.data())
+  renderTable()
 }
 
-function applySearch() {
-  const keyword = document.getElementById("search-input")?.value.trim().toLowerCase()
-  if (!keyword) return renderTable(signData)
+function sortData() {
+  allData.sort((a, b) => {
+    let aVal = a[currentSortField]
+    let bVal = b[currentSortField]
 
-  const filtered = signData.filter(d => {
-    const fields = [d.type2, d.note, d.amount, d.nickname]
-    return fields.some(f => (f || "").toString().toLowerCase().includes(keyword))
+    if (aVal?.toDate) aVal = aVal.toDate()
+    if (bVal?.toDate) bVal = bVal.toDate()
+
+    if (currentSortDirection === 'asc') {
+      return aVal > bVal ? 1 : -1
+    } else {
+      return aVal < bVal ? 1 : -1
+    }
   })
-  renderTable(filtered)
 }
 
-window.onload = async () => {
-  const snapshot = await getDocs(query(collection(db, "signs"), orderBy("createdAt", "desc")))
-  signData = snapshot.docs.map(doc => doc.data())
-  renderTable(signData)
+function renderTable() {
+  sortData()
 
-  document.getElementById("search-input")?.addEventListener("input", applySearch)
+  const start = (currentPage - 1) * pageSize
+  const end = start + pageSize
+  const pageData = allData.slice(start, end)
+
+  const tbody = document.getElementById('sign-list')
+  tbody.innerHTML = ''
+  pageData.forEach(d => {
+    const row = document.createElement('tr')
+    row.innerHTML = `
+      <td>${d.createdAt?.toDate().toLocaleDateString() || ''}</td>
+      <td>${d.type2 || ''}</td>
+      <td>${d.note || ''}</td>
+      <td>${d.amount || ''}</td>
+      <td>${d.nickname || ''}</td>
+      <td><img src="${d.signatureUrl || ''}" width="60"/></td>
+    `
+    tbody.appendChild(row)
+  })
+
+  renderPagination()
+}
+
+function renderPagination() {
+  const totalPages = Math.ceil(allData.length / pageSize)
+  const pager = document.getElementById('pager')
+  pager.innerHTML = ''
+
+  if (totalPages <= 1) return
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button')
+    btn.textContent = i
+    btn.className = (i === currentPage ? 'active' : '')
+    btn.addEventListener('click', () => {
+      currentPage = i
+      renderTable()
+    })
+    pager.appendChild(btn)
+  }
+}
+
+function setupSorting() {
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.dataset.field
+      if (field === currentSortField) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        currentSortField = field
+        currentSortDirection = 'asc'
+      }
+      renderTable()
+    })
+  })
+}
+
+window.onload = () => {
+  fetchData()
+  setupSorting()
 }
