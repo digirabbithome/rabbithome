@@ -2,55 +2,26 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>簽收查詢系統</title>
-  <link rel="stylesheet" href="/css/sign-list.css">
-  <script type="module" src="/js/sign-list.js"></script>
+  <script type="module" src="sign-list.js" defer></script>
 </head>
 <body>
-
-<div class="selector-row" style="margin-bottom: 1rem;">
-  <label for="yearSelect">年份：</label>
-  <select id="yearSelect" style="margin-right: 1rem;">
-    <option value="2024">2024</option>
-    <option value="2025" selected>2025</option>
-    <option value="2026">2026</option>
+  年份：
+  <select id="yearSelect">
+    <option>2025</option>
+    <option>2024</option>
   </select>
-
-  <label for="monthSelect">月份：</label>
-  <select id="monthSelect" style="margin-right: 1rem;">
-    <option value="01">1 月</option><option value="02">2 月</option><option value="03">3 月</option><option value="04">4 月</option><option value="05">5 月</option><option value="06">6 月</option><option value="07">7 月</option><option value="08">8 月</option><option value="09">9 月</option><option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+  月份：
+  <select id="monthSelect">
+    <option value="1">1 月</option>
+    <option value="7" selected>7 月</option>
   </select>
+  <button id="monthSearchBtn">查詢</button>
 
-  <button id="searchBtn">查詢</button>
-</div>
-
-  <div class="page-wrapper">
-    <h2>📋 簽收查詢系統</h2>
-    <div id="search-bar">
-      <input type="text" id="search-input" placeholder="搜尋供應商、簽收人、金額、備註…" />
-      <div id="autocomplete-container"></div>
-    </div>
-    <div id="filter-controls">
-      <button class="range-btn" data-range="today">今日</button>
-      <button class="range-btn" data-range="week">本週</button>
-      <button class="range-btn" data-range="month">本月</button>
-      <select id="month-select"></select>
-    </div>
-    <table id="sign-table">
-      <thead>
-        <tr>
-          <th data-sort="createdAt">簽收日期</th>
-          <th data-sort="shortName">公司</th>
-          <th data-sort="note">備註</th>
-          <th data-sort="amount">金額</th>
-          <th data-sort="nickname">負責人</th>
-          <th>簽名</th>
-        </tr>
-      </thead>
-      <tbody id="sign-body"></tbody>
-    </table>
-    <div id="pagination"></div>
-  </div>
+  <table border="1">
+    <thead><tr><th>簽收日期</th><th>公司</th><th>備註</th><th>金額</th><th>負責人</th><th>簽名</th></tr></thead>
+    <tbody id="sign-list"></tbody>
+  </table>
 </body>
 </html>
