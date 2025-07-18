@@ -1,6 +1,6 @@
 import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, doc, updateDoc, serverTimestamp
+  collection, addDoc, updateDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   ref, uploadString, getDownloadURL
@@ -24,7 +24,6 @@ window.onload = () => {
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
 
-    // 安全抓取 type2 值，不論是 input 或 select
     const searchInput = document.getElementById('type2-search');
     const selectInput = document.getElementById('type2');
     let type2 = '';
@@ -43,6 +42,7 @@ window.onload = () => {
     }
 
     try {
+      // 建立簽收紀錄
       const docRef = await addDoc(collection(db, 'signs'), {
         amount,
         note,
@@ -52,11 +52,15 @@ window.onload = () => {
         createdAt: serverTimestamp()
       });
 
+      console.log('🟢 新增成功的 docRef 路徑:', docRef.path);  // 調試用
+
+      // 上傳簽名圖
       const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
       await uploadString(imageRef, imageData, 'data_url');
       const imageUrl = await getDownloadURL(imageRef);
 
-      await updateDoc(doc(docRef), { signatureUrl: imageUrl });
+      // 正確使用 docRef，不包裹多餘 doc()
+      await updateDoc(docRef, { signatureUrl: imageUrl });
 
       alert('簽收紀錄已送出！');
       window.location.reload();
