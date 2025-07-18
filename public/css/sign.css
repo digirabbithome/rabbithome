@@ -1,35 +1,35 @@
 
-body {
-  font-family: 'Arial', sans-serif;
-  background: #fff5f7;
-  padding: 20px;
-}
-.container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
-  max-width: 420px;
-  margin: auto;
-  padding: 20px;
-}
-input, select, textarea, button {
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-}
-.btn-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.btn-row button {
-  width: 48%;
-}
-button {
-  background: #ff8eb3;
-  color: white;
-  font-weight: bold;
-  border: none;
+@media (max-width: 768px) {
+  .card, form {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+
+  input, select, textarea {
+    width: 100% !important;
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+    border: 1px solid #ccc;
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .button-row button {
+    flex: 1;
+    font-size: 16px;
+    padding: 12px 0;
+  }
 }
