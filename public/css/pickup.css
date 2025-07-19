@@ -1,0 +1,58 @@
+/* pickup.css */
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.age-1w {
+  border-bottom: 6px solid #fbcfe8;
+}
+.age-2w {
+  border-bottom: 6px solid #bae6fd;
+}
+.age-3w {
+  border-bottom: 6px solid #bbf7d0;
+}
+.record-item {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: #fff1f2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #fbcfe8;
+}
+.record-item .top-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+.record-item .text-sm {
+  font-size: 0.875rem;
+  color: #374151;
+}
+.record-item .action-buttons {
+  text-align: right;
+  margin-top: 0.5rem;
+}
+.record-item .action-buttons button {
+  margin-left: 0.5rem;
+  background-color: #f472b6;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+.form-input,
+.form-select,
+.form-textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  background-color: #fff;
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #f472b6;
+  box-shadow: 0 0 0 1px #f472b6;
+}

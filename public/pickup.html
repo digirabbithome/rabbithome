@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>櫃檯取貨</title>
+  <link rel="stylesheet" href="/css/pickup.css">
+  <script src="/js/firebase.js"></script>
+  <script src="/js/pickup.js" defer></script>
+</head>
+<body class="bg-pink-50 font-sans">
+  <div class="p-4 max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">📦 櫃檯取貨紀錄</h1>
+    <div class="bg-white rounded-xl shadow p-4 mb-6">
+      <h2 class="text-lg font-semibold mb-2">➕ 新增取貨紀錄</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium">聯絡資訊</label>
+          <input type="text" id="contact" class="form-input w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium">付款狀態</label>
+          <select id="paid" class="form-select w-full">
+            <option value="未付款">未付款</option>
+            <option value="已付全額">已付全額</option>
+            <option value="已付訂金">已付訂金</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium">商品資訊</label>
+          <textarea id="product" rows="2" class="form-textarea w-full"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium">備註</label>
+          <textarea id="note" rows="2" class="form-textarea w-full"></textarea>
+        </div>
+      </div>
+      <div class="mt-4 text-right">
+        <button id="addBtn" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg">確認新增</button>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow p-4">
+      <h2 class="text-lg font-semibold mb-2">📜 取貨紀錄列表</h2>
+      <input type="text" id="search" placeholder="搜尋聯絡資訊、商品或備註..." class="form-input w-full mb-4">
+      <div id="pickup-list" class="space-y-3"></div>
+    </div>
+  </div>
+</body>
+</html>
