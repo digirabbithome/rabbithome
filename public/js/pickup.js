@@ -47,6 +47,7 @@ window.onload = async () => {
 }
 
 async function fetchData() {
+  const q = query(collection(db, 'pickups'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   pickupList = snapshot.docs.map(doc => ({ id: doc.id, pinStatus: 0, ...doc.data() }))
 }
