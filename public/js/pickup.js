@@ -66,7 +66,7 @@ function renderList() {
         <span>${p.contact || '未填寫'}</span>
       </div>
       <div>商品：${p.product}</div>
-      <small>${p.note || '—'}（${p.paid}）</small>
+      <small>${p.note || '—'}（${p.paid}）<span style="color:gray; font-size: 12px; margin-left: 6px;">${p.createdBy || ''}</span></small>
     `
     list.appendChild(div)
   })
