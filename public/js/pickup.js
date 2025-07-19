@@ -47,7 +47,6 @@ window.onload = async () => {
 }
 
 async function fetchData() {
-  const q = query(collection(db, 'pickups'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   pickupList = snapshot.docs.map(doc => ({ id: doc.id, pinStatus: 0, ...doc.data() }))
 }
@@ -67,6 +66,8 @@ function renderList() {
     const p1 = priority[a.paid] || 99
     const p2 = priority[b.paid] || 99
     if (p1 !== p2) return p1 - p2
+  const t1 = a.createdAt?.toDate?.() || new Date(0)
+  const t2 = b.createdAt?.toDate?.() || new Date(0)
 
     return t2 - t1
   })
