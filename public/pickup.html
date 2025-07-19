@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -13,13 +14,11 @@
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      max-width: 420px;
+      max-width: 1000px;
       margin: auto;
       padding: 20px;
     }
     input, select, textarea, button {
-      width: 100%;
-      margin-bottom: 12px;
       padding: 8px;
       border-radius: 6px;
       border: 1px solid #ddd;
@@ -37,12 +36,27 @@
       color: white;
       font-weight: bold;
       border: none;
+      cursor: pointer;
     }
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 12px;
+    }
+    .topbar-left {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar input {
+      max-width: 260px;
+    }
+    .topbar button {
+      white-space: nowrap;
     }
     #pickup-list {
       display: grid;
@@ -65,11 +79,6 @@
     .pickup-card small {
       display: block;
       color: #888;
-    }
-    @media (min-width: 600px) {
-      .container {
-        max-width: 1000px;
-      }
     }
   </style>
   <script src="/js/firebase.js" type="module"></script>
@@ -174,10 +183,12 @@
 
   <div id="list-area" class="container">
     <div class="topbar">
-      <h2 class="text-lg font-semibold">📜 取貨紀錄列表</h2>
+      <div class="topbar-left">
+        <h2 class="text-lg font-semibold">📜 取貨紀錄列表</h2>
+        <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註...">
+      </div>
       <button id="showFormBtn">➕ 新增取貨單</button>
     </div>
-    <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註...">
     <div id="pickup-list" class="mt-4"></div>
   </div>
 </body>
