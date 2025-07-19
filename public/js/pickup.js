@@ -35,7 +35,7 @@ function renderList() {
   const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
 
   pickupList
-    .filter(p => !('pinStatus' in p) || p.pinStatus === 0 || p.pinStatus === 1) // ✅ 只搜尋狀態0或1
+    .filter(p => !('status' in p) || p.status === 0 || p.status === 1)
     .sort((a, b) => {
       const p1 = priority[a.paid] || 99
       const p2 = priority[b.paid] || 99
@@ -56,43 +56,40 @@ function renderList() {
       div.className = 'pickup-card'
       div.style.backgroundColor = bgColor
 
-      const pinStatus = p.pinStatus || 0
-      let stickerHTML = ''
-      if (pinStatus === 0) {
-        stickerHTML = '<div class="sticker sticker-2" title="點我撕貼紙"></div>'
-      } else if (pinStatus === 1) {
-        stickerHTML = '<div class="sticker sticker-1" title="再點一下表示完成"></div>'
-      }
+      const status = p.status ?? 0
+      let stickerSrc = ''
+      if (status === 1) stickerSrc = '/img/sticker_1.png'
+      if (status === 0) stickerSrc = '/img/sticker_2.png'
+
+      const sticker = status < 2 ? `<img class="sticker" src="${stickerSrc}" />` : ''
 
       div.innerHTML = `
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px; position: relative;">
           <strong>${p.serial || '—'}</strong>
           <span>${p.contact || '未填寫'}</span>
-          ${stickerHTML}
+          ${sticker}
         </div>
         <div>${p.product}</div>
         <small>${p.note || '—'}（${p.paid}）</small>
       `
 
-      if (pinStatus < 2) {
-        const stickerEl = div.querySelector('.sticker')
-        stickerEl?.addEventListener('click', () => updatePinStatus(p))
+      const stickerEl = div.querySelector('.sticker')
+      if (stickerEl) {
+        stickerEl.addEventListener('click', async () => {
+          const newStatus = ((status + 1) % 3)
+          const updateData = { status: newStatus }
+          if (newStatus === 2) {
+            updateData.completedAt = serverTimestamp()
+            updateData.completedBy = localStorage.getItem('nickname') || '未登入使用者'
+          }
+          await updateDoc(doc(db, 'pickups', p.id), updateData)
+          await fetchData()
+          renderList()
+        })
       }
 
       list.appendChild(div)
     })
-}
-
-async function updatePinStatus(data) {
-  const newStatus = ((data.pinStatus || 0) + 1) % 3
-  const updateData = { pinStatus: newStatus }
-  if (newStatus === 2) {
-    updateData.doneBy = localStorage.getItem('nickname') || '未登入使用者'
-    updateData.doneAt = serverTimestamp()
-  }
-  await updateDoc(doc(db, 'pickups', data.id), updateData)
-  await fetchData()
-  renderList()
 }
 
 async function addPickup() {
@@ -111,7 +108,7 @@ async function addPickup() {
     createdAt: serverTimestamp(),
     createdBy: nickname,
     serial,
-    pinStatus: 0
+    status: 0
   })
 
   document.getElementById('contact').value = ''
