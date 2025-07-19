@@ -91,9 +91,7 @@ function renderList() {
       <div style="display: flex; justify-content: space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:6px;">
           <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
-          <strong>${p.serial || '—'}</strong>
         </div>
-        <span>${p.contact || '未填寫'}</span>
       </div>
       <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
         <strong>${p.serial || '—'}</strong>
