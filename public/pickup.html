@@ -4,177 +4,24 @@
 <head>
   <meta charset="UTF-8">
   <title>櫃檯取貨</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background: #fff5f7;
-      padding: 20px;
-    }
-    .container {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
-    }
-    input, select, textarea, button {
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-    }
-    .btn-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .btn-row button {
-      width: 48%;
-    }
-    button {
-      background: #ff8eb3;
-      color: white;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .topbar-left {
-      flex-grow: 1;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .topbar input {
-      max-width: 260px;
-    }
-    .topbar button {
-      white-space: nowrap;
-    }
-    #pickup-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 12px;
-    }
-    .pickup-card {
-      background: #fff79a;
-      border-radius: 10px;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
-      padding: 12px;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-    .pickup-card strong {
-      font-size: 16px;
-      display: block;
-      margin-bottom: 4px;
-    }
-    .pickup-card small {
-      display: block;
-      color: #888;
-    }
-  </style>
-  <script src="/js/firebase.js" type="module"></script>
-  <script type="module">
-    import { db } from '/js/firebase.js'
-    import {
-      collection, addDoc, getDocs, query, orderBy, serverTimestamp
-    } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-
-    let pickupList = []
-
-    window.onload = async () => {
-      document.getElementById('addBtn').addEventListener('click', addPickup)
-      document.getElementById('search').addEventListener('input', renderList)
-      document.getElementById('showFormBtn').addEventListener('click', () => {
-        document.getElementById('form-area').style.display = 'block'
-        document.getElementById('list-area').style.display = 'none'
-      })
-      document.getElementById('cancelFormBtn').addEventListener('click', () => {
-        document.getElementById('form-area').style.display = 'none'
-        document.getElementById('list-area').style.display = 'block'
-      })
-      await fetchData()
-      renderList()
-    }
-
-    async function fetchData() {
-      const q = query(collection(db, 'pickups'), orderBy('createdAt', 'desc'))
-      const snapshot = await getDocs(q)
-      pickupList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    }
-
-    function renderList() {
-      const kw = document.getElementById('search').value.trim().toLowerCase()
-      const list = document.getElementById('pickup-list')
-      list.innerHTML = ''
-
-      pickupList.forEach(p => {
-        const match = [p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
-        if (!match) return
-        const div = document.createElement('div')
-        div.className = 'pickup-card'
-        div.innerHTML = `
-          <strong>${p.contact || '未填寫'}</strong>
-          <div>付款狀態：${p.paid}</div>
-          <div>商品：${p.product}</div>
-          <small>備註：${p.note || '—'}</small>
-        `
-        list.appendChild(div)
-      })
-    }
-
-    async function addPickup() {
-      const contact = document.getElementById('contact').value.trim()
-      const product = document.getElementById('product').value.trim()
-      const note = document.getElementById('note').value.trim()
-      const paid = document.getElementById('paid').value
-      const nickname = localStorage.getItem('nickname') || '未登入使用者'
-
-      if (!contact && !product) return alert('⚠️ 請至少填寫聯絡資訊或商品內容')
-      await addDoc(collection(db, 'pickups'), {
-        contact, product, note, paid,
-        createdAt: serverTimestamp(),
-        createdBy: nickname
-      })
-      document.getElementById('contact').value = ''
-      document.getElementById('product').value = ''
-      document.getElementById('note').value = ''
-
-      document.getElementById('form-area').style.display = 'none'
-      document.getElementById('list-area').style.display = 'block'
-
-      await fetchData()
-      renderList()
-    }
-  </script>
+  <link rel="stylesheet" href="css/pickup.css" />
+  <script type="module" src="js/pickup.js" defer></script>
 </head>
 <body>
   <div id="form-area" class="container" style="display:none">
-    <h1 class="text-xl font-bold mb-4">📦 新增取貨單</h1>
+    <h1>📦 新增取貨單</h1>
     <label>聯絡資訊：</label>
     <input type="text" id="contact" placeholder="姓名／LINE／電話">
-
     <label>付款狀態：</label>
     <select id="paid">
       <option value="未付款">未付款</option>
       <option value="已付全額">已付全額</option>
       <option value="已付訂金">已付訂金</option>
     </select>
-
     <label>商品資訊：</label>
-    <textarea id="product" rows="4" placeholder="請輸入完整商品名稱、數量等細節"></textarea>
-
+    <textarea id="product" rows="4" placeholder="請輸入商品名稱、數量等細節"></textarea>
     <label>備註：</label>
-    <textarea id="note" rows="2" placeholder="其他提醒事項，例如：需收尾款、幫忙通知等"></textarea>
-
+    <textarea id="note" rows="2" placeholder="其他提醒事項"></textarea>
     <div class="btn-row">
       <button type="button" id="cancelFormBtn">↩️ 取消</button>
       <button id="addBtn">✅ 確認新增</button>
@@ -184,12 +31,12 @@
   <div id="list-area" class="container">
     <div class="topbar">
       <div class="topbar-left">
-        <h2 class="text-lg font-semibold">📜 取貨紀錄列表</h2>
+        <h2>📜 取貨紀錄列表</h2>
         <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註...">
       </div>
       <button id="showFormBtn">➕ 新增取貨單</button>
     </div>
-    <div id="pickup-list" class="mt-4"></div>
+    <div id="pickup-list"></div>
   </div>
 </body>
 </html>
