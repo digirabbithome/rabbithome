@@ -2,7 +2,7 @@ import { db } from '/js/firebase.js'
 import {
   collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import { doc, updateDoc }
+import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
 
