@@ -3,50 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <title>櫃檯取貨</title>
-  <link rel="stylesheet" href="/css/pickup.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #fff5f7;
+      padding: 20px;
+    }
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      max-width: 420px;
+      margin: auto;
+      padding: 20px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .btn-row button {
+      width: 48%;
+    }
+    button {
+      background: #ff8eb3;
+      color: white;
+      font-weight: bold;
+      border: none;
+    }
+  </style>
   <script src="/js/firebase.js" type="module"></script>
   <script type="module" src="/js/pickup.js"></script>
 </head>
-<body class="bg-pink-50 font-sans">
-  <div class="p-4 max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6 text-center text-pink-600">📦 櫃檯取貨紀錄</h1>
+<body>
+  <div class="container">
+    <h1 class="text-xl font-bold mb-4">📦 新增取貨單（<span id="nickname">登入者</span>）</h1>
+    <label>聯絡資訊：</label>
+    <input type="text" id="contact" placeholder="姓名／LINE／電話">
 
-    <!-- 新增表單 -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-pink-200">
-      <h2 class="text-xl font-semibold mb-4 text-pink-500">➕ 新增取貨紀錄</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-        <div class="flex flex-col">
-          <label class="text-sm font-medium text-gray-700 mb-1">👤 聯絡資訊</label>
-          <input type="text" id="contact" class="form-input w-full" placeholder="姓名／LINE／電話">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-sm font-medium text-gray-700 mb-1">💰 付款狀態</label>
-          <select id="paid" class="form-select w-full">
-            <option value="未付款">未付款</option>
-            <option value="已付全額">已付全額</option>
-            <option value="已付訂金">已付訂金</option>
-          </select>
-        </div>
-        <div class="md:col-span-2 flex flex-col">
-          <label class="text-sm font-medium text-gray-700 mb-1">📦 商品資訊</label>
-          <textarea id="product" rows="4" class="form-textarea w-full" placeholder="請輸入完整商品名稱、數量等細節"></textarea>
-        </div>
-        <div class="md:col-span-2 flex flex-col">
-          <label class="text-sm font-medium text-gray-700 mb-1">📝 備註</label>
-          <textarea id="note" rows="2" class="form-textarea w-full" placeholder="其他提醒事項，例如：需收尾款、幫忙通知等"></textarea>
-        </div>
-      </div>
-      <div class="mt-6 text-right">
-        <button id="addBtn" class="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-xl shadow">✨ 確認新增</button>
-      </div>
-    </div>
+    <label>付款狀態：</label>
+    <select id="paid">
+      <option value="未付款">未付款</option>
+      <option value="已付全額">已付全額</option>
+      <option value="已付訂金">已付訂金</option>
+    </select>
 
-    <!-- 歷史紀錄清單 -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 border border-pink-100">
-      <h2 class="text-xl font-semibold mb-4 text-pink-500">📜 取貨紀錄列表</h2>
-      <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註..." class="form-input w-full mb-6">
-      <div id="pickup-list" class="space-y-4"></div>
+    <label>商品資訊：</label>
+    <textarea id="product" rows="4" placeholder="請輸入完整商品名稱、數量等細節"></textarea>
+
+    <label>備註：</label>
+    <textarea id="note" rows="2" placeholder="其他提醒事項，例如：需收尾款、幫忙通知等"></textarea>
+
+    <div class="btn-row">
+      <button type="button">🧽 清除內容</button>
+      <button id="addBtn">✅ 確認新增</button>
     </div>
+  </div>
+
+  <div class="container mt-8">
+    <h2 class="text-lg font-semibold mb-4">📜 取貨紀錄列表</h2>
+    <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註...">
+    <div id="pickup-list" class="space-y-4 mt-4"></div>
   </div>
 </body>
 </html>
