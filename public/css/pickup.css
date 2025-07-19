@@ -1,50 +1,97 @@
+
+/* 原本的樣式保留 */
 body {
-  font-family: 'Noto Sans TC', sans-serif;
-  background: #fefefe;
-  margin: 0;
-  padding: 1rem;
+  font-family: 'Arial', sans-serif;
+  background: #fff5f7;
+  padding: 20px;
 }
-
-h1 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-.card {
-  position: relative;
-  background: white;
+.container {
+  background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 1rem;
-  transition: transform 0.2s;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+input, select, textarea, button {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+.btn-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.btn-row button {
+  width: 48%;
+}
+button {
+  background: #ff8eb3;
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.topbar-left {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar input {
+  max-width: 260px;
+}
+#pickup-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.pickup-card {
+  background: #fff79a;
+  border-radius: 10px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+}
+.pickup-card strong {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 4px;
+}
+.pickup-card small {
+  display: block;
+  color: #888;
 }
 
-.card:hover {
-  transform: scale(1.02);
-}
-
-.card.yellow { background-color: #fffacc; }
-.card.green { background-color: #ddf5dd; }
-.card.blue { background-color: #d9f1ff; }
-
+/* 貼紙樣式 */
 .sticker {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  background-color: rgba(200, 200, 200, 0.3);
+  border-radius: 50%;
+  border: 2px dashed #aaa;
   cursor: pointer;
-  opacity: 0.9;
-  z-index: 10;
+  z-index: 2;
+  transition: all 0.3s ease;
 }
-
-.card .sticker.single {
-  right: 12px;
+.sticker-1 {
+  background-color: rgba(200, 200, 200, 0.15);
+  border: 2px solid #aaa;
+}
+.sticker:hover {
+  transform: scale(1.2);
 }
