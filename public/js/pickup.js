@@ -1,7 +1,7 @@
-// pickup.js
+
 import { db } from '/js/firebase.js'
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
@@ -9,6 +9,14 @@ let pickupList = []
 window.onload = async () => {
   document.getElementById('addBtn').addEventListener('click', addPickup)
   document.getElementById('search').addEventListener('input', renderList)
+  document.getElementById('showFormBtn').addEventListener('click', () => {
+    document.getElementById('form-area').style.display = 'block'
+    document.getElementById('list-area').style.display = 'none'
+  })
+  document.getElementById('cancelFormBtn').addEventListener('click', () => {
+    document.getElementById('form-area').style.display = 'none'
+    document.getElementById('list-area').style.display = 'block'
+  })
   await fetchData()
   renderList()
 }
@@ -19,40 +27,22 @@ async function fetchData() {
   pickupList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
 
-function getAgeClass(date) {
-  const days = (Date.now() - date.getTime()) / 86400000
-  if (days >= 21) return 'age-3w'
-  if (days >= 14) return 'age-2w'
-  if (days >= 7) return 'age-1w'
-  return ''
-}
-
 function renderList() {
   const kw = document.getElementById('search').value.trim().toLowerCase()
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
 
   pickupList.forEach(p => {
-    const created = p.createdAt?.toDate?.()
-    const className = created ? getAgeClass(created) : ''
-    const match = [p.contact, p.product, p.note].some(v =>
-      (v || '').toLowerCase().includes(kw)
-    )
+    const match = [p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
-
     const div = document.createElement('div')
-    div.className = `record-item ${className}`
+    div.className = 'pickup-card'
     div.innerHTML = `
-      <div class="top-row">
-        <div>${p.contact || '無聯絡資訊'}</div>
-        <div class="text-sm">${p.createdBy || '匿名'}・${created ? created.toLocaleDateString() : ''}</div>
-      </div>
-      <div class="text-sm">${p.product || ''}</div>
-      <div class="text-sm">付款：${p.paid || '未填寫'}</div>
-      <div class="text-sm">備註：${p.note || ''}</div>
-      <div class="action-buttons">
-        <button onclick="window.print()">列印</button>
-      </div>
+      <strong>${p.serial || '—'}</strong>
+      <div>${p.contact || '未填寫'}</div>
+      <div>付款狀態：${p.paid}</div>
+      <div>商品：${p.product}</div>
+      <small>備註：${p.note || '—'}</small>
     `
     list.appendChild(div)
   })
@@ -63,20 +53,46 @@ async function addPickup() {
   const product = document.getElementById('product').value.trim()
   const note = document.getElementById('note').value.trim()
   const paid = document.getElementById('paid').value
-  const nickname = localStorage.getItem('nickname') || '匿名'
+  const nickname = localStorage.getItem('nickname') || '未登入使用者'
 
-  if (!contact && !product) return alert('請至少填寫聯絡資訊或商品內容')
+  if (!contact && !product) return alert('⚠️ 請至少填寫聯絡資訊或商品內容')
+
+  const serial = await generateSerial()
 
   await addDoc(collection(db, 'pickups'), {
     contact, product, note, paid,
     createdAt: serverTimestamp(),
-    createdBy: nickname
+    createdBy: nickname,
+    serial
   })
 
   document.getElementById('contact').value = ''
   document.getElementById('product').value = ''
   document.getElementById('note').value = ''
 
+  document.getElementById('form-area').style.display = 'none'
+  document.getElementById('list-area').style.display = 'block'
+
   await fetchData()
   renderList()
+}
+
+async function generateSerial() {
+  const now = new Date()
+  const mmdd = (now.getMonth() + 1).toString().padStart(2, '0') +
+               now.getDate().toString().padStart(2, '0')
+
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const end = new Date(start)
+  end.setDate(end.getDate() + 1)
+
+  const q = query(
+    collection(db, 'pickups'),
+    where('createdAt', '>=', start),
+    where('createdAt', '<', end)
+  )
+  const snapshot = await getDocs(q)
+  const count = snapshot.size + 1
+  const num = count.toString().padStart(3, '0')
+  return mmdd + num
 }
