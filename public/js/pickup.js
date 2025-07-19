@@ -1,4 +1,3 @@
-
 import { db } from '/js/firebase.js'
 import {
   collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
@@ -19,6 +18,30 @@ window.onload = async () => {
   })
   await fetchData()
   renderList()
+
+  document.addEventListener('click', e => {
+    if (e.target.classList.contains('print-link')) {
+      const id = e.target.dataset.id
+      const data = pickupList.find(p => p.id === id)
+      if (!data) return
+
+      const area = document.getElementById('print-area')
+      area.innerHTML = `
+        <h2>📦 取貨單</h2>
+        <p><strong>編號：</strong> ${data.serial}</p>
+        <p><strong>聯絡人：</strong> ${data.contact}</p>
+        <p><strong>商品內容：</strong><br>${data.product}</p>
+        <p><strong>備註：</strong><br>${data.note || '—'}</p>
+        <p><strong>付款狀態：</strong> ${data.paid}</p>
+        <p><strong>填單人：</strong> ${data.createdBy || ''}</p>
+      `
+      document.getElementById('list-area').style.display = 'none'
+      area.style.display = 'block'
+      window.print()
+      area.style.display = 'none'
+      document.getElementById('list-area').style.display = 'block'
+    }
+  })
 }
 
 async function fetchData() {
@@ -32,7 +55,6 @@ function renderList() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
 
-  // 🔁 排序邏輯：先依付款狀態，再依時間
   const priority = {
     '未付款': 1,
     '已付訂金': 2,
@@ -46,14 +68,14 @@ function renderList() {
 
     const t1 = a.createdAt?.toDate?.() || new Date(0)
     const t2 = b.createdAt?.toDate?.() || new Date(0)
-    return t2 - t1 // 新的排前面
+    return t2 - t1
   })
 
   pickupList.forEach(p => {
     const match = [p.serial, p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
 
-    let bgColor = '#fff9b1' // 預設：未付款
+    let bgColor = '#fff9b1'
     if (p.paid === '已付訂金') bgColor = '#d0f0ff'
     if (p.paid === '已付全額') bgColor = '#d9f7c5'
 
@@ -63,7 +85,7 @@ function renderList() {
     div.innerHTML = `
       <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
         <strong>${p.serial || '—'}</strong>
-        <span>${p.contact || '未填寫'}</span>
+        <span class="print-link" data-id="${p.id}">${p.contact || '未填寫'}</span>
       </div>
       <div>商品：${p.product}</div>
       <small>${p.note || '—'}（${p.paid}）(${p.createdBy || ''})</small>
