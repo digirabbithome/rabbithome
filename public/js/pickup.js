@@ -36,8 +36,8 @@ function renderList() {
     const match = [p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
 
-    let bgColor = '#fff9b1' // default: 未付款
-    if (p.paid === '已付訂金') bgColor = '#d0f0ff'
+    let bgColor = '#fff5cc' // default: 未付款
+    if (p.paid === '已付訂金') bgColor = '#ffe5cc'
     if (p.paid === '已付全額') bgColor = '#d9f7c5'
 
     const div = document.createElement('div')
