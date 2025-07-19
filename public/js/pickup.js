@@ -1,7 +1,7 @@
 
 import { db } from '/js/firebase.js'
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
@@ -32,44 +32,67 @@ function renderList() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
 
-  // 🔁 排序邏輯：先依付款狀態，再依時間
-  const priority = {
-    '未付款': 1,
-    '已付訂金': 2,
-    '已付全額': 3
+  const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
+
+  pickupList
+    .filter(p => p.pinStatus !== 2) // 不顯示已完成貼紙
+    .sort((a, b) => {
+      const p1 = priority[a.paid] || 99
+      const p2 = priority[b.paid] || 99
+      if (p1 !== p2) return p1 - p2
+      const t1 = a.createdAt?.toDate?.() || new Date(0)
+      const t2 = b.createdAt?.toDate?.() || new Date(0)
+      return t2 - t1
+    })
+    .forEach(p => {
+      const match = [p.serial, p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
+      if (!match) return
+
+      let bgColor = '#fff9b1'
+      if (p.paid === '已付訂金') bgColor = '#d0f0ff'
+      if (p.paid === '已付全額') bgColor = '#d9f7c5'
+
+      const div = document.createElement('div')
+      div.className = 'pickup-card'
+      div.style.backgroundColor = bgColor
+
+      const pinStatus = p.pinStatus || 0
+      let stickerHTML = ''
+      if (pinStatus === 0) {
+        stickerHTML = '<div class="sticker sticker-2" title="點我撕貼紙"></div>'
+      } else if (pinStatus === 1) {
+        stickerHTML = '<div class="sticker sticker-1" title="再點一下表示完成"></div>'
+      }
+
+      div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px; position: relative;">
+          <strong>${p.serial || '—'}</strong>
+          <span>${p.contact || '未填寫'}</span>
+          ${stickerHTML}
+        </div>
+        <div>商品：${p.product}</div>
+        <small>${p.note || '—'}（${p.paid}）</small>
+      `
+
+      if (pinStatus < 2) {
+        const stickerEl = div.querySelector('.sticker')
+        stickerEl?.addEventListener('click', () => updatePinStatus(p))
+      }
+
+      list.appendChild(div)
+    })
+}
+
+async function updatePinStatus(data) {
+  const newStatus = (data.pinStatus || 0) + 1
+  const updateData = { pinStatus: newStatus % 3 }
+  if (updateData.pinStatus === 2) {
+    updateData.doneBy = localStorage.getItem('nickname') || '未登入使用者'
+    updateData.doneAt = serverTimestamp()
   }
-
-  pickupList.sort((a, b) => {
-    const p1 = priority[a.paid] || 99
-    const p2 = priority[b.paid] || 99
-    if (p1 !== p2) return p1 - p2
-
-    const t1 = a.createdAt?.toDate?.() || new Date(0)
-    const t2 = b.createdAt?.toDate?.() || new Date(0)
-    return t2 - t1 // 新的排前面
-  })
-
-  pickupList.forEach(p => {
-    const match = [p.serial, p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
-    if (!match) return
-
-    let bgColor = '#fff9b1' // 預設：未付款
-    if (p.paid === '已付訂金') bgColor = '#d0f0ff'
-    if (p.paid === '已付全額') bgColor = '#d9f7c5'
-
-    const div = document.createElement('div')
-    div.className = 'pickup-card'
-    div.style.backgroundColor = bgColor
-    div.innerHTML = `
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
-        <strong>${p.serial || '—'}</strong>
-        <span>${p.contact || '未填寫'}</span>
-      </div>
-      <div>商品：${p.product}</div>
-      <small>${p.note || '—'}（${p.paid}）</small>
-    `
-    list.appendChild(div)
-  })
+  await updateDoc(doc(db, 'pickups', data.id), updateData)
+  await fetchData()
+  renderList()
 }
 
 async function addPickup() {
@@ -87,7 +110,8 @@ async function addPickup() {
     contact, product, note, paid,
     createdAt: serverTimestamp(),
     createdBy: nickname,
-    serial
+    serial,
+    pinStatus: 0
   })
 
   document.getElementById('contact').value = ''
