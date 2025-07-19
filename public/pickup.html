@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -38,13 +39,19 @@
       font-weight: bold;
       border: none;
     }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
   </style>
   <script src="/js/firebase.js" type="module"></script>
   <script type="module" src="/js/pickup.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1 class="text-xl font-bold mb-4">📦 新增取貨單（<span id="nickname">登入者</span>）</h1>
+  <div id="form-area" class="container" style="display:none">
+    <h1 class="text-xl font-bold mb-4">📦 新增取貨單</h1>
     <label>聯絡資訊：</label>
     <input type="text" id="contact" placeholder="姓名／LINE／電話">
 
@@ -62,13 +69,16 @@
     <textarea id="note" rows="2" placeholder="其他提醒事項，例如：需收尾款、幫忙通知等"></textarea>
 
     <div class="btn-row">
-      <button type="button">🧽 清除內容</button>
+      <button type="button" id="cancelFormBtn">↩️ 取消</button>
       <button id="addBtn">✅ 確認新增</button>
     </div>
   </div>
 
-  <div class="container mt-8">
-    <h2 class="text-lg font-semibold mb-4">📜 取貨紀錄列表</h2>
+  <div id="list-area" class="container">
+    <div class="topbar">
+      <h2 class="text-lg font-semibold">📜 取貨紀錄列表</h2>
+      <button id="showFormBtn">➕ 新增取貨單</button>
+    </div>
     <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註...">
     <div id="pickup-list" class="space-y-4 mt-4"></div>
   </div>
