@@ -1,3 +1,38 @@
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: #fefefe;
+  margin: 0;
+  padding: 1rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1rem;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+.card.yellow { background-color: #fffacc; }
+.card.green { background-color: #ddf5dd; }
+.card.blue { background-color: #d9f1ff; }
+
 .sticker {
   position: absolute;
   top: -8px;
@@ -8,4 +43,8 @@
   cursor: pointer;
   opacity: 0.9;
   z-index: 10;
+}
+
+.card .sticker.single {
+  right: 12px;
 }
