@@ -35,7 +35,7 @@ function renderList() {
   const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
 
   pickupList
-    .filter(p => p.pinStatus !== 2) // 不顯示已完成貼紙
+    .filter(p => p.pinStatus === 0 || p.pinStatus === 1) // ✅ 只搜尋狀態0或1
     .sort((a, b) => {
       const p1 = priority[a.paid] || 99
       const p2 = priority[b.paid] || 99
@@ -70,7 +70,7 @@ function renderList() {
           <span>${p.contact || '未填寫'}</span>
           ${stickerHTML}
         </div>
-        <div>商品：${p.product}</div>
+        <div>${p.product}</div>
         <small>${p.note || '—'}（${p.paid}）</small>
       `
 
@@ -84,9 +84,9 @@ function renderList() {
 }
 
 async function updatePinStatus(data) {
-  const newStatus = (data.pinStatus || 0) + 1
-  const updateData = { pinStatus: newStatus % 3 }
-  if (updateData.pinStatus === 2) {
+  const newStatus = ((data.pinStatus || 0) + 1) % 3
+  const updateData = { pinStatus: newStatus }
+  if (newStatus === 2) {
     updateData.doneBy = localStorage.getItem('nickname') || '未登入使用者'
     updateData.doneAt = serverTimestamp()
   }
