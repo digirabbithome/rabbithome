@@ -74,24 +74,24 @@ button {
   color: #888;
 }
 
-/* 貼紙樣式 */
-.sticker {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 28px;
-  height: 28px;
-  background-color: rgba(200, 200, 200, 0.3);
-  border-radius: 50%;
-  border: 2px dashed #aaa;
-  cursor: pointer;
-  z-index: 2;
-  transition: all 0.3s ease;
-}
+
 .sticker-1 {
   background-color: rgba(200, 200, 200, 0.15);
   border: 2px solid #aaa;
 }
 .sticker:hover {
   transform: scale(1.2);
+}
+
+
+.sticker {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  cursor: pointer;
+  opacity: 0.9;
+  z-index: 10;
 }
