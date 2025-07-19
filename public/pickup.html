@@ -44,6 +44,28 @@
       align-items: center;
       margin-bottom: 12px;
     }
+    #pickup-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .pickup-card {
+      background: #fff0f4;
+      border-radius: 10px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .pickup-card strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .pickup-card small {
+      display: block;
+      color: #888;
+    }
   </style>
   <script src="/js/firebase.js" type="module"></script>
   <script type="module">
@@ -84,11 +106,12 @@
         const match = [p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
         if (!match) return
         const div = document.createElement('div')
-        div.className = 'border p-3 rounded bg-white shadow'
+        div.className = 'pickup-card'
         div.innerHTML = `
-          <div><strong>${p.contact || '未填寫'}</strong>｜付款：${p.paid}</div>
-          <div>${p.product}</div>
-          <div class='text-sm text-gray-500'>${p.note || ''}</div>
+          <strong>${p.contact || '未填寫'}</strong>
+          <div>付款狀態：${p.paid}</div>
+          <div>商品：${p.product}</div>
+          <small>備註：${p.note || '—'}</small>
         `
         list.appendChild(div)
       })
@@ -147,10 +170,10 @@
   <div id="list-area" class="container">
     <div class="topbar">
       <h2 class="text-lg font-semibold">📜 取貨紀錄列表</h2>
-      <button id="showFormBtn" type="button">➕ 新增取貨單</button>
+      <button id="showFormBtn">➕ 新增取貨單</button>
     </div>
     <input type="text" id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註...">
-    <div id="pickup-list" class="space-y-4 mt-4"></div>
+    <div id="pickup-list" class="mt-4"></div>
   </div>
 </body>
 </html>
