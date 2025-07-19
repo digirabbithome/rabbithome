@@ -81,6 +81,10 @@ function renderList() {
     if (!match) return
 
     let bgColor = '#fff9b1'
+    const now = new Date()
+    const createdAt = p.createdAt?.toDate?.() || new Date(0)
+    const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
+    if (dayDiff > 14) bgColor = '#ffb1b1' // 紅色提醒：超過14天
     if (p.paid === '已付訂金') bgColor = '#d0f0ff'
     if (p.paid === '已付全額') bgColor = '#d9f7c5'
 
