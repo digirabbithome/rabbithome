@@ -27,7 +27,7 @@ window.onload = async () => {
 
       const area = document.getElementById('print-area')
       area.innerHTML = `
-        <h2>📦 數位小兔取貨單</h2>
+        <h2>📦 取貨單</h2>
         <p><strong>編號：</strong> ${data.serial}</p>
         <p><strong>聯絡人：</strong> ${data.contact}</p>
         <p><strong>商品內容：</strong><br>${data.product}</p>
