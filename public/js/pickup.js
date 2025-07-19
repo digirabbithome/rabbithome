@@ -47,7 +47,6 @@ window.onload = async () => {
 }
 
 async function fetchData() {
-  const q = query(collection(db, 'pickups'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   pickupList = snapshot.docs.map(doc => ({ id: doc.id, pinStatus: 0, ...doc.data() }))
 }
@@ -68,8 +67,6 @@ function renderList() {
     const p2 = priority[b.paid] || 99
     if (p1 !== p2) return p1 - p2
 
-    const t1 = a.createdAt?.toDate?.() || new Date(0)
-    const t2 = b.createdAt?.toDate?.() || new Date(0)
     return t2 - t1
   })
 
@@ -81,15 +78,15 @@ function renderList() {
     if (!match) return
 
     let bgColor = '#fff9b1'
-    const now = new Date()
-    const createdAt = p.createdAt?.toDate?.() || new Date(0)
-    const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
-    if (dayDiff > 14) bgColor = '#ffb1b1' // 紅色提醒：超過14天
     if (p.paid === '已付訂金') bgColor = '#d0f0ff'
     if (p.paid === '已付全額') bgColor = '#d9f7c5'
 
     const div = document.createElement('div')
     div.className = 'pickup-card'
+    const now = new Date()
+    const createdAt = p.createdAt?.toDate?.() || new Date(0)
+    const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
+    if (dayDiff > 14) bgColor = '#ffb1b1' // 紅色提醒：超過14天
     div.style.backgroundColor = bgColor
     div.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items:center;">
@@ -121,7 +118,6 @@ async function addPickup() {
 
   await addDoc(collection(db, 'pickups'), {
     contact, product, note, paid,
-    createdAt: serverTimestamp(),
     createdBy: nickname,
     serial
   })
@@ -138,7 +134,6 @@ async function addPickup() {
 }
 
 async function generateSerial() {
-  const now = new Date()
   const mmdd = (now.getMonth() + 1).toString().padStart(2, '0') +
                now.getDate().toString().padStart(2, '0')
 
@@ -148,8 +143,6 @@ async function generateSerial() {
 
   const q = query(
     collection(db, 'pickups'),
-    where('createdAt', '>=', start),
-    where('createdAt', '<', end)
   )
   const snapshot = await getDocs(q)
   const count = snapshot.size + 1
