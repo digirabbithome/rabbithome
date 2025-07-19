@@ -35,7 +35,7 @@ function renderList() {
   const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
 
   pickupList
-    .filter(p => p.pinStatus === 0 || p.pinStatus === 1) // ✅ 只搜尋狀態0或1
+    .filter(p => !('pinStatus' in p) || p.pinStatus === 0 || p.pinStatus === 1) // ✅ 只搜尋狀態0或1
     .sort((a, b) => {
       const p1 = priority[a.paid] || 99
       const p2 = priority[b.paid] || 99
