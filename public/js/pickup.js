@@ -1,7 +1,7 @@
 
 import { db } from '/js/firebase.js'
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
@@ -33,7 +33,7 @@ function renderList() {
   list.innerHTML = ''
 
   pickupList.forEach(p => {
-    const match = [p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
+    const match = [p.contact, p.product, p.note, p.serial].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
     const div = document.createElement('div')
     div.className = 'pickup-card'
@@ -57,7 +57,12 @@ async function addPickup() {
 
   if (!contact && !product) return alert('⚠️ 請至少填寫聯絡資訊或商品內容')
 
-  const serial = await generateSerial()
+  const now = new Date()
+  const serial =
+    (now.getMonth() + 1).toString().padStart(2, '0') +
+    now.getDate().toString().padStart(2, '0') +
+    now.getHours().toString().padStart(2, '0') +
+    now.getMinutes().toString().padStart(2, '0')
 
   await addDoc(collection(db, 'pickups'), {
     contact, product, note, paid,
@@ -75,24 +80,4 @@ async function addPickup() {
 
   await fetchData()
   renderList()
-}
-
-async function generateSerial() {
-  const now = new Date()
-  const mmdd = (now.getMonth() + 1).toString().padStart(2, '0') +
-               now.getDate().toString().padStart(2, '0')
-
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const end = new Date(start)
-  end.setDate(end.getDate() + 1)
-
-  const q = query(
-    collection(db, 'pickups'),
-    where('createdAt', '>=', start),
-    where('createdAt', '<', end)
-  )
-  const snapshot = await getDocs(q)
-  const count = snapshot.size + 1
-  const num = count.toString().padStart(3, '0')
-  return mmdd + num
 }

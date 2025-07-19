@@ -1,58 +1,73 @@
-/* pickup.css */
+
 body {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: 'Arial', sans-serif;
+  background: #fff5f7;
+  padding: 20px;
 }
-.age-1w {
-  border-bottom: 6px solid #fbcfe8;
+.container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
 }
-.age-2w {
-  border-bottom: 6px solid #bae6fd;
+input, select, textarea, button {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
 }
-.age-3w {
-  border-bottom: 6px solid #bbf7d0;
-}
-.record-item {
-  padding: 1rem;
-  border-radius: 0.75rem;
-  background-color: #fff1f2;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid #fbcfe8;
-}
-.record-item .top-row {
+.btn-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.25rem;
-  font-weight: 500;
+  gap: 8px;
 }
-.record-item .text-sm {
-  font-size: 0.875rem;
-  color: #374151;
+.btn-row button {
+  width: 48%;
 }
-.record-item .action-buttons {
-  text-align: right;
-  margin-top: 0.5rem;
-}
-.record-item .action-buttons button {
-  margin-left: 0.5rem;
-  background-color: #f472b6;
+button {
+  background: #ff8eb3;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
 }
-.form-input,
-.form-select,
-.form-textarea {
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  font-size: 1rem;
-  background-color: #fff;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #f472b6;
-  box-shadow: 0 0 0 1px #f472b6;
+.topbar-left {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar input {
+  max-width: 260px;
+}
+#pickup-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.pickup-card {
+  background: #fff79a;
+  border-radius: 10px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.pickup-card strong {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 4px;
+}
+.pickup-card small {
+  display: block;
+  color: #888;
 }
