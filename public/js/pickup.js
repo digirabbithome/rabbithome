@@ -27,12 +27,13 @@ window.onload = async () => {
 
       const area = document.getElementById('print-area')
       area.innerHTML = `
-        <h2>📦 取貨單</h2>
+        <h2>📦 數位小兔取貨單</h2>
         <p><strong>編號：</strong> ${data.serial}</p>
         <p><strong>聯絡人：</strong> ${data.contact}</p>
         <p><strong>商品內容：</strong><br>${data.product}</p>
         <p><strong>備註：</strong><br>${data.note || '—'}</p>
-        <p><strong>付款狀態：</strong> ${data.paid}</p>
+        <p><strong>📌 付款狀態：</strong> ${data.paid}</p>
+<p><strong>💰 金額：</strong> NT$</p>
         <p><strong>填單人：</strong> ${data.createdBy || ''}</p>
       `
       document.getElementById('list-area').style.display = 'none'
@@ -47,7 +48,7 @@ window.onload = async () => {
 async function fetchData() {
   const q = query(collection(db, 'pickups'), orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
-  pickupList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  pickupList = snapshot.docs.map(doc => ({ id: doc.id, pinStatus: 0, ...doc.data() }))
 }
 
 function renderList() {
@@ -71,7 +72,10 @@ function renderList() {
     return t2 - t1
   })
 
+  
   pickupList.forEach(p => {
+    if (p.pinStatus === 1) return; // 只顯示未完成的
+
     const match = [p.serial, p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
 
@@ -83,6 +87,13 @@ function renderList() {
     div.className = 'pickup-card'
     div.style.backgroundColor = bgColor
     div.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
+          <strong>${p.serial || '—'}</strong>
+        </div>
+        <span>${p.contact || '未填寫'}</span>
+      </div>
       <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
         <strong>${p.serial || '—'}</strong>
         <span class="print-link" data-id="${p.id}">${p.contact || '未填寫'}</span>
@@ -142,3 +153,19 @@ async function generateSerial() {
   const num = count.toString().padStart(3, '0')
   return mmdd + num
 }
+
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('pin-toggle')) {
+    const id = e.target.dataset.id;
+    if (!id) return;
+    const nickname = localStorage.getItem('nickname') || '未登入';
+    const docRef = doc(db, 'pickups', id);
+    await updateDoc(docRef, {
+      pinStatus: 1,
+      doneBy: nickname,
+      doneAt: serverTimestamp()
+    });
+    // 移除畫面上的卡片
+    e.target.closest('.pickup-card').remove();
+  }
+});
