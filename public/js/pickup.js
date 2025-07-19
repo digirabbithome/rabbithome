@@ -1,8 +1,7 @@
-
 // pickup.js
 import { db } from '/js/firebase.js'
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
@@ -45,29 +44,18 @@ function renderList() {
     div.className = `record-item ${className}`
     div.innerHTML = `
       <div class="top-row">
-        <div class="text-sm"><strong>#${p.serial || "???????"}</strong> ${p.contact || "無聯絡資訊"}</div>
+        <div>${p.contact || '無聯絡資訊'}</div>
+        <div class="text-sm">${p.createdBy || '匿名'}・${created ? created.toLocaleDateString() : ''}</div>
       </div>
       <div class="text-sm">${p.product || ''}</div>
-      <div class="text-sm">備註：${(p.note || "") + "（" + (p.paid || "未填寫") + "）"}</div>
+      <div class="text-sm">付款：${p.paid || '未填寫'}</div>
+      <div class="text-sm">備註：${p.note || ''}</div>
       <div class="action-buttons">
         <button onclick="window.print()">列印</button>
       </div>
     `
     list.appendChild(div)
   })
-}
-
-async function generateSerial() {
-  const today = new Date()
-  const mmdd = `${(today.getMonth()+1).toString().padStart(2,'0')}${today.getDate().toString().padStart(2,'0')}`
-  const q = query(collection(db, 'pickups'), orderBy('createdAt', 'desc'))
-  const snapshot = await getDocs(q)
-  const todayDocs = snapshot.docs.filter(doc => {
-    const d = doc.data().createdAt?.toDate?.()
-    return d && d.getMonth() === today.getMonth() && d.getDate() === today.getDate()
-  })
-  const serial = mmdd + (todayDocs.length + 1).toString().padStart(3, '0')
-  return serial
 }
 
 async function addPickup() {
@@ -79,10 +67,8 @@ async function addPickup() {
 
   if (!contact && !product) return alert('請至少填寫聯絡資訊或商品內容')
 
-  const serial = await generateSerial()
-
   await addDoc(collection(db, 'pickups'), {
-    contact, product, note, paid, serial,
+    contact, product, note, paid,
     createdAt: serverTimestamp(),
     createdBy: nickname
   })
