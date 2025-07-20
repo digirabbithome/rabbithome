@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<title>櫃檯取貨</title>
+<link href="css/pickup.css" rel="stylesheet"/>
+<script defer="" src="js/pickup.js" type="module"></script>
+</head>
+<body>
+<div class="container" id="form-area" style="display:none">
+<h1>📦 新增取貨單</h1>
+<label>聯絡資訊：</label>
+<input id="contact" placeholder="姓名／LINE／電話" type="text"/>
+<label>付款狀態：</label>
+<select id="paid">
+<option value="未付款">未付款</option>
+<option value="已付全額">已付全額</option>
+<option value="已付訂金">已付訂金</option>
+</select>
+<label>商品資訊：</label>
+<textarea id="product" placeholder="請輸入商品名稱、數量等細節" rows="4"></textarea>
+<label>備註：</label>
+<textarea id="note" placeholder="其他提醒事項" rows="2"></textarea>
+<div class="btn-row">
+<button id="cancelFormBtn" type="button">↩️ 取消</button>
+<button id="addBtn">✅ 確認新增</button>
+</div>
+</div>
+<div class="container" id="list-area">
+<div class="topbar">
+<div class="topbar-left">
+<h2>📜 取貨紀錄列表</h2>
+<input id="search" placeholder="🔍 搜尋聯絡資訊、商品或備註..." type="text"/>
+</div>
+<button id="showFormBtn">➕ 新增取貨單</button>
+</div>
+<div id="pickup-list"></div>
+</div>
+<div id="print-id" style="font-size: 40px; font-weight: bold; text-align: center; margin-bottom: 20px;"></div><div id="print-area" style="display:none; padding:40px; font-size:20px; max-width:600px; margin:auto;"></div>
+</body>
+</html>
