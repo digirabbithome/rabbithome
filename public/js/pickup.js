@@ -137,7 +137,6 @@ async function addPickup() {
 }
 
 async function generateSerial() {
-  const now = new Date();
   const mmdd = (now.getMonth() + 1).toString().padStart(2, '0') +
                now.getDate().toString().padStart(2, '0')
 
