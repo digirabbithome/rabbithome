@@ -96,10 +96,7 @@ function renderList() {
           <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
         </div>
       </div>
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
-        <strong>${p.serial || '—'}</strong>
-        <span class="print-link" data-id="${p.id}">${p.contact || '未填寫'}</span>
-      </div>
+      <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">📌${p.serial || "—"}&nbsp;&nbsp;&nbsp;&nbsp;${p.contact || "未填寫"}</div>
       <div>商品：${p.product}</div>
       <small>${p.note || '—'}（${p.paid}）(${p.createdBy || ''})</small>
     `
