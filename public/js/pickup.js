@@ -1,3 +1,4 @@
+
 import { db } from '/js/firebase.js'
 import {
   collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
@@ -67,15 +68,13 @@ function renderList() {
     const p1 = priority[a.paid] || 99
     const p2 = priority[b.paid] || 99
     if (p1 !== p2) return p1 - p2
-  const t1 = a.createdAt?.toDate?.() || new Date(0)
-  const t2 = b.createdAt?.toDate?.() || new Date(0)
-
+    const t1 = a.createdAt?.toDate?.() || new Date(0)
+    const t2 = b.createdAt?.toDate?.() || new Date(0)
     return t2 - t1
   })
 
-  
   pickupList.forEach(p => {
-    if (p.pinStatus === 1) return; // 只顯示未完成的
+    if (p.pinStatus === 1) return
 
     const match = [p.serial, p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
@@ -89,7 +88,7 @@ function renderList() {
     const now = new Date()
     const createdAt = p.createdAt?.toDate?.() || new Date(0)
     const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
-    if (dayDiff > 14) bgColor = '#ffb1b1' // 紅色提醒：超過14天
+    if (dayDiff > 14) bgColor = '#ffb1b1'
     div.style.backgroundColor = bgColor
     div.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items:center;">
@@ -137,6 +136,7 @@ async function addPickup() {
 }
 
 async function generateSerial() {
+  const now = new Date()
   const mmdd = (now.getMonth() + 1).toString().padStart(2, '0') +
                now.getDate().toString().padStart(2, '0')
 
@@ -144,9 +144,7 @@ async function generateSerial() {
   const end = new Date(start)
   end.setDate(end.getDate() + 1)
 
-  const q = query(
-    collection(db, 'pickups'),
-  )
+  const q = query(collection(db, 'pickups'))
   const snapshot = await getDocs(q)
   const count = snapshot.size + 1
   const num = count.toString().padStart(3, '0')
@@ -164,7 +162,6 @@ document.addEventListener('click', async (e) => {
       doneBy: nickname,
       doneAt: serverTimestamp()
     });
-    // 移除畫面上的卡片
     e.target.closest('.pickup-card').remove();
   }
 });
