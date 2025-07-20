@@ -42,12 +42,12 @@ window.onload = async () => {
   <p><strong>取貨人：</strong>${data.contact}</p>
   <p><strong>商品：</strong>${data.product}</p>
   <p><strong>備註：</strong>${data.note || '—'}（${data.paid}）</p>
-  <p><strong>服務業務：</strong>${data.createdBy || ''}</p>
-`document.getElementById('list-area').style.display = 'none'
-      area.style.display = 'block'
-      window.print()
-      area.style.display = 'none'
-      document.getElementById('list-area').style.display = 'block'
+  <p><strong>服務業務：</strong>${data.createdBy || ''}</p>`;
+      document.getElementById('list-area').style.display = 'none';
+      area.style.display = 'block';
+      window.print();
+      area.style.display = 'none';
+      document.getElementById('list-area').style.display = 'block';
     }
   })
 }
