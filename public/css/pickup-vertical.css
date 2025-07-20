@@ -1,1 +1,18 @@
-.pickup-form-vertical label{display:block;font-weight:bold;margin-top:10px;}.pickup-form-vertical input,.pickup-form-vertical select,.pickup-form-vertical textarea{width:100%;margin-top:4px;margin-bottom:12px;}.pickup-form-vertical .btn-row{display:flex;justify-content:space-between;margin-top:20px;}
+
+.pickup-form-vertical label {
+  display: block;
+  font-weight: bold;
+  margin-top: 10px;
+}
+.pickup-form-vertical input,
+.pickup-form-vertical select,
+.pickup-form-vertical textarea {
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+.pickup-form-vertical .btn-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
