@@ -119,6 +119,8 @@ async function addPickup() {
   const serial = await generateSerial()
 
   await addDoc(collection(db, 'pickups'), {
+    createdAt: new Date(),
+    pinStatus: 0,
     contact, product, note, paid,
     createdBy: nickname,
     serial
@@ -148,7 +150,9 @@ async function generateSerial() {
   const snapshot = await getDocs(q)
   const count = snapshot.size + 1
   const num = count.toString().padStart(3, '0')
-  return mmdd + num
+  const hh = now.getHours().toString().padStart(2, '0')
+  const min = now.getMinutes().toString().padStart(2, '0')
+  return mmdd + hh + min
 }
 
 document.addEventListener('click', async (e) => {
