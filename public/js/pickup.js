@@ -92,7 +92,9 @@ function renderList() {
     div.style.backgroundColor = bgColor
     div.innerHTML = `
             <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">
-  <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>&nbsp;${p.serial || '—'}&nbsp;&nbsp;&nbsp;${p.contact || '未填寫'}
+  <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>&nbsp;
+  ${p.serial || "—"}&nbsp;&nbsp;&nbsp;
+  <span class="print-link" data-id="${p.id}">${p.contact || "未填寫"}</span>
 </div>
       <div>商品：${p.product}</div>
       <small>${p.note || '—'}（${p.paid}）(${p.createdBy || ''})</small>
