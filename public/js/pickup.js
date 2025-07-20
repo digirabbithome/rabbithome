@@ -27,14 +27,15 @@ window.onload = async () => {
       if (!data) return
 
       const area = document.getElementById('print-area')
+      const area = document.getElementById('print-area')
       area.innerHTML = `
-  <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px;">
-    <div style="flex: 0 0 40%;">
-      <img src="img/logo-black.png" style="height: 72px;" />
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+    <div style="flex: 0 0 42%;">
+      <img src="img/logo-black.png" style="height: 88px;" />
     </div>
     <div style="text-align: right; flex: 1;">
-      <div style="font-size: 32px; font-weight: bold;">${data.serial}</div>
-      <div style="font-size: 20px;">數位小兔取貨單</div>
+      <div style="font-size: 36px; font-weight: bold;">${data.serial}</div>
+      <div style="font-size: 22px;">數位小兔取貨單</div>
     </div>
   </div>
   <hr style="margin: 16px 0; border-top: 2px solid #000;" />
@@ -42,8 +43,7 @@ window.onload = async () => {
   <p><strong>商品：</strong>${data.product}</p>
   <p><strong>備註：</strong>${data.note || '—'}（${data.paid}）</p>
   <p><strong>服務業務：</strong>${data.createdBy || ''}</p>
-`
-      document.getElementById('list-area').style.display = 'none'
+`document.getElementById('list-area').style.display = 'none'
       area.style.display = 'block'
       window.print()
       area.style.display = 'none'
