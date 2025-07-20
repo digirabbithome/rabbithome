@@ -26,8 +26,8 @@ window.onload = async () => {
       const data = pickupList.find(p => p.id === id)
       if (!data) return
 
-      const area = document.getElementById('print-area')
-      const area = document.getElementById('print-area')
+      area = document.getElementById('print-area')
+      area = document.getElementById('print-area')
       area.innerHTML = `
   <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
     <div style="flex: 0 0 42%;">
