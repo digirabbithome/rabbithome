@@ -1,3 +1,4 @@
+
 import { db } from '/js/firebase.js'
 import {
   collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
@@ -28,16 +29,12 @@ window.onload = async () => {
 
       const area = document.getElementById('print-area')
       area.innerHTML = `
-  <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px;">
-    <div style="flex: 0 0 40%;">
-      <img src="img/logo-black.png" style="height: 72px;" />
-    </div>
-    <div style="text-align: right; flex: 1;">
-      <div style="font-size: 32px; font-weight: bold;">${data.serial}</div>
-      <div style="font-size: 20px;">數位小兔取貨單</div>
-    </div>
+  <div style="display: flex; align-items: center; justify-content: space-between;">
+    <img src="img/logo-black.png" style="height: 48px;" />
+    <div style="font-size: 40px; font-weight: bold;">${data.serial}</div>
   </div>
-  <hr style="margin: 16px 0; border-top: 2px solid #000;" />
+  <hr style="margin: 20px 0; border-top: 2px solid #000;" />
+  <h2 style="text-align: center; margin-bottom: 24px;">數位小兔取貨單</h2>
   <p><strong>取貨人：</strong>${data.contact}</p>
   <p><strong>商品：</strong>${data.product}</p>
   <p><strong>備註：</strong>${data.note || '—'}（${data.paid}）</p>
@@ -73,15 +70,13 @@ function renderList() {
     const p1 = priority[a.paid] || 99
     const p2 = priority[b.paid] || 99
     if (p1 !== p2) return p1 - p2
-  const t1 = a.createdAt?.toDate?.() || new Date(0)
-  const t2 = b.createdAt?.toDate?.() || new Date(0)
-
+    const t1 = a.createdAt?.toDate?.() || new Date(0)
+    const t2 = b.createdAt?.toDate?.() || new Date(0)
     return t2 - t1
   })
 
-  
   pickupList.forEach(p => {
-    if (p.pinStatus === 1) return; // 只顯示未完成的
+    if (p.pinStatus === 1) return
 
     const match = [p.serial, p.contact, p.product, p.note].some(v => (v || '').toLowerCase().includes(kw))
     if (!match) return
@@ -95,18 +90,14 @@ function renderList() {
     const now = new Date()
     const createdAt = p.createdAt?.toDate?.() || new Date(0)
     const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
-    if (dayDiff > 14) bgColor = '#ffb1b1' // 紅色提醒：超過14天
+    if (dayDiff > 14) bgColor = '#ffb1b1'
     div.style.backgroundColor = bgColor
     div.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
-        </div>
-      </div>
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
-        <strong>${p.serial || '—'}</strong>
-        <span class="print-link" data-id="${p.id}">${p.contact || '未填寫'}</span>
-      </div>
+            <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">
+  <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>&nbsp;
+  ${p.serial || "—"}&nbsp;&nbsp;&nbsp;
+  <span class="print-link" data-id="${p.id}">${p.contact || "未填寫"}</span>
+</div>
       <div>商品：${p.product}</div>
       <small>${p.note || '—'}（${p.paid}）(${p.createdBy || ''})</small>
     `
@@ -126,6 +117,8 @@ async function addPickup() {
   const serial = await generateSerial()
 
   await addDoc(collection(db, 'pickups'), {
+    createdAt: new Date(),
+    pinStatus: 0,
     contact, product, note, paid,
     createdBy: nickname,
     serial
@@ -143,6 +136,7 @@ async function addPickup() {
 }
 
 async function generateSerial() {
+  const now = new Date()
   const mmdd = (now.getMonth() + 1).toString().padStart(2, '0') +
                now.getDate().toString().padStart(2, '0')
 
@@ -150,13 +144,13 @@ async function generateSerial() {
   const end = new Date(start)
   end.setDate(end.getDate() + 1)
 
-  const q = query(
-    collection(db, 'pickups'),
-  )
+  const q = query(collection(db, 'pickups'))
   const snapshot = await getDocs(q)
   const count = snapshot.size + 1
   const num = count.toString().padStart(3, '0')
-  return mmdd + num
+  const hh = now.getHours().toString().padStart(2, '0')
+  const min = now.getMinutes().toString().padStart(2, '0')
+  return mmdd + hh + min
 }
 
 document.addEventListener('click', async (e) => {
@@ -170,7 +164,6 @@ document.addEventListener('click', async (e) => {
       doneBy: nickname,
       doneAt: serverTimestamp()
     });
-    // 移除畫面上的卡片
     e.target.closest('.pickup-card').remove();
   }
 });
