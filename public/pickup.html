@@ -10,26 +10,18 @@
 <body>
   <div id="form-area" class="container" style="display:none">
     <h1>📦 新增取貨單</h1>
-    <div class="form-group">
-      <label>聯絡資訊：</label>
-      <input type="text" id="contact" placeholder="姓名／LINE／電話">
-    </div>
-    <div class="form-group">
-      <label>付款狀態：</label>
-      <select id="paid">
-        <option value="未付款">未付款</option>
-        <option value="已付全額">已付全額</option>
-        <option value="已付訂金">已付訂金</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>商品資訊：</label>
-      <textarea id="product" rows="4" placeholder="請輸入商品名稱、數量等細節"></textarea>
-    </div>
-    <div class="form-group">
-      <label>備註：</label>
-      <textarea id="note" rows="2" placeholder="其他提醒事項"></textarea>
-    </div>
+    <label>聯絡資訊：</label>
+    <input type="text" id="contact" placeholder="姓名／LINE／電話">
+    <label>付款狀態：</label>
+    <select id="paid">
+      <option value="未付款">未付款</option>
+      <option value="已付全額">已付全額</option>
+      <option value="已付訂金">已付訂金</option>
+    </select>
+    <label>商品資訊：</label>
+    <textarea id="product" rows="4" placeholder="請輸入商品名稱、數量等細節"></textarea>
+    <label>備註：</label>
+    <textarea id="note" rows="2" placeholder="其他提醒事項"></textarea>
     <div class="btn-row">
       <button type="button" id="cancelFormBtn">↩️ 取消</button>
       <button id="addBtn">✅ 確認新增</button>
@@ -47,6 +39,6 @@
     <div id="pickup-list"></div>
   </div>
 
-  <div id="print-area" style="display:none; padding:40px; font-size:20px; max-width:600px; margin:auto;"></div>
+  <div id="print-area" style="display:none;"></div>
 </body>
 </html>

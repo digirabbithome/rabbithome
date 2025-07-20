@@ -1,7 +1,6 @@
-
 import { db } from '/js/firebase.js'
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
@@ -42,7 +41,6 @@ function renderList() {
     const p1 = priority[a.paid] || 99
     const p2 = priority[b.paid] || 99
     if (p1 !== p2) return p1 - p2
-
     const t1 = a.createdAt?.toDate?.() || new Date(0)
     const t2 = b.createdAt?.toDate?.() || new Date(0)
     return t2 - t1
@@ -57,19 +55,20 @@ function renderList() {
     let bgColor = '#fff9b1'
     if (p.paid === '已付訂金') bgColor = '#d0f0ff'
     if (p.paid === '已付全額') bgColor = '#d9f7c5'
-
-    const div = document.createElement('div')
-    div.className = 'pickup-card'
     const now = new Date()
     const createdAt = p.createdAt?.toDate?.() || new Date(0)
     const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
     if (dayDiff > 14) bgColor = '#ffb1b1'
+
+    const div = document.createElement('div')
+    div.className = 'pickup-card'
     div.style.backgroundColor = bgColor
     div.innerHTML = `
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #999; padding-bottom: 2px; margin-bottom: 4px;">
-        <strong>${p.serial || '—'}</strong>
-        <span class="print-link" data-id="${p.id}">${p.contact || '未填寫'}</span>
+      <div style="display: flex; justify-content: space-between; align-items:center;">
+        <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
+        <span class="print-link" data-id="${p.id}" style="cursor:pointer;">${p.contact}</span>
       </div>
+      <div><strong>${p.serial || '—'}</strong></div>
       <div>商品：${p.product}</div>
       <small>${p.note || '—'}（${p.paid}）(${p.createdBy || ''})</small>
     `
@@ -83,25 +82,19 @@ async function addPickup() {
   const note = document.getElementById('note').value.trim()
   const paid = document.getElementById('paid').value
   const nickname = localStorage.getItem('nickname') || '未登入使用者'
-
   if (!contact && !product) return alert('⚠️ 請至少填寫聯絡資訊或商品內容')
-
   const serial = await generateSerial()
-
   await addDoc(collection(db, 'pickups'), {
     contact, product, note, paid,
     createdAt: serverTimestamp(),
     createdBy: nickname,
     serial
   })
-
   document.getElementById('contact').value = ''
   document.getElementById('product').value = ''
   document.getElementById('note').value = ''
-
   document.getElementById('form-area').style.display = 'none'
   document.getElementById('list-area').style.display = 'block'
-
   await fetchData()
   renderList()
 }
@@ -114,3 +107,40 @@ async function generateSerial() {
   const mi = now.getMinutes().toString().padStart(2, '0')
   return mm + dd + hh + mi
 }
+
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('pin-toggle')) {
+    const id = e.target.dataset.id
+    if (!id) return
+    const nickname = localStorage.getItem('nickname') || '未登入'
+    const docRef = doc(db, 'pickups', id)
+    await updateDoc(docRef, {
+      pinStatus: 1,
+      doneBy: nickname,
+      doneAt: serverTimestamp()
+    })
+    e.target.closest('.pickup-card').remove()
+  }
+
+  if (e.target.classList.contains('print-link')) {
+    const id = e.target.dataset.id
+    const data = pickupList.find(p => p.id === id)
+    if (!data) return
+    const area = document.getElementById('print-area')
+    area.innerHTML = `
+      <h2>📦 數位小兔取貨單</h2>
+      <p><strong>編號：</strong> ${data.serial}</p>
+      <p><strong>聯絡人：</strong> ${data.contact}</p>
+      <p><strong>商品內容：</strong><br>${data.product}</p>
+      <p><strong>備註：</strong><br>${data.note || '—'}</p>
+      <p><strong>📌 付款狀態：</strong> ${data.paid}</p>
+      <p><strong>💰 金額：</strong> NT$</p>
+      <p><strong>填單人：</strong> ${data.createdBy || ''}</p>
+    `
+    document.getElementById('list-area').style.display = 'none'
+    area.style.display = 'block'
+    window.print()
+    area.style.display = 'none'
+    document.getElementById('list-area').style.display = 'block'
+  }
+})
