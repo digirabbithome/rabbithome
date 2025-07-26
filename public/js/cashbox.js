@@ -32,7 +32,7 @@ async function renderRecords() {
     const d = doc.data()
     const ts = d.createdAt?.toDate?.()
     const dateStr = ts
-      ? `${ts.getFullYear()}/${ts.getMonth() + 1}/${ts.getDate()} ${ts.getHours().toString().padStart(2, '0')}:${ts.getMinutes().toString().padStart(2, '0')}`
+const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
       : ''
 
     const typeMap = {
