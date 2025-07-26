@@ -27,13 +27,30 @@ async function renderRecords() {
 
   snapshot.forEach(doc => {
     const d = doc.data()
-    const date = d.createdAt?.toDate().toLocaleString() || ''
-    let text = ''
-    if (d.type === '重設') {
-      text = `🛠️ ${d.user} 於 ${date} 將錢櫃重設由 $${d.beforeAmount?.toLocaleString()} ➜ $${d.amount.toLocaleString()}`
-    } else {
-      text = `📌 ${d.user} 於 ${date} ${d.type} $${d.amount.toLocaleString()} ➜ 餘額 $${d.balanceAfter?.toLocaleString()}`
+    const ts = d.createdAt?.toDate?.()
+    const dateStr = ts ? `${ts.getFullYear()}/${ts.getMonth()+1}/${ts.getDate()} ${ts.getHours()}:${ts.getMinutes().toString().padStart(2, '0')}` : ''
+    const typeMap = {
+      'in': '存入',
+      'out': '提領',
+      'exchange': '換錢',
+      'reset': '重設'
     }
+    const action = typeMap[d.type] || d.type
+    let text = ''
+
+    if (d.type === 'reset') {
+      text = `🛠️ ${d.user} ${dateStr} 重設 $${d.amount.toLocaleString()}（原為 $${d.beforeAmount?.toLocaleString() || 0}）`
+    } else {
+      text = `📌 ${d.user} ${dateStr} ${action} $${d.amount.toLocaleString()} ➜ 餘額 $${d.balanceAfter?.toLocaleString()}`
+      if (d.reason?.trim()) text += ` ｜${d.reason.trim()}`
+    }
+
+    const div = document.createElement('div')
+    div.className = 'record'
+    div.textContent = text
+    recordsDiv.appendChild(div)
+  })
+}
     if (d.reason) text += `｜備註：${d.reason}`
     const div = document.createElement('div')
     div.className = 'record'
