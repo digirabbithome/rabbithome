@@ -1,6 +1,6 @@
 import {
   db, doc, getDoc, updateDoc, setDoc, addDoc,
-  collection, serverTimestamp, getDocs, query, orderBy
+  collection, serverTimestamp, getDocs, query, orderBy, limit
 } from '/js/firebase-cashbox.js'
 
 const nickname = localStorage.getItem('nickname') || '未知使用者'
@@ -23,7 +23,7 @@ async function loadBalance() {
 }
 
 async function renderRecords() {
-  const q = query(recordsRef, orderBy('createdAt', 'desc'))
+  const q = query(recordsRef, orderBy('createdAt', 'desc'), limit(30))
   const snapshot = await getDocs(q)
   const recordsDiv = document.getElementById('records')
   recordsDiv.innerHTML = ''
