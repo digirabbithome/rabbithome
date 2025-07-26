@@ -1,7 +1,10 @@
 import {
   db, doc, getDoc, updateDoc, setDoc, addDoc,
-  collection, serverTimestamp, getDocs, query, orderBy, limit
+  collection, serverTimestamp, getDocs, query, orderBy
 } from '/js/firebase-cashbox.js'
+
+// limit 函式使用本地定義，避免匯入錯誤
+const limit = (n) => ({ type: 'limit', value: n })
 
 const nickname = localStorage.getItem('nickname') || '未知使用者'
 const statusRef = doc(db, 'cashbox-status', 'main')
@@ -23,12 +26,13 @@ async function loadBalance() {
 }
 
 async function renderRecords() {
-  const q = query(recordsRef, orderBy('createdAt', 'desc'), limit(30))
+  const q = query(recordsRef, orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
   const recordsDiv = document.getElementById('records')
   recordsDiv.innerHTML = ''
 
-  snapshot.forEach(doc => {
+  const docs = snapshot.docs.slice(0, 30) // 顯示最新30筆
+  docs.forEach(doc => {
     const d = doc.data()
     const ts = d.createdAt?.toDate?.()
     const dateStr = ts ? `${ts.getMonth()+1}/${ts.getDate()} ${ts.getHours()}:${String(ts.getMinutes()).padStart(2,'0')}` : ''
