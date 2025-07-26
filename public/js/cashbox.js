@@ -47,9 +47,7 @@ async function renderRecords() {
     if (d.type === 'reset') {
       text = `🛠️ ${d.user} ${dateStr} 重設 $${d.amount.toLocaleString()}（原為 $${d.beforeAmount?.toLocaleString() || 0}）`;
     } else {
-      text = `📌 ${d.user} ${dateStr} ${action} $${d.amount.toLocaleString()}`;
-      if (d.reason?.trim()) text += `｜${d.reason.trim()}`;
-      text += ` ➜ 餘額 $${d.balanceAfter?.toLocaleString()}`;
+      text = `📌 ${d.user} ${dateStr} ${action} $${d.amount.toLocaleString()} ➜ 餘額 $${d.balanceAfter?.toLocaleString()}`;
       if (d.reason?.trim()) text += `｜${d.reason.trim()}`;
     }
 
