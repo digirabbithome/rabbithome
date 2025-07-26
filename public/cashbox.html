@@ -1,29 +1,30 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>內場錢櫃</title>
-  <link rel="stylesheet" href="/css/cashbox.css" />
-  <script type="module" src="/js/cashbox.js" defer></script>
+<meta charset="utf-8"/>
+<title>內場錢櫃</title>
+<link href="/css/cashbox.css" rel="stylesheet"/>
+<script defer="" src="/js/cashbox.js" type="module"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>💰 內場錢櫃</h1>
-    <div id="balance">目前錢櫃餘額：$<span id="current-balance">--</span></div>
-    <div class="form-block">
-      <label>資金用途：</label>
-      <input type="text" id="reason" placeholder="例如：花花收走" />
-      <label>金額：</label>
-      <input type="number" id="amount" placeholder="請輸入金額" />
-      <div class="actions">
-        <button data-type="reset">🔧 重設金額</button>
-        <button data-type="out">📤 提領</button>
-        <button data-type="in">📥 存入</button>
-        <button data-type="exchange">💱 換錢</button>
-      </div>
-    </div>
-    <h2>📋 錢櫃紀錄</h2>
-    <div id="records"></div>
-  </div>
+<div class="container">
+<h1>💰 內場錢櫃</h1>
+<div id="balance">目前錢櫃餘額：$<span id="current-balance">--</span></div>
+<div class="form-block">
+<label>資金用途：</label>
+<input id="reason" placeholder="例如：花花收走" type="text"/>
+<label>金額：</label>
+<input id="amount" placeholder="請輸入金額" type="number"/>
+<div class="actions">
+<button data-type="reset">🔧 重設金額</button>
+<button data-type="out">📤 提領</button>
+<button data-type="in">📥 存入</button>
+<button data-type="exchange">💱 換錢</button>
+</div>
+</div>
+<h2>📋 錢櫃紀錄</h2>
+<div id="records"></div>
+</div>
 </body>
 </html>
