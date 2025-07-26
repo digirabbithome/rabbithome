@@ -30,9 +30,9 @@ async function renderRecords() {
 
   snapshot.forEach(doc => {
     const d = doc.data()
-    const ts = d.createdAt?.toDate?.()
+const ts = d.createdAt?.toDate?.()
+const dateStr = ts ? `${ts.getMonth()+1}/${ts.getDate()} ${ts.getHours()}:${String(ts.getMinutes()).padStart(2,'0')}` : ''
 const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
-      : ''
 
     const typeMap = {
       'in': '存入',
