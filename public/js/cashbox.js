@@ -31,7 +31,6 @@ async function renderRecords() {
   snapshot.forEach(doc => {
     const d = doc.data()
     const ts = d.createdAt?.toDate?.()
-    const dateStr = ts
 const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
       : ''
 
