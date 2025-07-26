@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>錢櫃系統</title>
+  <link rel="stylesheet" href="/css/cashbox.css" />
+  <script type="module" src="/js/cashbox.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>💰 錢櫃系統</h1>
+    <div id="balance">目前錢櫃餘額：$<span id="current-balance">--</span></div>
+    <div class="tabs">
+      <button class="tab-btn" data-tab="reset">🔧 重設金額</button>
+      <button class="tab-btn" data-tab="out">📤 支出</button>
+      <button class="tab-btn" data-tab="in">📥 存錢</button>
+      <button class="tab-btn" data-tab="exchange">💱 換零錢</button>
+    </div>
+    <div id="tab-content"></div>
+  </div>
+</body>
+</html>

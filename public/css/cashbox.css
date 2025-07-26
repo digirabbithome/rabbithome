@@ -1,0 +1,6 @@
+.container { max-width: 600px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: sans-serif; }
+h1 { text-align: center; }
+#balance { text-align: center; margin: 1em 0; font-size: 1.2em; }
+.tabs { display: flex; justify-content: space-around; margin-bottom: 1em; }
+.tab-btn { padding: 0.5em 1em; border: none; background: #f0f0f0; border-radius: 0.5em; cursor: pointer; }
+.tab-btn:hover { background: #ffc0cb; }
