@@ -1,4 +1,4 @@
-import { db, doc, getDoc, updateDoc, setDoc, addDoc, collection, serverTimestamp, getDocs, query, orderBy } from '/js/firebase.js'
+import { db, doc, getDoc, updateDoc, setDoc, addDoc, collection, serverTimestamp, getDocs, query, orderBy } from '/js/firebase-cashbox.js'
 
 const nickname = localStorage.getItem('nickname') || '未知使用者'
 const statusRef = doc(db, 'cashbox-status', 'main')
