@@ -51,6 +51,23 @@ async function renderRecords() {
     recordsDiv.appendChild(div)
   })
 }
+
+    const action = typeMap[d.type] || d.type
+    let text = ''
+
+    if (d.type === 'reset') {
+      text = `🛠️ ${d.user} ${dateStr} 重設 $${d.amount.toLocaleString()}（原為 $${d.beforeAmount?.toLocaleString() || 0}）`
+    } else {
+      text = `📌 ${d.user} ${dateStr} ${action} $${d.amount.toLocaleString()} ➜ 餘額 $${d.balanceAfter?.toLocaleString()}`
+      if (d.reason?.trim()) text += ` ｜${d.reason.trim()}`
+    }
+
+    const div = document.createElement('div')
+    div.className = 'record'
+    div.textContent = text
+    recordsDiv.appendChild(div)
+  })
+}
     if (d.reason) text += `｜備註：${d.reason}`
     const div = document.createElement('div')
     div.className = 'record'
