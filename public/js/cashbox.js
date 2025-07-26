@@ -81,21 +81,21 @@ async function handleAction(type) {
     payload.amount = amount
     payload.balanceAfter = amount
     await setDoc(statusRef, { amount, updatedAt: serverTimestamp(), updatedBy: nickname })
-    showToast(\`✅ \${nickname} 將錢櫃重設為 $\${amount.toLocaleString()}（原為 $\${current.toLocaleString()}）\`)
+      showToast(`✅ ${nickname} 將錢櫃重設為 $${amount.toLocaleString()}（原為 $${current.toLocaleString()}）`)
   } else if (type === 'out') {
     payload.amount = amount
     payload.balanceAfter = current - amount
     await updateDoc(statusRef, { amount: payload.balanceAfter, updatedAt: serverTimestamp(), updatedBy: nickname })
-    showToast(\`✅ \${nickname} 提領 $\${amount.toLocaleString()}，餘額 $\${payload.balanceAfter.toLocaleString()}\`)
+      showToast(`✅ ${nickname} 提領 $${amount.toLocaleString()}，餘額 $${payload.balanceAfter.toLocaleString()}`)
   } else if (type === 'in') {
     payload.amount = amount
     payload.balanceAfter = current + amount
     await updateDoc(statusRef, { amount: payload.balanceAfter, updatedAt: serverTimestamp(), updatedBy: nickname })
-    showToast(\`✅ \${nickname} 存入 $\${amount.toLocaleString()}，餘額 $\${payload.balanceAfter.toLocaleString()}\`)
+      showToast(`✅ ${nickname} 存入 $${amount.toLocaleString()}，餘額 $${payload.balanceAfter.toLocaleString()}`)
   } else if (type === 'exchange') {
     payload.amount = amount
     payload.balanceAfter = current
-    showToast(\`✅ \${nickname} 換錢 $\${amount.toLocaleString()}，餘額 $\${current.toLocaleString()}\`)
+      showToast(`✅ ${nickname} 換錢 $${amount.toLocaleString()}，餘額 $${current.toLocaleString()}`)
   }
 
   await addDoc(recordsRef, payload)
