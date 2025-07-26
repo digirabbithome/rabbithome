@@ -3,12 +3,13 @@ import {
   collection, serverTimestamp, getDocs, query, orderBy
 } from '/js/firebase-cashbox.js'
 
-// limit 函式使用本地定義，避免匯入錯誤
-const limit = (n) => ({ type: 'limit', value: n })
-
 const nickname = localStorage.getItem('nickname') || '未知使用者'
 const statusRef = doc(db, 'cashbox-status', 'main')
 const recordsRef = collection(db, 'cashbox-records')
+const changeDocRef = doc(db, 'cashbox-change-request', new Date().toISOString().split('T')[0])
+
+const changeCoins = ['5', '10', '50', '100', '500']
+const changeState = {}
 
 function showToast(message) {
   const div = document.createElement('div')
@@ -16,6 +17,35 @@ function showToast(message) {
   div.textContent = message
   document.querySelector('.form-block').appendChild(div)
   setTimeout(() => div.remove(), 4000)
+}
+
+function setupChangeButtons() {
+  const container = document.getElementById('change-request')
+  changeCoins.forEach(coin => {
+    const btn = document.createElement('button')
+    btn.className = 'coin-btn'
+    btn.textContent = coin
+    btn.dataset.value = coin
+    btn.onclick = () => toggleCoin(btn)
+    container.appendChild(btn)
+    changeState[coin] = false
+  })
+}
+
+function toggleCoin(btn) {
+  const coin = btn.dataset.value
+  changeState[coin] = !changeState[coin]
+  btn.classList.toggle('active', changeState[coin])
+  saveChangeRequest()
+}
+
+async function saveChangeRequest() {
+  await setDoc(changeDocRef, {
+    date: new Date().toISOString().split('T')[0],
+    coins: changeState,
+    updatedBy: nickname,
+    updatedAt: serverTimestamp()
+  })
 }
 
 async function loadBalance() {
@@ -31,7 +61,7 @@ async function renderRecords() {
   const recordsDiv = document.getElementById('records')
   recordsDiv.innerHTML = ''
 
-  const docs = snapshot.docs.slice(0, 30) // 顯示最新30筆
+  const docs = snapshot.docs.slice(0, 30)
   docs.forEach(doc => {
     const d = doc.data()
     const ts = d.createdAt?.toDate?.()
@@ -110,6 +140,7 @@ async function handleAction(type) {
 window.onload = async () => {
   await loadBalance()
   await renderRecords()
+  setupChangeButtons()
 
   document.querySelectorAll('.actions button').forEach(btn => {
     btn.addEventListener('click', () => {
