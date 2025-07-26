@@ -11,6 +11,14 @@ async function loadBalance() {
   return amount
 }
 
+function showToast(message) {
+  const div = document.createElement('div')
+  div.className = 'toast'
+  div.textContent = message
+  document.querySelector('.form-block').appendChild(div)
+  setTimeout(() => div.remove(), 4000)
+}
+
 async function renderRecords() {
   const q = query(recordsRef, orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
@@ -27,7 +35,6 @@ async function renderRecords() {
       text = `📌 ${d.user} 於 ${date} ${d.type} $${d.amount.toLocaleString()} ➜ 餘額 $${d.balanceAfter?.toLocaleString()}`
     }
     if (d.reason) text += `｜備註：${d.reason}`
-
     const div = document.createElement('div')
     div.className = 'record'
     div.textContent = text
@@ -40,11 +47,12 @@ async function handleAction(type) {
   const amtStr = document.getElementById('amount').value
   const amount = parseInt(amtStr)
 
-  if (!reason && type !== 'reset') return alert('請填寫資金用途')
-  if ((isNaN(amount) || amount < 0) && type !== 'exchange') return alert('請輸入有效金額')
+  if (isNaN(amount) || amount <= 0) {
+    alert('請輸入有效金額')
+    return
+  }
 
   let current = await loadBalance()
-  let newAmount = current
   let payload = {
     type,
     user: nickname,
@@ -57,17 +65,21 @@ async function handleAction(type) {
     payload.amount = amount
     payload.balanceAfter = amount
     await setDoc(statusRef, { amount, updatedAt: serverTimestamp(), updatedBy: nickname })
+    showToast(`✅ ${nickname} 將錢櫃重設為 $${amount.toLocaleString()}（原為 $${current.toLocaleString()}）`)
   } else if (type === 'out') {
     payload.amount = amount
     payload.balanceAfter = current - amount
     await updateDoc(statusRef, { amount: payload.balanceAfter, updatedAt: serverTimestamp(), updatedBy: nickname })
+    showToast(`✅ ${nickname} 領出 $${amount.toLocaleString()}，餘額 $${payload.balanceAfter.toLocaleString()}`)
   } else if (type === 'in') {
     payload.amount = amount
     payload.balanceAfter = current + amount
     await updateDoc(statusRef, { amount: payload.balanceAfter, updatedAt: serverTimestamp(), updatedBy: nickname })
+    showToast(`✅ ${nickname} 存入 $${amount.toLocaleString()}，餘額 $${payload.balanceAfter.toLocaleString()}`)
   } else if (type === 'exchange') {
-    payload.amount = 0
+    payload.amount = amount
     payload.balanceAfter = current
+    showToast(`✅ ${nickname} 完成換零 $${amount.toLocaleString()}，餘額不變 $${current.toLocaleString()}`)
   }
 
   await addDoc(recordsRef, payload)
