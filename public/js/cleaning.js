@@ -4,7 +4,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 let currentUser = '';
-const adminEmails = ['you@example.com', 'boss@example.com']; // ← 你可以改成你自己的帳號
+const adminEmails = ['swimming8250@yahoo.com.tw', 'swimming8250@gmail.com']; // ← 你可以改成你自己的帳號
 
 window.onload = async () => {
   auth.onAuthStateChanged(async user => {
