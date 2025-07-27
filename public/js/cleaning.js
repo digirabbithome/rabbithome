@@ -1,10 +1,10 @@
 import { db, auth } from '/js/firebase.js';
 import {
-  collection, addDoc, getDocs, onSnapshot, serverTimestamp, query, orderBy
+  collection, addDoc, getDocs, onSnapshot, serverTimestamp, query, orderBy, doc, setDoc, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 let currentUser = '';
-const adminEmails = ['swimming8250@yahoo.com.tw', 'swimming8250@gmail.com']; // ← 你可以改成你自己的帳號
+const adminEmails = ['swimming8250@yahoo.com.tw', 'swimming8250@gmail.com'];
 
 window.onload = async () => {
   auth.onAuthStateChanged(async user => {
@@ -13,17 +13,60 @@ window.onload = async () => {
       return;
     }
     currentUser = localStorage.getItem('nickname') || user.email;
-    document.getElementById('user-name').innerText = `｜${currentUser}`;
+    await loadDutyPerson(); // ✅ 顯示本月值日生（插入在標題內）
     loadTasks();
     loadRecords();
   });
 };
 
+async function loadDutyPerson() {
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  const docRef = doc(db, 'cleaningDuty', monthKey);
+  const docSnap = await getDoc(docRef);
+  let dutyUser = '';
+  if (docSnap.exists()) {
+    dutyUser = docSnap.data().user;
+  }
+
+  const title = document.querySelector('h1');
+  if (title) {
+    title.innerHTML = `🧹 值日打掃日誌（本月值日生：${dutyUser || '尚未指定'}）｜${currentUser}`;
+  }
+
+  // 如果是管理者，顯示設定選單
+  if (adminEmails.includes(auth.currentUser.email)) {
+    const container = document.getElementById('task-form');
+    const userSnap = await getDocs(collection(db, 'cleaningLog'));
+    const allUsers = [...new Set(userSnap.docs.map(d => d.data().user))];
+
+    const select = document.createElement('select');
+    select.innerHTML = `<option value="">-- 選擇本月值日生 --</option>`;
+    allUsers.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.innerText = u;
+      if (u === dutyUser) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    const setBtn = document.createElement('button');
+    setBtn.innerText = '✔️ 設定值日生';
+    setBtn.onclick = async () => {
+      const selected = select.value;
+      if (!selected) return alert('請選擇值日生');
+      await setDoc(docRef, { month: monthKey, user: selected });
+      alert(`已設定 ${selected} 為本月值日生！`);
+      location.reload();
+    };
+
+    container.appendChild(select);
+    container.appendChild(setBtn);
+  }
+}
 
 async function loadTasks() {
   const formDiv = document.getElementById('task-form');
-  formDiv.innerHTML = '';
-
   const taskCol = collection(db, 'cleaningTasks');
   const taskSnap = await getDocs(taskCol);
   const taskList = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -57,7 +100,6 @@ async function loadTasks() {
     formDiv.appendChild(addBtn);
   }
 }
-
 
 async function submitTasks(taskList) {
   const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
@@ -98,7 +140,6 @@ async function loadRecords() {
       return d >= twoMonthsAgo;
     });
 
-  // 整理所有出現過的任務名稱
   const allTasksSet = new Set();
   records.forEach(r => r.items?.forEach(item => allTasksSet.add(item)));
   const allTasks = Array.from(allTasksSet);
