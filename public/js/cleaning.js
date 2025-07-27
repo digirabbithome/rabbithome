@@ -95,7 +95,7 @@ async function loadTasks() {
     const div = document.createElement('div');
     div.className = 'task-item';
     div.innerHTML = `
-      <label><input type="checkbox" value="\${task.name}"> \${task.name}</label>
+      <label><input type="checkbox" value="${task.name}"> ${task.name}</label>
     `;
     listDiv.appendChild(div);
   });
@@ -152,13 +152,13 @@ async function loadRecords() {
   const allTasks = Array.from(allTasksSet);
 
   let html = `<table><thead><tr><th>姓名</th><th>日期</th><th>時間</th>`;
-  allTasks.forEach(name => html += `<th>\${name}</th>`);
+  allTasks.forEach(name => html += `<th>${name}</th>`);
   html += `</tr></thead><tbody>`;
 
   records.forEach(r => {
-    html += `<tr><td>\${r.user}</td><td>\${r.date}</td><td>\${r.time}</td>`;
+    html += `<tr><td>${r.user}</td><td>${r.date}</td><td>${r.time}</td>`;
     allTasks.forEach(name => {
-      html += `<td>\${r.items.includes(name) ? '✅' : ''}</td>`;
+      html += `<td>${r.items.includes(name) ? '✅' : ''}</td>`;
     });
     html += `</tr>`;
   });
