@@ -1,7 +1,7 @@
 
 import { db, auth } from '/js/firebase.js';
 import {
-  collection, addDoc, getDoc, deleteDocs, onSnapshot, serverTimestamp, query, orderBy, doc, setDoc, getDoc, deleteDoc
+  collection, addDoc, getDocs, onSnapshot, serverTimestamp, query, orderBy, doc, setDoc, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 let currentUser = '';
@@ -24,7 +24,7 @@ async function loadDutyPerson() {
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
   const docRef = doc(db, 'cleaningDuty', monthKey);
-  const docSnap = await getDoc, deleteDoc(docRef);
+  const docSnap = await getDoc(docRef);
   let dutyUser = '';
   if (docSnap.exists()) {
     dutyUser = docSnap.data().user;
@@ -38,7 +38,7 @@ async function loadDutyPerson() {
   // 如果是管理者，顯示設定選單與新增項目
   if (adminEmails.includes(auth.currentUser.email)) {
     const container = document.getElementById('task-form');
-    const userSnap = await getDoc, deleteDocs(collection(db, 'users'));
+    const userSnap = await getDocs(collection(db, 'users'));
     const allUsers = userSnap.docs.map(doc => doc.data().nickname).filter(Boolean);
 
     const flexBox = document.createElement('div');
@@ -74,7 +74,7 @@ async function loadDutyPerson() {
     addBtn.innerText = '➕ 新增項目';
     addBtn.onclick = () => {
       const name = prompt('輸入新項目名稱');
-      if (name) addDoc(collection(db, 'cleaningTasks'), { name, createdAt: serverTimestamp() });
+      if (name) addDoc(collection(db, 'cleaningTasks'), { name, createdAt: serverTimestamp(), status: 'active' });
     };
     flexBox.appendChild(addBtn);
 
@@ -82,8 +82,8 @@ async function loadDutyPerson() {
     // 🔻 新增刪除項目選單與按鈕
     const deleteSelect = document.createElement('select');
     deleteSelect.innerHTML = `<option value="">-- 選擇要刪除的項目 --</option>`;
-    const taskSnap = await getDoc, deleteDocs(collection(db, 'cleaningTasks'));
-    const taskList = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const taskSnap = await getDocs(collection(db, 'cleaningTasks'));
+    const taskList = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(task => task.status !== 'deleted');
     taskList.forEach(task => {
       const opt = document.createElement('option');
       opt.value = task.id;
@@ -99,23 +99,9 @@ async function loadDutyPerson() {
       const id = deleteSelect.value;
       if (!id) return alert('請選擇要刪除的項目');
       if (!confirm('確定要刪除這個項目嗎？')) return;
-
-      // 從資料庫刪除
-      await deleteDoc(doc(db, 'cleaningTasks', id));
-      alert('已刪除該項目');
-
-      // 從下拉選單移除
-      const optionToRemove = deleteSelect.querySelector(`option[value="${id}"]`);
-      const taskName = optionToRemove?.innerText;
-      optionToRemove?.remove();
-
-      // 從 checkbox 任務清單中移除對應的項目
-      const taskItems = document.querySelectorAll('.task-item');
-      taskItems.forEach(item => {
-        if (item.textContent.includes(taskName)) {
-          item.remove();
-        }
-      });
+      await setDoc(doc(db, 'cleaningTasks', id), { status: 'deleted' }, { merge: true });
+      alert('已標記為刪除，請重新整理');
+      location.reload();
     };
 
     flexBox.appendChild(deleteBtn);
@@ -128,8 +114,8 @@ async function loadDutyPerson() {
 async function loadTasks() {
   const formDiv = document.getElementById('task-form');
   const taskCol = collection(db, 'cleaningTasks');
-  const taskSnap = await getDoc, deleteDocs(taskCol);
-  const taskList = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const taskSnap = await getDocs(taskCol);
+  const taskList = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(task => task.status !== 'deleted');
 
   const listDiv = document.createElement('div');
   listDiv.className = 'task-list';
@@ -179,7 +165,7 @@ async function submitTasks(taskList) {
 async function loadRecords() {
   const recordsDiv = document.getElementById('task-records');
   const q = query(collection(db, 'cleaningLog'), orderBy('createdAt', 'desc'));
-  const snap = await getDoc, deleteDocs(q);
+  const snap = await getDocs(q);
 
   const records = snap.docs
     .map(doc => doc.data())
