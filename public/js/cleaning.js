@@ -78,7 +78,34 @@ async function loadDutyPerson() {
     };
     flexBox.appendChild(addBtn);
 
+    
+    // 🔻 新增刪除項目選單與按鈕
+    const deleteSelect = document.createElement('select');
+    deleteSelect.innerHTML = `<option value="">-- 選擇要刪除的項目 --</option>`;
+    const taskSnap = await getDocs(collection(db, 'cleaningTasks'));
+    const taskList = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    taskList.forEach(task => {
+      const opt = document.createElement('option');
+      opt.value = task.id;
+      opt.innerText = task.name;
+      deleteSelect.appendChild(opt);
+    });
+    flexBox.appendChild(deleteSelect);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.innerText = '🗑️ 刪除項目';
+    deleteBtn.onclick = async () => {
+      const id = deleteSelect.value;
+      if (!id) return alert('請選擇要刪除的項目');
+      if (!confirm('確定要刪除這個項目嗎？')) return;
+      await setDoc(doc(db, 'cleaningTasks', id), {}, { merge: false });
+      alert('已刪除！請重新整理頁面。');
+      location.reload();
+    };
+    flexBox.appendChild(deleteBtn);
+
     container.appendChild(flexBox);
+    
   }
 }
 
