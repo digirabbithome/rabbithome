@@ -37,9 +37,14 @@ async function loadDutyPerson() {
   // 如果是管理者，顯示設定選單
   if (adminEmails.includes(auth.currentUser.email)) {
     const container = document.getElementById('task-form');
-    const userSnap = await getDocs(collection(db, 'cleaningLog'));
-    const allUsers = [...new Set(userSnap.docs.map(d => d.data().user))];
+   // const userSnap = await getDocs(collection(db, 'cleaningLog'));
+   // const allUsers = [...new Set(userSnap.docs.map(d => d.data().user))];
 
+
+const userSnap = await getDocs(collection(db, 'users'));
+const allUsers = userSnap.docs.map(doc => doc.data().nickname).filter(Boolean);
+
+    
     const select = document.createElement('select');
     select.innerHTML = `<option value="">-- 選擇本月值日生 --</option>`;
     allUsers.forEach(u => {
