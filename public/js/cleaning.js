@@ -162,10 +162,17 @@ async function submitTasks(taskList) {
   loadRecords();
 }
 
+
 async function loadRecords() {
   const recordsDiv = document.getElementById('task-records');
   const q = query(collection(db, 'cleaningLog'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
+
+  const taskSnap = await getDocs(collection(db, 'cleaningTasks'));
+  const activeTasks = taskSnap.docs
+    .map(doc => doc.data())
+    .filter(task => task.status !== 'deleted' && !!task.name)
+    .map(task => task.name);
 
   const records = snap.docs
     .map(doc => doc.data())
@@ -177,7 +184,9 @@ async function loadRecords() {
     });
 
   const allTasksSet = new Set();
-  records.forEach(r => r.items?.forEach(item => allTasksSet.add(item)));
+  records.forEach(r => r.items?.forEach(item => {
+    if (activeTasks.includes(item)) allTasksSet.add(item);
+  }));
   const allTasks = Array.from(allTasksSet);
 
   let html = `<table><thead><tr><th>姓名</th><th>日期</th><th>時間</th>`;
@@ -195,3 +204,4 @@ async function loadRecords() {
   html += `</tbody></table>`;
   recordsDiv.innerHTML = html;
 }
+
