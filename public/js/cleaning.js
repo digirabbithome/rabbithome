@@ -102,20 +102,7 @@ async function loadTasks() {
       const name = prompt('輸入新項目名稱');
       if (name) addDoc(taskCol, { name, createdAt: serverTimestamp() });
     };
-    //formDiv.appendChild(addBtn);
-
-const rowDiv = document.createElement('div');
-rowDiv.style.display = 'flex';
-rowDiv.style.alignItems = 'center';
-rowDiv.style.gap = '8px';
-rowDiv.appendChild(addBtn);
-rowDiv.appendChild(select);
-rowDiv.appendChild(setBtn);
-formDiv.appendChild(rowDiv);
-
-
-
-
+    formDiv.appendChild(addBtn);
   }
 }
 
