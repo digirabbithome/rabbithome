@@ -34,7 +34,7 @@ h1 {
 .task-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0rem;
   width: calc(100% / 8 - 1rem);
   margin-bottom: 2rem;
 }
