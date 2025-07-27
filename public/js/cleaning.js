@@ -1,11 +1,8 @@
 
-import {
-  collection, addDoc, getDocs, onSnapshot, serverTimestamp,
-  query, orderBy, doc, setDoc, getDoc, deleteDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { db, auth } from '/js/firebase.js';
 import {
   collection, addDoc, getDoc, deleteDocs, onSnapshot, serverTimestamp, query, orderBy, doc, setDoc, getDoc, deleteDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 let currentUser = '';
 const adminEmails = ['swimming8250@yahoo.com.tw', 'swimming8250@gmail.com'];
@@ -102,18 +99,21 @@ async function loadDutyPerson() {
       const id = deleteSelect.value;
       if (!id) return alert('請選擇要刪除的項目');
       if (!confirm('確定要刪除這個項目嗎？')) return;
+
+      // 從資料庫刪除
       await deleteDoc(doc(db, 'cleaningTasks', id));
       alert('已刪除該項目');
 
-      // 從刪除下拉選單中移除
+      // 從下拉選單移除
       const optionToRemove = deleteSelect.querySelector(`option[value="${id}"]`);
-      if (optionToRemove) optionToRemove.remove();
+      const taskName = optionToRemove?.innerText;
+      optionToRemove?.remove();
 
-      // 從任務 checkbox 區域移除
-      const checkboxes = document.querySelectorAll('.task-item');
-      checkboxes.forEach(div => {
-        if (div.textContent.includes(optionToRemove.innerText)) {
-          div.remove();
+      // 從 checkbox 任務清單中移除對應的項目
+      const taskItems = document.querySelectorAll('.task-item');
+      taskItems.forEach(item => {
+        if (item.textContent.includes(taskName)) {
+          item.remove();
         }
       });
     };
