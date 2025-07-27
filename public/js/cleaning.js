@@ -98,7 +98,8 @@ async function loadDutyPerson() {
       const id = deleteSelect.value;
       if (!id) return alert('請選擇要刪除的項目');
       if (!confirm('確定要刪除這個項目嗎？')) return;
-      await setDoc(doc(db, 'cleaningTasks', id), {}, { merge: false });
+      import { deleteDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+      await deleteDoc(doc(db, 'cleaningTasks', id));
       alert('已刪除！請重新整理頁面。');
       location.reload();
     };
