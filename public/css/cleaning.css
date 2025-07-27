@@ -36,6 +36,7 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   width: calc(100% / 7 - 1rem);
+  margin-bottom: 2rem;
 }
 
 button {
