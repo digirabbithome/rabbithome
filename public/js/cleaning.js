@@ -1,8 +1,11 @@
 
+import {
+  collection, addDoc, getDocs, onSnapshot, serverTimestamp,
+  query, orderBy, doc, setDoc, getDoc, deleteDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { db, auth } from '/js/firebase.js';
 import {
   collection, addDoc, getDoc, deleteDocs, onSnapshot, serverTimestamp, query, orderBy, doc, setDoc, getDoc, deleteDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 let currentUser = '';
 const adminEmails = ['swimming8250@yahoo.com.tw', 'swimming8250@gmail.com'];
