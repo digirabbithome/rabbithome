@@ -26,7 +26,20 @@ async function loadDutyPerson() {
   const docSnap = await getDoc(docRef);
   let dutyUser = '';
   if (docSnap.exists()) {
-    dutyUser = docSnap.data().user;
+    const userId = docSnap.data().user;
+    if (userId) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          dutyUser = userDoc.data().nickname || userId;
+        } else {
+          dutyUser = userId;
+        }
+      } catch (e) {
+        console.error('查詢 nickname 發生錯誤', e);
+        dutyUser = userId;
+      }
+    }
   }
 
   const title = document.querySelector('h1');
