@@ -1,3 +1,4 @@
+
 import { db, auth } from '/js/firebase.js';
 import {
   collection, addDoc, getDocs, onSnapshot, serverTimestamp, query, orderBy, doc, setDoc, getDoc
@@ -34,17 +35,19 @@ async function loadDutyPerson() {
     title.innerHTML = `🧹 值日打掃日誌（本月值日生：${dutyUser || '尚未指定'}）｜${currentUser}`;
   }
 
-  // 如果是管理者，顯示設定選單
+  // 如果是管理者，顯示設定選單與新增項目
   if (adminEmails.includes(auth.currentUser.email)) {
     const container = document.getElementById('task-form');
-   // const userSnap = await getDocs(collection(db, 'cleaningLog'));
-   // const allUsers = [...new Set(userSnap.docs.map(d => d.data().user))];
+    const userSnap = await getDocs(collection(db, 'users'));
+    const allUsers = userSnap.docs.map(doc => doc.data().nickname).filter(Boolean);
 
+    const flexBox = document.createElement('div');
+    flexBox.style.display = 'flex';
+    flexBox.style.flexWrap = 'wrap';
+    flexBox.style.alignItems = 'center';
+    flexBox.style.gap = '8px';
+    flexBox.style.marginBottom = '10px';
 
-const userSnap = await getDocs(collection(db, 'users'));
-const allUsers = userSnap.docs.map(doc => doc.data().nickname).filter(Boolean);
-
-    
     const select = document.createElement('select');
     select.innerHTML = `<option value="">-- 選擇本月值日生 --</option>`;
     allUsers.forEach(u => {
@@ -54,6 +57,7 @@ const allUsers = userSnap.docs.map(doc => doc.data().nickname).filter(Boolean);
       if (u === dutyUser) opt.selected = true;
       select.appendChild(opt);
     });
+    flexBox.appendChild(select);
 
     const setBtn = document.createElement('button');
     setBtn.innerText = '✔️ 設定值日生';
@@ -64,9 +68,17 @@ const allUsers = userSnap.docs.map(doc => doc.data().nickname).filter(Boolean);
       alert(`已設定 ${selected} 為本月值日生！`);
       location.reload();
     };
+    flexBox.appendChild(setBtn);
 
-    container.appendChild(select);
-    container.appendChild(setBtn);
+    const addBtn = document.createElement('button');
+    addBtn.innerText = '➕ 新增項目';
+    addBtn.onclick = () => {
+      const name = prompt('輸入新項目名稱');
+      if (name) addDoc(collection(db, 'cleaningTasks'), { name, createdAt: serverTimestamp() });
+    };
+    flexBox.appendChild(addBtn);
+
+    container.appendChild(flexBox);
   }
 }
 
@@ -83,7 +95,7 @@ async function loadTasks() {
     const div = document.createElement('div');
     div.className = 'task-item';
     div.innerHTML = `
-      <label><input type="checkbox" value="${task.name}"> ${task.name}</label>
+      <label><input type="checkbox" value="\${task.name}"> \${task.name}</label>
     `;
     listDiv.appendChild(div);
   });
@@ -94,16 +106,6 @@ async function loadTasks() {
   btn.innerText = '✅ 完成並送出';
   btn.onclick = () => submitTasks(taskList);
   formDiv.appendChild(btn);
-
-  if (adminEmails.includes(auth.currentUser.email)) {
-    const addBtn = document.createElement('button');
-    addBtn.innerText = '➕ 新增項目';
-    addBtn.onclick = () => {
-      const name = prompt('輸入新項目名稱');
-      if (name) addDoc(taskCol, { name, createdAt: serverTimestamp() });
-    };
-    formDiv.appendChild(addBtn);
-  }
 }
 
 async function submitTasks(taskList) {
@@ -117,7 +119,7 @@ async function submitTasks(taskList) {
 
   const now = new Date();
   const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-  const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
 
   await addDoc(collection(db, 'cleaningLog'), {
     user: currentUser,
@@ -150,13 +152,13 @@ async function loadRecords() {
   const allTasks = Array.from(allTasksSet);
 
   let html = `<table><thead><tr><th>姓名</th><th>日期</th><th>時間</th>`;
-  allTasks.forEach(name => html += `<th>${name}</th>`);
+  allTasks.forEach(name => html += `<th>\${name}</th>`);
   html += `</tr></thead><tbody>`;
 
   records.forEach(r => {
-    html += `<tr><td>${r.user}</td><td>${r.date}</td><td>${r.time}</td>`;
+    html += `<tr><td>\${r.user}</td><td>\${r.date}</td><td>\${r.time}</td>`;
     allTasks.forEach(name => {
-      html += `<td>${r.items.includes(name) ? '✅' : ''}</td>`;
+      html += `<td>\${r.items.includes(name) ? '✅' : ''}</td>`;
     });
     html += `</tr>`;
   });
