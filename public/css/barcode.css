@@ -50,11 +50,11 @@ button {
   flex-direction: column;
   justify-content: stretch;
 }
-.row-3 {
+.row-2 {
   display: flex;
   gap: 10px;
 }
-.row-3 > label {
+.row-2 > label {
   flex: 1;
   margin: 0;
 }
