@@ -16,6 +16,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   if (!supplier) return alert('請選擇供應商')
   if (!rawBarcodes) return alert('請輸入條碼')
 
+  const supplierName = suppliers.find(s => s.code === supplier)?.nameShort || '';
   const barcodeList = rawBarcodes.split('\n').map(x => x.trim()).filter(x => x)
 
   for (const barcode of barcodeList) {
