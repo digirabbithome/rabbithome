@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>條碼登記系統</title>
+  <link rel="stylesheet" href="css/barcode.css" />
+  <script type="module" src="js/barcode.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>📥 條碼登記</h2>
+    <label>供應商（搜尋）：<input type="text" id="supplierInput" placeholder="輸入供應商關鍵字" /></label>
+    <div id="supplierResults" class="popmenu"></div>
+    <label>廠牌：<input type="text" id="brand" /></label>
+    <label>產品：<input type="text" id="product" /></label>
+    <label>備註：<input type="text" id="note" /></label>
+    <label>條碼（每行一筆）：<textarea id="barcodes" rows="8" placeholder="SN1234567890"></textarea></label>
+    <button id="submitBtn">登記</button>
+  </div>
+  <hr>
+  <div class="container">
+    <h2>📋 查詢條碼</h2>
+    <input type="text" id="searchInput" placeholder="搜尋條碼／廠牌／產品／備註／人名" />
+    <div id="resultList"></div>
+  </div>
+</body>
+</html>
