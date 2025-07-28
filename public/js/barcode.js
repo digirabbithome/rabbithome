@@ -43,7 +43,7 @@ async function loadSuppliers() {
     const d = doc.data()
     return {
       code: d.code || '',
-      nameShort: d.nameShort || '（無名稱）'
+      nameShort: d.shortName || d.name || '（無名稱）'
     }
   })
 }
