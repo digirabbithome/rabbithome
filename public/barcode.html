@@ -13,15 +13,17 @@
       <div class="form-left">
         <label>供應商（搜尋）：<input type="text" id="supplierInput" placeholder="輸入供應商關鍵字" /></label>
         <div id="supplierResults" class="popmenu"></div>
-        <label>廠牌：<input type="text" id="brand" /></label>
-        <label>產品：<input type="text" id="product" /></label>
-        <label>備註：<input type="text" id="note" /></label>
+        <div class="row-3">
+          <label>廠牌：<input type="text" id="brand" /></label>
+          <label>產品：<input type="text" id="product" /></label>
+          <label>備註：<input type="text" id="note" /></label>
+        </div>
       </div>
       <div class="form-right">
         <label>條碼（每行一筆）：<textarea id="barcodes" rows="12" placeholder="SN1234567890"></textarea></label>
+        <button id="submitBtn">登記</button>
       </div>
     </div>
-    <button id="submitBtn">登記</button>
   </div>
   <hr>
   <div class="container">
