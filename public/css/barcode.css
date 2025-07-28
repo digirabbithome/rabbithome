@@ -65,3 +65,25 @@ button {
   align-items: center;
   gap: 10px;
 }
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.result-table th, .result-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+.result-table th {
+  background: #ffe0e9;
+  font-weight: bold;
+}
+.result-table tr:hover {
+  background: #fff5f8;
+}

@@ -19,14 +19,16 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   const barcodeList = rawBarcodes.split('\n').map(x => x.trim()).filter(x => x)
 
   for (const barcode of barcodeList) {
-    await addDoc(collection(db, 'barcodes'), {
+    const supplierName = supplierInput.value.trim();
+  await addDoc(collection(db, 'barcodes'), {
       barcode,
       supplier,
       brand,
       product,
       note,
       createdBy: nickname,
-      createdAt: serverTimestamp()
+      supplierName,
+    createdAt: serverTimestamp()
     })
   }
 
@@ -113,7 +115,7 @@ searchInput.addEventListener('input', async () => {
     d.product.toLowerCase().includes(keyword) ||
     d.note.toLowerCase().includes(keyword) ||
     d.barcode.toLowerCase().includes(keyword) ||
-    d.createdBy.toLowerCase().includes(keyword)
+    d.createdBy.toLowerCase().includes(keyword) || d.supplierName?.toLowerCase().includes(keyword)
   ).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   currentPage = 1
