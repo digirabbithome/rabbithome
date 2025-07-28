@@ -60,7 +60,7 @@ supplierInput.addEventListener('input', () => {
   ).slice(0, 10)
 
   supplierResults.innerHTML = matched.map(s =>
-    `<div class="result" data-code="\${s.code}">\${s.code} - \${s.nameShort}</div>`
+    `<div class="result" data-code="${s.code}">${s.code} - ${s.nameShort}</div>`
   ).join('')
 })
 
