@@ -6,7 +6,6 @@ import {
 
 const nickname = localStorage.getItem('nickname') || '未知使用者'
 
-// 🔘 登記邏輯
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const supplier = document.getElementById('supplierInput').dataset.value || ''
   const brand = document.getElementById('brand').value.trim()
@@ -40,7 +39,13 @@ let suppliers = []
 
 async function loadSuppliers() {
   const snapshot = await getDocs(collection(db, 'suppliers'))
-  suppliers = snapshot.docs.map(doc => doc.data())
+  suppliers = snapshot.docs.map(doc => {
+    const d = doc.data()
+    return {
+      code: d.code || '',
+      nameShort: d.nameShort || '（無名稱）'
+    }
+  })
 }
 loadSuppliers()
 
@@ -50,17 +55,18 @@ const supplierResults = document.getElementById('supplierResults')
 supplierInput.addEventListener('input', () => {
   const keyword = supplierInput.value.trim().toLowerCase()
   const matched = suppliers.filter(s =>
-    s.code?.toLowerCase().includes(keyword) ||
-    s.nameShort?.toLowerCase().includes(keyword) ||
-    s.nameFull?.toLowerCase().includes(keyword)
+    s.code.toLowerCase().includes(keyword) ||
+    s.nameShort.toLowerCase().includes(keyword)
   ).slice(0, 10)
 
   supplierResults.innerHTML = matched.map(s =>
-    `<div class="result" data-code="${s.code}">${s.code} - ${s.nameShort}</div>`
+    `<div class="result" data-code="\${s.code}">\${s.code} - \${s.nameShort}</div>`
   ).join('')
 })
 
 supplierResults.addEventListener('click', e => {
+  e.preventDefault()
+  e.stopPropagation()
   if (e.target.classList.contains('result')) {
     const code = e.target.dataset.code
     supplierInput.value = e.target.textContent
