@@ -1,7 +1,51 @@
-.container { padding: 20px; border-radius: 12px; background: #fff0f5; margin: 20px; }
-label { display: block; margin: 10px 0; }
-textarea, input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
-button { padding: 10px 20px; background: pink; border: none; border-radius: 10px; cursor: pointer; }
-.popmenu { background: white; border: 1px solid #ccc; max-height: 150px; overflow: auto; }
-.result { padding: 4px 8px; cursor: pointer; }
-.result:hover { background: #ffe0e9; }
+.container {
+  padding: 20px;
+  border-radius: 12px;
+  background: #fff0f5;
+  margin: 20px;
+}
+label {
+  display: block;
+  margin: 10px 0;
+}
+textarea, input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: pink;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.popmenu {
+  background: white;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow: auto;
+}
+.result {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.result:hover {
+  background: #ffe0e9;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+.form-left {
+  display: flex;
+  flex-direction: column;
+}
+.form-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+}
