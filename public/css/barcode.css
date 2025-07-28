@@ -58,3 +58,10 @@ button {
   flex: 1;
   margin: 0;
 }
+
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
