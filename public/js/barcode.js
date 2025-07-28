@@ -91,9 +91,9 @@ const pageSize = 100
 searchInput.addEventListener('input', async () => {
   const keyword = searchInput.value.trim().toLowerCase();
 
-  const snapshot = await getDocs(collection(db, 'barcodes'))
+  const snapshot = await getDocs(collection(db, 'barcodes'));
   allResults = snapshot.docs.map(doc => {
-    const d = doc.data()
+    const d = doc.data();
     return {
       supplier: d.supplier || '',
     supplierName: d.supplierName || '',
@@ -104,31 +104,27 @@ searchInput.addEventListener('input', async () => {
       barcode: d.barcode || '',
       createdBy: d.createdBy || '',
       createdAt: d.createdAt?.toDate?.().toISOString().slice(0, 10) || ''
-    }
-  })
+    };
+  });
 
   if (!keyword) {
     allResults = allResults.filter(d => d.createdAt === "2025-07-28")
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-    currentPage = 1;
-    renderPage();
-    return;
+  } else {
+    allResults = allResults.filter(d =>
+      d.supplier.toLowerCase().includes(keyword) ||
+      d.supplierName.toLowerCase().includes(keyword) ||
+      d.brand.toLowerCase().includes(keyword) ||
+      d.product.toLowerCase().includes(keyword) ||
+      d.note.toLowerCase().includes(keyword) ||
+      d.barcode.toLowerCase().includes(keyword) ||
+      d.createdBy.toLowerCase().includes(keyword)
+    ).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
-
-  allResults = allResults.filter(d =>
-    d.supplier.toLowerCase().includes(keyword) ||
-    d.supplierName.toLowerCase().includes(keyword) ||
-    d.brand.toLowerCase().includes(keyword) ||
-    d.product.toLowerCase().includes(keyword) ||
-    d.note.toLowerCase().includes(keyword) ||
-    d.barcode.toLowerCase().includes(keyword) ||
-    d.createdBy.toLowerCase().includes(keyword)
-  ).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   currentPage = 1;
   renderPage();
-})
+});
   const keyword = searchInput.value.trim().toLowerCase()
   if (!keyword) {
     resultList.innerHTML = ''
