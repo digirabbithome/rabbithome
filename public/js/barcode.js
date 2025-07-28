@@ -91,12 +91,12 @@ const pageSize = 100
 searchInput.addEventListener('input', async () => {
   const keyword = searchInput.value.trim().toLowerCase()
   if (!keyword) {
-  // 預設搜尋今天新增
-  const snapshot = await getDocs(collection(db, 'barcodes'))
+  const snapshot = await getDocs(collection(db, 'barcodes'));
   allResults = snapshot.docs.map(doc => {
-    const d = doc.data()
+    const d = doc.data();
     return {
       supplier: d.supplier || '',
+    supplierName: d.supplierName || '',
       supplierName: d.supplierName || '',
       brand: d.brand || '',
       product: d.product || '',
@@ -104,15 +104,15 @@ searchInput.addEventListener('input', async () => {
       barcode: d.barcode || '',
       createdBy: d.createdBy || '',
       createdAt: d.createdAt?.toDate?.().toISOString().slice(0, 10) || ''
-    }
+    };
   }).filter(d => d.createdAt === "2025-07-28")
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  currentPage = 1
-  renderPage()
-  return
+  currentPage = 1;
+  renderPage();
+  return;
+
 }
-
     resultList.innerHTML = ''
     pageInfo.textContent = ''
     return
