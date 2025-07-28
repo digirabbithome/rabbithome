@@ -7,7 +7,8 @@ import {
 const nickname = localStorage.getItem('nickname') || '未知使用者'
 
 document.getElementById('submitBtn').addEventListener('click', async () => {
-  const supplier = document.getElementById('supplierInput').dataset.value || ''
+  const supplierInput = document.getElementById('supplierInput');
+const supplier = supplierInput.dataset.value || ''
   const brand = document.getElementById('brand').value.trim()
   const product = document.getElementById('product').value.trim()
   const note = document.getElementById('note').value.trim()
@@ -19,16 +20,14 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   const barcodeList = rawBarcodes.split('\n').map(x => x.trim()).filter(x => x)
 
   for (const barcode of barcodeList) {
-    const supplierName = supplierInput.value.trim();
-  await addDoc(collection(db, 'barcodes'), {
+    await addDoc(collection(db, 'barcodes'), {
       barcode,
       supplier,
       brand,
       product,
       note,
       createdBy: nickname,
-      supplierName,
-    createdAt: serverTimestamp()
+      createdAt: serverTimestamp()
     })
   }
 
@@ -92,6 +91,28 @@ const pageSize = 100
 searchInput.addEventListener('input', async () => {
   const keyword = searchInput.value.trim().toLowerCase()
   if (!keyword) {
+  // 預設搜尋今天新增
+  const snapshot = await getDocs(collection(db, 'barcodes'))
+  allResults = snapshot.docs.map(doc => {
+    const d = doc.data()
+    return {
+      supplier: d.supplier || '',
+      supplierName: d.supplierName || '',
+      brand: d.brand || '',
+      product: d.product || '',
+      note: d.note || '',
+      barcode: d.barcode || '',
+      createdBy: d.createdBy || '',
+      createdAt: d.createdAt?.toDate?.().toISOString().slice(0, 10) || ''
+    }
+  }).filter(d => d.createdAt === "2025-07-28")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+  currentPage = 1
+  renderPage()
+  return
+}
+
     resultList.innerHTML = ''
     pageInfo.textContent = ''
     return
@@ -102,6 +123,7 @@ searchInput.addEventListener('input', async () => {
     const d = doc.data()
     return {
       supplier: d.supplier || '',
+    supplierName: d.supplierName || '',
       brand: d.brand || '',
       product: d.product || '',
       note: d.note || '',
@@ -115,7 +137,7 @@ searchInput.addEventListener('input', async () => {
     d.product.toLowerCase().includes(keyword) ||
     d.note.toLowerCase().includes(keyword) ||
     d.barcode.toLowerCase().includes(keyword) ||
-    d.createdBy.toLowerCase().includes(keyword) || d.supplierName?.toLowerCase().includes(keyword)
+    d.createdBy.toLowerCase().includes(keyword)
   ).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   currentPage = 1
