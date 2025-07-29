@@ -13,7 +13,7 @@ const groupMap = {
 }
 
 const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
-let currentRangeDays = 20
+let currentRangeDays = 14
 let allDocs = []
 
 window.onload = async () => {
