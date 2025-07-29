@@ -1,3 +1,4 @@
+
 import { db } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy, updateDoc, doc
@@ -118,6 +119,8 @@ async function renderBulletins(endDate, rangeDays) {
       contentSpan.textContent = text
       if (state === 'highlight') {
         contentSpan.style.backgroundColor = '#fffbbd'
+      } else if (state === 'pink') {
+        contentSpan.style.backgroundColor = '#ffddee'
       }
 
       if (state === 'hidden' && !showAll) {
@@ -134,8 +137,23 @@ async function renderBulletins(endDate, rangeDays) {
       star.addEventListener('click', async () => {
         const newStatus = star.textContent === '☆'
         star.textContent = newStatus ? '⭐' : '☆'
+        const newState = newStatus ? 'pink' : 'none'
+        p.dataset.state = newState
+        if (newState === 'pink') {
+          contentSpan.style.backgroundColor = '#ffddee'
+          p.style.opacity = 1
+          p.style.display = ''
+        } else {
+          contentSpan.style.backgroundColor = ''
+          p.style.opacity = 1
+          p.style.display = ''
+        }
+
         const ref = doc(db, 'bulletins', id)
-        await updateDoc(ref, { isStarred: newStatus })
+        await updateDoc(ref, {
+          isStarred: newStatus,
+          markState: newState
+        })
       })
 
       const pencil = document.createElement('span')
@@ -147,6 +165,7 @@ async function renderBulletins(endDate, rangeDays) {
         if (p.dataset.state === 'none') {
           contentSpan.style.backgroundColor = '#fffbbd'
           p.style.opacity = 1
+          p.style.display = ''
           newState = 'highlight'
         } else if (p.dataset.state === 'highlight') {
           contentSpan.style.backgroundColor = ''
