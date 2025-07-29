@@ -126,11 +126,7 @@ searchInput.addEventListener('input', async () => {
   renderPage()
 })
   const keyword = searchInput.value.trim().toLowerCase()
-  if (!keyword) {
-    resultList.innerHTML = ''
-    pageInfo.textContent = ''
-    return
-  }
+  
 
   const snapshot = await getDocs(collection(db, 'barcodes'))
   allResults = snapshot.docs.map(doc => {
