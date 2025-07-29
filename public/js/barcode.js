@@ -16,8 +16,8 @@ async function loadSuppliers() {
   document.getElementById('supplierInput').addEventListener('input', e => {
     const keyword = e.target.value.trim().toLowerCase();
     const matched = suppliers.filter(s =>
-      s.shortname.toLowerCase().includes(keyword) ||
-      s.fullname.toLowerCase().includes(keyword)
+      (s.shortname || '').toLowerCase().includes(keyword) ||
+      (s.fullname || '').toLowerCase().includes(keyword)
     );
     const resultDiv = document.getElementById('supplierResults');
     resultDiv.innerHTML = '';
