@@ -4,6 +4,18 @@ import {
   collection, addDoc, serverTimestamp, getDocs, query, orderBy, where
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
+
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let suppliers = [];
+
+async function loadSuppliers() {
+  const snapshot = await getDocs(collection(db, 'suppliers'));
+  suppliers = snapshot.docs.map(doc => doc.data());
+  return suppliers;
+}
+
+
 let suppliers = [];
 let currentPage = 1;
 const pageSize = 100;
