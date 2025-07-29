@@ -91,11 +91,7 @@ const pageSize = 100
 
 searchInput.addEventListener('input', async () => {
   const keyword = searchInput.value.trim().toLowerCase()
-  if (!keyword) {
-    resultList.innerHTML = ''
-    pageInfo.textContent = ''
-    return
-  }
+  const today = new Date().toISOString().slice(0, 10)
 
   const snapshot = await getDocs(collection(db, 'barcodes'))
   allResults = snapshot.docs.map(doc => {
@@ -110,16 +106,23 @@ searchInput.addEventListener('input', async () => {
       createdBy: d.createdBy || '',
       createdAt: d.createdAt?.toDate?.().toISOString().slice(0, 10) || ''
     }
-  }).filter(d =>
-    d.supplier.toLowerCase().includes(keyword) ||
-    d.brand.toLowerCase().includes(keyword) ||
-    d.product.toLowerCase().includes(keyword) ||
-    d.note.toLowerCase().includes(keyword) ||
-    d.barcode.toLowerCase().includes(keyword) ||
-    d.createdBy.toLowerCase().includes(keyword) ||
-    d.supplierName.toLowerCase().includes(keyword)
-  ).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  })
 
+  if (!keyword) {
+    allResults = allResults.filter(d => d.createdAt === today)
+  } else {
+    allResults = allResults.filter(d =>
+      d.supplier.toLowerCase().includes(keyword) ||
+      d.brand.toLowerCase().includes(keyword) ||
+      d.product.toLowerCase().includes(keyword) ||
+      d.note.toLowerCase().includes(keyword) ||
+      d.barcode.toLowerCase().includes(keyword) ||
+      d.createdBy.toLowerCase().includes(keyword) ||
+      d.supplierName.toLowerCase().includes(keyword)
+    )
+  }
+
+  allResults.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   currentPage = 1
   renderPage()
 })
