@@ -90,11 +90,11 @@ let currentPage = 1
 const pageSize = 100
 
 searchInput.addEventListener('input', async () => {
+  const today = new Date().toISOString().slice(0, 10);
   const keyword = searchInput.value.trim().toLowerCase()
   if (!keyword) {
-    resultList.innerHTML = ''
-    pageInfo.textContent = ''
-    return
+    allResults = allResults.filter(d => d.createdAt === today);
+
   }
 
   const snapshot = await getDocs(collection(db, 'barcodes'))
