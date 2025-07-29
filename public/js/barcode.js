@@ -172,3 +172,10 @@ nextPageBtn.addEventListener('click', () => {
     renderPage()
   }
 })
+
+
+// ⏱ 頁面載入後自動顯示今日資料
+window.onload = async () => {
+  searchInput.value = ''
+  searchInput.dispatchEvent(new Event('input'))
+}
