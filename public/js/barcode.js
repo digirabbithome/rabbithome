@@ -1,3 +1,4 @@
+
 // barcode.js
 import { db } from '/js/firebase.js'
 import {
@@ -20,7 +21,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 
   for (const barcode of barcodeList) {
     const supplierName = supplierInput.value.trim();
-  await addDoc(collection(db, 'barcodes'), {
+    await addDoc(collection(db, 'barcodes'), {
       barcode,
       supplier,
       brand,
@@ -28,7 +29,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       note,
       createdBy: nickname,
       supplierName,
-    createdAt: serverTimestamp()
+      createdAt: serverTimestamp()
     })
   }
 
@@ -77,7 +78,6 @@ supplierResults.addEventListener('click', e => {
   }
 })
 
-
 // 🔍 查詢功能
 const searchInput = document.getElementById('searchInput')
 const resultList = document.getElementById('resultList')
@@ -101,7 +101,8 @@ searchInput.addEventListener('input', async () => {
   allResults = snapshot.docs.map(doc => {
     const d = doc.data()
     return {
-      supplierName: d.supplier || '',
+      supplier: d.supplier || '',
+      supplierName: d.supplierName || '',
       brand: d.brand || '',
       product: d.product || '',
       note: d.note || '',
@@ -115,7 +116,8 @@ searchInput.addEventListener('input', async () => {
     d.product.toLowerCase().includes(keyword) ||
     d.note.toLowerCase().includes(keyword) ||
     d.barcode.toLowerCase().includes(keyword) ||
-    d.createdBy.toLowerCase().includes(keyword) || d.supplierName?.toLowerCase().includes(keyword)
+    d.createdBy.toLowerCase().includes(keyword) ||
+    d.supplierName.toLowerCase().includes(keyword)
   ).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   currentPage = 1
@@ -135,7 +137,7 @@ function renderPage() {
         ${pageItems.map(r => `
           <tr>
             <td>${r.createdAt}</td>
-            <td>${r.supplier}</td>
+            <td>${r.supplierName || r.supplier}</td>
             <td>${r.brand}</td>
             <td>${r.product}</td>
             <td>${r.note}</td>
