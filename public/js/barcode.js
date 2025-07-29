@@ -101,7 +101,7 @@ searchInput.addEventListener('input', async () => {
   allResults = snapshot.docs.map(doc => {
     const d = doc.data()
     return {
-      supplier: d.supplier || '',
+      supplier: d.supplierName || '',
       brand: d.brand || '',
       product: d.product || '',
       note: d.note || '',
@@ -110,12 +110,12 @@ searchInput.addEventListener('input', async () => {
       createdAt: d.createdAt?.toDate?.().toISOString().slice(0, 10) || ''
     }
   }).filter(d =>
-    d.supplier.toLowerCase().includes(keyword) ||
+    d.supplierName.toLowerCase().includes(keyword) ||
     d.brand.toLowerCase().includes(keyword) ||
     d.product.toLowerCase().includes(keyword) ||
     d.note.toLowerCase().includes(keyword) ||
     d.barcode.toLowerCase().includes(keyword) ||
-    d.createdBy.toLowerCase().includes(keyword) || d.supplierName?.toLowerCase().includes(keyword)
+    d.createdBy.toLowerCase().includes(keyword) || d.supplierNameName?.toLowerCase().includes(keyword)
   ).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   currentPage = 1
