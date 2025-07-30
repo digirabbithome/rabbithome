@@ -1,32 +1,285 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>新增簽收單</title>
-  <link rel="stylesheet" href="/css/sign.css" />
+  <link rel="stylesheet" href="/css/sign.css">
+  <script type="module" src="/js/sign.js"></script>
+  <script type="module">
+
+    import { db } from '/js/firebase.js';
+    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+    let allSuppliers = [];
+
+    async function loadAllSuppliers() {
+      const snap = await getDocs(collection(db, 'suppliers'));
+      allSuppliers = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.code && d.shortName) {
+          const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
+          allSuppliers.push(d.code + ' - ' + name);
+        }
+      });
+    }
+
+    async function loadUsersToPayerSelect() {
+      const snap = await getDocs(collection(db, 'users'));
+      const payerSelect = document.getElementById('payer');
+      console.log("👀 檢查 payer element:", payerSelect);
+      if (!payerSelect) {
+        console.error("⚠️ 找不到 #payer 元素！");
+        return;
+      }
+      console.log("📦 載入使用者筆數:", snap.size);
+      snap.forEach(doc => {
+        const d = doc.data();
+        console.log("📌 nickname:", d.nickname);
+        if (d.nickname) {
+          const opt = document.createElement('option');
+          opt.value = d.nickname;
+          opt.textContent = d.nickname;
+          payerSelect.appendChild(opt);
+        }
+      });
+    }
+
+    function renderFilteredList(keyword) {
+      const list = document.getElementById('type2-list');
+      list.innerHTML = '';
+      if (!keyword.trim()) return;
+      const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
+      matches.forEach(m => {
+        const li = document.createElement('li');
+        li.textContent = m;
+        li.onclick = () => {
+          document.getElementById('type2-search').value = m;
+          list.innerHTML = '';
+        };
+        list.appendChild(li);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadAllSuppliers();
+      await loadUsersToPayerSelect();
+
+      const type1 = document.getElementById('type1');
+      const container = document.getElementById('type2-container');
+
+      type1.addEventListener('change', () => {
+        if (type1.value === '供應商') {
+          container.innerHTML = `
+            <input type="text" id="type2-search" placeholder="搜尋供應商" required />
+            <ul id="type2-list" class="popup-list"></ul>
+          `;
+          const searchBox = document.getElementById('type2-search');
+          searchBox.addEventListener('input', () => renderFilteredList(searchBox.value));
+        } else if (type1.value === '物流') {
+          container.innerHTML = `
+            <select id="type2" required>
+              <option>新竹</option><option>黑貓</option><option>大榮</option>
+              <option>宅配通</option><option>順豐</option>
+              <option>Uber</option><option>LALA</option><option>其他</option>
+            </select>
+          `;
+        } else {
+          container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
+        }
+      });
+    });
+
+  </script>
 </head>
 <body>
-  <div class="form-container">
-    <h2>新增簽收單（<span id="currentUser"></span>）</h2>
+  <div class="container">
+    <h2>新增簽收單（<span id="nickname"></span>）</h2>
     <form id="sign-form">
-      <label>付款人：</label>
-      <select id="payer" required></select>
-      <label>身份分類：</label>
-      <select id="payerType" required></select>
-      <label>金額：</label>
+
+      <div class="inline-row">
+        <label for="payer">付款人：</label>
+        <select id="payer" required>
+          <option value="">請選擇</option>
+        </select>
+
+        <label>身份分類：</label>
+        <select id="type1" required>
+          <option value="">請選擇</option>
+          <option value="供應商">供應商</option>
+          <option value="物流">物流</option>
+          <option>其他</option>
+        </select>
+      </div>
+
+
+      
+
+      
+
+      <div id="type2-container"></div>
+
+      <label for="amount">金額：</label>
       <input type="number" id="amount" required />
-      <label>備註：</label>
-      <textarea id="note"></textarea>
+
+      <label for="note">備註：</label>
+      <textarea id="note" rows="3"></textarea>
+
       <label>簽名：</label>
-      <canvas id="signature" width="300" height="150" style="border:1px solid #000;"></canvas>
-      <div class="button-row">
-        <button id="clear" type="button">🧽 清除簽名</button>
+      <canvas id="signature" style="border:1px solid #ccc;"></canvas>
+
+      <div class="btn-row">
+        <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
         <button type="submit">✅ 確認送出</button>
       </div>
     </form>
   </div>
 
-  <script type="module" src="/js/sign.js"></script>
+  <script>
+    const canvas = document.getElementById('signature');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function resizeCanvasToMatchContainer() {
+      const containerWidth = canvas.parentElement.clientWidth;
+      const desiredHeight = 200;
+      canvas.width = containerWidth;
+      canvas.height = desiredHeight;
+    }
+    resizeCanvasToMatchContainer();
+
+    function startDraw(e) {
+      e.preventDefault();
+      drawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      drawing = false;
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (x - rect.left) * (canvas.width / rect.width),
+        y: (y - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseout', endDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDraw);
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+</body>
+</html>
+        <select id="payer" required>
+          <option value="">請選擇</option>
+        </select>
+
+        <label>身份分類：</label>
+        <select id="type1" required>
+          <option value="">請選擇</option>
+          <option value="供應商">供應商</option>
+          <option value="物流">物流</option>
+          <option>其他</option>
+        </select>
+      </div>
+
+
+      
+
+      
+
+      <div id="type2-container"></div>
+
+      <label for="amount">金額：</label>
+      <input type="number" id="amount" required />
+
+      <label for="note">備註：</label>
+      <textarea id="note" rows="3"></textarea>
+
+      <label>簽名：</label>
+      <canvas id="signature" style="border:1px solid #ccc;"></canvas>
+
+      <div class="btn-row">
+        <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
+        <button type="submit">✅ 確認送出</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('signature');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function resizeCanvasToMatchContainer() {
+      const containerWidth = canvas.parentElement.clientWidth;
+      const desiredHeight = 200;
+      canvas.width = containerWidth;
+      canvas.height = desiredHeight;
+    }
+    resizeCanvasToMatchContainer();
+
+    function startDraw(e) {
+      e.preventDefault();
+      drawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      drawing = false;
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (x - rect.left) * (canvas.width / rect.width),
+        y: (y - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseout', endDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDraw);
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
 </body>
 </html>
