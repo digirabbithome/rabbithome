@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -33,6 +34,21 @@ async function loadUsersToPayerSelect() {
 }
 
 
+    
+      console.log("📦 載入使用者筆數:", snap.size);
+      snap.forEach(doc => {
+        const d = doc.data();
+        console.log("📌 nickname:", d.nickname);
+        if (d.nickname) {
+          const opt = document.createElement('option');
+          opt.value = d.nickname;
+          opt.textContent = d.nickname;
+          payerSelect.appendChild(opt);
+        }
+      });
+    }
+
+
     async function loadAllSuppliers() {
       const snap = await getDocs(collection(db, 'suppliers'));
       allSuppliers = [];
@@ -45,24 +61,14 @@ async function loadUsersToPayerSelect() {
       });
     }
 
-    function renderFilteredList(keyword) {
-      const list = document.getElementById('type2-list');
-      list.innerHTML = '';
-      if (!keyword.trim()) return;
-      const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
-      matches.forEach(m => {
-        const li = document.createElement('li');
-        li.textContent = m;
-        li.onclick = () => {
-          document.getElementById('type2-search').value = m;
-          list.innerHTML = '';
-        };
-        list.appendChild(li);
+    
       });
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadAllSuppliers();
+      await loadUsersToPayerSelect();
+
       const type1 = document.getElementById('type1');
       const container = document.getElementById('type2-container');
 
@@ -80,12 +86,27 @@ async function loadUsersToPayerSelect() {
               <option>新竹</option><option>黑貓</option><option>大榮</option>
               <option>宅配通</option><option>順豐</option>
               <option>Uber</option><option>LALA</option><option>其他</option>
-          
             </select>`;
         } else {
           container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
         }
       });
+
+      function renderFilteredList(keyword) {
+        const list = document.getElementById('type2-list');
+        list.innerHTML = '';
+        if (!keyword.trim()) return;
+        const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
+        matches.forEach(m => {
+          const li = document.createElement('li');
+          li.textContent = m;
+          li.onclick = () => {
+            document.getElementById('type2-search').value = m;
+            list.innerHTML = '';
+          };
+          list.appendChild(li);
+        });
+      }
     });
   </script>
 </head>
@@ -105,10 +126,21 @@ async function loadUsersToPayerSelect() {
           <option value="">請選擇</option>
           <option value="供應商">供應商</option>
           <option value="物流">物流</option>
-          <option>其他</option>
+          <option value="其他">其他</option>
         </select>
       </div>
 
+
+      
+
+
+      
+
+
+      
+
+
+      
 
       
 
@@ -185,6 +217,8 @@ async function loadUsersToPayerSelect() {
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+
+    document.getElementById('nickname').textContent = localStorage.getItem('nickname') || '';
   </script>
 </body>
 </html>
