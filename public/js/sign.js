@@ -1,4 +1,3 @@
-
 import { db, storage } from '/js/firebase.js';
 import {
   collection, addDoc, updateDoc, serverTimestamp
@@ -8,12 +7,19 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
 window.onload = () => {
-  const form = document.getElementById('sign-form');
+  const nickname = localStorage.getItem('nickname');
+  if (!nickname) {
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
+    return;
+  }
 
+  document.getElementById('nickname').textContent = nickname;
+
+  const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const nickname = document.getElementById('payer').value;
     const amount = document.getElementById('amount').value;
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
@@ -30,8 +36,8 @@ window.onload = () => {
     const canvas = document.getElementById('signature');
     const imageData = canvas.toDataURL('image/png');
 
-    if (!amount || !imageData || type1 === '' || type2 === '' || nickname === '') {
-      alert('請填寫所有欄位並簽名');
+    if (!amount || !imageData || type1 === '' || type2 === '') {
+      alert('請填寫金額、選擇分類、公司資訊並簽名');
       return;
     }
 

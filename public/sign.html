@@ -6,7 +6,6 @@
   <link rel="stylesheet" href="/css/sign.css">
   <script type="module" src="/js/sign.js"></script>
   <script type="module">
-
     import { db } from '/js/firebase.js';
     import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
@@ -20,27 +19,6 @@
         if (d.code && d.shortName) {
           const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
           allSuppliers.push(d.code + ' - ' + name);
-        }
-      });
-    }
-
-    async function loadUsersToPayerSelect() {
-      const snap = await getDocs(collection(db, 'users'));
-      const payerSelect = document.getElementById('payer');
-      console.log("👀 檢查 payer element:", payerSelect);
-      if (!payerSelect) {
-        console.error("⚠️ 找不到 #payer 元素！");
-        return;
-      }
-      console.log("📦 載入使用者筆數:", snap.size);
-      snap.forEach(doc => {
-        const d = doc.data();
-        console.log("📌 nickname:", d.nickname);
-        if (d.nickname) {
-          const opt = document.createElement('option');
-          opt.value = d.nickname;
-          opt.textContent = d.nickname;
-          payerSelect.appendChild(opt);
         }
       });
     }
@@ -63,8 +41,6 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadAllSuppliers();
-      await loadUsersToPayerSelect();
-
       const type1 = document.getElementById('type1');
       const container = document.getElementById('type2-container');
 
@@ -82,40 +58,25 @@
               <option>新竹</option><option>黑貓</option><option>大榮</option>
               <option>宅配通</option><option>順豐</option>
               <option>Uber</option><option>LALA</option><option>其他</option>
-            </select>
-          `;
+            </select>`;
         } else {
           container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
         }
       });
     });
-
   </script>
 </head>
 <body>
   <div class="container">
     <h2>新增簽收單（<span id="nickname"></span>）</h2>
     <form id="sign-form">
-
-      <div class="inline-row">
-        <label for="payer">付款人：</label>
-        <select id="payer" required>
-          <option value="">請選擇</option>
-        </select>
-
-        <label>身份分類：</label>
-        <select id="type1" required>
-          <option value="">請選擇</option>
-          <option value="供應商">供應商</option>
-          <option value="物流">物流</option>
-          <option>其他</option>
-        </select>
-      </div>
-
-
-      
-
-      
+      <label>身份分類：</label>
+      <select id="type1" required>
+        <option value="">請選擇</option>
+        <option value="供應商">供應商</option>
+        <option value="物流">物流</option>
+        <option value="其他">其他</option>
+      </select>
 
       <div id="type2-container"></div>
 
@@ -188,45 +149,6 @@
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-  </script>
-</body>
-</html>
-        <select id="payer" required>
-          <option value="">請選擇</option>
-        </select>
-
-        <label>身份分類：</label>
-        <select id="type1" required>
-          <option value="">請選擇</option>
-          <option value="供應商">供應商</option>
-          <option value="物流">物流</option>
-          <option>其他</option>
-        </select>
-      </div>
-
-
-      
-
-      
-
-      <div id="type2-container"></div>
-
-      <label for="amount">金額：</label>
-      <input type="number" id="amount" required />
-
-      <label for="note">備註：</label>
-      <textarea id="note" rows="3"></textarea>
-
-      <label>簽名：</label>
-      <canvas id="signature" style="border:1px solid #ccc;"></canvas>
-
-      <div class="btn-row">
-        <button type="button" onclick="clearCanvas()">🧽 清除簽名</button>
-        <button type="submit">✅ 確認送出</button>
-      </div>
-    </form>
-  </div>
-
   </script>
 </body>
 </html>
