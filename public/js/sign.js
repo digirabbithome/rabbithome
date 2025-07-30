@@ -7,35 +7,30 @@ import {
   ref, uploadString, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-async function loadNicknames() {
+async function loadPayers() {
   const snapshot = await getDocs(collection(db, 'users'));
-  const nicknameSelect = document.getElementById('nickname');
   const payerSelect = document.getElementById('payer');
 
   snapshot.forEach(doc => {
     const data = doc.data();
     if (data.nickname) {
-      const opt1 = document.createElement('option');
-      opt1.value = data.nickname;
-      opt1.textContent = data.nickname;
-      nicknameSelect.appendChild(opt1);
-
-      const opt2 = document.createElement('option');
-      opt2.value = data.nickname;
-      opt2.textContent = data.nickname;
-      payerSelect.appendChild(opt2);
+      const opt = document.createElement('option');
+      opt.value = data.nickname;
+      opt.textContent = data.nickname;
+      payerSelect.appendChild(opt);
     }
   });
 }
 
 window.onload = () => {
-  loadNicknames();
+  const loginNickname = localStorage.getItem('nickname') || '未登入';
+  document.getElementById('login-user').textContent = loginNickname;
+  loadPayers();
 
   const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const selectedNickname = document.getElementById('nickname').value;
     const payer = document.getElementById('payer').value;
     const amountStr = document.getElementById('amount').value;
     const amount = parseInt(amountStr);
@@ -47,19 +42,18 @@ window.onload = () => {
     const canvas = document.getElementById('signature');
     const imageData = canvas.toDataURL('image/png');
 
-    if (!selectedNickname || !payer || !amount || !type1 || !type2 || !imageData) {
+    if (!loginNickname || !payer || !amount || !type1 || !type2 || !imageData) {
       alert('請填寫所有欄位並簽名');
       return;
     }
 
     try {
-      // Step 1: 新增 signs 簽名資料
       const signRef = await addDoc(collection(db, 'signs'), {
         amount,
         note,
         type1,
         type2,
-        nickname: selectedNickname,
+        nickname: loginNickname,
         payer,
         cashbox: !!cashboxChecked,
         createdAt: serverTimestamp()
@@ -70,7 +64,6 @@ window.onload = () => {
       const imageUrl = await getDownloadURL(imageRef);
       await updateDoc(signRef, { signatureUrl: imageUrl });
 
-      // Step 2: 若勾選內場錢櫃，寫入 cashbox-records 並更新餘額
       if (cashboxChecked) {
         const statusRef = doc(db, 'cashbox-status', 'currentBalance');
         const statusSnap = await getDoc(statusRef);
@@ -82,7 +75,7 @@ window.onload = () => {
           amount,
           reason: type2,
           user: payer,
-          createdBy: selectedNickname,
+          createdBy: loginNickname,
           createdAt: serverTimestamp(),
           balanceAfter: newBalance
         });
