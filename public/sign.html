@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -11,6 +12,28 @@
 
     let allSuppliers = [];
 
+    async function loadUsersToPayerSelect() {
+      const snap = await getDocs(collection(db, 'users'));
+      const payerSelect = document.getElementById('payer');
+      console.log("👀 檢查 payer element:", payerSelect);
+      if (!payerSelect) {
+        console.error("⚠️ 找不到 #payer 元素！");
+        return;
+      }
+      console.log("📦 載入使用者筆數:", snap.size);
+      snap.forEach(doc => {
+        const d = doc.data();
+        console.log("📌 nickname:", d.nickname);
+        if (d.nickname) {
+          const opt = document.createElement('option');
+          opt.value = d.nickname;
+          opt.textContent = d.nickname;
+          payerSelect.appendChild(opt);
+        }
+      });
+    }
+
+
     async function loadAllSuppliers() {
       const snap = await getDocs(collection(db, 'suppliers'));
       allSuppliers = [];
@@ -23,24 +46,24 @@
       });
     }
 
-    function renderFilteredList(keyword) {
-      const list = document.getElementById('type2-list');
-      list.innerHTML = '';
-      if (!keyword.trim()) return;
-      const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
-      matches.forEach(m => {
-        const li = document.createElement('li');
-        li.textContent = m;
-        li.onclick = () => {
-          document.getElementById('type2-search').value = m;
-          list.innerHTML = '';
-        };
-        list.appendChild(li);
+    async function loadUsersToPayerSelect() {
+      const snap = await getDocs(collection(db, 'users'));
+      const payerSelect = document.getElementById('payer');
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.nickname) {
+          const opt = document.createElement('option');
+          opt.value = d.nickname;
+          opt.textContent = d.nickname;
+          payerSelect.appendChild(opt);
+        }
       });
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadAllSuppliers();
+      await loadUsersToPayerSelect();
+
       const type1 = document.getElementById('type1');
       const container = document.getElementById('type2-container');
 
@@ -63,6 +86,22 @@
           container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
         }
       });
+
+      function renderFilteredList(keyword) {
+        const list = document.getElementById('type2-list');
+        list.innerHTML = '';
+        if (!keyword.trim()) return;
+        const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
+        matches.forEach(m => {
+          const li = document.createElement('li');
+          li.textContent = m;
+          li.onclick = () => {
+            document.getElementById('type2-search').value = m;
+            list.innerHTML = '';
+          };
+          list.appendChild(li);
+        });
+      }
     });
   </script>
 </head>
@@ -70,13 +109,35 @@
   <div class="container">
     <h2>新增簽收單（<span id="nickname"></span>）</h2>
     <form id="sign-form">
-      <label>身份分類：</label>
-      <select id="type1" required>
-        <option value="">請選擇</option>
-        <option value="供應商">供應商</option>
-        <option value="物流">物流</option>
-        <option value="其他">其他</option>
-      </select>
+      <div class="inline-row">
+        <label for="payer">付款人：</label>
+        <select id="payer" required>
+          <option value="">請選擇</option>
+        </select>
+
+        <label>身份分類：</label>
+        <select id="type1" required>
+          <option value="">請選擇</option>
+          <option value="供應商">供應商</option>
+          <option value="物流">物流</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+
+      <div class="inline-row">
+        <label for="payer">付款人：</label>
+        <select id="payer" required>
+          <option value="">請選擇</option>
+        </select>
+
+        <label>身份分類：</label>
+        <select id="type1" required>
+          <option value="">請選擇</option>
+          <option value="供應商">供應商</option>
+          <option value="物流">物流</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
 
       <div id="type2-container"></div>
 
@@ -149,6 +210,8 @@
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+
+    document.getElementById('nickname').textContent = localStorage.getItem('nickname') || '';
   </script>
 </body>
 </html>
