@@ -10,7 +10,6 @@ import {
 async function loadPayers() {
   const snapshot = await getDocs(collection(db, 'users'));
   const payerSelect = document.getElementById('payer');
-
   snapshot.forEach(doc => {
     const data = doc.data();
     if (data.nickname) {
@@ -23,7 +22,7 @@ async function loadPayers() {
 }
 
 window.onload = () => {
-  const loginNickname = localStorage.getItem('nickname') || '未登入';
+  const loginNickname = localStorage.getItem('nickname') || '';
   document.getElementById('login-user').textContent = loginNickname;
   loadPayers();
 
@@ -42,6 +41,17 @@ window.onload = () => {
     const canvas = document.getElementById('signature');
     const imageData = canvas.toDataURL('image/png');
 
+    console.log("🚀 DEBUG 資料送出前：", {
+      nickname: loginNickname,
+      payer,
+      amount,
+      note,
+      type1,
+      type2,
+      cashboxChecked,
+      signatureImageLength: imageData.length
+    });
+
     if (!loginNickname || !payer || !amount || !type1 || !type2 || !imageData) {
       alert('請填寫所有欄位並簽名');
       return;
@@ -59,10 +69,14 @@ window.onload = () => {
         createdAt: serverTimestamp()
       });
 
+      console.log("✅ 已成功寫入 signs，ID：", signRef.id);
+
       const imageRef = ref(storage, 'signatures/' + signRef.id + '.png');
       await uploadString(imageRef, imageData, 'data_url');
       const imageUrl = await getDownloadURL(imageRef);
       await updateDoc(signRef, { signatureUrl: imageUrl });
+
+      console.log("🖼️ 簽名圖上傳成功 URL：", imageUrl);
 
       if (cashboxChecked) {
         const statusRef = doc(db, 'cashbox-status', 'currentBalance');
@@ -81,12 +95,14 @@ window.onload = () => {
         });
 
         await updateDoc(statusRef, { value: newBalance });
+
+        console.log("💰 內場錢櫃更新完成，餘額：", newBalance);
       }
 
       alert('簽收紀錄已送出！');
       window.location.reload();
     } catch (err) {
-      console.error('寫入錯誤', err);
+      console.error('❌ 寫入錯誤：', err.message, err);
       alert('送出失敗，請稍後再試');
     }
   });
