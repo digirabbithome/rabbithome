@@ -41,5 +41,122 @@
       </div>
     </form>
   </div>
+
+  <script type="module">
+    import { db } from '/js/firebase.js';
+    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+    let allSuppliers = [];
+
+    async function loadAllSuppliers() {
+      const snap = await getDocs(collection(db, 'suppliers'));
+      allSuppliers = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.code && d.shortName) {
+          const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
+          allSuppliers.push(d.code + ' - ' + name);
+        }
+      });
+    }
+
+    function renderFilteredList(keyword) {
+      const list = document.getElementById('type2-list');
+      list.innerHTML = '';
+      if (!keyword.trim()) return;
+      const matches = allSuppliers.filter(item => item.toLowerCase().includes(keyword.toLowerCase()));
+      matches.forEach(m => {
+        const li = document.createElement('li');
+        li.textContent = m;
+        li.onclick = () => {
+          document.getElementById('type2-search').value = m;
+          list.innerHTML = '';
+        };
+        list.appendChild(li);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('login-user').textContent = localStorage.getItem('nickname') || '未登入';
+      await loadAllSuppliers();
+
+      const type1 = document.getElementById('type1');
+      const container = document.getElementById('type2-container');
+
+      type1.addEventListener('change', () => {
+        if (type1.value === '供應商') {
+          container.innerHTML = `
+            <input type="text" id="type2-search" placeholder="搜尋供應商" required />
+            <ul id="type2-list" class="popup-list"></ul>
+          `;
+          const searchBox = document.getElementById('type2-search');
+          searchBox.addEventListener('input', () => renderFilteredList(searchBox.value));
+        } else if (type1.value === '物流') {
+          container.innerHTML = `
+            <select id="type2" required>
+              <option>新竹</option><option>黑貓</option><option>大榮</option>
+              <option>宅配通</option><option>順豐</option>
+              <option>Uber</option><option>LALA</option><option>其他</option>
+            </select>`;
+        } else {
+          container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
+        }
+      });
+    });
+
+    // 簽名畫布功能補上
+    const canvas = document.getElementById('signature');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function resizeCanvasToMatchContainer() {
+      const containerWidth = canvas.parentElement.clientWidth;
+      const desiredHeight = 200;
+      canvas.width = containerWidth;
+      canvas.height = desiredHeight;
+    }
+    resizeCanvasToMatchContainer();
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (x - rect.left) * (canvas.width / rect.width),
+        y: (y - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function startDraw(e) {
+      e.preventDefault();
+      drawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      drawing = false;
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseout', endDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDraw);
+
+    window.clearCanvas = function () {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
 </body>
 </html>
