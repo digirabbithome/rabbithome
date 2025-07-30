@@ -8,8 +8,9 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
 window.onload = async () => {
-  const nickname = localStorage.getItem('nickname') || '未知使用者';
-  document.getElementById('nickname').textContent = nickname;
+  const loginNickname = localStorage.getItem('nickname') || '未登入';
+  const loginSpan = document.getElementById('login-user');
+  if (loginSpan) loginSpan.textContent = loginNickname;
 
   await loadNicknames();
 
@@ -21,7 +22,7 @@ window.onload = async () => {
       const type1 = document.getElementById('type1').value;
       let type2 = '';
       if (type1 === '供應商') {
-        type2 = document.getElementById('type2-search').value.trim();
+        type2 = document.getElementById('type2-search')?.value.trim() || '';
       } else {
         type2 = document.getElementById('type2')?.value.trim() || '';
       }
@@ -30,7 +31,6 @@ window.onload = async () => {
       const checkbox = document.getElementById('cashbox-checkbox');
       const isCashbox = checkbox && checkbox.checked;
 
-      // 1. 儲存簽名圖
       const canvas = document.getElementById('signature');
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       const filename = `sign_${Date.now()}.png`;
@@ -38,11 +38,10 @@ window.onload = async () => {
       await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
 
-      // 2. 寫入主資料
       const docRef = await addDoc(collection(db, 'signs'), {
         createdAt: serverTimestamp(),
-        signer: nickname,
-        handler: payer, // 正確！使用付款人選擇值
+        signer: loginNickname,
+        handler: payer,
         amount,
         note,
         type1,
@@ -51,7 +50,6 @@ window.onload = async () => {
         cashbox: isCashbox
       });
 
-      // 3. 若勾選內場錢櫃，更新餘額並寫入紀錄
       if (isCashbox) {
         const cashRef = doc(db, 'cashbox-status', 'currentBalance');
         const snap = await getDoc(cashRef);
@@ -66,7 +64,7 @@ window.onload = async () => {
           from: payer,
           amount,
           type: '支出',
-          nickname,
+          nickname: loginNickname,
           note,
           remain: newAmount
         });
