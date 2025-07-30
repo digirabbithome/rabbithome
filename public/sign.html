@@ -52,11 +52,10 @@
           const searchBox = document.getElementById('type2-search');
           searchBox.addEventListener('input', () => renderFilteredList(searchBox.value));
         } else if (type1.value === '物流') {
-            <select id="type2" required>
+          container.innerHTML = '<select id="type2" required><option>新竹</option><option>黑貓</option><option>大榮</option><option>宅配通</option><option>順豐</option><option>Uber</option><option>LALA</option><option>其他</option></select>';
               <option>新竹</option><option>黑貓</option><option>大榮</option>
               <option>宅配通</option><option>順豐</option>
               <option>Uber</option><option>LALA</option><option>其他</option>
-            </select>\`;
         } else {
           container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
         }
@@ -69,7 +68,6 @@
     <h2>新增簽收單（登入人：<span id="login-user"></span>）</h2>
     <form id="sign-form">
       <label>身份分類：</label>
-      <select id="type1" required>
         <option value="">請選擇</option>
         <option value="供應商">供應商</option>
         <option value="物流">物流</option>
@@ -79,7 +77,6 @@
       <div id="type2-container"></div>
 
       <label>付款人員：</label>
-      <select id="payer" required></select>
 
       <label><input type="checkbox" id="cashbox-checkbox" /> 內場錢櫃</label>
 
