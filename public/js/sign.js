@@ -9,7 +9,7 @@ import {
 
 window.onload = async () => {
   // 載入使用者 nickname 並塞入付款人選單
-  const payerSelect = document.getElementById('payer');
+//  const payerSelect = document.getElementById('payer');
   const usersSnap = await getDocs(collection(db, 'users'));
   usersSnap.forEach(doc => {
     const d = doc.data();
