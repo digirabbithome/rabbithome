@@ -12,14 +12,29 @@
 
     let allSuppliers = [];
 
-    async function loadUsersToPayerSelect() {
-      const snap = await getDocs(collection(db, 'users'));
-      const payerSelect = document.getElementById('payer');
-      console.log("👀 檢查 payer element:", payerSelect);
-      if (!payerSelect) {
-        console.error("⚠️ 找不到 #payer 元素！");
-        return;
-      }
+async function loadUsersToPayerSelect() {
+  const snap = await getDocs(collection(db, 'users'));
+  const payerSelect = document.getElementById('payer');
+  console.log("👀 檢查 payer element:", payerSelect);
+  if (!payerSelect) {
+    console.error("⚠️ 找不到 #payer 元素！");
+    return;
+  }
+  console.log("📦 載入使用者筆數:", snap.size);
+  snap.forEach(doc => {
+    const d = doc.data();
+    console.log("📌 nickname:", d.nickname);
+    if (d.nickname) {
+      const opt = document.createElement('option');
+      opt.value = d.nickname;
+      opt.textContent = d.nickname;
+      payerSelect.appendChild(opt);
+    }
+  });
+}
+
+
+    
       console.log("📦 載入使用者筆數:", snap.size);
       snap.forEach(doc => {
         const d = doc.data();
@@ -46,17 +61,7 @@
       });
     }
 
-    async function loadUsersToPayerSelect() {
-      const snap = await getDocs(collection(db, 'users'));
-      const payerSelect = document.getElementById('payer');
-      snap.forEach(doc => {
-        const d = doc.data();
-        if (d.nickname) {
-          const opt = document.createElement('option');
-          opt.value = d.nickname;
-          opt.textContent = d.nickname;
-          payerSelect.appendChild(opt);
-        }
+    
       });
     }
 
