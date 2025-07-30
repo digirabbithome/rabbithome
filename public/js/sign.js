@@ -1,3 +1,4 @@
+const payerSelect = document.getElementById('payer');
 
 import { db, storage } from '/js/firebase.js'
 import {
@@ -9,7 +10,6 @@ import {
 
 window.onload = async () => {
   // 載入使用者 nickname 並塞入付款人選單
-//  const payerSelect = document.getElementById('payer');
   const usersSnap = await getDocs(collection(db, 'users'));
   usersSnap.forEach(doc => {
     const d = doc.data();
@@ -31,7 +31,6 @@ window.onload = async () => {
   document.getElementById('nickname').textContent = nickname
 
   // 載入付款人選單
-  const payerSelect = document.getElementById('payer')
   if (payerSelect) {
     const snap = await getDocs(collection(db, 'users'))
     payerSelect.innerHTML = '<option value="">請選擇付款人</option>'
