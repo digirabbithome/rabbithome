@@ -8,6 +8,19 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
 
 window.onload = async () => {
+  // 載入使用者 nickname 並塞入付款人選單
+  const payerSelect = document.getElementById('payer');
+  const usersSnap = await getDocs(collection(db, 'users'));
+  usersSnap.forEach(doc => {
+    const d = doc.data();
+    if (d.nickname) {
+      const option = document.createElement('option');
+      option.value = d.nickname;
+      option.textContent = d.nickname;
+      payerSelect.appendChild(option);
+    }
+  });
+
   const nickname = localStorage.getItem('nickname')
   if (!nickname) {
     alert('請先登入帳號！')
