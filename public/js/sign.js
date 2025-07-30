@@ -1,60 +1,94 @@
+
 import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, updateDoc, serverTimestamp
+  collection, addDoc, updateDoc, getDoc, getDocs, doc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   ref, uploadString, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-window.onload = () => {
-  const nickname = localStorage.getItem('nickname');
-  if (!nickname) {
-    alert('請先登入帳號！');
-    window.location.href = '/login.html';
-    return;
-  }
+async function loadNicknames() {
+  const snapshot = await getDocs(collection(db, 'users'));
+  const nicknameSelect = document.getElementById('nickname');
+  const payerSelect = document.getElementById('payer');
 
-  document.getElementById('nickname').textContent = nickname;
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.nickname) {
+      const opt1 = document.createElement('option');
+      opt1.value = data.nickname;
+      opt1.textContent = data.nickname;
+      nicknameSelect.appendChild(opt1);
+
+      const opt2 = document.createElement('option');
+      opt2.value = data.nickname;
+      opt2.textContent = data.nickname;
+      payerSelect.appendChild(opt2);
+    }
+  });
+}
+
+window.onload = () => {
+  loadNicknames();
 
   const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const amount = document.getElementById('amount').value;
+    const selectedNickname = document.getElementById('nickname').value;
+    const payer = document.getElementById('payer').value;
+    const amountStr = document.getElementById('amount').value;
+    const amount = parseInt(amountStr);
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
-
-    const searchInput = document.getElementById('type2-search');
-    const selectInput = document.getElementById('type2');
-    let type2 = '';
-    if (searchInput) {
-      type2 = searchInput.value.trim();
-    } else if (selectInput) {
-      type2 = selectInput.value.trim();
-    }
+    const type2 = document.getElementById('type2-search')?.value.trim() || document.getElementById('type2')?.value.trim();
+    const cashboxChecked = document.getElementById('cashbox')?.checked;
 
     const canvas = document.getElementById('signature');
     const imageData = canvas.toDataURL('image/png');
 
-    if (!amount || !imageData || type1 === '' || type2 === '') {
-      alert('請填寫金額、選擇分類、公司資訊並簽名');
+    if (!selectedNickname || !payer || !amount || !type1 || !type2 || !imageData) {
+      alert('請填寫所有欄位並簽名');
       return;
     }
 
     try {
-      const docRef = await addDoc(collection(db, 'signs'), {
+      // Step 1: 新增 signs 簽名資料
+      const signRef = await addDoc(collection(db, 'signs'), {
         amount,
         note,
         type1,
         type2,
-        nickname,
+        nickname: selectedNickname,
+        payer,
+        cashbox: !!cashboxChecked,
         createdAt: serverTimestamp()
       });
 
-      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
+      const imageRef = ref(storage, 'signatures/' + signRef.id + '.png');
       await uploadString(imageRef, imageData, 'data_url');
       const imageUrl = await getDownloadURL(imageRef);
-      await updateDoc(docRef, { signatureUrl: imageUrl });
+      await updateDoc(signRef, { signatureUrl: imageUrl });
+
+      // Step 2: 若勾選內場錢櫃，寫入 cashbox-records 並更新餘額
+      if (cashboxChecked) {
+        const statusRef = doc(db, 'cashbox-status', 'currentBalance');
+        const statusSnap = await getDoc(statusRef);
+        let currentBalance = statusSnap.exists() ? statusSnap.data().value || 0 : 0;
+        const newBalance = currentBalance - amount;
+
+        await addDoc(collection(db, 'cashbox-records'), {
+          type: 'out',
+          amount,
+          reason: type2,
+          user: payer,
+          createdBy: selectedNickname,
+          createdAt: serverTimestamp(),
+          balanceAfter: newBalance
+        });
+
+        await updateDoc(statusRef, { value: newBalance });
+      }
 
       alert('簽收紀錄已送出！');
       window.location.reload();
