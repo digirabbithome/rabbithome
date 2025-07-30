@@ -1,93 +1,66 @@
-
 import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, getDocs
+  collection, addDoc, updateDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
-  ref, uploadBytes, getDownloadURL
+  ref, uploadString, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-window.onload = async () => {
-  const loginNickname = localStorage.getItem('nickname') || '未登入';
-  const loginSpan = document.getElementById('login-user');
-  if (loginSpan) loginSpan.textContent = loginNickname;
+window.onload = () => {
+  const nickname = localStorage.getItem('nickname');
+  if (!nickname) {
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
+    return;
+  }
 
-  await loadNicknames();
+  document.getElementById('nickname').textContent = nickname;
 
   const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const amount = document.getElementById('amount').value;
+    const note = document.getElementById('note').value;
+    const type1 = document.getElementById('type1').value;
+
+    const searchInput = document.getElementById('type2-search');
+    const selectInput = document.getElementById('type2');
+    let type2 = '';
+    if (searchInput) {
+      type2 = searchInput.value.trim();
+    } else if (selectInput) {
+      type2 = selectInput.value.trim();
+    }
+
+    const canvas = document.getElementById('signature');
+    const imageData = canvas.toDataURL('image/png');
+
+    if (!amount || !imageData || type1 === '' || type2 === '') {
+      alert('請填寫金額、選擇分類、公司資訊並簽名');
+      return;
+    }
+
     try {
-      const payer = document.getElementById('payer').value;
-      const type1 = document.getElementById('type1').value;
-      let type2 = '';
-      if (type1 === '供應商') {
-        type2 = document.getElementById('type2-search')?.value.trim() || '';
-      } else {
-        type2 = document.getElementById('type2')?.value.trim() || '';
-      }
-      const amount = parseInt(document.getElementById('amount').value);
-      const note = document.getElementById('note').value.trim();
-      const checkbox = document.getElementById('cashbox-checkbox');
-      const isCashbox = checkbox && checkbox.checked;
-
-      const canvas = document.getElementById('signature');
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      const filename = `sign_${Date.now()}.png`;
-      const storageRef = ref(storage, 'signatures/' + filename);
-      await uploadBytes(storageRef, blob);
-      const imageUrl = await getDownloadURL(storageRef);
-
       const docRef = await addDoc(collection(db, 'signs'), {
-        createdAt: serverTimestamp(),
-        signer: loginNickname,
-        handler: payer,
         amount,
         note,
         type1,
         type2,
-        imageUrl,
-        cashbox: isCashbox
+        nickname,
+        createdAt: serverTimestamp()
       });
 
-      if (isCashbox) {
-        const cashRef = doc(db, 'cashbox-status', 'currentBalance');
-        const snap = await getDoc(cashRef);
-        if (!snap.exists()) throw new Error('現金狀態不存在');
-        const data = snap.data();
-        const current = data.amount || 0;
-        const newAmount = current - amount;
-        await updateDoc(cashRef, { amount: newAmount });
+      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
+      await uploadString(imageRef, imageData, 'data_url');
+      const imageUrl = await getDownloadURL(imageRef);
+      await updateDoc(docRef, { signatureUrl: imageUrl });
 
-        await addDoc(collection(db, 'cashbox-logs'), {
-          createdAt: serverTimestamp(),
-          from: payer,
-          amount,
-          type: '支出',
-          nickname: loginNickname,
-          note,
-          remain: newAmount
-        });
-      }
-
-      alert('✅ 送出成功！');
-      location.reload();
+      alert('簽收紀錄已送出！');
+      window.location.reload();
     } catch (err) {
-      console.error('發生錯誤：', err);
+      console.error('寫入錯誤', err);
       alert('送出失敗，請稍後再試');
     }
   });
 };
-
-async function loadNicknames() {
-  const snap = await getDocs(collection(db, 'users'));
-  const payer = document.getElementById('payer');
-  snap.forEach(doc => {
-    const d = doc.data();
-    if (d.nickname) {
-      const opt = document.createElement('option');
-      opt.textContent = d.nickname;
-      payer.appendChild(opt);
-    }
-  });
-}
