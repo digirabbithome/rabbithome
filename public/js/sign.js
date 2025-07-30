@@ -1,73 +1,44 @@
-const payerSelect = document.getElementById('payer');
-
-import { db, storage } from '/js/firebase.js'
+import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, updateDoc, serverTimestamp, getDocs
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+  collection, addDoc, updateDoc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   ref, uploadString, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js'
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-window.onload = async () => {
-  // 載入使用者 nickname 並塞入付款人選單
-  const usersSnap = await getDocs(collection(db, 'users'));
-  usersSnap.forEach(doc => {
-    const d = doc.data();
-    if (d.nickname) {
-      const option = document.createElement('option');
-      option.value = d.nickname;
-      option.textContent = d.nickname;
-      payerSelect.appendChild(option);
-    }
-  });
-
-  const nickname = localStorage.getItem('nickname')
+window.onload = () => {
+  const nickname = localStorage.getItem('nickname');
   if (!nickname) {
-    alert('請先登入帳號！')
-    window.location.href = '/login.html'
-    return
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
+    return;
   }
 
-  document.getElementById('nickname').textContent = nickname
+  document.getElementById('nickname').textContent = nickname;
 
-  // 載入付款人選單
-  if (payerSelect) {
-    const snap = await getDocs(collection(db, 'users'))
-    payerSelect.innerHTML = '<option value="">請選擇付款人</option>'
-    snap.forEach(doc => {
-      const d = doc.data()
-      if (d.nickname) {
-        const opt = document.createElement('option')
-        opt.value = d.nickname
-        opt.textContent = d.nickname
-        payerSelect.appendChild(opt)
-      }
-    })
-  }
-
-  const form = document.getElementById('sign-form')
+  const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const amount = document.getElementById('amount').value
-    const note = document.getElementById('note').value
-    const type1 = document.getElementById('type1').value
+    const amount = document.getElementById('amount').value;
+    const note = document.getElementById('note').value;
+    const type1 = document.getElementById('type1').value;
 
-    const searchInput = document.getElementById('type2-search')
-    const selectInput = document.getElementById('type2')
-    let type2 = ''
+    const searchInput = document.getElementById('type2-search');
+    const selectInput = document.getElementById('type2');
+    let type2 = '';
     if (searchInput) {
-      type2 = searchInput.value.trim()
+      type2 = searchInput.value.trim();
     } else if (selectInput) {
-      type2 = selectInput.value.trim()
+      type2 = selectInput.value.trim();
     }
 
-    const canvas = document.getElementById('signature')
-    const imageData = canvas.toDataURL('image/png')
+    const canvas = document.getElementById('signature');
+    const imageData = canvas.toDataURL('image/png');
 
     if (!amount || !imageData || type1 === '' || type2 === '') {
-      alert('請填寫金額、選擇分類、公司資訊並簽名')
-      return
+      alert('請填寫金額、選擇分類、公司資訊並簽名');
+      return;
     }
 
     try {
@@ -78,18 +49,18 @@ window.onload = async () => {
         type2,
         nickname,
         createdAt: serverTimestamp()
-      })
+      });
 
-      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png')
-      await uploadString(imageRef, imageData, 'data_url')
-      const imageUrl = await getDownloadURL(imageRef)
-      await updateDoc(docRef, { signatureUrl: imageUrl })
+      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
+      await uploadString(imageRef, imageData, 'data_url');
+      const imageUrl = await getDownloadURL(imageRef);
+      await updateDoc(docRef, { signatureUrl: imageUrl });
 
-      alert('簽收紀錄已送出！')
-      window.location.reload()
+      alert('簽收紀錄已送出！');
+      window.location.reload();
     } catch (err) {
-      console.error('寫入錯誤', err)
-      alert('送出失敗，請稍後再試')
+      console.error('寫入錯誤', err);
+      alert('送出失敗，請稍後再試');
     }
-  })
-}
+  });
+};
