@@ -9,20 +9,22 @@
 <body>
   <div class="form-container">
     <h2>新增簽收單（<span id="currentUser"></span>）</h2>
-    <label>付款人：</label>
-    <select id="payer" required></select>
-    <label>身份分類：</label>
-    <select id="payerType" required></select>
-    <label>金額：</label>
-    <input type="number" id="amount" required />
-    <label>備註：</label>
-    <textarea id="note"></textarea>
-    <label>簽名：</label>
-    <canvas id="signature" width="300" height="150" style="border:1px solid #000;"></canvas>
-    <div class="button-row">
-      <button id="clear">🧽 清除簽名</button>
-      <button id="submit">✅ 確認送出</button>
-    </div>
+    <form id="sign-form">
+      <label>付款人：</label>
+      <select id="payer" required></select>
+      <label>身份分類：</label>
+      <select id="payerType" required></select>
+      <label>金額：</label>
+      <input type="number" id="amount" required />
+      <label>備註：</label>
+      <textarea id="note"></textarea>
+      <label>簽名：</label>
+      <canvas id="signature" width="300" height="150" style="border:1px solid #000;"></canvas>
+      <div class="button-row">
+        <button id="clear" type="button">🧽 清除簽名</button>
+        <button type="submit">✅ 確認送出</button>
+      </div>
+    </form>
   </div>
 
   <script type="module" src="/js/sign.js"></script>
