@@ -1,73 +1,66 @@
-
-import { db } from '/js/firebase.js'
+import { db, storage } from '/js/firebase.js';
 import {
-  collection, getDocs
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+  collection, addDoc, updateDoc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  ref, uploadString, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-window.onload = async () => {
-  const payerSelect = document.getElementById('payer')
-  if (payerSelect) {
-    const snapshot = await getDocs(collection(db, 'users'))
-    snapshot.forEach(doc => {
-      const d = doc.data()
-      if (d.nickname) {
-        const opt = document.createElement('option')
-        opt.textContent = d.nickname
-        payerSelect.appendChild(opt)
-      }
-    })
+window.onload = () => {
+  const nickname = localStorage.getItem('nickname');
+  if (!nickname) {
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
+    return;
   }
 
-  const canvas = document.getElementById('signature')
-  const ctx = canvas.getContext('2d')
-  let drawing = false
+  document.getElementById('nickname').textContent = nickname;
 
-  function resizeCanvasToMatchContainer() {
-    const containerWidth = canvas.parentElement.clientWidth
-    const desiredHeight = 200
-    canvas.width = containerWidth
-    canvas.height = desiredHeight
-  }
-  resizeCanvasToMatchContainer()
+  const form = document.getElementById('sign-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect()
-    const x = e.touches ? e.touches[0].clientX : e.clientX
-    const y = e.touches ? e.touches[0].clientY : e.clientY
-    return {
-      x: (x - rect.left) * (canvas.width / rect.width),
-      y: (y - rect.top) * (canvas.height / rect.height)
+    const amount = document.getElementById('amount').value;
+    const note = document.getElementById('note').value;
+    const type1 = document.getElementById('type1').value;
+
+    const searchInput = document.getElementById('type2-search');
+    const selectInput = document.getElementById('type2');
+    let type2 = '';
+    if (searchInput) {
+      type2 = searchInput.value.trim();
+    } else if (selectInput) {
+      type2 = selectInput.value.trim();
     }
-  }
 
-  function startDraw(e) {
-    e.preventDefault()
-    drawing = true
-    const pos = getPos(e)
-    ctx.beginPath()
-    ctx.moveTo(pos.x, pos.y)
-  }
+    const canvas = document.getElementById('signature');
+    const imageData = canvas.toDataURL('image/png');
 
-  function draw(e) {
-    if (!drawing) return
-    const pos = getPos(e)
-    ctx.lineTo(pos.x, pos.y)
-    ctx.stroke()
-  }
+    if (!amount || !imageData || type1 === '' || type2 === '') {
+      alert('請填寫金額、選擇分類、公司資訊並簽名');
+      return;
+    }
 
-  function endDraw() {
-    drawing = false
-  }
+    try {
+      const docRef = await addDoc(collection(db, 'signs'), {
+        amount,
+        note,
+        type1,
+        type2,
+        nickname,
+        createdAt: serverTimestamp()
+      });
 
-  canvas.addEventListener('mousedown', startDraw)
-  canvas.addEventListener('mousemove', draw)
-  canvas.addEventListener('mouseup', endDraw)
-  canvas.addEventListener('mouseout', endDraw)
-  canvas.addEventListener('touchstart', startDraw)
-  canvas.addEventListener('touchmove', draw)
-  canvas.addEventListener('touchend', endDraw)
+      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
+      await uploadString(imageRef, imageData, 'data_url');
+      const imageUrl = await getDownloadURL(imageRef);
+      await updateDoc(docRef, { signatureUrl: imageUrl });
 
-  window.clearCanvas = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-  }
-}
+      alert('簽收紀錄已送出！');
+      window.location.reload();
+    } catch (err) {
+      console.error('寫入錯誤', err);
+      alert('送出失敗，請稍後再試');
+    }
+  });
+};
