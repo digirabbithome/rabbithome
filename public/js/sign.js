@@ -1,65 +1,137 @@
-
-// 匯入 Firebase 函式
+import { db, storage } from '/js/firebase.js';
 import {
-  db, collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, getDocs
-} from '/js/firebase.js'
+  collection, addDoc, updateDoc, getDocs, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  ref, uploadString, getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-const nickname = localStorage.getItem('nickname') || '未知使用者'
+async function loadPayers() {
+  const snap = await getDocs(collection(db, 'users'));
+  const payerSelect = document.getElementById('payerSelect');
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.nickname) {
+      const option = document.createElement('option');
+      option.value = d.nickname;
+      option.textContent = d.nickname;
+      payerSelect.appendChild(option);
+    }
+  });
+}
 
 window.onload = async () => {
-  await populatePayerMenu()
-  await populateCompanyOptions()
-  setupListeners()
-}
+  const nickname = localStorage.getItem('nickname');
+  if (!nickname) {
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
+    return;
+  }
 
-async function populatePayerMenu() {
-  const snapshot = await getDocs(collection(db, 'users'))
-  const payerSelect = document.getElementById('payer')
-  snapshot.forEach(doc => {
-    const data = doc.data()
-    const option = document.createElement('option')
-    option.value = data.nickname
-    option.textContent = data.nickname
-    payerSelect.appendChild(option)
-  })
-}
+  document.getElementById('nickname').textContent = nickname;
+  await loadPayers();
 
-function setupListeners() {
-  document.getElementById('submitBtn').addEventListener('click', async () => {
-    const payer = document.getElementById('payer').value || nickname
-    const isCashbox = document.getElementById('cashbox-check')?.checked
-    const amountStr = document.getElementById('amount')?.value || ''
-    const amount = parseInt(amountStr)
-    const reason = document.getElementById('reason')?.value.trim() || ''
-    const category = document.getElementById('categorySelect')?.value || ''
+  const type1 = document.getElementById('type1');
+  const container = document.getElementById('type2-container');
 
-    // 寫入 sign 表單資料（略）
-
-    if (isCashbox && !isNaN(amount) && amount > 0) {
-      await handleCashboxOut(payer, amount, category || reason)
+  type1.addEventListener('change', () => {
+    if (type1.value === '供應商') {
+      container.innerHTML = `
+        <input type="text" id="type2-search" placeholder="搜尋供應商" required />
+        <ul id="type2-list" class="popup-list"></ul>
+      `;
+      const searchBox = document.getElementById('type2-search');
+      searchBox.addEventListener('input', () => {
+        const keyword = searchBox.value.toLowerCase();
+        if (!keyword) {
+          document.getElementById('type2-list').innerHTML = '';
+          return;
+        }
+        keyword = searchBox.value.toLowerCase();
+        const list = document.getElementById('type2-list');
+        list.innerHTML = '';
+        getDocs(collection(db, 'suppliers')).then(snap => {
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (
+      d.code &&
+      d.shortName &&
+      d.code !== '000' &&
+      !/測試|test|樣品/.test(d.shortName)
+    ) {
+              const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
+              const label = d.code + ' - ' + name;
+              if (label.toLowerCase().includes(keyword)) {
+                const li = document.createElement('li');
+                li.textContent = label;
+                li.onclick = () => {
+                  searchBox.value = label;
+                  list.innerHTML = '';
+                };
+                list.appendChild(li);
+              }
+            }
+          });
+        });
+      });
+    } else if (type1.value === '物流') {
+      container.innerHTML = `
+        <select id="type2" required>
+          <option>新竹</option><option>黑貓</option><option>大榮</option>
+          <option>宅配通</option><option>順豐</option>
+          <option>Uber</option><option>LALA</option><option>其他</option>
+        </select>`;
+    } else {
+      container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
     }
-  })
-}
+  });
 
-async function handleCashboxOut(payer, amount, reason) {
-  const statusRef = doc(db, 'cashbox-status', 'main')
-  const recordsRef = collection(db, 'cashbox-records')
-  const snap = await getDoc(statusRef)
-  const currentBalance = snap.exists() ? snap.data().amount : 0
-  const newBalance = currentBalance - amount
+  const form = document.getElementById('sign-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  await addDoc(recordsRef, {
-    user: payer,
-    type: 'out',
-    amount,
-    reason,
-    createdAt: serverTimestamp(),
-    balanceAfter: newBalance
-  })
+    const amount = document.getElementById('amount').value;
+    const note = document.getElementById('note').value;
+    const type1 = document.getElementById('type1').value;
+    const payer = document.getElementById('payerSelect').value;
 
-  await updateDoc(statusRef, {
-    amount: newBalance,
-    updatedAt: serverTimestamp(),
-    updatedBy: payer
-  })
-}
+    const searchInput = document.getElementById('type2-search');
+    const selectInput = document.getElementById('type2');
+    let type2 = '';
+    if (searchInput) {
+      type2 = searchInput.value.trim();
+    } else if (selectInput) {
+      type2 = selectInput.value.trim();
+    }
+
+    const canvas = document.getElementById('signature');
+    const imageData = canvas.toDataURL('image/png');
+
+    if (!payer || !amount || type1 === '' || type2 === '') {
+      alert('請填寫所有欄位與簽名');
+      return;
+    }
+
+    try {
+      const docRef = await addDoc(collection(db, 'signs'), {
+        amount,
+        note,
+        type1,
+        type2,
+        nickname: payer,
+        createdAt: serverTimestamp()
+      });
+
+      const imageRef = ref(storage, 'signatures/' + docRef.id + '.png');
+      await uploadString(imageRef, imageData, 'data_url');
+      const imageUrl = await getDownloadURL(imageRef);
+      await updateDoc(docRef, { signatureUrl: imageUrl });
+
+      alert('簽收紀錄已送出！');
+      window.location.reload();
+    } catch (err) {
+      console.error('寫入錯誤', err);
+      alert('送出失敗，請稍後再試');
+    }
+  });
+};
