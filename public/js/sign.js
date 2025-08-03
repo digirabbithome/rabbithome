@@ -1,12 +1,26 @@
 import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, updateDoc, serverTimestamp
+  collection, addDoc, updateDoc, getDocs, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   ref, uploadString, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 
-window.onload = () => {
+async function loadPayers() {
+  const snap = await getDocs(collection(db, 'users'));
+  const payerSelect = document.getElementById('payerSelect');
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.nickname) {
+      const option = document.createElement('option');
+      option.value = d.nickname;
+      option.textContent = d.nickname;
+      payerSelect.appendChild(option);
+    }
+  });
+}
+
+window.onload = async () => {
   const nickname = localStorage.getItem('nickname');
   if (!nickname) {
     alert('請先登入帳號！');
@@ -15,6 +29,7 @@ window.onload = () => {
   }
 
   document.getElementById('nickname').textContent = nickname;
+  await loadPayers();
 
   const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
@@ -23,6 +38,7 @@ window.onload = () => {
     const amount = document.getElementById('amount').value;
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
+    const payer = document.getElementById('payerSelect').value;
 
     const searchInput = document.getElementById('type2-search');
     const selectInput = document.getElementById('type2');
@@ -36,8 +52,8 @@ window.onload = () => {
     const canvas = document.getElementById('signature');
     const imageData = canvas.toDataURL('image/png');
 
-    if (!amount || !imageData || type1 === '' || type2 === '') {
-      alert('請填寫金額、選擇分類、公司資訊並簽名');
+    if (!payer || !amount || type1 === '' || type2 === '') {
+      alert('請填寫所有欄位與簽名');
       return;
     }
 
@@ -47,7 +63,7 @@ window.onload = () => {
         note,
         type1,
         type2,
-        nickname,
+        nickname: payer,
         createdAt: serverTimestamp()
       });
 
