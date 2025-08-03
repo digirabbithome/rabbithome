@@ -135,33 +135,3 @@ window.onload = async () => {
     }
   });
 };
-
-
-
-import {
-  doc, getDoc, updateDoc, setDoc, collection, addDoc, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-
-async function handleCashboxUpdate(amount, reason, payer) {
-  const statusRef = doc(db, 'cashbox-status', 'main');
-  const statusSnap = await getDoc(statusRef);
-  const prevAmount = statusSnap.exists() ? (statusSnap.data().amount || 0) : 0;
-
-  const newBalance = prevAmount - amount;
-  await addDoc(collection(db, 'cashbox-records'), {
-    amount: amount,
-    type: 'out',
-    reason: reason,
-    createdAt: serverTimestamp(),
-    balanceAfter: newBalance,
-    user: payer
-  });
-
-  await updateDoc(statusRef, {
-    amount: newBalance,
-    updatedAt: serverTimestamp(),
-    updatedBy: payer
-  });
-}
-
-window.handleCashboxUpdate = handleCashboxUpdate;
