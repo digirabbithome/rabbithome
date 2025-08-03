@@ -21,6 +21,16 @@ async function loadPayers() {
 }
 
 window.onload = async () => {
+  const nickname = localStorage.getItem('nickname');
+  if (!nickname) {
+    alert('請先登入帳號！');
+    window.location.href = '/login.html';
+    return;
+  }
+
+  document.getElementById('nickname').textContent = nickname;
+  await loadPayers();
+
   const type1 = document.getElementById('type1');
   const container = document.getElementById('type2-container');
 
@@ -65,15 +75,6 @@ window.onload = async () => {
       container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
     }
   });
-  const nickname = localStorage.getItem('nickname');
-  if (!nickname) {
-    alert('請先登入帳號！');
-    window.location.href = '/login.html';
-    return;
-  }
-
-  document.getElementById('nickname').textContent = nickname;
-  await loadPayers();
 
   const form = document.getElementById('sign-form');
   form.addEventListener('submit', async (e) => {
