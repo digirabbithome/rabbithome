@@ -135,3 +135,28 @@ window.onload = async () => {
     }
   });
 };
+
+
+// 現在加入處理內場錢櫃邏輯
+async function handleCashboxOut(payer, amount, reason) {
+  const statusRef = doc(db, 'cashbox-status', 'main');
+  const recordsRef = collection(db, 'cashbox-records');
+  const snap = await getDoc(statusRef);
+  const currentBalance = snap.exists() ? snap.data().amount : 0;
+  const newBalance = currentBalance - amount;
+
+  await addDoc(recordsRef, {
+    user: payer,
+    type: 'out',
+    amount,
+    reason,
+    createdAt: serverTimestamp(),
+    balanceAfter: newBalance
+  });
+
+  await updateDoc(statusRef, {
+    amount: newBalance,
+    updatedAt: serverTimestamp(),
+    updatedBy: payer
+  });
+}
