@@ -21,6 +21,50 @@ async function loadPayers() {
 }
 
 window.onload = async () => {
+  const type1 = document.getElementById('type1');
+  const container = document.getElementById('type2-container');
+
+  type1.addEventListener('change', () => {
+    if (type1.value === '供應商') {
+      container.innerHTML = `
+        <input type="text" id="type2-search" placeholder="搜尋供應商" required />
+        <ul id="type2-list" class="popup-list"></ul>
+      `;
+      const searchBox = document.getElementById('type2-search');
+      searchBox.addEventListener('input', () => {
+        const keyword = searchBox.value.toLowerCase();
+        const list = document.getElementById('type2-list');
+        list.innerHTML = '';
+        getDocs(collection(db, 'suppliers')).then(snap => {
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (d.code && d.shortName) {
+              const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
+              const label = d.code + ' - ' + name;
+              if (label.toLowerCase().includes(keyword)) {
+                const li = document.createElement('li');
+                li.textContent = label;
+                li.onclick = () => {
+                  searchBox.value = label;
+                  list.innerHTML = '';
+                };
+                list.appendChild(li);
+              }
+            }
+          });
+        });
+      });
+    } else if (type1.value === '物流') {
+      container.innerHTML = `
+        <select id="type2" required>
+          <option>新竹</option><option>黑貓</option><option>大榮</option>
+          <option>宅配通</option><option>順豐</option>
+          <option>Uber</option><option>LALA</option><option>其他</option>
+        </select>`;
+    } else {
+      container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
+    }
+  });
   const nickname = localStorage.getItem('nickname');
   if (!nickname) {
     alert('請先登入帳號！');
