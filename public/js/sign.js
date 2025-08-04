@@ -33,6 +33,46 @@ window.onload = async () => {
   await loadPayers();
 
   const type1 = document.getElementById('type1');
+
+  type1.addEventListener('change', () => {
+    if (type1.value === '供應商') {
+      container.innerHTML = `
+        <input type="text" id="type2-search" placeholder="搜尋供應商" required />
+        <ul id="type2-list" class="popup-list"></ul>
+      `;
+      const searchBox = document.getElementById('type2-search');
+      searchBox.addEventListener('input', () => {
+        const keyword = searchBox.value.toLowerCase();
+        if (!keyword) {
+          document.getElementById('type2-list').innerHTML = '';
+          return;
+        }
+        keyword = searchBox.value.toLowerCase();
+        const list = document.getElementById('type2-list');
+        list.innerHTML = '';
+        getDocs(collection(db, 'suppliers')).then(snap => {
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (
+      d.code &&
+      d.shortName &&
+      d.code !== '000' &&
+      !/測試|test|樣品/.test(d.shortName)
+    ) {
+              const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
+              const label = d.code + ' - ' + name;
+              if (label.toLowerCase().includes(keyword)) {
+                const li = document.createElement('li');
+                li.textContent = label;
+                li.onclick = () => {
+                  searchBox.value = label;
+                  list.innerHTML = '';
+                };
+                list.appendChild(li);
+              }
+            }
+          });
+
   const container = document.getElementById('type2-container');
 
         });
