@@ -43,12 +43,10 @@ window.onload = async () => {
       `;
       const searchBox = document.getElementById('type2-search');
       searchBox.addEventListener('input', () => {
-        const keyword = searchBox.value.toLowerCase();
         if (!keyword) {
           document.getElementById('type2-list').innerHTML = '';
           return;
         }
-        keyword = searchBox.value.toLowerCase();
         const list = document.getElementById('type2-list');
         list.innerHTML = '';
         getDocs(collection(db, 'suppliers')).then(snap => {
