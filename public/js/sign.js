@@ -1,6 +1,7 @@
+
 import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, updateDoc, getDocs, serverTimestamp
+  collection, addDoc, updateDoc, getDocs, serverTimestamp, doc, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   ref, uploadString, getDownloadURL
@@ -36,10 +37,10 @@ window.onload = async () => {
 
   type1.addEventListener('change', () => {
     if (type1.value === '供應商') {
-      container.innerHTML = `
+      container.innerHTML = \`
         <input type="text" id="type2-search" placeholder="搜尋供應商" required />
         <ul id="type2-list" class="popup-list"></ul>
-      `;
+      \`;
       const searchBox = document.getElementById('type2-search');
       searchBox.addEventListener('input', () => {
         const keyword = searchBox.value.toLowerCase();
@@ -47,18 +48,12 @@ window.onload = async () => {
           document.getElementById('type2-list').innerHTML = '';
           return;
         }
-        keyword = searchBox.value.toLowerCase();
         const list = document.getElementById('type2-list');
         list.innerHTML = '';
         getDocs(collection(db, 'suppliers')).then(snap => {
           snap.forEach(doc => {
             const d = doc.data();
-            if (
-      d.code &&
-      d.shortName &&
-      d.code !== '000' &&
-      !/測試|test|樣品/.test(d.shortName)
-    ) {
+            if (d.code && d.shortName && d.code !== '000' && !/測試|test|樣品/.test(d.shortName)) {
               const name = d.shortName.length > 4 ? d.shortName.slice(0, 4) : d.shortName;
               const label = d.code + ' - ' + name;
               if (label.toLowerCase().includes(keyword)) {
@@ -75,12 +70,12 @@ window.onload = async () => {
         });
       });
     } else if (type1.value === '物流') {
-      container.innerHTML = `
+      container.innerHTML = \`
         <select id="type2" required>
           <option>新竹</option><option>黑貓</option><option>大榮</option>
           <option>宅配通</option><option>順豐</option>
           <option>Uber</option><option>LALA</option><option>其他</option>
-        </select>`;
+        </select>\`;
     } else {
       container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
     }
@@ -90,10 +85,11 @@ window.onload = async () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const amount = document.getElementById('amount').value;
+    const amount = Number(document.getElementById('amount').value);
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
     const payer = document.getElementById('payerSelect').value;
+    const cashboxChecked = document.getElementById('cashboxCheckbox').checked;
 
     const searchInput = document.getElementById('type2-search');
     const selectInput = document.getElementById('type2');
@@ -119,6 +115,7 @@ window.onload = async () => {
         type1,
         type2,
         nickname: payer,
+        cashbox: cashboxChecked,
         createdAt: serverTimestamp()
       });
 
@@ -126,6 +123,30 @@ window.onload = async () => {
       await uploadString(imageRef, imageData, 'data_url');
       const imageUrl = await getDownloadURL(imageRef);
       await updateDoc(docRef, { signatureUrl: imageUrl });
+
+      if (cashboxChecked) {
+        // 讀取現有 cashbox 金額
+        const statusRef = doc(db, 'cashbox-status', 'main');
+        const statusSnap = await getDoc(statusRef);
+        const currentAmount = statusSnap.exists() ? statusSnap.data().amount || 0 : 0;
+        const newAmount = currentAmount - amount;
+
+        const reason = `${type1} - ${type2}${note ? ' / ' + note : ''}`;
+
+        await addDoc(collection(db, 'cashbox-records'), {
+          amount,
+          type: 'Out',
+          reason,
+          createdAt: serverTimestamp(),
+          balanceAfter: newAmount
+        });
+
+        await updateDoc(statusRef, {
+          amount: newAmount,
+          updatedAt: serverTimestamp(),
+          updatedBy: payer
+        });
+      }
 
       alert('簽收紀錄已送出！');
       window.location.reload();
