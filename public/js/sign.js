@@ -60,6 +60,7 @@ window.onload = async () => {
                 const li = document.createElement('li');
                 li.textContent = label;
                 li.onclick = () => {
+                  list.innerHTML = '';
                   searchBox.value = label;
                   list.innerHTML = '';
                 };
