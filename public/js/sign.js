@@ -135,7 +135,8 @@ window.onload = async () => {
 
         await addDoc(collection(db, 'cashbox-records'), {
           amount,
-          type: 'Out',
+          type: 'out',
+          user: payer,
           reason,
           createdAt: serverTimestamp(),
           balanceAfter: newAmount
