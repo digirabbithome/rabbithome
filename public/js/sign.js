@@ -49,7 +49,6 @@ window.onload = async () => {
           return;
         }
         const list = document.getElementById('type2-list');
-        list.innerHTML = '';
         getDocs(collection(db, 'suppliers')).then(snap => {
           snap.forEach(doc => {
             const d = doc.data();
@@ -60,9 +59,8 @@ window.onload = async () => {
                 const li = document.createElement('li');
                 li.textContent = label;
                 li.onclick = () => {
-                  list.innerHTML = '';
+                  document.getElementById('type2-list').innerHTML = '';
                   searchBox.value = label;
-                  list.innerHTML = '';
                 };
                 list.appendChild(li);
               }
