@@ -37,10 +37,10 @@ window.onload = async () => {
 
   type1.addEventListener('change', () => {
     if (type1.value === '供應商') {
-      container.innerHTML = \`
+      container.innerHTML = `
         <input type="text" id="type2-search" placeholder="搜尋供應商" required />
         <ul id="type2-list" class="popup-list"></ul>
-      \`;
+      `;
       const searchBox = document.getElementById('type2-search');
       searchBox.addEventListener('input', () => {
         const keyword = searchBox.value.toLowerCase();
@@ -70,12 +70,12 @@ window.onload = async () => {
         });
       });
     } else if (type1.value === '物流') {
-      container.innerHTML = \`
+      container.innerHTML = `
         <select id="type2" required>
           <option>新竹</option><option>黑貓</option><option>大榮</option>
           <option>宅配通</option><option>順豐</option>
           <option>Uber</option><option>LALA</option><option>其他</option>
-        </select>\`;
+        </select>`;
     } else {
       container.innerHTML = '<input type="text" id="type2" placeholder="請填寫名稱" required>';
     }
