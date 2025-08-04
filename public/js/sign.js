@@ -35,6 +35,7 @@ window.onload = async () => {
   const type1 = document.getElementById('type1');
 
   type1.addEventListener('change', () => {
+    const container = document.getElementById('type2-container');
     if (type1.value === '供應商') {
       container.innerHTML = `
         <input type="text" id="type2-search" placeholder="搜尋供應商" required />
