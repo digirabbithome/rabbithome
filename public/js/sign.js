@@ -1,7 +1,6 @@
-
 import { db, storage } from '/js/firebase.js';
 import {
-  collection, addDoc, updateDoc, getDocs, serverTimestamp, doc, getDoc
+  collection, addDoc, updateDoc, getDocs, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   ref, uploadString, getDownloadURL
@@ -91,11 +90,10 @@ window.onload = async () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const amount = Number(document.getElementById('amount').value);
+    const amount = document.getElementById('amount').value;
     const note = document.getElementById('note').value;
     const type1 = document.getElementById('type1').value;
     const payer = document.getElementById('payerSelect').value;
-    const cashboxChecked = document.getElementById('cashboxCheckbox').checked;
 
     const searchInput = document.getElementById('type2-search');
     const selectInput = document.getElementById('type2');
@@ -121,7 +119,6 @@ window.onload = async () => {
         type1,
         type2,
         nickname: payer,
-        cashbox: cashboxChecked,
         createdAt: serverTimestamp()
       });
 
@@ -129,31 +126,6 @@ window.onload = async () => {
       await uploadString(imageRef, imageData, 'data_url');
       const imageUrl = await getDownloadURL(imageRef);
       await updateDoc(docRef, { signatureUrl: imageUrl });
-
-      if (cashboxChecked) {
-        // 讀取現有 cashbox 金額
-        const statusRef = doc(db, 'cashbox-status', 'main');
-        const statusSnap = await getDoc(statusRef);
-        const currentAmount = statusSnap.exists() ? statusSnap.data().amount || 0 : 0;
-        const newAmount = currentAmount - amount;
-
-        const reason = `${type1} - ${type2}${note ? ' / ' + note : ''}`;
-
-        await addDoc(collection(db, 'cashbox-records'), {
-          amount,
-          type: 'out',
-          user: payer,
-          reason,
-          createdAt: serverTimestamp(),
-          balanceAfter: newAmount
-        });
-
-        await updateDoc(statusRef, {
-          amount: newAmount,
-          updatedAt: serverTimestamp(),
-          updatedBy: payer
-        });
-      }
 
       alert('簽收紀錄已送出！');
       window.location.reload();
