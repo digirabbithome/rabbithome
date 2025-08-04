@@ -48,7 +48,6 @@ window.onload = async () => {
           document.getElementById('type2-list').innerHTML = '';
           return;
         }
-        keyword = searchBox.value.toLowerCase();
         const list = document.getElementById('type2-list');
         list.innerHTML = '';
         getDocs(collection(db, 'suppliers')).then(snap => {
