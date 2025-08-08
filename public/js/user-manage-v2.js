@@ -6,6 +6,7 @@ import {
   onAuthStateChanged, sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
+// 管理者帳號清單
 const allowedEmails = [
   'swimming8250@yahoo.com.tw',
   'duckskin@yahoo.com.tw'
@@ -13,9 +14,11 @@ const allowedEmails = [
 
 let users = []
 let filter = 'all'
+let myEmail = ''
 
 window.onload = () => {
-  onAuthStateChanged(auth, async () => {
+  onAuthStateChanged(auth, async (me) => {
+    myEmail = me?.email || ''
     await loadUsers()
     bindUI()
     render()
@@ -26,7 +29,12 @@ async function loadUsers() {
   const snap = await getDocs(collection(db, 'users'))
   users = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
-    .filter(u => allowedEmails.includes(u.email))
+    .filter(u => {
+      // 管理者看到所有人
+      if (allowedEmails.includes(myEmail)) return true
+      // 一般人只能看到自己
+      return u.email === myEmail
+    })
 }
 
 function bindUI() {
