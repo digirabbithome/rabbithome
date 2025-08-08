@@ -138,7 +138,7 @@ function render() {
         <div class="cell">${u.group || ''}</div>
         <div class="cell"><span class="badge ${u.employment||'full-time'}">${labelEmployment(u.employment)}</span></div>
         <div class="cell">${u.hireDate || '未設定'}（年資：${yrs} 年）</div>
-        <div class="cell">年假 ${left}/${quota}（已用 ${used}）</div>
+        <div class="cell">剩餘 ${left} 天 / 總額 ${quota} 天（已用 ${used} 天）</div>
         <div class="cell actions">
           <select data-id="${u.id}">
             ${opt('full-time','正職',u.employment)}
