@@ -2,6 +2,16 @@ import { db, auth } from '/js/firebase.js'
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
+const fmtDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' })
+const fmtTime = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+function todayTPE(){ return fmtDate.format(new Date()) }
+function nowTimeTPE(){ return fmtTime.format(new Date()) }
+function formatToTPE(dtLike){
+  const d = dtLike?.toDate ? dtLike.toDate() : (dtLike instanceof Date ? dtLike : new Date(dtLike))
+  const dstr = fmtDate.format(d), tstr = fmtTime.format(d)
+  return `${dstr} ${tstr}`
+}
+
 const pad2 = n => String(n).padStart(2, '0')
 let me, yyyymm
 
@@ -9,8 +19,8 @@ window.onload = () => {
   onAuthStateChanged(auth, async (user) => {
     if (!user) { alert('請先登入'); return }
     me = user
-    const now = new Date()
-    yyyymm = `${now.getFullYear()}${pad2(now.getMonth() + 1)}`
+    const dstr = todayTPE()
+    yyyymm = dstr.slice(0,7).replace('-', '')
     document.getElementById('me').textContent = me.email || ''
     bindActions()
     await loadToday()
@@ -23,29 +33,36 @@ function bindActions() {
 }
 
 async function punch(kind) {
-  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+  const localDate = todayTPE()
+  const localTime = nowTimeTPE()
+  const atISO = new Date().toISOString()
   await addDoc(collection(db, 'punches', me.uid, yyyymm), {
-    date: today,                // 查詢用
-    kind,                       // 'in' or 'out'
-    at: new Date().toISOString(),
+    date: localDate,
+    kind,
+    at: atISO,
+    atTPE: `${localDate} ${localTime}`,
+    tz: 'Asia/Taipei',
     createdAt: serverTimestamp()
   })
   await loadToday()
 }
 
 async function loadToday() {
-  const today = new Date().toISOString().slice(0, 10)
-  // ✅ 不加 orderBy，避免複合索引；改前端排序
-  const q = query(collection(db, 'punches', me.uid, yyyymm), where('date', '==', today))
+  const localDate = todayTPE()
+  const q = query(collection(db, 'punches', me.uid, yyyymm), where('date', '==', localDate))
   const snap = await getDocs(q)
   const rows = []
   snap.forEach(d => rows.push({ id: d.id, ...d.data() }))
-
-  // 以 at 欄位排序（字串 ISO 時間可直接比較）
-  rows.sort((a, b) => (a.at || '').localeCompare(b.at || ''))
-
+  rows.sort((a, b) => {
+    const ta = a.atTPE || formatToTPE(a.at || a.createdAt || new Date())
+    const tb = b.atTPE || formatToTPE(b.at || b.createdAt || new Date())
+    return ta.localeCompare(tb)
+  })
   const list = document.getElementById('todayList')
   list.innerHTML = rows.length
-    ? rows.map(r => `<div class="row">${(r.at || '').slice(11, 19)}　${r.kind === 'in' ? '上班' : '下班'}</div>`).join('')
+    ? rows.map(r => {
+        const show = r.atTPE || formatToTPE(r.at || r.createdAt || new Date())
+        return `<div class="row">${show.slice(11, 19)}　${r.kind === 'in' ? '上班' : '下班'}</div>`
+      }).join('')
     : '<div class="row">今天尚無打卡</div>'
 }
