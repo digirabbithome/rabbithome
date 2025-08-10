@@ -2,6 +2,8 @@ import { db, auth } from '/js/firebase.js'
 import { doc, getDoc, collection, addDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
+const zhStatus = s => s==='pending'?'待審核': s==='approved'?'已核准': s==='rejected'?'已拒絕': s
+
 let me, profile
 window.onload = () => {
   onAuthStateChanged(auth, async user => {
@@ -39,6 +41,6 @@ function bindForm(){
 async function loadLeaves(){
   const snap=await getDocs(collection(db,'users',me.uid,'leaves'))
   const list=document.getElementById('list'); if(snap.empty){ list.innerHTML='<div class="row">尚無申請</div>'; return }
-  const rows=[]; snap.forEach(d=>{ const l=d.data(); rows.push(`<div class="row"><span>${l.start} ~ ${l.end}</span><span>${l.days||'-'}</span><span><span class="badge ${l.status}">${l.status}</span></span></div>`) })
+  const rows=[]; snap.forEach(d=>{ const l=d.data(); rows.push(`<div class="row"><span>${l.start} ~ ${l.end}</span><span>${l.days||'-'}</span><span><span class="badge ${l.status}">${zhStatus(l.status)}</span></span></div>`) })
   list.innerHTML=rows.join('')
 }
