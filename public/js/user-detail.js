@@ -25,13 +25,18 @@ function settlePartTimeDay({ punches }){
 let uid, yyyymm
 window.onload = () => {
   const params = new URLSearchParams(location.search)
-  uid = params.get('uid')
+  uid = params.get('uid') // 可能為 null
   const now = new Date()
   yyyymm = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`
   onAuthStateChanged(auth, async me => {
-    const myEmail = me?.email || ''
     if (!me) return location.replace('/user-manage-v2.html')
-    if (!allowedAdmins.includes(myEmail) && me.uid !== uid) return location.replace('/user-manage-v2.html')
+    const myEmail = me.email || ''
+    // 若網址沒帶 uid，預設看自己；避免把 null 傳給 Firestore
+    if (!uid) uid = me.uid
+    // 非管理者僅能看自己
+    if (!allowedAdmins.includes(myEmail) && me.uid !== uid) {
+      return location.replace('/user-manage-v2.html')
+    }
     await loadAndRender()
     bindMonthNav()
   })
@@ -39,6 +44,7 @@ window.onload = () => {
 
 async function loadAndRender(){
   document.getElementById('yyyymm').textContent = yyyymm
+  // 這裡 uid 一定已存在（上面保底），避免 doc(..., null)
   const profileSnap = await getDoc(doc(db,'users',uid))
   const profile = profileSnap.exists()? profileSnap.data(): {}
   document.getElementById('title').textContent = `${profile.nickname||profile.name||'(未命名)'} 的月結`
