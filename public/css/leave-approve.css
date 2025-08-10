@@ -4,7 +4,7 @@ body{font-family:system-ui,-apple-system; background:#fff9fc; margin:0;}
 h1{color:#d63384; margin:0;}
 .filters{display:flex; gap:8px; align-items:center;}
 .card{background:#fff; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,.06); padding:12px; margin-top:12px;}
-.thead,.tbody .row{display:grid; grid-template-columns: 160px 220px 200px 70px 80px 90px 150px 220px; gap:8px; align-items:center;}
+.thead,.tbody .row{display:grid; grid-template-columns: 160px 220px 200px 70px 80px 90px 100px 220px; gap:8px; align-items:center;}
 .thead{padding:8px 10px; font-weight:600; color:#555; border-bottom:1px solid #f3d1e1;}
 .tbody .row{padding:8px 10px; border-bottom:1px dashed #f6e4ee;}
 .badge{padding:2px 8px; border-radius:999px; font-size:12px;}

@@ -1,7 +1,5 @@
 import { db, auth } from '/js/firebase.js'
-import {
-  doc, getDoc, collection, getDocs
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { doc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 const allowedAdmins = ['swimming8250@yahoo.com.tw','duckskin@yahoo.com.tw']

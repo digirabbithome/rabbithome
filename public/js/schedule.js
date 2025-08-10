@@ -1,5 +1,5 @@
 import { db, auth } from '/js/firebase.js'
-import { doc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 const allowedAdmins=['swimming8250@yahoo.com.tw','duckskin@yahoo.com.tw']
@@ -17,11 +17,9 @@ window.onload=()=>{
     if(me.uid!==uid && !allowedAdmins.includes(myEmail)){
       alert('你沒有權限查看他人班表'); uid=me.uid
     }
-    await render()
-    bindMonthNav()
+    await render(); bindMonthNav()
   })
 }
-
 function firstWeekday(y,m){ return new Date(y, m-1, 1).getDay() }
 function daysInMonth(y,m){ return new Date(y, m, 0).getDate() }
 
@@ -31,15 +29,11 @@ async function render(){
   const grid=document.getElementById('grid'); grid.innerHTML=''
   const startPad=firstWeekday(y,m); const total=daysInMonth(y,m)
 
-  // load schedules/{uid}/{yyyymm}/days/*
-  const daysSnap=await getDocs(collection(db,'schedules', uid, `${y}${pad2(m)}`, 'days'))
-  const byDay={}; daysSnap.forEach(d=>byDay[d.id.padStart(2,'0')]=d.data())
+  const daysSnap = await getDocs(collection(db, 'schedules', uid, `${y}${pad2(m)}`))
+  const byDay = {}; daysSnap.forEach(d=> byDay[d.id.padStart(2,'0')] = d.data())
 
-  // headers
   const wk=['日','一','二','三','四','五','六']
   for(let i=0;i<7;i++){ const h=document.createElement('div'); h.className='muted'; h.textContent=wk[i]; grid.appendChild(h) }
-
-  // blank padding
   for(let i=0;i<startPad;i++){ grid.appendChild(document.createElement('div')) }
 
   for(let d=1; d<=total; d++){
@@ -52,7 +46,6 @@ async function render(){
     grid.appendChild(cell)
   }
 }
-
 function bindMonthNav(){
   document.getElementById('prevM').onclick=()=>{ const [y,m]=yyyymm.split('-').map(Number); const d=new Date(y,m-2,1); yyyymm=`${d.getFullYear()}-${pad2(d.getMonth()+1)}`; render() }
   document.getElementById('nextM').onclick=()=>{ const [y,m]=yyyymm.split('-').map(Number); const d=new Date(y,m,1);   yyyymm=`${d.getFullYear()}-${pad2(d.getMonth()+1)}`; render() }
