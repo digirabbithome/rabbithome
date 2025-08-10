@@ -1,11 +1,11 @@
 body{font-family:system-ui,-apple-system; background:#fff9fc; margin:0;}
-.wrap{max-width:760px; margin:20px auto; padding:0 16px;}
-h1{color:#d63384;}
-.me{margin:8px 0 12px;}
-.actions{display:flex; gap:10px; margin-bottom:12px;}
+.wrap{max-width:820px; margin:20px auto; padding:0 16px;}
+.topbar{display:flex; align-items:center; gap:12px;}
+h1{color:#d63384; margin:0;}
+.me{margin-left:auto; color:#555;}
+.actions{display:flex; gap:10px; margin:12px 0;}
 button{border:0; background:#ff80b5; color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer;}
 button.secondary{background:#ffd7ea; color:#333;}
 button:hover{filter:brightness(.95);}
-.card{background:#fff; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,.06); padding:16px;}
-.list .row{display:flex; gap:12px; padding:8px 0; border-bottom:1px dashed #f6e4ee;}
-.time{font-family:monospace;}
+.card{background:#fff; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,.06); padding:16px; margin:16px 0;}
+#todayList .row{padding:8px 10px; border-bottom:1px dashed #f6e4ee; color:#333;}
