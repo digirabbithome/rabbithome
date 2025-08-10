@@ -12,28 +12,25 @@
     <header class="topbar">
       <h1>✅ 年假審核</h1>
       <div class="filters">
-        <select id="status">
-          <option value="pending">待審核</option>
-          <option value="approved">已核准</option>
-          <option value="rejected">已拒絕</option>
-          <option value="all">全部</option>
-        </select>
+        <label>狀態
+          <select id="status">
+            <option value="pending">待審核</option>
+            <option value="approved">已核准</option>
+            <option value="rejected">已拒絕</option>
+            <option value="all">全部</option>
+          </select>
+        </label>
         <input id="from" type="date" />
         <span>~</span>
         <input id="to" type="date" />
-        <button id="prevMonth">上個月</button>
-        <button id="thisMonth">本月</button>
-        <button id="nextMonth">下個月</button>
-        <label style="display:flex;align-items:center;gap:6px;">
-          <input id="allowPast" type="checkbox" checked /> 允許補核准過去期間
-        </label>
+        <label><input id="allowOverride" type="checkbox" /> 允許「剩餘不足」仍可核准</label>
         <button id="refresh">重新整理</button>
       </div>
     </header>
 
     <section class="card">
       <div class="thead">
-        <span>員工</span><span>Email</span><span>區間</span><span>天數</span><span>類別</span><span>狀態</span><span>—</span><span>操作</span>
+        <span>員工</span><span>Email</span><span>區間</span><span>天數</span><span>類別</span><span>狀態</span><span>剩餘/總額</span><span>操作</span>
       </div>
       <div id="list" class="tbody">載入中…</div>
     </section>

@@ -2,9 +2,9 @@ import { db, auth } from '/js/firebase.js'
 import { doc, getDoc, collection, addDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
-const zhStatus = s => s==='pending'?'待審核': s==='approved'?'已核准': s==='rejected'?'已拒絕': s
-
 let me, profile
+const statusZh = s => s==='pending'?'待審核': s==='approved'?'已核准': s==='rejected'?'已拒絕': s
+
 window.onload = () => {
   onAuthStateChanged(auth, async user => {
     if (!user) { alert('請先登入'); return }
@@ -34,6 +34,15 @@ function bindForm(){
     const start=document.getElementById('start').value, end=document.getElementById('end').value
     if(!start||!end) return alert('請選擇開始與結束日期'); if(end<start) return alert('結束日期不得早於開始日期')
     const days=daysBetween(start,end)
+    // 前端提示：若剩餘不足，提醒但仍可送出（由管理者決定是否超扣）
+    const total=Number(document.getElementById('quotaTotal').textContent||0)
+    const used = Number(document.getElementById('quotaUsed').textContent||0)
+    const left = Math.max(0, total-used)
+    if (days>left) {
+      const go = confirm(`你申請 ${days} 天，但剩餘僅 ${left} 天。
+仍要送出申請給主管審核嗎？`)
+      if (!go) return
+    }
     await addDoc(collection(db,'users',me.uid,'leaves'), { type:'annual', start, end, days, status:'pending', createdBy:me.uid, createdAt:serverTimestamp() })
     alert('已送出，等待主管核准'); document.getElementById('start').value=''; document.getElementById('end').value=''; await loadLeaves()
   }
@@ -41,6 +50,6 @@ function bindForm(){
 async function loadLeaves(){
   const snap=await getDocs(collection(db,'users',me.uid,'leaves'))
   const list=document.getElementById('list'); if(snap.empty){ list.innerHTML='<div class="row">尚無申請</div>'; return }
-  const rows=[]; snap.forEach(d=>{ const l=d.data(); rows.push(`<div class="row"><span>${l.start} ~ ${l.end}</span><span>${l.days||'-'}</span><span><span class="badge ${l.status}">${zhStatus(l.status)}</span></span></div>`) })
+  const rows=[]; snap.forEach(d=>{ const l=d.data(); rows.push(`<div class="row"><span>${l.start} ~ ${l.end}</span><span>${l.days||'-'}</span><span><span class="badge ${l.status}">${statusZh(l.status)}</span></span></div>`) })
   list.innerHTML=rows.join('')
 }
