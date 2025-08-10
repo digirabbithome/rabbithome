@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>年假審核</title>
+  <link rel="stylesheet" href="/css/leave-approve.css" />
+  <script type="module" src="/js/leave-approve.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <h1>✅ 年假審核</h1>
+      <div class="filters">
+        <select id="status">
+          <option value="pending">待審核</option>
+          <option value="approved">已核准</option>
+          <option value="rejected">已拒絕</option>
+          <option value="all">全部</option>
+        </select>
+        <input id="from" type="date" />
+        <span>~</span>
+        <input id="to" type="date" />
+        <button id="refresh">重新整理</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="thead">
+        <span>員工</span><span>Email</span><span>區間</span><span>天數</span><span>類別</span><span>狀態</span><span>剩餘/總額</span><span>操作</span>
+      </div>
+      <div id="list" class="tbody">載入中…</div>
+    </section>
+  </div>
+</body>
+</html>

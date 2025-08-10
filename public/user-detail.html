@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>同事月結詳情</title>
+  <link rel="stylesheet" href="/css/user-detail.css">
+  <script type="module" src="/js/user-detail.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <a class="back" href="/user-manage-v2.html">← 返回列表</a>
+      <h1 id="title">同事月結詳情</h1>
+      <div class="month">
+        <button id="prevM">‹</button>
+        <span id="yyyymm"></span>
+        <button id="nextM">›</button>
+      </div>
+    </header>
+
+    <section class="card" id="summaryCard">
+      <div class="row">
+        <div><label>應工時</label><b id="reqH">-</b></div>
+        <div><label>實際工時</label><b id="workedH">-</b></div>
+        <div><label>加班(+)</label><b id="otH">+0</b></div>
+        <div><label>不足(-)</label><b id="shortH">-0</b></div>
+        <div><label>年假</label><b id="annualDays">0 天</b></div>
+        <div><label>事假</label><b id="personalDays">0 天</b></div>
+        <div class="span2 total"><label>本月結餘</label><b id="netH">0</b></div>
+      </div>
+    </section>
+
+    <section class="table">
+      <div class="thead">
+        <span>日期</span><span>班表/應工時</span><span>打卡工時</span><span>差異(±)</span><span>假別</span><span>備註</span>
+      </div>
+      <div id="tbody" class="tbody">載入中…</div>
+    </section>
+
+    <aside class="history">
+      <h2>歷史紀錄</h2>
+      <div id="historyList" class="list">載入中…</div>
+    </aside>
+  </div>
+</body>
+</html>

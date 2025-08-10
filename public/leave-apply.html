@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的年假申請</title>
+  <link rel="stylesheet" href="/css/leave-apply.css" />
+  <script type="module" src="/js/leave-apply.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🌿 我的年假申請</h1>
+    <section class="card">
+      <div id="profile">載入中…</div>
+      <div class="quota">
+        <div>年假：<b id="quotaLeft">-</b> / <span id="quotaTotal">-</span>（已用 <span id="quotaUsed">-</span>）</div>
+      </div>
+      <div class="form">
+        <label>開始日期 <input id="start" type="date" /></label>
+        <label>結束日期 <input id="end" type="date" /></label>
+        <button id="submit">送出年假申請</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>我的請假紀錄</h2>
+      <div class="thead"><span>區間</span><span>天數</span><span>狀態</span></div>
+      <div id="list" class="tbody">載入中…</div>
+    </section>
+  </div>
+</body>
+</html>
