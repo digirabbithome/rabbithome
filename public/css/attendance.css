@@ -1,0 +1,10 @@
+
+body { font-family: Arial, sans-serif; background: #fffafc; margin: 0; padding: 0; }
+.container { padding: 20px; }
+h1 { color: #ff6699; }
+table { border-collapse: collapse; width: 100%; background: white; border-radius: 8px; overflow: hidden; }
+th, td { padding: 8px 12px; border-bottom: 1px solid #eee; text-align: center; }
+th { background: #ffe6f0; }
+tr:hover { background: #fff0f5; }
+button.edit-hours { background: #ffb3c6; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+button.edit-hours:hover { background: #ff99b9; }
