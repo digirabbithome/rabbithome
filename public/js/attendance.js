@@ -1,6 +1,6 @@
 import { db, auth } from '/js/firebase.js'
 import {
-  collection, addDoc, serverTimestamp, getDocs,
+  collection, addDoc, serverTimestamp, getDocs, setDoc, doc,
   doc, getDoc, setDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
@@ -317,3 +317,40 @@ function showToast(text){
   el.style.display = 'block'
   setTimeout(()=> el.style.display='none', 1600)
 }
+
+
+// ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
+(function bindNoteAutoSave(){
+  const tbody = document.getElementById('tbody');
+  if (!tbody || tbody._noteBound) return;
+  tbody._noteBound = true;
+
+  const handler = async (e) => {
+    const el = e.target && e.target.closest && e.target.closest('input.note');
+    if (!el) return;
+
+    const ddRaw = el.dataset.dd || '';
+    const idx   = String(el.dataset.idx || '0');
+    const val   = el.value || '';
+
+    const yyyymm = `${y}${String(m).padStart(2,'0')}`;
+    const dd     = String(ddRaw).padStart(2,'0');
+
+    try {
+      await setDoc(
+        doc(db,'schedules', viewingUid, yyyymm, dd),
+        { [`notes.${idx}`]: val },
+        { merge: true }
+      );
+      el.classList.add('saved-ok');
+      setTimeout(()=> el.classList.remove('saved-ok'), 800);
+    } catch (err) {
+      console.error('備註儲存失敗', err);
+      el.classList.add('saved-fail');
+      setTimeout(()=> el.classList.remove('saved-fail'), 1200);
+    }
+  };
+
+  tbody.addEventListener('focusout', handler, true);
+  tbody.addEventListener('change',   handler, true);
+})();
