@@ -1,1 +1,6 @@
-body { font-family: sans-serif; }
+body { font-family: Arial, sans-serif; padding: 20px; }
+#attendance-summary { margin-bottom: 15px; font-size: 18px; }
+#attendance-actions button { margin-right: 10px; padding: 5px 10px; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+table, th, td { border: 1px solid #ccc; }
+th, td { padding: 8px; text-align: center; }

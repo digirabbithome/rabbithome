@@ -2,11 +2,27 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>出勤系統</title>
+  <title>出勤管理</title>
   <link rel="stylesheet" href="/css/attendance.css">
   <script type="module" src="/js/attendance.js"></script>
 </head>
 <body>
-  <h1>出勤系統</h1>
+  <h2 id="page-title"></h2>
+  <div id="attendance-summary">
+    <span>本月總工時：<span id="total-hours">0</span> 小時</span>
+    <span>（差異加總：<span id="total-diff">0</span> 小時）</span>
+  </div>
+  <div id="attendance-actions">
+    <button id="clock-in">上班打卡</button>
+    <button id="clock-out">下班打卡</button>
+  </div>
+  <div id="attendance-records">
+    <table>
+      <thead>
+        <tr><th>日期</th><th>上班</th><th>下班</th><th>工時</th><th>差異</th><th>備註</th></tr>
+      </thead>
+      <tbody id="record-body"></tbody>
+    </table>
+  </div>
 </body>
 </html>
