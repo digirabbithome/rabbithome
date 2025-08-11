@@ -1,45 +1,27 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>出勤日記</title>
-  <link rel="stylesheet" href="/css/attendance.css" />
-  <script type="module" src="/js/attendance.js"></script>
+  <meta charset="UTF-8">
+  <title>出勤系統</title>
+  <link rel="stylesheet" href="css/attendance.css">
+  <script type="module" src="js/attendance.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <h1 id="pageTitle">出勤日記</h1>
-      <div class="who" id="who"></div>
-    </header>
-
-    <section class="controls">
-      <div class="punch" id="punchBar">
-        <button id="btnIn">上班打卡</button>
-        <button id="btnOut" class="secondary">下班打卡</button>
-        <span class="now" id="nowTPE"></span>
-      </div>
-      <div class="month-switch">
-        <button id="prevM">‹</button>
-        <input type="month" id="monthPicker" />
-        <button id="nextM">›</button>
-        <span class="sum" id="monthSum">本月總工時：—</span>
-      </div>
-    </section>
-
-    <section class="table card">
-      <div class="thead">
-        <span>日期</span><span>上班</span><span>下班</span><span>工時</span><span>差異(±)</span><span>假別</span><span>備註</span>
-      </div>
-      <div class="tbody" id="tbody">載入中…</div>
-    </section>
-
-    <section class="legend">
-      <small>＊差異：加班以 0.5h 捨去，不足以 0.5h 進位；平日 9h、週末 7h。公司層級 0h 會顯示「公司休假（名稱）」且不占月休1～7。</small>
-    </section>
-
-    <div id="toast" class="toast" style="display:none"></div>
+  <div class="header">
+    <h2 id="nickname-title"></h2>
+    <div id="month-summary">本月總工時：<span id="total-hours">0</span> 小時 (<span id="total-diff">0</span> 差異)</div>
+  </div>
+  <div class="controls">
+    <button id="clock-in-btn">上班打卡</button>
+    <button id="clock-out-btn">下班打卡</button>
+  </div>
+  <div class="records">
+    <table>
+      <thead>
+        <tr><th>日期</th><th>上班</th><th>下班</th><th>工時</th><th>差異</th><th>備註</th></tr>
+      </thead>
+      <tbody id="records-body"></tbody>
+    </table>
   </div>
 </body>
 </html>
