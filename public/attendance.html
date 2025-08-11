@@ -2,44 +2,38 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>出勤日記</title>
+  <title>出勤打卡系統</title>
   <link rel="stylesheet" href="/css/attendance.css" />
   <script type="module" src="/js/attendance.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <h1 id="pageTitle">出勤日記</h1>
-      <div class="who" id="who"></div>
+  <div class="container">
+    <header>
+      <h2 id="nicknameTitle"></h2>
+      <div class="summary">
+        <span>本月總工時：<span id="totalHours">0</span> 小時</span>
+        <span>差異加總：<span id="totalDiff">0</span> 小時</span>
+      </div>
     </header>
-
-    <section class="controls">
-      <div class="punch" id="punchBar">
-        <button id="btnIn">上班打卡</button>
-        <button id="btnOut" class="secondary">下班打卡</button>
-        <span class="now" id="nowTPE"></span>
+    <main>
+      <div class="clock-buttons">
+        <button id="btnClockIn">上班打卡</button>
+        <button id="btnClockOut">下班打卡</button>
       </div>
-      <div class="month-switch">
-        <button id="prevM">‹</button>
-        <input type="month" id="monthPicker" />
-        <button id="nextM">›</button>
-        <span class="sum" id="monthSum">本月總工時：—</span>
-      </div>
-    </section>
-
-    <section class="table card">
-      <div class="thead">
-        <span>日期</span><span>上班</span><span>下班</span><span>工時</span><span>差異(±)</span><span>假別</span><span>備註</span>
-      </div>
-      <div class="tbody" id="tbody">載入中…</div>
-    </section>
-
-    <section class="legend">
-      <small>＊差異：加班以 0.5h 捨去，不足以 0.5h 進位；平日 9h、週末 7h。公司層級 0h 會顯示「公司休假（名稱）」且不占月休1～7。</small>
-    </section>
-
-    <div id="toast" class="toast" style="display:none"></div>
+      <table id="attendanceTable">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>上班</th>
+            <th>下班</th>
+            <th>總時數</th>
+            <th>差異</th>
+            <th>備註</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </main>
   </div>
 </body>
 </html>
