@@ -1,19 +1,43 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>出勤管理</title>
-  <link rel="stylesheet" href="/css/attendance.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>出勤管理（打卡＋月結）</title>
+  <link rel="stylesheet" href="/css/attendance.css" />
   <script type="module" src="/js/attendance.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>📅 出勤管理</h1>
-    <div id="controls">
-      <input type="month" id="monthPicker">
-      <button id="refresh">重新整理</button>
-    </div>
-    <div id="attendanceTable"></div>
+  <div class="wrap">
+    <header class="topbar">
+      <h1>🗓️ 出勤管理</h1>
+      <div class="who" id="who"></div>
+    </header>
+
+    <section class="controls">
+      <div class="punch" id="punchBar">
+        <button id="btnIn">上班打卡</button>
+        <button id="btnOut" class="secondary">下班打卡</button>
+        <span class="now" id="nowTPE"></span>
+      </div>
+      <div class="month-switch">
+        <button id="prevM">‹</button>
+        <input type="month" id="monthPicker" />
+        <button id="nextM">›</button>
+        <span class="sum" id="monthSum">本月總工時：—</span>
+      </div>
+    </section>
+
+    <section class="table card">
+      <div class="thead">
+        <span>日期</span><span>上班</span><span>下班</span><span>工時</span><span>差異(±)</span><span>假別</span><span>備註</span>
+      </div>
+      <div class="tbody" id="tbody">載入中…</div>
+    </section>
+
+    <section class="legend">
+      <small>＊差異：加班以 0.5h 捨去，不足以 0.5h 進位；平日 9h、週末 7h；管理者可點 ✏️ 調整應工時。</small>
+    </section>
   </div>
 </body>
 </html>
