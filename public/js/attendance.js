@@ -1,6 +1,6 @@
 import { db, auth } from '/js/firebase.js'
 import {
-  collection, addDoc, serverTimestamp, getDocs,
+  collection, addDoc, serverTimestamp, query, where, getDocs,
   doc, getDoc, setDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
@@ -21,7 +21,6 @@ const ceilToHalf  = (h) => Math.ceil(h*2)/2        // 用於不足（進位）
 let me = null
 let viewingUid = null
 let y = 0, m = 0    // 檢視的年/月（數字）
-let todayNextKind = 'in'
 const allowedAdmins = ['swimming8250@yahoo.com.tw','duckskin@yahoo.com.tw']
 
 /** 啟動 */
@@ -32,13 +31,7 @@ window.onload = () => {
     const params = new URLSearchParams(location.search)
     const target = params.get('uid')
     viewingUid = target && allowedAdmins.includes(me.email||'') ? target : me.uid
-
-    // 顯示使用者暱稱/名稱 → 「xxx 的出勤日記」
-    const uSnap = await getDoc(doc(db,'users',viewingUid))
-    const u = uSnap.exists()? uSnap.data(): {}
-    const alias = u.nickname || u.name || (me.email||'').split('@')[0] || '使用者'
-    document.getElementById('pageTitle').textContent = `${alias} 的出勤日記`
-    document.getElementById('who').textContent = me.email || ''
+    document.getElementById('who').textContent = (me.email||'').split('@')[0]
 
     // 初始化月份
     const now = new Date()
@@ -62,62 +55,21 @@ window.onload = () => {
   })
 }
 
-/** 設定打卡按鈕的狀態（只能交替） */
-function setPunchButtons(next){
-  todayNextKind = next
-  const btnIn = document.getElementById('btnIn')
-  const btnOut = document.getElementById('btnOut')
-  if (next === 'in'){
-    btnIn.disabled = false
-    btnOut.disabled = true
-  }else{
-    btnIn.disabled = true
-    btnOut.disabled = false
-  }
-}
-
-/** 依今日 raw punches 計算下一步應該顯示哪顆按鈕 */
-function computeTodayNextKind(rawList){
-  if (!rawList || !rawList.length) return 'in'
-  // 按時間排序取最後一筆
-  const sorted = rawList.map(p => ({
-    kind: p.kind,
-    t: p.at ? new Date(p.at) : (p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.atTPE.replace(' ','T')))
-  })).sort((a,b)=>a.t-b.t)
-  const last = sorted[sorted.length-1]
-  return last.kind === 'in' ? 'out' : 'in'
-}
-
 /** 打卡（沿用 punches/{uid}/{yyyymm} 一筆一打） */
 async function punch(kind){
-  if (kind !== todayNextKind) {
-    showToast(kind==='in' ? '需先下班打卡，才能再次上班' : '需先上班打卡，才能下班')
-    return
-  }
-  const btnIn = document.getElementById('btnIn')
-  const btnOut = document.getElementById('btnOut')
-  btnIn.disabled = true; btnOut.disabled = true
-
   const d = new Date()
   const localDate = toISODate(d)
   const localTime = toHM(d).slice(0,5)
   const yyyymm = localDate.slice(0,7).replace('-','')
-  try{
-    await addDoc(collection(db, 'punches', me.uid, yyyymm), {
-      date: localDate,
-      kind,
-      at: d.toISOString(),
-      atTPE: `${localDate} ${localTime}`,
-      tz: 'Asia/Taipei',
-      createdAt: serverTimestamp()
-    })
-    showToast(`打卡成功：${kind==='in'?'上班':'下班'} ${localTime}`)
-    await renderMonth()
-  }catch(err){
-    showToast('打卡失敗，請再試一次')
-  }finally{
-    // renderMonth 會重新判斷今天的下一步是哪個按鈕
-  }
+  await addDoc(collection(db, 'punches', me.uid, yyyymm), {
+    date: localDate,
+    kind,
+    at: d.toISOString(),
+    atTPE: `${localDate} ${localTime}`,
+    tz: 'Asia/Taipei',
+    createdAt: serverTimestamp()
+  })
+  await renderMonth()
 }
 
 /** 讀取月資料並渲染 */
@@ -137,11 +89,6 @@ async function renderMonth(){
     if (!ds) continue
     ;(byDateRaw[ds] ||= []).push(p)
   }
-
-  // 依今日 raw 設定按鈕交替狀態
-  const todayRaw = byDateRaw[toISODate(new Date())] || []
-  setPunchButtons(computeTodayNextKind(todayRaw))
-
   // 轉成多段 session
   const sessionsByDate = {}
   for (const [ds,list] of Object.entries(byDateRaw)){
@@ -337,12 +284,4 @@ function showInlineTip(inputEl, text, ok){
   tip.style.marginLeft = '6px'
   inputEl.insertAdjacentElement('afterend', tip)
   setTimeout(()=> tip.remove(), 1200)
-}
-
-/** Toast */
-function showToast(text){
-  const el = document.getElementById('toast')
-  el.textContent = text
-  el.style.display = 'block'
-  setTimeout(()=> el.style.display='none', 1600)
 }
