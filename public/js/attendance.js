@@ -159,9 +159,9 @@ async function renderMonth(){
   const schedSnap = await getDocs(collection(db,'schedules', viewingUid, yyyymm))
   schedSnap.forEach(d=>{ sched[d.id.padStart(2,'0')] = d.data() }) // dd -> data
 
-  // orgSchedules（公司層級覆蓋 & 名稱）
+  // orgSchedules（公司層級覆蓋 & 名稱）→ 使用子集合 days
   const org = {}
-  const orgSnap = await getDocs(collection(db,'orgSchedules', yyyymm))
+  const orgSnap = await getDocs(collection(db,'orgSchedules', yyyymm, 'days'))
   orgSnap.forEach(d=>{ org[d.id.padStart(2,'0')] = d.data() })
 
   // 計算＆渲染
@@ -235,9 +235,10 @@ async function renderMonth(){
     const notes = (daySched.notes && typeof daySched.notes === 'object') ? daySched.notes : {}
     const noteVal = (i) => (notes && typeof notes[i]==='string') ? notes[i] : ''
 
+    const tbodyEl = document.getElementById('tbody')
     if (segRows.length){
       segRows.forEach((r, i) => {
-        document.getElementById('tbody').insertAdjacentHTML('beforeend', `
+        tbodyEl.insertAdjacentHTML('beforeend', `
           <div class="tr">
             <span>${i===0?date:''}</span>
             <span>${r.tIn}</span>
@@ -251,7 +252,7 @@ async function renderMonth(){
       })
     } else {
       // 無打卡 → 單行（顯示假別/月休/—）
-      document.getElementById('tbody').insertAdjacentHTML('beforeend', `
+      tbodyEl.insertAdjacentHTML('beforeend', `
         <div class="tr">
           <span>${date}</span>
           <span>—</span><span>—</span>
@@ -265,8 +266,7 @@ async function renderMonth(){
 
     // 管理者鉛筆（應工時：個人 / 公司）
     if (allowedAdmins.includes(me.email||'')){
-      const tbodyEl = document.getElementById('tbody')
-      const targetTr = tbodyEl.lastElementChild
+      const targetTr = document.getElementById('tbody').lastElementChild
       const cell = targetTr.children[5] // 假別欄位
       const reqEditor = document.createElement('span')
       reqEditor.className = 'td-req'
@@ -280,7 +280,7 @@ async function renderMonth(){
           <label style="display:flex;align-items:center;gap:4px;">
             <input type="checkbox" class="applyOrg" ${orgChecked?'checked':''}> 套用全公司
           </label>
-          <input type="text" class="orgName" placeholder="公司假別名稱（如：春節）" value="${orgSched.name||''}">
+          <input type="text" class="orgName" placeholder="公司假別名稱（如：春節）" value="${orgSched.name or ''}">
           <button class="icon saveBtn">💾</button>
           <small class="muted saveTip" style="margin-left:6px"></small>
         </label>
@@ -300,8 +300,8 @@ async function renderMonth(){
         const yyyymm2 = `${y}${pad2(m)}`
         try{
           if (applyOrg.checked){
-            const ref = doc(db,'orgSchedules', yyyymm2, pad2(parseInt(btn.dataset.dd)))
-            await setDoc(ref, { requiredHoursOverride: v, name: orgName.value||null }, { merge:true })
+            const ref = doc(db,'orgSchedules', yyyymm2, 'days', pad2(parseInt(btn.dataset.dd)))
+            await setDoc(ref, { requiredHoursOverride: v, name: orgName.value or None }, { merge:true })
           } else {
             const ref = doc(db,'schedules', viewingUid, yyyymm2, btn.dataset.dd)
             await setDoc(ref, { requiredHoursOverride: v }, { merge:true })
