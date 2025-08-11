@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>出勤管理（打卡＋月結）</title>
+  <title>出勤日記</title>
   <link rel="stylesheet" href="/css/attendance.css" />
   <script type="module" src="/js/attendance.js"></script>
 </head>
 <body>
   <div class="wrap">
     <header class="topbar">
-      <h1>🗓️ 出勤管理</h1>
+      <h1 id="pageTitle">出勤日記</h1>
       <div class="who" id="who"></div>
     </header>
 
@@ -36,8 +36,10 @@
     </section>
 
     <section class="legend">
-      <small>＊差異：加班以 0.5h 捨去，不足以 0.5h 進位；平日 9h、週末 7h；管理者可點 ✏️ 調整應工時。</small>
+      <small>＊差異：加班以 0.5h 捨去，不足以 0.5h 進位；平日 9h、週末 7h。若公司層級設定為 0h，顯示「公司休假（名稱）」且不占用月休1～7。</small>
     </section>
+
+    <div id="toast" class="toast" style="display:none"></div>
   </div>
 </body>
 </html>
