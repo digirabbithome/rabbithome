@@ -199,7 +199,7 @@ async function renderMonth(){
       }
     } else if (typeof orgSched.requiredHoursOverride === 'number' && orgSched.requiredHoursOverride===0){
       isCompanyHoliday = true
-      leaveTag = `公司休假${orgSched.name?`（${orgSched.name}）`:''}`
+      leaveTag = `公司休假${orgSched.name ? `（${orgSched.name}）` : ''}`
       // 不占用月休（下面月休邏輯會避開 isCompanyHoliday）
     } else if (!sessions.length){
       // 沒打卡且無請假 → 自動月休 1..7（僅顯示）
@@ -280,7 +280,7 @@ async function renderMonth(){
           <label style="display:flex;align-items:center;gap:4px;">
             <input type="checkbox" class="applyOrg" ${orgChecked?'checked':''}> 套用全公司
           </label>
-          <input type="text" class="orgName" placeholder="公司假別名稱（如：春節）" value="${orgSched.name or ''}">
+          <input type="text" class="orgName" placeholder="公司假別名稱（如：春節）" value="${orgSched.name || ''}">
           <button class="icon saveBtn">💾</button>
           <small class="muted saveTip" style="margin-left:6px"></small>
         </label>
@@ -300,10 +300,10 @@ async function renderMonth(){
         const yyyymm2 = `${y}${pad2(m)}`
         try{
           if (applyOrg.checked){
-            const ref = doc(db,'orgSchedules', yyyymm2, 'days', pad2(parseInt(btn.dataset.dd)))
-            await setDoc(ref, { requiredHoursOverride: v, name: orgName.value or None }, { merge:true })
+            const ref = doc(db,'orgSchedules', yyyymm2, 'days', keyDD)
+            await setDoc(ref, { requiredHoursOverride: v, name: (orgName.value || null) }, { merge:true })
           } else {
-            const ref = doc(db,'schedules', viewingUid, yyyymm2, btn.dataset.dd)
+            const ref = doc(db,'schedules', viewingUid, yyyymm2, keyDD)
             await setDoc(ref, { requiredHoursOverride: v }, { merge:true })
           }
           tip.textContent = '✅ 已儲存'; tip.style.display='inline'
