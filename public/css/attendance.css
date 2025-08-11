@@ -12,6 +12,7 @@ button{border:0; background:#ff7fb4; color:#fff; padding:8px 12px; border-radius
 button.secondary{background:#ffd7ea; color:#333;}
 button.icon{padding:4px 6px; background:#ffe3f1; color:#c22577;}
 button:hover{filter:brightness(.95);}
+button:disabled{opacity:.6; cursor:not-allowed;}
 .card{background:#fff; border-radius:16px; box-shadow:0 10px 24px rgba(0,0,0,.06); padding:0; overflow:hidden;}
 .table .thead,.table .tr{display:grid; grid-template-columns: 140px 120px 120px 110px 120px 160px auto; gap:8px; align-items:center;}
 .table .thead{padding:10px 12px; background:#ffe6f2; font-weight:700; color:#333;}
@@ -27,3 +28,4 @@ button:hover{filter:brightness(.95);}
 .now{color:#6c757d; font-size:12px;}
 .legend{margin:10px 2px; color:#888;}
 input.note{width:100%; padding:6px 8px; border:1px solid #f0c8dc; border-radius:8px;}
+.toast{position:fixed; right:16px; bottom:16px; background:#212529; color:#fff; padding:10px 14px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.25);}
