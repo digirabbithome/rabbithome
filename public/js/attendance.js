@@ -103,10 +103,11 @@ async function punch(kind){
   try{
     // ★ 上班打卡：先在 UI 插入暫時列（即時可見）
     if (kind === 'in') {
-      // 確保切回當月，避免臨時列插在不可見月份
-      const nowY = d.getFullYear();
-      const nowM = d.getMonth()+1;
-      if (y !== nowY || m !== nowM) {
+      // 保險：切回當月
+      const now = new Date();
+      const nowY = now.getFullYear();
+      const nowM = now.getMonth()+1;
+      if (y!==nowY || m!==nowM){
         y = nowY; m = nowM;
         const mp = document.getElementById('monthPicker');
         if (mp) mp.value = `${y}-${String(m).padStart(2,'0')}`;
@@ -299,9 +300,9 @@ function renderPendingInRow(dateStr, timeHM){
     <span>${renderNoteInput(dateStr.slice(-2), 0, '')}</span>
   `;
   tbody.appendChild(row);
-  try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e) {}
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
   row.classList.add('flash');
-  setTimeout(()=> row.classList.remove('flash'), 800);
+  setTimeout(()=>row.classList.remove('flash'), 800);
 }
 
 /** 備註欄輸入框（預設空白，blur 儲存） */
@@ -330,19 +331,17 @@ function showToast(text){
 
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
+
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
   if (!tbody || tbody._noteBound) return;
   tbody._noteBound = true;
 
-  const handler = async (e) => {
-    const el = e.target && e.target.closest && e.target.closest('input.note');
+  async function save(el){
     if (!el) return;
-
     const ddRaw = el.dataset.dd || '';
     const idx   = String(el.dataset.idx || '0');
     const val   = el.value || '';
-
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
@@ -359,8 +358,13 @@ function showToast(text){
       el.classList.add('saved-fail');
       setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
-  };
+  }
 
-  tbody.addEventListener('focusout', handler, true);
-  tbody.addEventListener('change',   handler, true);
+  const direct = (e) => {
+    const el = e.target && e.target.closest && e.target.closest('input.note');
+    if (!el) return;
+    save(el);
+  };
+  tbody.addEventListener('focusout', direct, true);
+  tbody.addEventListener('change',   direct, true);
 })();

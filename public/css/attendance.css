@@ -36,5 +36,5 @@ input.note{width:100%; padding:6px 8px; border:1px solid #f0c8dc; border-radius:
 input.note.saved-ok{ box-shadow:0 0 0 2px #7bd87b inset; }
 input.note.saved-fail{ box-shadow:0 0 0 2px #ff9aa2 inset; }
 
-/* 臨時列提示閃一下 */
-.tr.flash { outline: 2px dashed #f5a; outline-offset: 2px; }
+/* flash highlight for pending row */
+.tr.flash { outline: 2px dashed #f0c8dc; }
