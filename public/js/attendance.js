@@ -107,7 +107,8 @@ async function punch(kind){
       renderPendingInRow(localDate, localTime)
       setPunchButtons('out')
     }
-await addDoc(collection(db, 'punches', me.uid, yyyymm), {
+
+    await addDoc(collection(db, 'punches', me.uid, yyyymm), {
       date: localDate,
       kind,
       at: d.toISOString(),
@@ -233,9 +234,10 @@ async function renderMonth(){
     const diff = dayTotal - required
     const overtime = diff>0 ? floorToHalf(diff) : 0
     const shortage = diff<0 ? ceilToHalf(Math.abs(diff)) : 0
-    const diffBadge = diff===0 ? '—'
+    
     const dayNet = overtime - shortage
     diffTotal += dayNet
+const diffBadge = diff===0 ? '—'
       : (diff>0 ? `<span class="badge plus">+${overtime.toFixed(1)}</span>`
                 : `<span class="badge minus">-${shortage.toFixed(1)}</span>`)
 
