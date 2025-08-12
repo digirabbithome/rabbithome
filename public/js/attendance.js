@@ -165,6 +165,14 @@ async function renderMonth(){
   const schedSnap = await getDocs(collection(db,'schedules', viewingUid, yyyymm))
   schedSnap.forEach(d=>{ sched[d.id.padStart(2,'0')] = d.data() })
 
+  console.log('[NOTE][READ] renderMonth schedules snapshot', {
+    viewingUid, y, m, yyyymm, count: schedSnap.size
+  });
+  schedSnap.forEach(d => {
+    const data = d.data();
+    console.log('[NOTE][READ] doc', d.id, data && data.notes);
+  });
+
   // orgSchedules（公司層級覆蓋 & 名稱）
   const org = {}
   const orgSnap = await getDocs(collection(db,'orgSchedules', yyyymm, 'days'))
