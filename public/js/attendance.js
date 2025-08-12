@@ -335,31 +335,34 @@ function showToast(text){
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
 
+
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
   if (!tbody || tbody._noteBound) { console.log('[NOTE] skip bind (already bound or no tbody)'); return; }
   tbody._noteBound = true;
-  console.log('[NOTE] bind blur-only listeners');
+  console.log('[NOTE] bind blur-only listeners (v3)');
 
   async function save(el){
     if (!el) return;
     const ddRaw = el.dataset.dd || '';
     const idx   = String(el.dataset.idx || '0');
-    const val   = el.value || '';
+    const val   = el.value ?? '';
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
-    console.log('[NOTE] save called', { viewingUid, y, m, yyyymm, dd, idx, val });
+    console.log('[NOTE] SAVE about to write', { val: String(val), viewingUid, y, m, yyyymm, dd, idx });
 
     try {
       await setDoc(
         doc(db,'schedules', viewingUid, yyyymm, dd),
-        { [`notes.${idx}`]: val },
+        { [`notes.${idx}`]: String(val) },
         { merge: true }
       );
+      console.log('[NOTE] SAVE ok, verifying...');
+      const snap = await getDoc(doc(db,'schedules', viewingUid, yyyymm, dd));
+      console.log('[NOTE] READBACK after save', dd, snap.exists() ? snap.data().notes : '(no doc)');
       el.classList.add('saved-ok');
       setTimeout(()=> el.classList.remove('saved-ok'), 800);
-      console.log('[NOTE] save ok');
     } catch (err) {
       console.error('[NOTE] save fail', err);
       el.classList.add('saved-fail');
@@ -376,4 +379,5 @@ function showToast(text){
   tbody.addEventListener('focusout', direct, true);
   tbody.addEventListener('change',   direct, true);
 })();
+
 
