@@ -165,14 +165,6 @@ async function renderMonth(){
   const schedSnap = await getDocs(collection(db,'schedules', viewingUid, yyyymm))
   schedSnap.forEach(d=>{ sched[d.id.padStart(2,'0')] = d.data() })
 
-  console.log('[NOTE][READ] renderMonth schedules snapshot', {
-    viewingUid, y, m, yyyymm, count: schedSnap.size
-  });
-  schedSnap.forEach(d => {
-    const data = d.data();
-    console.log('[NOTE][READ] doc', d.id, data && data.notes);
-  });
-
   // orgSchedules（公司層級覆蓋 & 名稱）
   const org = {}
   const orgSnap = await getDocs(collection(db,'orgSchedules', yyyymm, 'days'))
@@ -334,9 +326,6 @@ function showToast(text){
 
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
-
-
-
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
   if (!tbody || tbody._noteBound) return;
@@ -346,25 +335,16 @@ function showToast(text){
     if (!el) return;
     const ddRaw = el.dataset.dd || '';
     const idx   = String(el.dataset.idx || '0');
-    const val   = String(el.value ?? '');
+    const val   = el.value || '';
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
     try {
-      // Guard: don't overwrite non-empty with empty (to prevent accidental clears)
-      const ref = doc(db,'schedules', viewingUid, yyyymm, dd);
-      const snap = await getDoc(ref);
-      const currentNotes = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
-      const currentVal = currentNotes && typeof currentNotes[idx] === 'string' ? currentNotes[idx] : '';
-
-      if (val.trim() === '' && currentVal && currentVal.trim() !== '') {
-        // skip overwrite
-        el.classList.add('saved-skip');
-        setTimeout(()=> el.classList.remove('saved-skip'), 800);
-        return;
-      }
-
-      await setDoc(ref, { [`notes.${idx}`]: val }, { merge: true });
+      await setDoc(
+        doc(db,'schedules', viewingUid, yyyymm, dd),
+        { [`notes.${idx}`]: val },
+        { merge: true }
+      );
       el.classList.add('saved-ok');
       setTimeout(()=> el.classList.remove('saved-ok'), 800);
     } catch (err) {
@@ -382,6 +362,3 @@ function showToast(text){
   tbody.addEventListener('focusout', direct, true);
   tbody.addEventListener('change',   direct, true);
 })();
-
-
-
