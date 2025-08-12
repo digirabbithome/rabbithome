@@ -103,6 +103,15 @@ async function punch(kind){
   try{
     // ★ 上班打卡：先在 UI 插入暫時列（即時可見）
     if (kind === 'in') {
+      // 保險：切回當月
+      const now = new Date();
+      const nowY = now.getFullYear();
+      const nowM = now.getMonth()+1;
+      if (y!==nowY || m!==nowM){
+        y = nowY; m = nowM;
+        const mp = document.getElementById('monthPicker');
+        if (mp) mp.value = `${y}-${String(m).padStart(2,'0')}`;
+      }
       renderPendingInRow(localDate, localTime)
       setPunchButtons('out')
     }
@@ -290,14 +299,10 @@ function renderPendingInRow(dateStr, timeHM){
     <span>—</span>
     <span>${renderNoteInput(dateStr.slice(-2), 0, '')}</span>
   `;
-  // append to end (today is last row)
   tbody.appendChild(row);
-  // visual hint
-  try {
-    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    row.classList.add('flash');
-    setTimeout(()=> row.classList.remove('flash'), 800);
-  } catch(e) {}
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.add('flash');
+  setTimeout(()=>row.classList.remove('flash'), 800);
 }
 
 /** 備註欄輸入框（預設空白，blur 儲存） */
@@ -326,6 +331,7 @@ function showToast(text){
 
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
+
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
   if (!tbody || tbody._noteBound) return;
