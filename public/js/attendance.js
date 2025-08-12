@@ -103,15 +103,6 @@ async function punch(kind){
   try{
     // ★ 上班打卡：先在 UI 插入暫時列（即時可見）
     if (kind === 'in') {
-      // 保險：切回當月
-      const now = new Date();
-      const nowY = now.getFullYear();
-      const nowM = now.getMonth()+1;
-      if (y!==nowY || m!==nowM){
-        y = nowY; m = nowM;
-        const mp = document.getElementById('monthPicker');
-        if (mp) mp.value = `${y}-${String(m).padStart(2,'0')}`;
-      }
       renderPendingInRow(localDate, localTime)
       setPunchButtons('out')
     }
@@ -299,10 +290,7 @@ function renderPendingInRow(dateStr, timeHM){
     <span>—</span>
     <span>${renderNoteInput(dateStr.slice(-2), 0, '')}</span>
   `;
-  tbody.appendChild(row);
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  row.classList.add('flash');
-  setTimeout(()=>row.classList.remove('flash'), 800);
+  tbody.insertAdjacentElement('afterbegin', row);
 }
 
 /** 備註欄輸入框（預設空白，blur 儲存） */
@@ -331,11 +319,13 @@ function showToast(text){
 
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
-
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
   if (!tbody || tbody._noteBound) return;
   tbody._noteBound = true;
+
+  // per-input debounce map
+  const timers = new Map();
 
   async function save(el){
     if (!el) return;
@@ -360,6 +350,16 @@ function showToast(text){
     }
   }
 
+  // Debounced input save
+  tbody.addEventListener('input', (e) => {
+    const el = e.target && e.target.closest && e.target.closest('input.note');
+    if (!el) return;
+    const key = `${el.dataset.dd || ''}/${el.dataset.idx || '0'}`;
+    clearTimeout(timers.get(key));
+    timers.set(key, setTimeout(() => save(el), 700));
+  }, true);
+
+  // Fallback: blur/change triggers immediate save
   const direct = (e) => {
     const el = e.target && e.target.closest && e.target.closest('input.note');
     if (!el) return;
