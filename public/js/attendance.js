@@ -336,35 +336,39 @@ function showToast(text){
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
 
 
+
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
-  if (!tbody || tbody._noteBound) { console.log('[NOTE] skip bind (already bound or no tbody)'); return; }
+  if (!tbody || tbody._noteBound) return;
   tbody._noteBound = true;
-  console.log('[NOTE] bind blur-only listeners (v3)');
 
   async function save(el){
     if (!el) return;
     const ddRaw = el.dataset.dd || '';
     const idx   = String(el.dataset.idx || '0');
-    const val   = el.value ?? '';
+    const val   = String(el.value ?? '');
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
-    console.log('[NOTE] SAVE about to write', { val: String(val), viewingUid, y, m, yyyymm, dd, idx });
-
     try {
-      await setDoc(
-        doc(db,'schedules', viewingUid, yyyymm, dd),
-        { [`notes.${idx}`]: String(val) },
-        { merge: true }
-      );
-      console.log('[NOTE] SAVE ok, verifying...');
-      const snap = await getDoc(doc(db,'schedules', viewingUid, yyyymm, dd));
-      console.log('[NOTE] READBACK after save', dd, snap.exists() ? snap.data().notes : '(no doc)');
+      // Guard: don't overwrite non-empty with empty (to prevent accidental clears)
+      const ref = doc(db,'schedules', viewingUid, yyyymm, dd);
+      const snap = await getDoc(ref);
+      const currentNotes = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
+      const currentVal = currentNotes && typeof currentNotes[idx] === 'string' ? currentNotes[idx] : '';
+
+      if (val.trim() === '' && currentVal && currentVal.trim() !== '') {
+        // skip overwrite
+        el.classList.add('saved-skip');
+        setTimeout(()=> el.classList.remove('saved-skip'), 800);
+        return;
+      }
+
+      await setDoc(ref, { [`notes.${idx}`]: val }, { merge: true });
       el.classList.add('saved-ok');
       setTimeout(()=> el.classList.remove('saved-ok'), 800);
     } catch (err) {
-      console.error('[NOTE] save fail', err);
+      console.error('備註儲存失敗', err);
       el.classList.add('saved-fail');
       setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
@@ -373,11 +377,11 @@ function showToast(text){
   const direct = (e) => {
     const el = e.target && e.target.closest && e.target.closest('input.note');
     if (!el) return;
-    console.log('[NOTE] direct save (blur/change)', { dd: el.dataset.dd, idx: el.dataset.idx });
     save(el);
   };
   tbody.addEventListener('focusout', direct, true);
   tbody.addEventListener('change',   direct, true);
 })();
+
 
 
