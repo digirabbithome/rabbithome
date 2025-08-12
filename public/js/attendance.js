@@ -326,10 +326,12 @@ function showToast(text){
 
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
+
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
-  if (!tbody || tbody._noteBound) return;
+  if (!tbody || tbody._noteBound) { console.log('[NOTE] skip bind (already bound or no tbody)'); return; }
   tbody._noteBound = true;
+  console.log('[NOTE] bind blur-only listeners');
 
   async function save(el){
     if (!el) return;
@@ -339,6 +341,8 @@ function showToast(text){
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
+    console.log('[NOTE] save called', { viewingUid, y, m, yyyymm, dd, idx, val });
+
     try {
       await setDoc(
         doc(db,'schedules', viewingUid, yyyymm, dd),
@@ -347,8 +351,9 @@ function showToast(text){
       );
       el.classList.add('saved-ok');
       setTimeout(()=> el.classList.remove('saved-ok'), 800);
+      console.log('[NOTE] save ok');
     } catch (err) {
-      console.error('備註儲存失敗', err);
+      console.error('[NOTE] save fail', err);
       el.classList.add('saved-fail');
       setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
@@ -357,8 +362,10 @@ function showToast(text){
   const direct = (e) => {
     const el = e.target && e.target.closest && e.target.closest('input.note');
     if (!el) return;
+    console.log('[NOTE] direct save (blur/change)', { dd: el.dataset.dd, idx: el.dataset.idx });
     save(el);
   };
   tbody.addEventListener('focusout', direct, true);
   tbody.addEventListener('change',   direct, true);
 })();
+
