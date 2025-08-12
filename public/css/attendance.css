@@ -31,7 +31,3 @@ button:disabled{opacity:.6; cursor:not-allowed;}
 .legend{margin:10px 2px; color:#888;}
 input.note{width:100%; padding:6px 8px; border:1px solid #f0c8dc; border-radius:8px;}
 .toast{position:fixed; right:16px; bottom:16px; background:#212529; color:#fff; padding:10px 14px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.25);}
-
-/* autosave hints */
-input.note.saved-ok{ box-shadow:0 0 0 2px #7bd87b inset; }
-input.note.saved-fail{ box-shadow:0 0 0 2px #ff9aa2 inset; }
