@@ -324,14 +324,14 @@ function showToast(text){
   if (!tbody || tbody._noteBound) return;
   tbody._noteBound = true;
 
-  const handler = async (e) => {
-    const el = e.target && e.target.closest && e.target.closest('input.note');
-    if (!el) return;
+  // per-input debounce map
+  const timers = new Map();
 
+  async function save(el){
+    if (!el) return;
     const ddRaw = el.dataset.dd || '';
     const idx   = String(el.dataset.idx || '0');
     const val   = el.value || '';
-
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
@@ -348,8 +348,23 @@ function showToast(text){
       el.classList.add('saved-fail');
       setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
-  };
+  }
 
-  tbody.addEventListener('focusout', handler, true);
-  tbody.addEventListener('change',   handler, true);
+  // Debounced input save
+  tbody.addEventListener('input', (e) => {
+    const el = e.target && e.target.closest && e.target.closest('input.note');
+    if (!el) return;
+    const key = `${el.dataset.dd || ''}/${el.dataset.idx || '0'}`;
+    clearTimeout(timers.get(key));
+    timers.set(key, setTimeout(() => save(el), 700));
+  }, true);
+
+  // Fallback: blur/change triggers immediate save
+  const direct = (e) => {
+    const el = e.target && e.target.closest && e.target.closest('input.note');
+    if (!el) return;
+    save(el);
+  };
+  tbody.addEventListener('focusout', direct, true);
+  tbody.addEventListener('change',   direct, true);
 })();
