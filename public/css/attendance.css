@@ -36,5 +36,10 @@ input.note{width:100%; padding:6px 8px; border:1px solid #f0c8dc; border-radius:
 input.note.saved-ok{ box-shadow:0 0 0 2px #7bd87b inset; }
 input.note.saved-fail{ box-shadow:0 0 0 2px #ff9aa2 inset; }
 
-/* flash highlight for pending row */
-.tr.flash { outline: 2px dashed #f0c8dc; }
+.tr.flash { outline: 2px dashed #f0c8dc; animation: flash 0.8s ease; }
+@keyframes flash { from { background:#fff0fa; } to { background:transparent; } }
+
+input.note.saved-skip{ outline:2px dashed #bbb; background:#f7f7f7; }
+
+.btn-pen{display:inline-flex;align-items:center;justify-content:center;margin-left:6px;padding:0 6px;height:22px;border:1px solid #e4b6cf;border-radius:6px;background:#fff;font-size:12px;cursor:pointer}
+.btn-pen:hover{background:#fff1f7}

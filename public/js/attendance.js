@@ -1,7 +1,5 @@
 import { db, auth } from '/js/firebase.js'
-import {
-  collection, addDoc, serverTimestamp, getDocs, setDoc, doc, getDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { addDoc, collection, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 /** ===== 共用工具（台北時間） ===== */
@@ -103,15 +101,6 @@ async function punch(kind){
   try{
     // ★ 上班打卡：先在 UI 插入暫時列（即時可見）
     if (kind === 'in') {
-      // 保險：切回當月
-      const now = new Date();
-      const nowY = now.getFullYear();
-      const nowM = now.getMonth()+1;
-      if (y!==nowY || m!==nowM){
-        y = nowY; m = nowM;
-        const mp = document.getElementById('monthPicker');
-        if (mp) mp.value = `${y}-${String(m).padStart(2,'0')}`;
-      }
       renderPendingInRow(localDate, localTime)
       setPunchButtons('out')
     }
@@ -173,6 +162,14 @@ async function renderMonth(){
   const sched = {}
   const schedSnap = await getDocs(collection(db,'schedules', viewingUid, yyyymm))
   schedSnap.forEach(d=>{ sched[d.id.padStart(2,'0')] = d.data() })
+
+  console.log('[NOTE][READ] renderMonth schedules snapshot', {
+    viewingUid, y, m, yyyymm, count: schedSnap.size
+  });
+  schedSnap.forEach(d => {
+    const data = d.data();
+    console.log('[NOTE][READ] doc', d.id, data && data.notes);
+  });
 
   // orgSchedules（公司層級覆蓋 & 名稱）
   const org = {}
@@ -259,7 +256,7 @@ async function renderMonth(){
             <span>${r.tOut}</span>
             <span>${r.h}${i===0?`（合計 ${dayTotal.toFixed(1)}h）`:''}</span>
             <span>${i===0?diffBadge:''}</span>
-            <span>${i===0?`${leaveTag}${isCompanyHoliday?' <span class="badge org">公司</span>':''}`:''}</span>
+            <span>${i===0?`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`:''}</span>
             <span>${renderNoteInput(keyDD, i, noteVal(i))}</span>
           </div>
         `)
@@ -271,7 +268,7 @@ async function renderMonth(){
           <span>—</span><span>—</span>
           <span>0.0</span>
           <span>${diffBadge}</span>
-          <span>${`${leaveTag}${isCompanyHoliday?' <span class="badge org">公司</span>':''}`}</span>
+          <span>${`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`}</span>
           <span>${renderNoteInput(keyDD, 0, noteVal(0))}</span>
         </div>
       `)
@@ -299,10 +296,14 @@ function renderPendingInRow(dateStr, timeHM){
     <span>—</span>
     <span>${renderNoteInput(dateStr.slice(-2), 0, '')}</span>
   `;
+  // append to end (today is last row)
   tbody.appendChild(row);
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  row.classList.add('flash');
-  setTimeout(()=>row.classList.remove('flash'), 800);
+  // visual hint
+  try {
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.classList.add('flash');
+    setTimeout(()=> row.classList.remove('flash'), 800);
+  } catch(e) {}
 }
 
 /** 備註欄輸入框（預設空白，blur 儲存） */
@@ -332,6 +333,8 @@ function showToast(text){
 
 // ===== 備註即時儲存（穩定版：focusout + change；只綁一次） =====
 
+
+
 (function bindNoteAutoSave(){
   const tbody = document.getElementById('tbody');
   if (!tbody || tbody._noteBound) return;
@@ -341,16 +344,25 @@ function showToast(text){
     if (!el) return;
     const ddRaw = el.dataset.dd || '';
     const idx   = String(el.dataset.idx || '0');
-    const val   = el.value || '';
+    const val   = String(el.value ?? '');
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
 
     try {
-      await setDoc(
-        doc(db,'schedules', viewingUid, yyyymm, dd),
-        { [`notes.${idx}`]: val },
-        { merge: true }
-      );
+      // Guard: don't overwrite non-empty with empty (to prevent accidental clears)
+      const ref = doc(db,'schedules', viewingUid, yyyymm, dd);
+      const snap = await getDoc(ref);
+      const currentNotes = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
+      const currentVal = currentNotes && typeof currentNotes[idx] === 'string' ? currentNotes[idx] : '';
+
+      if (val.trim() === '' && currentVal && currentVal.trim() !== '') {
+        // skip overwrite
+        el.classList.add('saved-skip');
+        setTimeout(()=> el.classList.remove('saved-skip'), 800);
+        return;
+      }
+
+      await setDoc(ref, { [`notes.${idx}`]: val }, { merge: true });
       el.classList.add('saved-ok');
       setTimeout(()=> el.classList.remove('saved-ok'), 800);
     } catch (err) {
@@ -368,3 +380,104 @@ function showToast(text){
   tbody.addEventListener('focusout', direct, true);
   tbody.addEventListener('change',   direct, true);
 })();
+
+
+
+
+/** ===== 管理：當日工時/假別覆蓋（筆 icon） ===== */
+function renderAdminPen(dd){
+  const allowedAdmins = ['swimming8250@yahoo.com.tw','duckskin@yahoo.com.tw'];
+  if (!me || !allowedAdmins.includes(me.email||'')) return '';
+  return `<button class="btn-pen" data-dd="${dd}" title="管理：調整工時/假別">✎</button>`;
+}
+
+
+// ✎：管理個人/全店當日工時與休假
+document.addEventListener('click', async (e) => {
+  const btn = e.target && e.target.closest && e.target.closest('.btn-pen');
+  if (!btn) return;
+
+  const dd = String(btn.dataset.dd || '').padStart(2, '0');
+  const yyyymm = `${y}${String(m).padStart(2,'0')}`;
+  const refPersonal = doc(db, 'schedules', viewingUid, yyyymm, dd);
+  const refStore    = doc(db, 'orgSchedules', yyyymm, 'days', dd);
+
+  const scope = prompt(
+    `調整日期：${y}-${String(m).padStart(2,'0')}-${dd}\n` +
+    `請選擇作用範圍：\n` +
+    `1 = 只調整目前這位（個人）\n` +
+    `2 = 套用全店（所有人）`
+  );
+  if (!scope) return;
+  const isStore = (scope === '2');
+
+  const choice = prompt(
+    `選擇要做的事（${isStore ? '全店' : '個人'}）：\n` +
+    `1 = 設定「應工時」（小時）\n` +
+    `2 = 設為「休假（工時 0）」\n` +
+    `3 = 清除覆蓋（恢復預設）`
+  );
+  if (!choice) return;
+
+  try {
+    if (choice === '1') {
+      const hoursStr = prompt('請輸入應工時（例如 9、7、0.5）：', '9');
+      if (hoursStr == null) return;
+      const hours = Number(hoursStr);
+      if (Number.isNaN(hours)) { alert('請輸入數字'); return; }
+
+      if (isStore) {
+        await setDoc(refStore, {
+          requiredHoursOverride: hours,
+          name: deleteField()
+        }, { merge: true });
+      } else {
+        await setDoc(refPersonal, {
+          requiredHoursOverride: hours,
+          leaveType: deleteField(),
+          leaveIndex: deleteField()
+        }, { merge: true });
+      }
+      showToast(`${isStore?'全店':'個人'}已設定應工時：${hours}h`);
+
+    } else if (choice === '2') {
+      if (isStore) {
+        const name = prompt('公司休假名稱（可留空）：', '公司休假');
+        await setDoc(refStore, {
+          requiredHoursOverride: 0,
+          ...(name ? { name } : { name: deleteField() })
+        }, { merge: true });
+      } else {
+        await setDoc(refPersonal, {
+          requiredHoursOverride: 0,
+          leaveType: 'personal',
+          leaveIndex: deleteField()
+        }, { merge: true });
+      }
+      showToast(`${isStore?'全店':'個人'}已設定為休假（工時 0）`);
+
+    } else if (choice === '3') {
+      if (isStore) {
+        await setDoc(refStore, {
+          requiredHoursOverride: deleteField(),
+          name: deleteField()
+        }, { merge: true });
+      } else {
+        await setDoc(refPersonal, {
+          requiredHoursOverride: deleteField(),
+          leaveType: deleteField(),
+          leaveIndex: deleteField()
+        }, { merge: true });
+      }
+      showToast(`${isStore?'全店':'個人'}已清除覆蓋，恢復預設`);
+    } else {
+      return;
+    }
+
+    await renderMonth();
+
+  } catch (err) {
+    console.error('管理更新失敗', err);
+    alert('更新失敗，請稍後再試');
+  }
+});
