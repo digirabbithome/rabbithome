@@ -350,6 +350,7 @@ function showToast(text){
 
 
 
+
 (function bindNoteAutoSave(){
   if (document._noteBound) return;
   document._noteBound = true;
@@ -369,6 +370,31 @@ function showToast(text){
     }catch(e){ console.warn('[NOTE][MIGRATE] failed', e); }
   }
 
+  async function writeWithRetry(ref, idx, val, attempts=3){
+    for (let i=1; i<=attempts; i++){
+      try{
+        await setDoc(ref, { [`notes.${idx}`]: val }, { merge:true });
+        const after = await getDoc(ref);
+        const data = after.exists() ? after.data() : null;
+        const notes = data && data.notes;
+        const got = notes && typeof notes[idx] === 'string' ? notes[idx] : undefined;
+        if (got === String(val)) {
+          console.log('[NOTE][VERIFY] ok on attempt', i, { idx, val: String(val) });
+          return true;
+        }
+        // if legacy '0' present, migrate and try again
+        if (data && typeof data['0'] === 'string') {
+          console.warn('[NOTE][VERIFY] legacy 0 present, migrating then retrying');
+          await setDoc(ref, { 'notes.0': data['0'], '0': deleteField() }, { merge:true });
+        }
+      }catch(err){
+        console.warn('[NOTE][VERIFY] attempt failed', i, err);
+      }
+      await new Promise(r=>setTimeout(r, 250));
+    }
+    return false;
+  }
+
   async function save(el){
     if (!el) return;
     const ddRaw  = el.dataset.dd || '';
@@ -378,7 +404,7 @@ function showToast(text){
     const val    = String(el.value ?? '');
 
     try {
-      const ref  = doc(db,'schedules', viewingUid, yyyymm, dd); // ✅ always viewingUid
+      const ref  = doc(db,'schedules', viewingUid, yyyymm, dd); // always viewingUid
       const before = await getDoc(ref);
       await migrateLegacy(ref, before);
 
@@ -392,12 +418,13 @@ function showToast(text){
       }
 
       console.log('[NOTE][WRITE]', { path:`schedules/${viewingUid}/${yyyymm}/${dd}`, key:`notes.${idx}`, val });
-      await setDoc(ref, { [`notes.${idx}`]: val }, { merge:true });
-
-      const after = await getDoc(ref);
-      const n = after.exists() && after.data() && after.data().notes ? after.data().notes : undefined;
-      console.log('[NOTE] READBACK after save', dd, n);
-      showToast('備註已儲存');
+      const ok = await writeWithRetry(ref, idx, val, 3);
+      if (ok){
+        showToast('備註已儲存');
+      }else{
+        showToast('備註儲存異常，已嘗試重試');
+        console.warn('[NOTE] write failed after retries');
+      }
     } catch (err) {
       console.error('備註儲存失敗', err);
       showToast('備註儲存失敗');
@@ -427,6 +454,7 @@ function showToast(text){
   document.addEventListener('focusout', direct, true);
   document.addEventListener('change',   direct, true);
 })();
+
 
 
 
