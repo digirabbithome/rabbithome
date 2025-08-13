@@ -260,10 +260,8 @@ async function renderMonth(){
                 : `<span class="badge minus">-${shortage.toFixed(1)}</span>`)
 
     // 備註
-    const notes = (daySched.notes && typeof daySched.notes === 'object') ? daySched.notes : {}
-    const noteVal = (i) => {
-      // Priority: notes.0 (map) > legacy root '0'
-      if (notes && typeof notes[i] === 'string' && notes[i].trim() !== '') return notes[i];
+    const notes = (daySched && daySched.notes && typeof daySched.notes === 'object') ? daySched.notes : {};
+if (!__printedNotesDebug) { try { console.log('[NOTE][DEBUG] notes snapshot', {date, dd:keyDD, notes}); } catch(e){} __printedNotesDebug = true; }
       if (typeof daySched?.[i] === 'string' && String(daySched[i]).trim() !== '') return daySched[i];
       return '';
     }
@@ -407,16 +405,8 @@ function showToast(text){
 
       console.log('[NOTE][WRITE]', { path:`schedules/${viewingUid}/${yyyymm}/${dd}`, key:`notes.${idx}`, val });
       await setDoc(ref, { [`notes.${idx}`]: val, '0': deleteField() }, { merge:true });
-// Strong readback from server
-let back = (typeof getDocFromServer === 'function' ? await getDocFromServer(ref).catch(()=>null) : await getDoc(ref).catch(()=>null));
-if (!back || !back.exists() || !((back.data()||{}).notes && String((back.data().notes||{})[idx]||'') === String(val))) {
-  console.warn('[NOTE][VERIFY] mismatch, retry via updateDoc');
-  try { await updateDoc(ref, { [`notes.${idx}`]: val, '0': deleteField() }); } catch(e) { console.warn('updateDoc retry failed', e); }
-  await new Promise(r=>setTimeout(r,250));
-  back = (typeof getDocFromServer === 'function' ? await getDocFromServer(ref).catch(()=>null) : await getDoc(ref).catch(()=>null));
-}
-try { console.log('[NOTE] READBACK after save', dd, { full: back && back.data && back.data(), notes: back && back.data && back.data().notes }); } catch(e){}
-const after = await getDoc(ref);
+
+      const after = await getDoc(ref);
       const n = after.exists() && after.data() && after.data().notes ? after.data().notes : undefined;
       console.log('[NOTE] READBACK after save', dd, n);
       showToast('備註已儲存');
