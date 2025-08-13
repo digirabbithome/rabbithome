@@ -173,7 +173,11 @@ async function renderMonth(){
         const notes = (data && data.notes) || undefined;
         const cur = notes && typeof notes['0']==='string' ? notes['0'] : '';
         if (String(data['0']).trim() !== '' && (!cur || String(cur).trim()==='')) {
-          ops.push(setDoc(doc(db,'schedules', viewingUid, yyyymm, d.id), { 'notes.0': data['0'], '0': deleteField() }, { merge:true }));
+          ops.push(if (data['0'] && String(data['0']).trim() !== '') {
+      setDoc(doc(db,'schedules', viewingUid, yyyymm, d.id), { 'notes.0': data['0'], '0': deleteField() }, { merge:true });
+    } else {
+      setDoc(doc(db,'schedules', viewingUid, yyyymm, d.id), { '0': deleteField() }, { merge:true });
+    }));
         }
       }
     });
@@ -368,7 +372,11 @@ function showToast(text){
       if (snap && snap.exists() && typeof snap.data()['0'] === 'string') {
         const legacy = snap.data()['0'];
         console.warn('[NOTE][MIGRATE] moving root 0 -> notes.0', legacy);
-        await setDoc(ref, { 'notes.0': legacy, '0': deleteField() }, { merge: true });
+        await if (legacy && String(legacy).trim() !== '') {
+      setDoc(ref, { 'notes.0': legacy, '0': deleteField() }, { merge: true });
+    } else {
+      setDoc(ref, { '0': deleteField() }, { merge: true });
+    });
       }
     }catch(e){ console.warn('[NOTE][MIGRATE] failed', e); }
   }
