@@ -67,3 +67,11 @@ input.note.saved-skip{ outline:2px dashed #bbb; background:#f7f7f7; }
 /* ---- coworker menu: inline before email ---- */
 #adminMenuWrap{ position: static !important; display: inline-block !important; margin-left: 12px; margin-right: 12px; vertical-align: middle; }
 .admin-menu-btn{ color: #000 !important; font-weight: 600; }
+
+
+/* Inline coworker control before email, right aligned */
+.topbar::after{content:"";display:block;clear:both;}
+.topbar #adminMenuWrap{float:right;margin-right:12px;position:static !important;display:inline-block !important;vertical-align:middle;}
+.topbar .who{float:right;}
+.popmenu .menu-group .hd{display:none !important;}
+.admin-menu-btn{color:#000 !important;font-weight:600;}
