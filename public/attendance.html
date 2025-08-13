@@ -4,13 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>出勤日記</title>
-  <link rel="stylesheet" href="/css/attendance.css?v=20250814-admin-coworkers-clean" />
+  <link rel="stylesheet" href="/css/attendance.css?v=20250814-admin-coworkers-pack" />
   <script type="module" src="/js/attendance.js?v=20250814-admin-coworkers-guard"?v=20250813-notes-server-verify-fix"?v=20250813-notes-server-verify"?v=20250813-notes-priority-fix2?v=20250813-skip-empty-notes-v2"?v=20250813-fix-root0-overwrite-v2"?v=20250813-highlight-logger"?v=20250813-remove-root0"?v=20250813-write-logger"?v=20250813-migration-guard"?v=20250813-fix-viewing-migrate"?v=20250813-toast-fix"?v=20250813-admin-pen-store"?v=20250812-stable"?v=20250812-debug3"?v=20250812-debug2"?v=20250812-debug"?v=20250812-append-blur""></script>
 </head>
 <body>
   <div class="wrap">
     <header class="topbar">
       <h1 id="pageTitle">出勤日記</h1>
+<div id="adminMenuWrap" style="display:none">
+  <button id="adminMenuBtn" class="btn-pen admin-menu-btn">同事 ▾</button>
+  <div id="adminMenu" class="popmenu">
+    <div class="menu-search"><input id="adminMenuSearch" placeholder="搜尋暱稱/姓名/Email"></div>
+    <div class="menu-group" data-group="ft"><div class="hd">正職</div><div class="list"></div></div>
+    <div class="menu-group" data-group="pt"><div class="hd">兼職</div><div class="list"></div></div>
+    <div class="menu-group" data-group="other"><div class="hd">其他</div><div class="list"></div></div>
+  </div>
+</div>
       <div class="who" id="who"></div>
     </header>
 
