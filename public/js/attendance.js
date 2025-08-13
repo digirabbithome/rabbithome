@@ -408,12 +408,12 @@ function showToast(text){
       console.log('[NOTE][WRITE]', { path:`schedules/${viewingUid}/${yyyymm}/${dd}`, key:`notes.${idx}`, val });
       await setDoc(ref, { [`notes.${idx}`]: val, '0': deleteField() }, { merge:true });
 // Strong readback from server
-let back = await getDocFromServer(ref).catch(()=>null);
+let back = (typeof getDocFromServer === 'function' ? await getDocFromServer(ref).catch(()=>null) : await getDoc(ref).catch(()=>null));
 if (!back || !back.exists() || !((back.data()||{}).notes && String((back.data().notes||{})[idx]||'') === String(val))) {
   console.warn('[NOTE][VERIFY] mismatch, retry via updateDoc');
   try { await updateDoc(ref, { [`notes.${idx}`]: val, '0': deleteField() }); } catch(e) { console.warn('updateDoc retry failed', e); }
   await new Promise(r=>setTimeout(r,250));
-  back = await getDocFromServer(ref).catch(()=>null);
+  back = (typeof getDocFromServer === 'function' ? await getDocFromServer(ref).catch(()=>null) : await getDoc(ref).catch(()=>null));
 }
 try { console.log('[NOTE] READBACK after save', dd, { full: back && back.data && back.data(), notes: back && back.data && back.data().notes }); } catch(e){}
 const after = await getDoc(ref);
