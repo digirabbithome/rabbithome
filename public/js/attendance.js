@@ -262,14 +262,46 @@ async function renderMonth(){
     // 備註
     const notes = (daySched.notes && typeof daySched.notes === 'object') ? daySched.notes : {}
     const noteVal = (i) => {
-    // Priority: notes['0'] (string key) > notes[0] (number key) > legacy root '0'
-    const kStr = String(i);
-    if (notes && typeof notes[kStr] === 'string' && notes[kStr].trim() !== '') return notes[kStr];
-    if (notes && typeof notes[i] === 'string' && String(notes[i]).trim() !== '') return String(notes[i]);
-    const legacy = (daySched && (daySched[kStr] ?? daySched[i]));
-    if (typeof legacy === 'string' && legacy.trim() !== '') return legacy;
-    return '';
+      // Priority: notes.0 (map) > legacy root '0'
+      if (notes && typeof notes[i] === 'string' && notes[i].trim() !== '') return notes[i];
+      if (typeof daySched?.[i] === 'string' && String(daySched[i]).trim() !== '') return daySched[i];
+      return '';
+    }
+
+    const tbodyEl = document.getElementById('tbody')
+    if (segRows.length){
+      segRows.forEach((r, i) => {
+        tbodyEl.insertAdjacentHTML('beforeend', `
+          <div class="tr">
+            <span>${i===0?date:''}</span>
+            <span>${r.tIn}</span>
+            <span>${r.tOut}</span>
+            <span>${r.h}${i===0?`（合計 ${dayTotal.toFixed(1)}h）`:''}</span>
+            <span>${i===0?diffBadge:''}</span>
+            <span>${i===0?`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`:''}</span>
+            <span>${renderNoteInput(keyDD, i, noteVal(i))}</span>
+          </div>
+        `)
+      })
+    } else {
+      tbodyEl.insertAdjacentHTML('beforeend', `
+        <div class="tr">
+          <span>${date}</span>
+          <span>—</span><span>—</span>
+          <span>0.0</span>
+          <span>${diffBadge}</span>
+          <span>${`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`}</span>
+          <span>${renderNoteInput(keyDD, 0, noteVal(0))}</span>
+        </div>
+      `)
+    }
   }
+
+  // 顯示工時合計 + 差異合計
+  const diffText = `${diffTotal >= 0 ? '+' : ''}${diffTotal.toFixed(1)} h`
+  document.getElementById('monthSum').textContent =
+    `本月總工時：${monthTotal.toFixed(1)} 小時　差異合計：${diffText}`
+}
 
 /** 上班打卡後的暫時列（即時可見） */
 function renderPendingInRow(dateStr, timeHM){
