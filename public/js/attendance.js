@@ -278,7 +278,7 @@ async function renderMonth(){
             <span>${r.tOut}</span>
             <span>${r.h}${(i===0 && segRows.length>1)?`（合計 ${dayTotal.toFixed(1)}h）`:''}</span>
             <span>${i===0?diffBadge:''}</span>
-            <span>${i===0?`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`:''}</span>
+            <span>${i===0?`${renderAdminPen(keyDD)} ${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''}`:''}</span>
             <span>${renderNoteInput(keyDD, i, noteVal(i))}</span>
           </div>
         `)
@@ -290,7 +290,7 @@ async function renderMonth(){
           <span>—</span><span>—</span>
           <span>0.0</span>
           <span>${diffBadge}</span>
-          <span>${`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`}</span>
+          <span>${`${renderAdminPen(keyDD)} ${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''}`}</span>
           <span>${renderNoteInput(keyDD, 0, noteVal(0))}</span>
         </div>
       `)
