@@ -335,51 +335,75 @@ function showToast(text){
 
 
 
+
 (function bindNoteAutoSave(){
-  const tbody = document.getElementById('tbody');
-  if (!tbody || tbody._noteBound) return;
-  tbody._noteBound = true;
+  if (document._noteBound) return;
+  document._noteBound = true;
+
+  const ALLOW_CLEAR = false;
+  const timers = new Map();
+  let composing = false;
 
   async function save(el){
     if (!el) return;
-    const ddRaw = el.dataset.dd || '';
-    const idx   = String(el.dataset.idx || '0');
-    const val   = String(el.value ?? '');
+    const ddRaw  = el.dataset.dd || '';
+    const idx    = String(el.dataset.idx || '0');
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
     const dd     = String(ddRaw).padStart(2,'0');
+    const val    = String(el.value ?? '');
 
     try {
-      // Guard: don't overwrite non-empty with empty (to prevent accidental clears)
-      const ref = doc(db,'schedules', viewingUid, yyyymm, dd);
-      const snap = await getDoc(ref);
-      const currentNotes = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
-      const currentVal = currentNotes && typeof currentNotes[idx] === 'string' ? currentNotes[idx] : '';
-
-      if (val.trim() === '' && currentVal && currentVal.trim() !== '') {
-        // skip overwrite
-        el.classList.add('saved-skip');
-        setTimeout(()=> el.classList.remove('saved-skip'), 800);
-        return;
+      const ref  = doc(db,'schedules', viewingUid, yyyymm, dd);
+      if (!ALLOW_CLEAR) {
+        const snap = await getDoc(ref);
+        const current = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
+        const oldVal  = current && typeof current[idx] === 'string' ? current[idx] : '';
+        if (val.trim()==='' && oldVal.trim()!=='') {
+          // skip overwrite with empty
+          el.classList.add('saved-skip');
+          setTimeout(()=> el.classList.remove('saved-skip'), 800);
+          return;
+        }
       }
-
-      await setDoc(ref, { [`notes.${idx}`]: val }, { merge: true });
+      await setDoc(ref, { [`notes.${idx}`]: val }, { merge:true });
+      if (typeof showToast === 'function') showToast('備註已儲存');
       el.classList.add('saved-ok');
       setTimeout(()=> el.classList.remove('saved-ok'), 800);
     } catch (err) {
       console.error('備註儲存失敗', err);
+      if (typeof showToast === 'function') showToast('備註儲存失敗');
       el.classList.add('saved-fail');
       setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
   }
 
+  // IME handling
+  document.addEventListener('compositionstart', e => {
+    if (e.target && e.target.matches && e.target.matches('input.note')) composing = true;
+  }, true);
+  document.addEventListener('compositionend', e => {
+    if (e.target && e.target.matches && e.target.matches('input.note')) composing = false;
+  }, true);
+
+  // input debounce 500ms as backup
+  document.addEventListener('input', (e) => {
+    const el = e.target && e.target.closest && e.target.closest('input.note');
+    if (!el || composing) return;
+    const key = `${el.dataset.dd || ''}/${el.dataset.idx || '0'}`;
+    clearTimeout(timers.get(key));
+    timers.set(key, setTimeout(() => save(el), 500));
+  }, true);
+
+  // blur/change immediate (0ms delay to capture final value)
   const direct = (e) => {
     const el = e.target && e.target.closest && e.target.closest('input.note');
     if (!el) return;
-    save(el);
+    setTimeout(() => save(el), 0);
   };
-  tbody.addEventListener('focusout', direct, true);
-  tbody.addEventListener('change',   direct, true);
+  document.addEventListener('focusout', direct, true);
+  document.addEventListener('change',   direct, true);
 })();
+
 
 
 
@@ -431,13 +455,17 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: hours,
           name: deleteField()
         }, { merge: true });
-      } else {
+      
+      try { showToast('全店已更新'); } catch(e){};
+} else {
         await setDoc(refPersonal, {
           requiredHoursOverride: hours,
           leaveType: deleteField(),
           leaveIndex: deleteField()
         }, { merge: true });
-      }
+      
+      try { showToast('個人已更新'); } catch(e){};
+}
       showToast(`${isStore?'全店':'個人'}已設定應工時：${hours}h`);
 
     } else if (choice === '2') {
@@ -447,13 +475,17 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: 0,
           ...(name ? { name } : { name: deleteField() })
         }, { merge: true });
-      } else {
+      
+      try { showToast('全店已更新'); } catch(e){};
+} else {
         await setDoc(refPersonal, {
           requiredHoursOverride: 0,
           leaveType: 'personal',
           leaveIndex: deleteField()
         }, { merge: true });
-      }
+      
+      try { showToast('個人已更新'); } catch(e){};
+}
       showToast(`${isStore?'全店':'個人'}已設定為休假（工時 0）`);
 
     } else if (choice === '3') {
@@ -462,13 +494,17 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: deleteField(),
           name: deleteField()
         }, { merge: true });
-      } else {
+      
+      try { showToast('全店已更新'); } catch(e){};
+} else {
         await setDoc(refPersonal, {
           requiredHoursOverride: deleteField(),
           leaveType: deleteField(),
           leaveIndex: deleteField()
         }, { merge: true });
-      }
+      
+      try { showToast('個人已更新'); } catch(e){};
+}
       showToast(`${isStore?'全店':'個人'}已清除覆蓋，恢復預設`);
     } else {
       return;
