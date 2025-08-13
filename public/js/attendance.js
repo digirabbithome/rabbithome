@@ -276,7 +276,7 @@ async function renderMonth(){
             <span>${i===0?date:''}</span>
             <span>${r.tIn}</span>
             <span>${r.tOut}</span>
-            <span>${r.h}${i===0?`（合計 ${dayTotal.toFixed(1)}h）`:''}</span>
+            <span>${r.h}${(i===0 && segRows.length>1)?`（合計 ${dayTotal.toFixed(1)}h）`:''}</span>
             <span>${i===0?diffBadge:''}</span>
             <span>${i===0?`${leaveTag}${isCompanyHoliday?' <span class=\"badge org\">公司</span>':''} ${renderAdminPen(keyDD)}`:''}</span>
             <span>${renderNoteInput(keyDD, i, noteVal(i))}</span>
