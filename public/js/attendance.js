@@ -341,6 +341,7 @@ function showToast(text){
   document._noteBound = true;
 
   const ALLOW_CLEAR = false;
+  const INPUT_DEBOUNCE_MS = 500;
   const timers = new Map();
   let composing = false;
 
@@ -349,7 +350,7 @@ function showToast(text){
     const ddRaw  = el.dataset.dd || '';
     const idx    = String(el.dataset.idx || '0');
     const yyyymm = `${y}${String(m).padStart(2,'0')}`;
-    const dd     = String(ddRaw).padStart(2,'0');
+    const dd     = String(ddRaw).padStart(2,'0') ;
     const val    = String(el.value ?? '');
 
     try {
@@ -359,25 +360,27 @@ function showToast(text){
         const current = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
         const oldVal  = current && typeof current[idx] === 'string' ? current[idx] : '';
         if (val.trim()==='' && oldVal.trim()!=='') {
-          // skip overwrite with empty
           el.classList.add('saved-skip');
           setTimeout(()=> el.classList.remove('saved-skip'), 800);
+          showToast('已略過空白，不覆蓋原備註');
           return;
         }
       }
+
       await setDoc(ref, { [`notes.${idx}`]: val }, { merge:true });
-      if (typeof showToast === 'function') showToast('備註已儲存');
-      el.classList.add('saved-ok');
-      setTimeout(()=> el.classList.remove('saved-ok'), 800);
+      // immediate readback for verification
+      const after = await getDoc(ref);
+      const n = after.exists() && after.data() && after.data().notes ? after.data().notes : undefined;
+      console.log('[NOTE] READBACK after save', dd, n);
+      showToast('備註已儲存');
+      el.classList.add('saved-ok'); setTimeout(()=> el.classList.remove('saved-ok'), 800);
     } catch (err) {
       console.error('備註儲存失敗', err);
-      if (typeof showToast === 'function') showToast('備註儲存失敗');
-      el.classList.add('saved-fail');
-      setTimeout(()=> el.classList.remove('saved-fail'), 1200);
+      showToast('備註儲存失敗');
+      el.classList.add('saved-fail'); setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
   }
 
-  // IME handling
   document.addEventListener('compositionstart', e => {
     if (e.target && e.target.matches && e.target.matches('input.note')) composing = true;
   }, true);
@@ -385,16 +388,14 @@ function showToast(text){
     if (e.target && e.target.matches && e.target.matches('input.note')) composing = false;
   }, true);
 
-  // input debounce 500ms as backup
   document.addEventListener('input', (e) => {
     const el = e.target && e.target.closest && e.target.closest('input.note');
     if (!el || composing) return;
     const key = `${el.dataset.dd || ''}/${el.dataset.idx || '0'}`;
     clearTimeout(timers.get(key));
-    timers.set(key, setTimeout(() => save(el), 500));
+    timers.set(key, setTimeout(() => save(el), INPUT_DEBOUNCE_MS));
   }, true);
 
-  // blur/change immediate (0ms delay to capture final value)
   const direct = (e) => {
     const el = e.target && e.target.closest && e.target.closest('input.note');
     if (!el) return;
@@ -455,17 +456,13 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: hours,
           name: deleteField()
         }, { merge: true });
-      
-      try { showToast('全店已更新'); } catch(e){};
-} else {
+      } else {
         await setDoc(refPersonal, {
           requiredHoursOverride: hours,
           leaveType: deleteField(),
           leaveIndex: deleteField()
         }, { merge: true });
-      
-      try { showToast('個人已更新'); } catch(e){};
-}
+      }
       showToast(`${isStore?'全店':'個人'}已設定應工時：${hours}h`);
 
     } else if (choice === '2') {
@@ -475,17 +472,13 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: 0,
           ...(name ? { name } : { name: deleteField() })
         }, { merge: true });
-      
-      try { showToast('全店已更新'); } catch(e){};
-} else {
+      } else {
         await setDoc(refPersonal, {
           requiredHoursOverride: 0,
           leaveType: 'personal',
           leaveIndex: deleteField()
         }, { merge: true });
-      
-      try { showToast('個人已更新'); } catch(e){};
-}
+      }
       showToast(`${isStore?'全店':'個人'}已設定為休假（工時 0）`);
 
     } else if (choice === '3') {
@@ -494,17 +487,13 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: deleteField(),
           name: deleteField()
         }, { merge: true });
-      
-      try { showToast('全店已更新'); } catch(e){};
-} else {
+      } else {
         await setDoc(refPersonal, {
           requiredHoursOverride: deleteField(),
           leaveType: deleteField(),
           leaveIndex: deleteField()
         }, { merge: true });
-      
-      try { showToast('個人已更新'); } catch(e){};
-}
+      }
       showToast(`${isStore?'全店':'個人'}已清除覆蓋，恢復預設`);
     } else {
       return;
