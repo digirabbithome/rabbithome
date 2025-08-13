@@ -1,0 +1,79 @@
+
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto; background:#fff9fc; margin:0;}
+.wrap{max-width:1200px; margin:20px auto; padding:0 16px;}
+.topbar{display:flex; align-items:center; gap:12px;}
+.topbar h1{color:#d63384; margin:0;}
+.topbar .who{margin-left:auto; color:#666;}
+.controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:10px 0 6px;}
+.punch{display:flex; align-items:center; gap:10px;}
+.month-switch{display:flex; align-items:center; gap:8px; margin-left:auto;}
+#monthPicker{padding:6px 8px; border-radius:8px; border:1px solid #e6c2d5; background:#fff;}
+button{border:0; background:#ff7fb4; color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer;}
+button.secondary{background:#ffd7ea; color:#333;}
+button.icon{padding:4px 6px; background:#ffe3f1; color:#c22577;}
+button:hover{filter:brightness(.95);}
+button:disabled{opacity:.6; cursor:not-allowed;}
+.card{background:#fff; border-radius:16px; box-shadow:0 10px 24px rgba(0,0,0,.06); padding:0; overflow:hidden;}
+.table .thead,.table .tr{display:grid; grid-template-columns: 140px 120px 120px 110px 160px 220px auto; gap:8px; align-items:center;}
+.table .thead{padding:10px 12px; background:#ffe6f2; font-weight:700; color:#333;}
+.table .tbody .tr{padding:10px 12px; border-bottom:1px dashed #f6e4ee;}
+.badge{padding:2px 8px; border-radius:999px; font-size:12px; background:#eee; color:#333;}
+.badge.plus{background:#e6f6e6;}
+.badge.minus{background:#ffe6e6;}
+.badge.note-ok{background:#d1f7d6;}
+.badge.note-err{background:#ffd3d6;}
+.badge.org{background:#e7f0ff; color:#1c4bb7;}
+.td-req{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.td-req input[type="number"]{width:80px; padding:4px 6px; border:1px solid #e6c2d5; border-radius:6px;}
+.td-req input[type="text"]{width:150px; padding:4px 6px; border:1px solid #e6c2d5; border-radius:6px;}
+.muted{color:#999;}
+.now{color:#6c757d; font-size:12px;}
+.legend{margin:10px 2px; color:#888;}
+input.note{width:100%; padding:6px 8px; border:1px solid #f0c8dc; border-radius:8px;}
+.toast{position:fixed; right:16px; bottom:16px; background:#212529; color:#fff; padding:10px 14px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.25);}
+
+/* autosave hints */
+input.note.saved-ok{ box-shadow:0 0 0 2px #7bd87b inset; }
+input.note.saved-fail{ box-shadow:0 0 0 2px #ff9aa2 inset; }
+
+.tr.flash { outline: 2px dashed #f0c8dc; animation: flash 0.8s ease; }
+@keyframes flash { from { background:#fff0fa; } to { background:transparent; } }
+
+input.note.saved-skip{ outline:2px dashed #bbb; background:#f7f7f7; }
+
+.btn-pen{display:inline-flex;align-items:center;justify-content:center;margin-left:6px;padding:0 6px;height:22px;border:1px solid #e4b6cf;border-radius:6px;background:#fff;font-size:12px;cursor:pointer}
+.btn-pen:hover{background:#fff1f7}
+
+
+/* ===== Admin coworker Popmenu ===== */
+#adminMenuWrap{ position:absolute; top:16px; right:16px; }
+.admin-menu-btn{ font-size:14px; padding:6px 10px; }
+.popmenu{
+  position:absolute; right:0; margin-top:6px; min-width:260px;
+  background:#fff; border:1px solid #f0c8dc; border-radius:10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.08); display:none; z-index: 20;
+  max-height: 360px; overflow:auto;
+}
+.popmenu.open{ display:block; }
+.popmenu .menu-search{ padding:8px; border-bottom:1px solid #f6d7e6; position: sticky; top:0; background:#fff; }
+.popmenu .menu-search input{ width:100%; padding:6px 8px; border:1px solid #f0c8dc; border-radius:8px; }
+.popmenu .menu-group .hd{ font-weight:600; font-size:12px; color:#a24d7a; padding:8px 12px 4px; }
+.popmenu .menu-group .list .item{ padding:8px 12px; cursor:pointer; display:flex; gap:8px; align-items:center; }
+.popmenu .menu-group .list .item .nm{ flex:1; }
+.popmenu .menu-group .list .item .tag{ font-size:11px; color:#a24d7a; background:#ffe7f2; padding:2px 6px; border-radius:999px; }
+.popmenu .menu-group .list .item:hover{ background:#fff1f6; }
+
+
+/* ---- coworker menu: inline before email ---- */
+#adminMenuWrap{ position: static !important; display: inline-block !important; margin-left: 12px; margin-right: 12px; vertical-align: middle; }
+.admin-menu-btn{ color: #000 !important; font-weight: 600; }
+
+
+/* === topbar right align: coworker before email, same row === */
+.topbar::after{content:"";display:block;clear:both;}
+.topbar #adminMenuWrap{float:right; position:static !important; margin-right:12px; display:inline-block !important;}
+.topbar .who{float:right;}
+.admin-menu-btn{ color:#000 !important; font-weight:600; }
+
+/* hide group headers in coworker popmenu */
+.popmenu .menu-group .hd{ display:none; }
