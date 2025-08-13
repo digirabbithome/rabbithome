@@ -10,8 +10,12 @@
 <body>
   <div class="wrap">
     <header class="topbar">
-      <h1 id="pageTitle">出勤日記</h1>
-<div id="adminMenuWrap" style="display:none">
+      <h1 id="pageTitle">出勤日記</h1><div class="menu-group" data-group="ft"><div class="hd">正職</div><div class="list"></div></div>
+    <div class="menu-group" data-group="pt"><div class="hd">兼職</div><div class="list"></div></div>
+    <div class="menu-group" data-group="other"><div class="hd">其他</div><div class="list"></div></div>
+  </div>
+</div>
+      <div id="adminMenuWrap" style="display:none">
   <button id="adminMenuBtn" class="btn-pen admin-menu-btn">同事 ▾</button>
   <div id="adminMenu" class="popmenu">
     <div class="menu-search"><input id="adminMenuSearch" placeholder="搜尋暱稱/姓名/Email"></div>
@@ -20,7 +24,7 @@
     <div class="menu-group" data-group="other"><div class="hd">其他</div><div class="list"></div></div>
   </div>
 </div>
-      <div class="who" id="who"></div>
+<div class="who" id="who"></div>
     </header>
 
     <section class="controls">
