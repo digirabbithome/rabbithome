@@ -407,8 +407,16 @@ function showToast(text){
 
       console.log('[NOTE][WRITE]', { path:`schedules/${viewingUid}/${yyyymm}/${dd}`, key:`notes.${idx}`, val });
       await setDoc(ref, { [`notes.${idx}`]: val, '0': deleteField() }, { merge:true });
-
-      const after = await getDoc(ref);
+// Strong readback from server
+let back = await getDocFromServer(ref).catch(()=>null);
+if (!back || !back.exists() || !((back.data()||{}).notes && String((back.data().notes||{})[idx]||'') === String(val))) {
+  console.warn('[NOTE][VERIFY] mismatch, retry via updateDoc');
+  try { await updateDoc(ref, { [`notes.${idx}`]: val, '0': deleteField() }); } catch(e) { console.warn('updateDoc retry failed', e); }
+  await new Promise(r=>setTimeout(r,250));
+  back = await getDocFromServer(ref).catch(()=>null);
+}
+try { console.log('[NOTE] READBACK after save', dd, { full: back && back.data && back.data(), notes: back && back.data && back.data().notes }); } catch(e){}
+const after = await getDoc(ref);
       const n = after.exists() && after.data() && after.data().notes ? after.data().notes : undefined;
       console.log('[NOTE] READBACK after save', dd, n);
       showToast('備註已儲存');
