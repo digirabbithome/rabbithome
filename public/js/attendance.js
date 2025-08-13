@@ -573,3 +573,155 @@ document.addEventListener('click', (e)=>{
   const yyyymm = `${y}${String(m).padStart(2,'0')}`;
   console.log('[ADMIN] writes will target', { personal:`schedules/${viewingUid}/${yyyymm}/${dd}`, store:`orgSchedules/${yyyymm}/days/${dd}` });
 }, true);
+
+// ===== Admin Popmenu =====
+function bindAdminCoworkerMenu(){
+  const wrap = document.getElementById('adminMenuWrap');
+  const btn  = document.getElementById('adminMenuBtn');
+  const menu = document.getElementById('adminMenu');
+  if (!wrap || !btn || !menu) return;
+
+  btn.onclick = (e)=>{
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  };
+  document.addEventListener('click', ()=> menu.classList.remove('open'));
+
+  menu.addEventListener('click', async (e)=>{
+    const it = e.target.closest('.item'); if (!it) return;
+    const uid = it.dataset.uid;
+    menu.classList.remove('open');
+    if (uid){
+      const params = new URLSearchParams(location.search);
+      params.set('uid', uid);
+      location.search = params.toString();
+    }
+  });
+}
+
+// Helpers to get today yyyymm & dd based on current viewing y/m controls
+function getTodayKeys(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd= String(d.getDate()).padStart(2,'0');
+  return { yyyymm: `${y}${m}`, dd };
+}
+
+// 個人：本日 0 小時（requiredHoursOverride:0）
+async function actSelfZeroToday(){
+  const { yyyymm, dd } = getTodayKeys();
+  try{
+    await setDoc(doc(db,'schedules', viewingUid, yyyymm, dd), { requiredHoursOverride: 0 }, { merge:true });
+    showToast('已將本人今日應工時設為 0');
+    await renderMonth();
+  }catch(e){ console.error(e); showToast('設定失敗'); }
+}
+
+// 全店：本日 0 小時（orgSchedules/{yyyymm}/days/{dd}）
+async function actStoreZeroToday(){
+  const { yyyymm, dd } = getTodayKeys();
+  try{
+    await setDoc(doc(db,'orgSchedules', yyyymm, 'days', dd), { requiredHoursOverride: 0, name: '管理調整' }, { merge:true });
+    showToast('已將全店今日應工時設為 0');
+    await renderMonth();
+  }catch(e){ console.error(e); showToast('設定失敗'); }
+}
+
+// 全店：本日公司休假（同樣設為 0，並加上名稱）
+async function actStoreHolidayToday(){
+  const { yyyymm, dd } = getTodayKeys();
+  try{
+    await setDoc(doc(db,'orgSchedules', yyyymm, 'days', dd), { requiredHoursOverride: 0, name: '公司休假' }, { merge:true });
+    showToast('已設定今日為公司休假');
+    await renderMonth();
+  }catch(e){ console.error(e); showToast('設定失敗'); }
+}
+
+// 清理本月備註欄位（root 0 → notes.0）
+async function actCleanMonthLegacy(){
+  const mp = document.getElementById('monthPicker');
+  const [yy,mm] = mp.value.split('-').map(Number);
+  const yyyymm = `${yy}${String(mm).padStart(2,'0')}`;
+  try{
+    const snap = await getDocs(collection(db,'schedules', viewingUid, yyyymm));
+    let moved=0, deleted=0;
+    for (const d of snap.docs){
+      const ref = doc(db,'schedules', viewingUid, yyyymm, d.id);
+      const data = d.data()||{};
+      const notes = data.notes||{};
+      const root0 = data['0'];
+      if (typeof root0 === 'string'){
+        const hasNotes0 = typeof notes['0']==='string' && notes['0'].trim()!=='';
+        const hasRoot0  = root0.trim()!=='';
+        if (!hasNotes0 && hasRoot0){
+          await setDoc(ref, { 'notes.0': root0, '0': deleteField() }, { merge:true });
+          moved++;
+        }else{
+          await setDoc(ref, { '0': deleteField() }, { merge:true });
+          deleted++;
+        }
+      }
+    }
+    showToast(`備註清理完成：搬移 ${moved} 刪除 ${deleted}`);
+    await renderMonth();
+  }catch(e){ console.error(e); showToast('清理失敗'); }
+}
+
+
+// ===== Coworker menu data loader =====
+async function loadCoworkersForMenu(){
+  const menu = document.getElementById('adminMenu');
+  if (!menu) return;
+  const q = await getDocs(collection(db,'users'));
+  const list = [];
+  q.forEach(d=>{
+    const u = d.data()||{}; const uid = d.id;
+    const nickname = u.nickname || u.name || (u.email? u.email.split('@')[0]: uid.slice(0,6));
+    const email = u.email || '';
+    const kindRaw = String(u.employment || u.type || u.jobType || u.role || '').toLowerCase();
+    let grp = 'other';
+    if (kindRaw.includes('正職') || kindRaw.includes('全職') || kindRaw.includes('full')) grp = 'ft';
+    else if (kindRaw.includes('兼職') || kindRaw.includes('part')) grp = 'pt';
+    list.push({ uid, nickname, email, grp });
+  });
+  // Build UI
+  const groups = { ft: [], pt: [], other: [] };
+  list.forEach(u=> groups[u.grp].push(u));
+  for (const g of Object.keys(groups)){
+    const box = menu.querySelector(`.menu-group[data-group="${g}"] .list`);
+    if (!box) continue;
+    box.innerHTML = groups[g].map(u=>(
+      `<div class="item" data-uid="${u.uid}"><span class="nm">${u.nickname}</span><span class="tag">${u.email || ''}</span></div>`
+    )).join('') || '<div class="item" style="opacity:.6;cursor:default;">（無資料）</div>';
+  }
+  // Search
+  const search = document.getElementById('adminMenuSearch');
+  if (search){
+    search.oninput = () => {
+      const kw = search.value.trim().toLowerCase();
+      menu.querySelectorAll('.item[data-uid]').forEach(el=>{
+        const text = (el.textContent||'').toLowerCase();
+        el.style.display = (kw==='' || text.includes(kw)) ? '' : 'none';
+      });
+    };
+  }
+}
+
+// Re-bind init for coworker menu
+function bindAdminCoworkerMenu(){
+  const wrap = document.getElementById('adminMenuWrap');
+  const btn  = document.getElementById('adminMenuBtn');
+  const menu = document.getElementById('adminMenu');
+  if (!wrap || !btn || !menu) return;
+
+  btn.onclick = async (e)=>{
+    e.stopPropagation();
+    if (!menu.dataset.loaded){
+      await loadCoworkersForMenu();
+      menu.dataset.loaded = '1';
+    }
+    menu.classList.toggle('open');
+  };
+  document.addEventListener('click', ()=> menu.classList.remove('open'));
+}
