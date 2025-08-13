@@ -55,7 +55,7 @@ window.onload = () => {
       const d=new Date(); document.getElementById('nowTPE').textContent = toISODate(d)+' '+toHM(d).slice(0,5)+' (GMT+8)'
     }, 1000)
 
-    if (allowedAdmins.includes(me.email||'')) { document.getElementById('adminMenuWrap').style.display='inline-block'; bindAdminCoworkerMenu(); }
+    if (allowedAdmins.includes(me.email||'')) { const _wrap = document.getElementById('adminMenuWrap'); if (_wrap) { _wrap.style.display='inline-block'; bindAdminCoworkerMenu(); } }
     await renderMonth()
   })
 }
@@ -114,7 +114,7 @@ async function punch(kind){
       createdAt: serverTimestamp()
     })
     showToast(`打卡成功：${kind==='in'?'上班':'下班'} ${localTime}`)
-    if (allowedAdmins.includes(me.email||'')) { document.getElementById('adminMenuWrap').style.display='inline-block'; bindAdminCoworkerMenu(); }
+    if (allowedAdmins.includes(me.email||'')) { const _wrap = document.getElementById('adminMenuWrap'); if (_wrap) { _wrap.style.display='inline-block'; bindAdminCoworkerMenu(); } }
     await renderMonth()
   }catch(err){
     showToast('打卡失敗，請再試一次')
@@ -559,7 +559,7 @@ document.addEventListener('click', async (e) => {
       return;
     }
 
-    if (allowedAdmins.includes(me.email||'')) { document.getElementById('adminMenuWrap').style.display='inline-block'; bindAdminCoworkerMenu(); }
+    if (allowedAdmins.includes(me.email||'')) { const _wrap = document.getElementById('adminMenuWrap'); if (_wrap) { _wrap.style.display='inline-block'; bindAdminCoworkerMenu(); } }
     await renderMonth();
 
   } catch (err) {
