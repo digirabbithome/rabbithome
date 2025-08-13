@@ -1,5 +1,5 @@
 import { db, auth } from '/js/firebase.js'
-import { addDoc, collection, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { addDoc, collection, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 /** ===== 共用工具（台北時間） ===== */
@@ -162,6 +162,19 @@ async function renderMonth(){
   const sched = {}
   const schedSnap = await getDocs(collection(db,'schedules', viewingUid, yyyymm))
   schedSnap.forEach(d=>{ sched[d.id.padStart(2,'0')] = d.data() })
+
+  // migrate any legacy root "0" field to notes.0, once
+  try{
+    const ops = [];
+    schedSnap.forEach(d => {
+      const data = d.data();
+      if (typeof data['0'] === 'string') {
+        console.warn('[NOTE][MIGRATE][render]', d.id, 'moving 0 -> notes.0');
+        ops.push(setDoc(doc(db,'schedules', viewingUid, yyyymm, d.id), { 'notes.0': data['0'], '0': deleteField() }, { merge:true }));
+      }
+    });
+    if (ops.length) { Promise.all(ops).then(()=>console.log('[NOTE][MIGRATE][render] done', ops.length)); }
+  }catch(e){ console.warn('[NOTE][MIGRATE][render] error', e); }
 
   console.log('[NOTE][READ] renderMonth schedules snapshot', {
     viewingUid, y, m, yyyymm, count: schedSnap.size
@@ -336,6 +349,7 @@ function showToast(text){
 
 
 
+
 (function bindNoteAutoSave(){
   if (document._noteBound) return;
   document._noteBound = true;
@@ -344,6 +358,16 @@ function showToast(text){
   const INPUT_DEBOUNCE_MS = 500;
   const timers = new Map();
   let composing = false;
+
+  async function migrateLegacy(ref, snap){
+    try{
+      if (snap && snap.exists() && typeof snap.data()['0'] === 'string') {
+        const legacy = snap.data()['0'];
+        console.warn('[NOTE][MIGRATE] moving root 0 -> notes.0', legacy);
+        await setDoc(ref, { 'notes.0': legacy, '0': deleteField() }, { merge: true });
+      }
+    }catch(e){ console.warn('[NOTE][MIGRATE] failed', e); }
+  }
 
   async function save(el){
     if (!el) return;
@@ -354,30 +378,29 @@ function showToast(text){
     const val    = String(el.value ?? '');
 
     try {
-      const ref  = doc(db,'schedules', viewingUid, yyyymm, dd);
+      const ref  = doc(db,'schedules', viewingUid, yyyymm, dd); // ✅ always viewingUid
+      const before = await getDoc(ref);
+      await migrateLegacy(ref, before);
+
       if (!ALLOW_CLEAR) {
-        const snap = await getDoc(ref);
-        const current = snap.exists() && snap.data() && snap.data().notes ? snap.data().notes : undefined;
+        const current = before.exists() && before.data() && before.data().notes ? before.data().notes : undefined;
         const oldVal  = current && typeof current[idx] === 'string' ? current[idx] : '';
         if (val.trim()==='' && oldVal.trim()!=='') {
-          el.classList.add('saved-skip');
-          setTimeout(()=> el.classList.remove('saved-skip'), 800);
           showToast('已略過空白，不覆蓋原備註');
           return;
         }
       }
 
+      console.log('[NOTE][WRITE]', { path:`schedules/${viewingUid}/${yyyymm}/${dd}`, key:`notes.${idx}`, val });
       await setDoc(ref, { [`notes.${idx}`]: val }, { merge:true });
-      // immediate readback for verification
+
       const after = await getDoc(ref);
       const n = after.exists() && after.data() && after.data().notes ? after.data().notes : undefined;
       console.log('[NOTE] READBACK after save', dd, n);
       showToast('備註已儲存');
-      el.classList.add('saved-ok'); setTimeout(()=> el.classList.remove('saved-ok'), 800);
     } catch (err) {
       console.error('備註儲存失敗', err);
       showToast('備註儲存失敗');
-      el.classList.add('saved-fail'); setTimeout(()=> el.classList.remove('saved-fail'), 1200);
     }
   }
 
@@ -404,6 +427,7 @@ function showToast(text){
   document.addEventListener('focusout', direct, true);
   document.addEventListener('change',   direct, true);
 })();
+
 
 
 
@@ -456,13 +480,17 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: hours,
           name: deleteField()
         }, { merge: true });
-      } else {
+      
+      try { showToast('全店已更新'); } catch(e){};
+} else {
         await setDoc(refPersonal, {
           requiredHoursOverride: hours,
           leaveType: deleteField(),
           leaveIndex: deleteField()
         }, { merge: true });
-      }
+      
+      try { showToast('個人已更新'); } catch(e){};
+}
       showToast(`${isStore?'全店':'個人'}已設定應工時：${hours}h`);
 
     } else if (choice === '2') {
@@ -472,13 +500,17 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: 0,
           ...(name ? { name } : { name: deleteField() })
         }, { merge: true });
-      } else {
+      
+      try { showToast('全店已更新'); } catch(e){};
+} else {
         await setDoc(refPersonal, {
           requiredHoursOverride: 0,
           leaveType: 'personal',
           leaveIndex: deleteField()
         }, { merge: true });
-      }
+      
+      try { showToast('個人已更新'); } catch(e){};
+}
       showToast(`${isStore?'全店':'個人'}已設定為休假（工時 0）`);
 
     } else if (choice === '3') {
@@ -487,13 +519,17 @@ document.addEventListener('click', async (e) => {
           requiredHoursOverride: deleteField(),
           name: deleteField()
         }, { merge: true });
-      } else {
+      
+      try { showToast('全店已更新'); } catch(e){};
+} else {
         await setDoc(refPersonal, {
           requiredHoursOverride: deleteField(),
           leaveType: deleteField(),
           leaveIndex: deleteField()
         }, { merge: true });
-      }
+      
+      try { showToast('個人已更新'); } catch(e){};
+}
       showToast(`${isStore?'全店':'個人'}已清除覆蓋，恢復預設`);
     } else {
       return;
@@ -506,3 +542,12 @@ document.addEventListener('click', async (e) => {
     alert('更新失敗，請稍後再試');
   }
 });
+
+// extra logging for admin pen paths
+document.addEventListener('click', (e)=>{
+  const btn = e.target && e.target.closest && e.target.closest('.btn-pen');
+  if (!btn) return;
+  const dd = String(btn.dataset.dd || '').padStart(2,'0');
+  const yyyymm = `${y}${String(m).padStart(2,'0')}`;
+  console.log('[ADMIN] writes will target', { personal:`schedules/${viewingUid}/${yyyymm}/${dd}`, store:`orgSchedules/${yyyymm}/days/${dd}` });
+}, true);
