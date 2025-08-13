@@ -55,6 +55,7 @@ window.onload = () => {
       const d=new Date(); document.getElementById('nowTPE').textContent = toISODate(d)+' '+toHM(d).slice(0,5)+' (GMT+8)'
     }, 1000)
 
+    if (allowedAdmins.includes(me.email||'')) { document.getElementById('adminMenuWrap').style.display='inline-block'; bindAdminCoworkerMenu(); }
     await renderMonth()
   })
 }
@@ -113,6 +114,7 @@ async function punch(kind){
       createdAt: serverTimestamp()
     })
     showToast(`打卡成功：${kind==='in'?'上班':'下班'} ${localTime}`)
+    if (allowedAdmins.includes(me.email||'')) { document.getElementById('adminMenuWrap').style.display='inline-block'; bindAdminCoworkerMenu(); }
     await renderMonth()
   }catch(err){
     showToast('打卡失敗，請再試一次')
@@ -557,6 +559,7 @@ document.addEventListener('click', async (e) => {
       return;
     }
 
+    if (allowedAdmins.includes(me.email||'')) { document.getElementById('adminMenuWrap').style.display='inline-block'; bindAdminCoworkerMenu(); }
     await renderMonth();
 
   } catch (err) {
@@ -574,102 +577,8 @@ document.addEventListener('click', (e)=>{
   console.log('[ADMIN] writes will target', { personal:`schedules/${viewingUid}/${yyyymm}/${dd}`, store:`orgSchedules/${yyyymm}/days/${dd}` });
 }, true);
 
-// ===== Admin Popmenu =====
-function bindAdminCoworkerMenu(){
-  const wrap = document.getElementById('adminMenuWrap');
-  const btn  = document.getElementById('adminMenuBtn');
-  const menu = document.getElementById('adminMenu');
-  if (!wrap || !btn || !menu) return;
 
-  btn.onclick = (e)=>{
-    e.stopPropagation();
-    menu.classList.toggle('open');
-  };
-  document.addEventListener('click', ()=> menu.classList.remove('open'));
-
-  menu.addEventListener('click', async (e)=>{
-    const it = e.target.closest('.item'); if (!it) return;
-    const uid = it.dataset.uid;
-    menu.classList.remove('open');
-    if (uid){
-      const params = new URLSearchParams(location.search);
-      params.set('uid', uid);
-      location.search = params.toString();
-    }
-  });
-}
-
-// Helpers to get today yyyymm & dd based on current viewing y/m controls
-function getTodayKeys(){
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const dd= String(d.getDate()).padStart(2,'0');
-  return { yyyymm: `${y}${m}`, dd };
-}
-
-// 個人：本日 0 小時（requiredHoursOverride:0）
-async function actSelfZeroToday(){
-  const { yyyymm, dd } = getTodayKeys();
-  try{
-    await setDoc(doc(db,'schedules', viewingUid, yyyymm, dd), { requiredHoursOverride: 0 }, { merge:true });
-    showToast('已將本人今日應工時設為 0');
-    await renderMonth();
-  }catch(e){ console.error(e); showToast('設定失敗'); }
-}
-
-// 全店：本日 0 小時（orgSchedules/{yyyymm}/days/{dd}）
-async function actStoreZeroToday(){
-  const { yyyymm, dd } = getTodayKeys();
-  try{
-    await setDoc(doc(db,'orgSchedules', yyyymm, 'days', dd), { requiredHoursOverride: 0, name: '管理調整' }, { merge:true });
-    showToast('已將全店今日應工時設為 0');
-    await renderMonth();
-  }catch(e){ console.error(e); showToast('設定失敗'); }
-}
-
-// 全店：本日公司休假（同樣設為 0，並加上名稱）
-async function actStoreHolidayToday(){
-  const { yyyymm, dd } = getTodayKeys();
-  try{
-    await setDoc(doc(db,'orgSchedules', yyyymm, 'days', dd), { requiredHoursOverride: 0, name: '公司休假' }, { merge:true });
-    showToast('已設定今日為公司休假');
-    await renderMonth();
-  }catch(e){ console.error(e); showToast('設定失敗'); }
-}
-
-// 清理本月備註欄位（root 0 → notes.0）
-async function actCleanMonthLegacy(){
-  const mp = document.getElementById('monthPicker');
-  const [yy,mm] = mp.value.split('-').map(Number);
-  const yyyymm = `${yy}${String(mm).padStart(2,'0')}`;
-  try{
-    const snap = await getDocs(collection(db,'schedules', viewingUid, yyyymm));
-    let moved=0, deleted=0;
-    for (const d of snap.docs){
-      const ref = doc(db,'schedules', viewingUid, yyyymm, d.id);
-      const data = d.data()||{};
-      const notes = data.notes||{};
-      const root0 = data['0'];
-      if (typeof root0 === 'string'){
-        const hasNotes0 = typeof notes['0']==='string' && notes['0'].trim()!=='';
-        const hasRoot0  = root0.trim()!=='';
-        if (!hasNotes0 && hasRoot0){
-          await setDoc(ref, { 'notes.0': root0, '0': deleteField() }, { merge:true });
-          moved++;
-        }else{
-          await setDoc(ref, { '0': deleteField() }, { merge:true });
-          deleted++;
-        }
-      }
-    }
-    showToast(`備註清理完成：搬移 ${moved} 刪除 ${deleted}`);
-    await renderMonth();
-  }catch(e){ console.error(e); showToast('清理失敗'); }
-}
-
-
-// ===== Coworker menu data loader =====
+// ===== Coworker Menu Helpers =====
 async function loadCoworkersForMenu(){
   const menu = document.getElementById('adminMenu');
   if (!menu) return;
@@ -685,7 +594,6 @@ async function loadCoworkersForMenu(){
     else if (kindRaw.includes('兼職') || kindRaw.includes('part')) grp = 'pt';
     list.push({ uid, nickname, email, grp });
   });
-  // Build UI
   const groups = { ft: [], pt: [], other: [] };
   list.forEach(u=> groups[u.grp].push(u));
   for (const g of Object.keys(groups)){
@@ -695,7 +603,6 @@ async function loadCoworkersForMenu(){
       `<div class="item" data-uid="${u.uid}"><span class="nm">${u.nickname}</span><span class="tag">${u.email || ''}</span></div>`
     )).join('') || '<div class="item" style="opacity:.6;cursor:default;">（無資料）</div>';
   }
-  // Search
   const search = document.getElementById('adminMenuSearch');
   if (search){
     search.oninput = () => {
@@ -708,7 +615,6 @@ async function loadCoworkersForMenu(){
   }
 }
 
-// Re-bind init for coworker menu
 function bindAdminCoworkerMenu(){
   const wrap = document.getElementById('adminMenuWrap');
   const btn  = document.getElementById('adminMenuBtn');
@@ -724,4 +630,17 @@ function bindAdminCoworkerMenu(){
     menu.classList.toggle('open');
   };
   document.addEventListener('click', ()=> menu.classList.remove('open'));
+
+  // 點選人員 → 切換到該同事的打卡頁
+  menu.addEventListener('click', (e)=>{
+    const it = e.target.closest('.item'); if (!it) return;
+    const uid = it.dataset.uid;
+    menu.classList.remove('open');
+    if (uid){
+      const params = new URLSearchParams(location.search);
+      params.set('uid', uid);
+      location.search = params.toString();
+    }
+  });
 }
+// End Coworker Menu Helpers
