@@ -377,15 +377,14 @@ function showToast(text){
     if (!el) return;
     const ddRaw  = el.dataset.dd || '';
     const idx    = String(el.dataset.idx || '0');
-    const yyyymm = `${y
+    const yyyymm = `${y}${String(m).padStart(2,'0')}`;
+    const dd     = String(ddRaw).padStart(2,'0') ;
+    const val    = String(el.value ?? '');
     // Guard: Skip empty writes unless user explicitly cleared
     if ((val === '' || val === undefined) && !el.dataset.userCleared) {
       console.warn('[NOTE][SKIP EMPTY WRITE]', {dd: dd, idx: idx, reason: 'empty value'});
       return;
     }
-    }${String(m).padStart(2,'0')}`;
-    const dd     = String(ddRaw).padStart(2,'0') ;
-    const val    = String(el.value ?? '');
 
     try {
       const ref  = doc(db,'schedules', viewingUid, yyyymm, dd); // ✅ always viewingUid
