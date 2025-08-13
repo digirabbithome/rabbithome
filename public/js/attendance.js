@@ -261,7 +261,12 @@ async function renderMonth(){
 
     // 備註
     const notes = (daySched.notes && typeof daySched.notes === 'object') ? daySched.notes : {}
-    const noteVal = (i) => (notes && typeof notes[i]==='string') ? notes[i] : ''
+    const noteVal = (i) => {
+      // Priority: notes.0 (map) > legacy root '0'
+      if (notes && typeof notes[i] === 'string' && notes[i].trim() !== '') return notes[i];
+      if (typeof daySched?.[i] === 'string' && String(daySched[i]).trim() !== '') return daySched[i];
+      return '';
+    }
 
     const tbodyEl = document.getElementById('tbody')
     if (segRows.length){
