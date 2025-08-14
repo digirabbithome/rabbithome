@@ -1,5 +1,4 @@
-
-// barcode.js
+// barcode.js (no 'brand' field)
 import { db } from '/js/firebase.js'
 import {
   collection, addDoc, serverTimestamp, getDocs
@@ -9,7 +8,6 @@ const nickname = localStorage.getItem('nickname') || '未知使用者'
 
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const supplier = document.getElementById('supplierInput').dataset.value || ''
-  const brand = document.getElementById('brand').value.trim()
   const product = document.getElementById('product').value.trim()
   const note = document.getElementById('note').value.trim()
   const rawBarcodes = document.getElementById('barcodes').value.trim()
@@ -24,7 +22,6 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     await addDoc(collection(db, 'barcodes'), {
       barcode,
       supplier,
-      brand,
       product,
       note,
       createdBy: nickname,
@@ -99,7 +96,6 @@ searchInput.addEventListener('input', async () => {
     return {
       supplier: d.supplier || '',
       supplierName: d.supplierName || '',
-      brand: d.brand || '',
       product: d.product || '',
       note: d.note || '',
       barcode: d.barcode || '',
@@ -113,7 +109,6 @@ searchInput.addEventListener('input', async () => {
   } else {
     allResults = allResults.filter(d =>
       d.supplier.toLowerCase().includes(keyword) ||
-      d.brand.toLowerCase().includes(keyword) ||
       d.product.toLowerCase().includes(keyword) ||
       d.note.toLowerCase().includes(keyword) ||
       d.barcode.toLowerCase().includes(keyword) ||
@@ -134,14 +129,13 @@ function renderPage() {
   resultList.innerHTML = `
     <table class="result-table">
       <thead><tr>
-        <th>日期</th><th>供應商</th><th>廠牌</th><th>產品</th><th>備註</th><th>序號</th><th>填寫人</th>
+        <th>日期</th><th>供應商</th><th>產品</th><th>備註</th><th>序號</th><th>填寫人</th>
       </tr></thead>
       <tbody>
         ${pageItems.map(r => `
           <tr>
             <td>${r.createdAt}</td>
             <td>${r.supplierName || r.supplier}</td>
-            <td>${r.brand}</td>
             <td>${r.product}</td>
             <td>${r.note}</td>
             <td>${r.barcode}</td>
