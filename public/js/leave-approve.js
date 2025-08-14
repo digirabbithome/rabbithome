@@ -128,20 +128,29 @@ async function refresh() {
       // 批次寫入
       const batch = writeBatch(db)
 
-      // schedules/{uid}/{yyyymm}/{dd}：帶總天數與標籤，方便顯示「年假1/14」
+      // schedules/{uid}/{yyyymm}/{dd}：帶總天數與標籤，並同時寫年度累計
       let idx = 0
       for (const ds of dates) {
         idx += 1
         const yyyymm = ds.slice(0, 7).replace('-', ''), dd = ds.slice(8, 10)
         const dayRef = doc(db, 'schedules', uid, yyyymm, dd)
         const human = (l.type === 'annual') ? '年假' : l.type
+
+        // 年度累計
+        const annualUsedSoFar  = (l.type === 'annual') ? (used + idx) : null
+        const annualTotalQuota = (l.type === 'annual') ? quota : null
+        const annualLabel = (l.type === 'annual') ? `${human}${annualUsedSoFar}/${annualTotalQuota}` : null
+
         batch.set(dayRef, {
           leaveType: l.type,
           leaveIndex: idx,
           leaveTotal: days,
           leaveLabel: `${human}${idx}/${days}`,
+          annualUsedSoFar,
+          annualTotalQuota,
+          annualLabel,
           requiredHoursOverride: 0,
-          fromQuota: (l.type === 'annual'),  // 年假才算配額
+          fromQuota: (l.type === 'annual'),
           markedBy: auth.currentUser?.uid || null,
           markedAtTPE: nowTPE()
         }, { merge: true })
