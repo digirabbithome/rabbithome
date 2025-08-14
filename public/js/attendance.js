@@ -219,13 +219,33 @@ async function renderMonth(){
         ? Number(orgSched.requiredHoursOverride)
         : (weekend ? 7 : 9)
 
-    // 假別顯示
-    let leaveTag = '—'
-    let isCompanyHoliday = false
-    if (daySched.leaveType){
-      const cn = daySched.leaveType==='annual' ? '年假' : (daySched.leaveType==='personal' ? '事假' : daySched.leaveType)
-      leaveTag = daySched.leaveIndex ? `${cn}${daySched.leaveIndex}` : cn
-    } else if (typeof orgSched.requiredHoursOverride === 'number' && orgSched.requiredHoursOverride===0){
+    // 假別顯示（patched: 年假優先 annualLabel；非年假用 leaveLabel）
+let leaveTag = '—'
+let isCompanyHoliday = false
+if (daySched.leaveType){
+  if (daySched.leaveType === 'annual'){
+    if (daySched.annualLabel){
+      leaveTag = daySched.annualLabel
+    } else if (
+      typeof daySched.annualUsedSoFar === 'number' &&
+      typeof daySched.annualTotalQuota === 'number'
+    ){
+      leaveTag = `年假${daySched.annualUsedSoFar}/${daySched.annualTotalQuota}`
+    } else if (daySched.leaveIndex){
+      leaveTag = `年假${daySched.leaveIndex}`
+    } else {
+      leaveTag = '年假'
+    }
+  } else if (daySched.leaveLabel){
+    leaveTag = daySched.leaveLabel
+  } else {
+    const cn = daySched.leaveType==='personal' ? '事假' : daySched.leaveType
+    leaveTag = daySched.leaveIndex ? `${cn}${daySched.leaveIndex}` : cn
+  }
+} else if (typeof orgSched.requiredHoursOverride === 'number' && orgSched.requiredHoursOverride===0){
+  isCompanyHoliday = true
+  leaveTag = `公司休假${orgSched.name ? `（${orgSched.name}）` : ''}`
+
       isCompanyHoliday = true
       leaveTag = `公司休假${orgSched.name ? `（${orgSched.name}）` : ''}`
     } else if (!sessions.length){
