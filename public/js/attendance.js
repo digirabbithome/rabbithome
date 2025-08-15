@@ -1,4 +1,14 @@
 import { db, auth } from '/js/firebase.js'
+
+// === Minute-level time utilities (ignore seconds; minimal patch) ===
+const MS_PER_MIN = 60 * 1000;
+const floorToMinuteMs = d => d ? Math.floor(new Date(d).getTime() / MS_PER_MIN) * MS_PER_MIN : null;
+function minutesBetweenIgnoreSeconds(inTime, outTime){
+  const s = floorToMinuteMs(inTime);
+  const e = floorToMinuteMs(outTime);
+  return (s != null && e != null) ? Math.max(0, (e - s) / MS_PER_MIN) : 0;
+}
+// === End minute-level utilities ===
 import { addDoc, collection, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
@@ -261,7 +271,7 @@ if (daySched.leaveType){
     let dayTotal = 0
     sessions.forEach((seg, idx) => {
       const hasOut = !!seg.out
-      const h = hasOut ? Math.max(0, (seg.out - seg.in) / 3600000) : 0
+      const h = hasOut ? Math.max(0, minutesBetweenIgnoreSeconds(seg.in, seg.out) / 60) : 0
       const hRound = hasOut ? Math.floor(h*2)/2 : 0
       dayTotal += hRound
       const tIn = toHM(seg.in).slice(0,5)
