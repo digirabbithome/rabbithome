@@ -29,6 +29,7 @@ let me = null
 let viewingUid = null
 let y = 0, m = 0    // 檢視的年/月（數字）
 let todayNextKind = 'in'
+let isPartTime = false  // 兼職視圖 flag
 const allowedAdmins = ['swimming8250@yahoo.com.tw','duckskin@yahoo.com.tw']
 
 /** 啟動 */
@@ -43,6 +44,24 @@ window.onload = () => {
     // 顯示使用者暱稱/名稱 → 「xxx 的出勤日記」
     const uSnap = await getDoc(doc(db,'users',viewingUid))
     const u = uSnap.exists()? uSnap.data(): {}
+    // 兼職判斷與樣式（只影響顯示，不改計算）
+    try {
+      const empRaw = String(u.employment || u.type || u.jobType || u.role || '').toLowerCase();
+      isPartTime = (empRaw.includes('兼職') || empRaw.includes('part'));
+      if (isPartTime) {
+        if (!document.getElementById('pt-hide-cols')) {
+          const style = document.createElement('style');
+          style.id = 'pt-hide-cols';
+          style.textContent = [
+            'body.pt .th > span:nth-child(5), body.pt .th > span:nth-child(6) { display:none !important; }',
+            'body.pt .tr > span:nth-child(5), body.pt .tr > span:nth-child(6) { display:none !important; }'
+          ].join('\n');
+          document.head.appendChild(style);
+        }
+        document.body.classList.add('pt');
+      }
+    } catch(e) { console.warn('part-time detect failed', e); }
+
     const alias = u.nickname || u.name || (me.email||'').split('@')[0] || '使用者'
     document.getElementById('pageTitle').textContent = `${alias} 的出勤日記`
     document.getElementById('who').textContent = me.email || ''
@@ -330,9 +349,12 @@ if (daySched.leaveType){
   }
 
   // 顯示工時合計 + 差異合計
-  const diffText = `${diffTotal >= 0 ? '+' : ''}${diffTotal.toFixed(1)} h`
-  document.getElementById('monthSum').textContent =
-    `本月總工時：${monthTotal.toFixed(1)} 小時　差異合計：${diffText}`
+  if (isPartTime) {
+    document.getElementById('monthSum').textContent = `本月總工時：${monthTotal.toFixed(1)} 小時`
+  } else {
+    const diffText = `${diffTotal >= 0 ? '+' : ''}${diffTotal.toFixed(1)} h`
+    document.getElementById('monthSum').textContent = `本月總工時：${monthTotal.toFixed(1)} 小時　差異合計：${diffText}`
+  }
 }
 
 /** 上班打卡後的暫時列（即時可見） */
