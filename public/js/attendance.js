@@ -44,24 +44,6 @@ window.onload = () => {
     // 顯示使用者暱稱/名稱 → 「xxx 的出勤日記」
     const uSnap = await getDoc(doc(db,'users',viewingUid))
     const u = uSnap.exists()? uSnap.data(): {}
-    // 兼職判斷與樣式（只影響顯示，不改計算）
-    try {
-      const empRaw = String(u.employment || u.type || u.jobType || u.role || '').toLowerCase();
-      isPartTime = (empRaw.includes('兼職') || empRaw.includes('part'));
-      if (isPartTime) {
-        if (!document.getElementById('pt-hide-cols')) {
-          const style = document.createElement('style');
-          style.id = 'pt-hide-cols';
-          style.textContent = [
-            'body.pt .th > span:nth-child(5), body.pt .th > span:nth-child(6) { display:none !important; }',
-            'body.pt .tr > span:nth-child(5), body.pt .tr > span:nth-child(6) { display:none !important; }'
-          ].join('\n');
-          document.head.appendChild(style);
-        }
-        document.body.classList.add('pt');
-      }
-    } catch(e) { console.warn('part-time detect failed', e); }
-
     const alias = u.nickname || u.name || (me.email||'').split('@')[0] || '使用者'
     document.getElementById('pageTitle').textContent = `${alias} 的出勤日記`
     document.getElementById('who').textContent = me.email || ''
@@ -157,6 +139,41 @@ async function renderMonth(){
   tbody.innerHTML = '載入中…'
   const yyyymm = `${y}${pad2(m)}`
   const daysInMonth = new Date(y, m, 0).getDate()
+
+  // === Part-time detection & column hiding ===
+  try {
+    const uRef = doc(db, 'users', viewingUid);
+    const uSnap = await getDoc(uRef);
+    const u = uSnap.exists() ? uSnap.data() : {};
+    const emp = String(u.employment || u.type || u.jobType || u.role || '').toLowerCase();
+    isPartTime = (emp.includes('兼職') || emp.includes('part'));
+
+    if (isPartTime) {
+      // Inject robust CSS to hide column 5 (差異) and 6 (假別) for header & rows
+      if (!document.getElementById('pt-hide-cols')) {
+        const style = document.createElement('style');
+        style.id = 'pt-hide-cols';
+        style.textContent = `
+          body.pt .th > span:nth-child(5), body.pt .th > span:nth-child(6),
+          body.pt .thead > span:nth-child(5), body.pt .thead > span:nth-child(6),
+          body.pt .table-head > span:nth-child(5), body.pt .table-head > span:nth-child(6),
+          body.pt .tr > span:nth-child(5),  body.pt .tr > span:nth-child(6) { display:none !important; }`;
+        document.head.appendChild(style);
+      }
+      document.body.classList.add('pt');
+
+      // Defensive: directly hide header spans if present now
+      ['.th', '.thead', '.table-head'].forEach(sel => {
+        const h = document.querySelector(sel);
+        if (h) {
+          const spans = h.querySelectorAll('span');
+          if (spans[4]) spans[4].style.display = 'none';
+          if (spans[5]) spans[5].style.display = 'none';
+        }
+      });
+    }
+  } catch(e) { console.warn('PT detect failed', e); }
+  // === End part-time block ===
   const todayStr = toISODate(new Date())
 
   // punches（原始一筆一打）
