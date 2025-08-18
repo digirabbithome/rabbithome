@@ -73,3 +73,5 @@ th.resizable:hover .col-resizer::after{background:#ddd}
   border:none;background:transparent;cursor:pointer;margin-left:6px;font-size:16px;line-height:1;
 }
 .pen-btn.active{color:#d97706}
+
+#product { flex: 3; min-width: 300px; }
