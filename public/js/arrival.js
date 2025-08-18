@@ -1,3 +1,5 @@
+// Build v3 2025-08-18T17:48:19.770516Z
+console.log('arrival.js v3 loaded');
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
