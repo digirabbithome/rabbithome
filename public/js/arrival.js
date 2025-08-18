@@ -1,5 +1,5 @@
 // Build v3 2025-08-18T17:48:19.770516Z
-console.log('arrival.js v3 loaded');
+console.log('arrival.js v4 loaded');
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
@@ -52,8 +52,8 @@ function fmtDate(ts) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}/${m}/${day}`;
-}/${m}/${day}`;
 }
+
 
 // ====== 新增／載入 ======
 async function addItem() {
