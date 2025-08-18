@@ -1,0 +1,68 @@
+:root{
+  --pink:#ff96c8;  /* 品牌粉 */
+  --pink-weak:#ffe4f0;
+  --ink:#333;
+  --line:#eee;
+  --muted:#888;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans TC",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);}
+.container{padding:16px}
+
+/* 表單列 */
+.top-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.input{border:1px solid #ccc;border-radius:10px;padding:8px 10px;min-width:140px}
+.btn{background:#fff;border:1px solid var(--pink);color:#c0265c;border-radius:10px;padding:8px 14px;cursor:pointer}
+.btn.primary{background:var(--pink);color:#fff;border-color:var(--pink)}
+.btn:hover{filter:brightness(0.98)}
+
+/* 搜尋工具列 */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.toolbar .spacer{flex:1}
+.muted{color:var(--muted);font-size:12px}
+.mode-toggle{display:flex;align-items:center;gap:4px;font-size:12px;color:#555}
+
+/* 表格 */
+.table-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.table thead th{position:sticky;top:0;background:#fff;padding:10px;border-bottom:1px solid var(--line);cursor:pointer}
+.table tbody td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.table tbody tr.important{background:#fff799}
+.table tbody tr:hover{background:var(--pink-weak)}
+
+/* 備註輸入 */
+.note-input{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px}
+.status-select,.important-check{padding:6px 8px}
+
+/* 排序指示 */
+th.sort-asc::after{content:" ▲";color:#999}
+th.sort-desc::after{content:" ▼";color:#999}
+
+/* 分頁 */
+.pagination{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+.page-btn{padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer}
+.page-btn.active{background:var(--pink);border-color:var(--pink);color:#fff}
+.page-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* 可拖曳欄位的表頭 */
+th.resizable{position:relative}
+th.resizable .col-resizer{
+  position:absolute;top:0;right:0;width:6px;height:100%;
+  cursor:col-resize;user-select:none;
+}
+th.resizable .col-resizer::after{
+  content:"";position:absolute;left:2px;top:0;bottom:0;
+  width:2px;background:#eee;
+}
+th.resizable:hover .col-resizer::after{background:#ddd}
+
+/* 刪除鈕 */
+.delete-btn{
+  padding:6px 10px;
+  border:1px solid #f2b3b3;
+  background:#fff5f5;
+  color:#b91c1c;
+  border-radius:8px;
+  cursor:pointer;
+}
+.delete-btn:hover{background:#ffe3e3}

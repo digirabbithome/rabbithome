@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>貨到通知</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- 使用絕對路徑，確保在 Rabbithome 的 iframe 中正常載入 -->
+  <link rel="stylesheet" href="/css/arrival.css" />
+  <script type="module" src="/js/arrival.js"></script>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 上方表單：單行輸入 -->
+    <div class="top-form">
+      <input id="product" class="input" placeholder="商品名稱" />
+      <select id="market" class="input">
+        <option value="">賣場</option>
+        <option value="露1">露1</option>
+        <option value="露2">露2</option>
+        <option value="露3">露3</option>
+      </select>
+      <input id="account" class="input" placeholder="帳號" />
+      <input id="note" class="input" placeholder="備註" />
+      <button id="btnAdd" class="btn primary">新增</button>
+    </div>
+
+    <!-- 中間搜尋工具列 -->
+    <div class="toolbar">
+      <input id="searchKeyword" class="input" placeholder="搜尋：商品名稱 / 賣場 / 帳號 / 備註" />
+      <select id="searchMarket" class="input">
+        <option value="">全部賣場</option>
+        <option value="露1">露1</option>
+        <option value="露2">露2</option>
+        <option value="露3">露3</option>
+      </select>
+      <select id="timeFilter" class="input">
+        <option value="">不限時間</option>
+        <option value="7">一週內</option>
+        <option value="14">兩週內</option>
+        <option value="30">一個月內</option>
+        <option value="60">兩個月內</option>
+      </select>
+      <select id="statusFilter" class="input">
+        <option value="未完成" selected>未完成</option>
+        <option value="已完成">已完成</option>
+        <option value="">全部</option>
+      </select>
+
+      <!-- 搜尋模式切換（OR/AND） -->
+      <label class="mode-toggle">
+        <input type="radio" name="mode" value="OR" checked> 寬鬆 (OR)
+      </label>
+      <label class="mode-toggle">
+        <input type="radio" name="mode" value="AND"> 嚴格 (AND)
+      </label>
+
+      <button id="btnSearch" class="btn">搜尋</button>
+      <div class="spacer"></div>
+      <div id="resultInfo" class="muted"></div>
+    </div>
+
+    <!-- 列表區 -->
+    <div class="table-wrap">
+      <table class="table">
+        <colgroup id="colgroup">
+          <col style="width: 150px">
+          <col style="width: 240px">
+          <col style="width: 100px">
+          <col style="width: 160px">
+          <col style="width: 320px">
+          <col style="width: 100px">
+          <col style="width: 110px">
+          <col style="width: 90px">
+          <col style="width: 90px"><!-- 刪除 -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="resizable" data-sort="createdAt">新增日期</th>
+            <th class="resizable" data-sort="product">商品名稱</th>
+            <th class="resizable" data-sort="market">賣場</th>
+            <th class="resizable" data-sort="account">帳號</th>
+            <th class="resizable" data-sort="note">備註（即時儲存）</th>
+            <th class="resizable" data-sort="createdBy">填寫人</th>
+            <th class="resizable" data-sort="status">狀態</th>
+            <th class="resizable" data-sort="important">重要</th>
+            <th class="resizable">刪除</th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+
+    <!-- 分頁 -->
+    <div id="pagination" class="pagination"></div>
+  </div>
+</body>
+</html>
