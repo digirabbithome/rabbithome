@@ -19,7 +19,17 @@
         <option value="露1">露1</option>
         <option value="露2">露2</option>
         <option value="露3">露3</option>
-      </select>
+        <option value="免睡">免睡</option>
+        <option value="蝦D">蝦D</option>
+        <option value="聚1">聚1</option>
+        <option value="聚2">聚2</option>
+        <option value="聚3">聚3</option>
+        <option value="Y拍">Y拍</option>
+        <option value="臉書">臉書</option>
+        <option value="官網">官網</option>
+        <option value="LINE">LINE</option>
+        <option value="電話">電話</option>
+    </select>
       <input id="account" class="input" placeholder="帳號" />
       <input id="note" class="input" placeholder="備註" />
       <button id="btnAdd" class="btn primary">新增</button>
@@ -33,7 +43,17 @@
         <option value="露1">露1</option>
         <option value="露2">露2</option>
         <option value="露3">露3</option>
-      </select>
+        <option value="免睡">免睡</option>
+        <option value="蝦D">蝦D</option>
+        <option value="聚1">聚1</option>
+        <option value="聚2">聚2</option>
+        <option value="聚3">聚3</option>
+        <option value="Y拍">Y拍</option>
+        <option value="臉書">臉書</option>
+        <option value="官網">官網</option>
+        <option value="LINE">LINE</option>
+        <option value="電話">電話</option>
+    </select>
       <select id="timeFilter" class="input">
         <option value="">不限時間</option>
         <option value="7">一週內</option>
@@ -55,7 +75,7 @@
         <input type="radio" name="mode" value="AND"> 嚴格 (AND)
       </label>
 
-      <button id="btnSearch" class="btn">搜尋</button>
+      
       <div class="spacer"></div>
       <div id="resultInfo" class="muted"></div>
     </div>
@@ -63,30 +83,8 @@
     <!-- 列表區 -->
     <div class="table-wrap">
       <table class="table">
-        <colgroup id="colgroup">
-          <col style="width: 150px">
-          <col style="width: 240px">
-          <col style="width: 100px">
-          <col style="width: 160px">
-          <col style="width: 320px">
-          <col style="width: 100px">
-          <col style="width: 110px">
-          <col style="width: 90px">
-          <col style="width: 90px"><!-- 刪除 -->
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="resizable" data-sort="createdAt">新增日期</th>
-            <th class="resizable" data-sort="product">商品名稱</th>
-            <th class="resizable" data-sort="market">賣場</th>
-            <th class="resizable" data-sort="account">帳號</th>
-            <th class="resizable" data-sort="note">備註（即時儲存）</th>
-            <th class="resizable" data-sort="createdBy">填寫人</th>
-            <th class="resizable" data-sort="status">狀態</th>
-            <th class="resizable" data-sort="important">重要</th>
-            <th class="resizable">刪除</th>
-          </tr>
-        </thead>
+        <colgroup id="colgroup"><col style="width: 180px"><col style="width: 420px"><col style="width: 120px"><col style="width: 160px"><col style="width: 420px"><col style="width: 120px"><col style="width: 160px"></colgroup>
+        <thead><tr><th class="resizable" data-sort="createdAt">新增日期</th><th class="resizable" data-sort="product">商品名稱</th><th class="resizable" data-sort="market">賣場</th><th class="resizable" data-sort="account">帳號</th><th class="resizable" data-sort="note">備註（即時儲存）</th><th class="resizable" data-sort="createdBy">填寫人</th><th class="resizable" data-sort="status">狀態</th></tr></thead>
         <tbody id="list"></tbody>
       </table>
     </div>

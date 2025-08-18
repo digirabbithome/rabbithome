@@ -50,9 +50,7 @@ function matchRow(query, row, tokenMode = 'OR') {
 function debounce(fn, wait = 400) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
 }
-function fmtDate(ts) {
-  const d = ts?.toDate?.() || null;
-  return d ? `${d.getFullYear()}/${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')} ${(''+d.getHours()).padStart(2,'0')}:${(''+d.getMinutes()).padStart(2,'0')}` : '';
+function fmtDate(ts){ const d = ts?.toDate?.() || null; return d ? `${d.getFullYear()}/${(d.getMonth()+1+"").padStart(2,"0")}/${(d.getDate()+"").padStart(2,"0")}` : ""; }/${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')} ${(''+d.getHours()).padStart(2,'0')}:${(''+d.getMinutes()).padStart(2,'0')}` : '';
 }
 
 // ====== 新增／載入 ======
@@ -177,17 +175,14 @@ function renderTable() {
     const tr = document.createElement('tr');
     if (d.important) tr.classList.add('important');
     tr.innerHTML = `
-      <td>${fmtDate(d.createdAt)}</td>
+      <td>${(function(){const ymd=fmtDate(d.createdAt); return ymd+` <button class="pen-btn ${d.important?'active':''}" data-id="${d.id}" title="標記重要">🖊️</button>`;})() }</td>
       <td>${d.product||''}</td>
       <td>${d.market||''}</td>
       <td>${d.account||''}</td>
       <td><input class="note-input" data-id="${d.id}" value="${(d.note||'').replace(/"/g,'&quot;')}"></td>
       <td>${d.createdBy||''}</td>
       <td>
-        <select class="status-select" data-id="${d.id}">
-          <option value="未完成" ${d.status==='未完成'?'selected':''}>未完成</option>
-          <option value="已完成" ${d.status==='已完成'?'selected':''}>已完成</option>
-        </select>
+        <select class="status-select" data-id="${d.id}"><option value="未完成" ${d.status==='未完成'?'selected':''}>未完成</option><option value="已完成" ${d.status==='已完成'?'selected':''}>已完成</option><option value="刪除">刪除</option></select>
       </td>
       <td style="text-align:center">
         <input type="checkbox" class="important-check" data-id="${d.id}" ${d.important?'checked':''}>
@@ -208,12 +203,19 @@ function renderTable() {
     el.addEventListener('change', handler);
   });
 
-  document.querySelectorAll('.status-select').forEach(el => {
-    el.addEventListener('change', async () => {
-      await updateDoc(doc(db, 'arrival', el.dataset.id), { status: el.value });
-      renderTable();
-    });
+  document.querySelectorAll('.status-select').forEach(el=>{
+  el.addEventListener('change', async ()=>{
+    const id = el.dataset.id; const val = el.value;
+    if(val === '刪除'){
+      await updateDoc(doc(db, 'arrival', id), { deleted: true });
+      const row = allData.find(x=>x.id===id); if(row) row.deleted = true;
+    } else {
+      await updateDoc(doc(db, 'arrival', id), { status: val });
+      const row = allData.find(x=>x.id===id); if(row) row.status = val;
+    }
+    renderTable();
   });
+});
 
   document.querySelectorAll('.important-check').forEach(el => {
     el.addEventListener('change', async () => {
@@ -231,6 +233,15 @@ function renderTable() {
       const row = allData.find(x => x.id === id);
       if (row) row.deleted = true;
       renderTable();
+    });
+  });
+
+    // 重要（🖊️）即時切換
+  document.querySelectorAll('.pen-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id; const row = allData.find(x=>x.id===id);
+      const newVal = !row?.important; await updateDoc(doc(db, 'arrival', id), { important: newVal });
+      if(row) row.important = newVal; renderTable();
     });
   });
 
@@ -307,7 +318,12 @@ function bindSearchBar() {
 
 // iframe 友善
 window.onload = () => {
-  document.getElementById('btnAdd').addEventListener('click', addItem);
+  // 自動搜尋監聽
+  const auto = debounce(()=>{ currentPage=1; renderTable(); }, 500);
+  ["searchKeyword","searchMarket","timeFilter","statusFilter"].forEach(id=>{
+    const el = document.getElementById(id); if(!el) return; el.addEventListener("input", auto); el.addEventListener("change", auto);
+  });
+document.getElementById('btnAdd').addEventListener('click', addItem);
   bindSearchBar();
   bindSortHeaders();
   initResizableHeaders();
