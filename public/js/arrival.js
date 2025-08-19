@@ -54,8 +54,8 @@ function normalizeAlias(str = "") {
 }
 
 // 用 alias 後的版本取代原本的 compact/tokens
-function compact(str = "") { return normalizeAlias(str).replace(/[^a-z0-9]/g, ""); }
-function tokens(str = "") { return normalizeAlias(str).split(/[^a-z0-9]+/).filter(Boolean); }
+function compact(str = "") { const cleaned = normalizeAlias(baseNormalize(str)); return cleaned.replace(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]/g, ""); }
+function tokens(str = "") { const cleaned = normalizeAlias(baseNormalize(str)); return cleaned.split(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g).filter(Boolean); }
 function matchRow(query, row, tokenMode = 'OR') {
   const qC = compact(query);
   if (!qC) return false;
