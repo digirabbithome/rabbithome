@@ -1,5 +1,5 @@
-// arrival.js — Roman/Arabic full-duplex search + better CJK handling
-// Build v9 2025-08-19
+// arrival.js — v10 (Strict Search + Roman/Arabic duplex + CJK safe)
+// Build: 2025-08-19
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
@@ -106,6 +106,7 @@ function expandTokenVariants(tok) {
 
 function tokens(str = "") {
   const cleaned = normalizeAlias(baseNormalize(str));
+  // 保留英數 + 中日韓 + 相容漢字 + 常用 CJK 標點（避免中文被吃）
   const arr = cleaned.split(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F]+/gi).filter(Boolean);
   const bag = [];
   for (const t of arr) bag.push(...expandTokenVariants(t));
@@ -114,18 +115,42 @@ function tokens(str = "") {
 
 function compact(str = "") {
   const cleaned = normalizeAlias(baseNormalize(str));
+  // 同上，保留 CJK 標點，避免被清空後失配
   return cleaned.replace(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F]/gi, "");
 }
 
+/* ========== 嚴格搜尋規則（v10） ========== */
 function matchRow(query, row, mode = 'OR') {
-  const qT = tokens(query);
-  const bag = row._tokensSet;
-  const hit = (tok) => {
-    if (bag.has(tok)) return true;
-    for (const w of bag) if (w.includes(tok)) return true;
+  const qT = tokens(query);             // token 化後（含羅馬/數字雙版本）
+  const bag = row._tokensSet;           // 列的 token set
+  const cq = compact(query);            // 連寫（移除連字號等）
+
+  // 1) 完全相等 token
+  const tokenExactHit = (tok) => bag.has(tok);
+
+  // 2) 安全前綴：查詢長度 >= 3 才啟用（例：200x 命中 200xs）
+  const tokenSafePrefixHit = (tok) => {
+    if (tok.length < 3) return false;
+    for (const w of bag) { if (w.startsWith(tok)) return true; }
     return false;
   };
-  return mode === 'AND' ? qT.every(hit) : qT.some(hit);
+
+  // 3) 連寫包含（compact），查詢長度 >= 3（例：200-x 被 200x 命中）
+  const compactContinuousHit = () => {
+    const q = cq;
+    if (!q || q.length < 3) return false;
+    return (row._searchCompact || "").includes(q);
+  };
+
+  const hit = (tok) => tokenExactHit(tok) || tokenSafePrefixHit(tok);
+
+  if (mode === 'AND') {
+    if (compactContinuousHit()) return true;
+    return qT.every(hit);
+  } else { // OR
+    if (compactContinuousHit()) return true;
+    return qT.some(hit);
+  }
 }
 
 /* ========== 小工具 ========== */
@@ -171,11 +196,15 @@ async function loadData() {
   allData = snap.docs.map(d => {
     const obj = { id: d.id, ...d.data() };
     obj.deleted = !!obj.deleted;
+
+    // 建索引：把商品/賣場/帳號/備註組成一個 blob，做 compact 與 tokens
     const blob = [obj.product, obj.market, obj.account, obj.note].join(' || ');
     obj._searchCompact = compact(blob);
+
     const ts = tokens(blob);
     obj._tokens = ts;
     obj._tokensSet = new Set(ts);
+
     return obj;
   });
   renderTable();
@@ -222,6 +251,7 @@ function sortList(list) {
 
 function renderPagination(total) {
   const p = document.getElementById('pagination');
+  if (!p) return;
   p.innerHTML = '';
   const pages = Math.max(1, Math.ceil(total / pageSize));
   if (currentPage > pages) currentPage = pages;
@@ -246,6 +276,7 @@ function renderPagination(total) {
 
 function renderTable() {
   const tbody = document.getElementById('list');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   let filtered = applyFilters(allData);
@@ -256,8 +287,10 @@ function renderTable() {
   const end = start + pageSize;
   const pageRows = filtered.slice(start, end);
 
-  document.getElementById('resultInfo').textContent =
-    `共 ${total} 筆，顯示第 ${start+1}-${Math.min(end,total)} 筆`;
+  const infoEl = document.getElementById('resultInfo');
+  if (infoEl) {
+    infoEl.textContent = `共 ${total} 筆，顯示第 ${start+1}-${Math.min(end,total)} 筆`;
+  }
 
   for (const d of pageRows) {
     const tr = document.createElement('tr');
@@ -330,6 +363,7 @@ function initResizableHeaders() {
   const ths = Array.from(document.querySelectorAll('thead th.resizable'));
   const colgroup = document.getElementById('colgroup');
   const cols = Array.from(colgroup.querySelectorAll('col'));
+  if (!ths.length || !cols.length) return;
 
   try {
     const saved = JSON.parse(localStorage.getItem('arrival_colwidths') || '[]');
@@ -397,7 +431,7 @@ function bindSearchBar() {
 // iframe 友善
 window.onload = () => {
   const addBtn = document.getElementById('btnAdd');
-  if (addBtn) addBtn.addEventListener('click', addItem);
+  if (addBtn) addEventListener('click', addItem);
   bindSearchBar();
   bindSortHeaders();
   initResizableHeaders();
