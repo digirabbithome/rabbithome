@@ -73,3 +73,9 @@ th.resizable:hover .col-resizer::after{background:#ddd}
   border:none;background:transparent;cursor:pointer;margin-left:6px;font-size:16px;line-height:1;
 }
 .pen-btn.active{color:#d97706}
+
+
+#product.input {
+  flex: 2;          /* 如果外層是 flex，可直接撐兩倍空間 */
+  min-width: 280px; /* 原本 140px，翻倍 */
+}
