@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSV 批次匯入到 arrival</title>
+  <style>
+    :root{ --pink:#ff96c8; --ink:#333; --line:#eee; --muted:#777; }
+    *{box-sizing:border-box} body{margin:0;font-family:"Noto Sans TC",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);}
+    .wrap{max-width:1000px;margin:24px auto;padding:16px}
+    h1{margin:0 0 12px;font-size:20px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0}
+    .input{border:1px solid #ccc;border-radius:10px;padding:10px;min-width:180px}
+    textarea.input{width:100%;min-height:180px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .btn{background:#fff;border:1px solid var(--pink);color:#c0265c;border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn.primary{background:var(--pink);color:#fff;border-color:var(--pink)}
+    .muted{color:var(--muted);font-size:12px}
+    table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;margin-top:12px}
+    th,td{border-bottom:1px solid var(--line);padding:8px 10px;vertical-align:top;word-break:break-all}
+    thead th{position:sticky;top:0;background:#fff}
+    .status{margin-top:8px;font-size:13px}
+    .badge{display:inline-block;padding:2px 6px;border-radius:6px;border:1px solid var(--line);background:#fff}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CSV 批次匯入 arrival</h1>
+  <div>
+    欄位順序：
+    <span class="badge">日期(0)</span>
+    <span class="badge">商品名稱(1)</span>
+    <span class="badge">賣場(2)</span>
+    <span class="badge">建立者(3)</span>
+    <span class="badge">帳號(4)</span>
+    <span class="badge">備註(5)</span>
+    <span class="badge">狀態(6)</span>
+  </div>
+  <div class="row">
+    <textarea id="csv" class="input" placeholder="把 CSV 貼在這裡"></textarea>
+  </div>
+  <div class="row">
+    <button id="btnParse" class="btn">解析預覽</button>
+    <button id="btnImport" class="btn primary" disabled>匯入到 Firestore</button>
+    <span id="count" class="muted"></span>
+  </div>
+  <div id="previewWrap"></div>
+  <div class="status" id="status"></div>
+</div>
+
+<script type="module">
+import { db } from '/js/firebase.js';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const $ = (id) => document.getElementById(id);
+
+function baseNormalize(str=""){ return String(str).normalize("NFKC").trim(); }
+function parseDate(s){
+  s = baseNormalize(s);
+  if(!s) return null;
+  if(s === '1899/12/30') return null;
+  const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(!m) return null;
+  const y = parseInt(m[1],10), mo = parseInt(m[2],10)-1, d = parseInt(m[3],10);
+  const dt = new Date(y, mo, d, 12, 0, 0);
+  if(isNaN(dt.getTime())) return null;
+  return dt;
+}
+function parseCSV(text){
+  const rows=[];
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+  for(const line of lines){ rows.push(line.split(',').map(s=>s.trim())); }
+  return rows;
+}
+function renderPreview(rows){
+  if(!rows.length){ $('previewWrap').innerHTML=''; $('count').textContent=''; $('btnImport').disabled=true; return; }
+  const head=['日期','商品名稱','賣場','建立者','帳號','備註','狀態'];
+  let html='<table><thead><tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  for(const r of rows){ html+='<tr>'+r.slice(0,7).map(x=>`<td>${x||''}</td>`).join('')+'</tr>'; }
+  html+='</tbody></table>';
+  $('previewWrap').innerHTML=html;
+  $('count').textContent=`共 ${rows.length} 筆`;
+  $('btnImport').disabled=false;
+}
+let parsedRows=[];
+$('btnParse').addEventListener('click',()=>{ parsedRows=parseCSV($('csv').value); renderPreview(parsedRows); });
+$('btnImport').addEventListener('click',async()=>{
+  if(!parsedRows.length){alert('請先解析 CSV');return;}
+  $('btnImport').disabled=true;
+  let ok=0,fail=0;
+  for(const cols of parsedRows){
+    const dt=parseDate(cols[0]||'');
+    const payload={
+      product:cols[1]||'', market:cols[2]||'', account:cols[4]||'', note:cols[5]||'',
+      status:cols[6]||'未完成', important:false, deleted:false,
+      createdBy:cols[3]|| (localStorage.getItem('nickname')||'批次匯入'),
+      createdAt:dt?Timestamp.fromDate(dt):serverTimestamp(),
+    };
+    try{ await addDoc(collection(db,'arrival'),payload); ok++; }
+    catch(e){ console.error(e); fail++; }
+    $('status').textContent=`成功 ${ok} 筆，失敗 ${fail} 筆`;
+  }
+  $('btnImport').disabled=false;
+  alert(`完成：成功 ${ok}，失敗 ${fail}`);
+});
+</script>
+</body>
+</html>
