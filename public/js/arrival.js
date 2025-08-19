@@ -123,15 +123,20 @@ function matchRow(query, row, mode = 'OR') {
   const cq = compact(query);
 
   const tokenExactHit = (tok) => bag.has(tok);
+
+  // 前綴比對：長度 >=2 即可 (允許 GR, RX 這類短代號)
   const tokenSafePrefixHit = (tok) => {
-    if (tok.length < 3) return false;
+    if (tok.length < 2) return false;
     for (const w of bag) { if (w.startsWith(tok)) return true; }
     return false;
   };
+
+  // compact 比對：允許包含與前綴
   const compactContinuousHit = () => {
     const q = cq;
-    if (!q || q.length < 3) return false;
-    return (row._searchCompact || "").includes(q);
+    if (!q || q.length < 2) return false;
+    const compacted = (row._searchCompact || "");
+    return compacted.includes(q) || compacted.startsWith(q);
   };
 
   const hit = (tok) => tokenExactHit(tok) || tokenSafePrefixHit(tok);
