@@ -1,4 +1,4 @@
-console.log('arrival.js v8.4 clean one-alias');
+console.log('arrival.js v8.5 clean single-declare');
 
 console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
 // Build v3 2025-08-18T17:48:19.770516Z
@@ -26,7 +26,8 @@ function baseNormalize(str = "") {
 
 
 
-// ---- Regex helpers ----
+
+// ---- Unicode-aware word boundaries (single declaration) ----
 let RE_STRIP_NON_WORD, RE_SPLIT_NON_WORD;
 try {
   RE_STRIP_NON_WORD = /[^\p{L}\p{N}]/gu;
@@ -36,23 +37,50 @@ try {
   RE_SPLIT_NON_WORD = /[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g;
 }
 
-// ---- 型號別名標準化（順序很重要）----
+// ---- Alias normalization (single definition) ----
 function normalizeAlias(str = "") {
   let s = baseNormalize(str);
 
-  // 特例先行（避免被通用規則吃掉）
+  // Specific models first
   s = s.replace(/\bgr\s*iii\b/gi, "gr3")
        .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
        .replace(/\ba7\s*iii\b/gi, "a73");
 
-  // RX100 VII 全系列 → rx100m7
+  // RX100 VII family → rx100m7
   s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
        .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
        .replace(/\brx100\s*m7\b/gi, "rx100m7")
        .replace(/\brx100m7\b/gi, "rx100m7")
        .replace(/\brx100vii\b/gi, "rx100m7");
 
+  // Mark/Mk → mN (roman or digit)
   const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
+        (_, pre, d) => pre + "m" + d);
+
+  // glued MKII/MII → m2
+  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
+       .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
+
+  // Generic roman suffix I~X → digits
+  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
+// ---- compact/tokens aligned with alias (single definition) ----
+function compact(str = "") {
+  return normalizeAlias(str).replace(RE_STRIP_NON_WORD, "");
+}
+function tokens(str = "") {
+  return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean);
+}
+// ---- Regex helpers ----
+// ---- 型號別名標準化（順序很重要）----
+;
 
   // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
@@ -72,21 +100,7 @@ function normalizeAlias(str = "") {
 }
 
 // 與 alias 對齊的 compact/tokens（支援中文）
-function compact(str = "") {
-  return normalizeAlias(str).replace(RE_STRIP_NON_WORD, "");
-}
-function tokens(str = "") {
-  return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean);
-}
 // ---- Regex helpers ----
-let RE_STRIP_NON_WORD, RE_SPLIT_NON_WORD;
-try {
-  RE_STRIP_NON_WORD = /[^\p{L}\p{N}]/gu;
-  RE_SPLIT_NON_WORD = /[^\p{L}\p{N}]+/gu;
-} catch {
-  RE_STRIP_NON_WORD = /[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]/g;
-  RE_SPLIT_NON_WORD = /[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g;
-}
 ;
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
         (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
