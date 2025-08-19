@@ -1,4 +1,4 @@
-console.log('arrival.js v8.3+++++ map-block fixed safely');
+console.log('arrival.js v8.4 clean one-alias');
 
 console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
 // Build v3 2025-08-18T17:48:19.770516Z
@@ -25,6 +25,7 @@ function baseNormalize(str = "") {
 }
 
 
+
 // ---- Regex helpers ----
 let RE_STRIP_NON_WORD, RE_SPLIT_NON_WORD;
 try {
@@ -35,17 +36,58 @@ try {
   RE_SPLIT_NON_WORD = /[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g;
 }
 
+// ---- 型號別名標準化（順序很重要）----
 function normalizeAlias(str = "") {
   let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
   s = s.replace(/\bgr\s*iii\b/gi, "gr3")
        .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
        .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
   s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
        .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
        .replace(/\brx100\s*m7\b/gi, "rx100m7")
        .replace(/\brx100m7\b/gi, "rx100m7")
        .replace(/\brx100vii\b/gi, "rx100m7");
+
   const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
+        (_, pre, d) => pre + "m" + d);
+
+  // 黏在一起：...MKII / ...MII → m2
+  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
+       .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
+
+  // 任意前綴 + 羅馬字尾（I~X）→ 尾碼數字
+  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
+// 與 alias 對齊的 compact/tokens（支援中文）
+function compact(str = "") {
+  return normalizeAlias(str).replace(RE_STRIP_NON_WORD, "");
+}
+function tokens(str = "") {
+  return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean);
+}
+// ---- Regex helpers ----
+let RE_STRIP_NON_WORD, RE_SPLIT_NON_WORD;
+try {
+  RE_STRIP_NON_WORD = /[^\p{L}\p{N}]/gu;
+  RE_SPLIT_NON_WORD = /[^\p{L}\p{N}]+/gu;
+} catch {
+  RE_STRIP_NON_WORD = /[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]/g;
+  RE_SPLIT_NON_WORD = /[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g;
+}
+;
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
         (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
@@ -56,32 +98,6 @@ function normalizeAlias(str = "") {
         (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
   return s.replace(/\s+/g, " ").trim();
 }
-function compact(str = "") {
-  return normalizeAlias(str).replace(RE_STRIP_NON_WORD, "");
-}
-function tokens(str = "") {
-  return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean);
-}
-// ====== 通用型號別名標準化（支援浮動前綴，如任意字首+羅馬數字、Mark/Mk 變體、RX100 VII/M7） ======
-;
-  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii)\b/gi,
-      (_, pre, r) => pre + "m" + romanMap[r.toLowerCase()]);
-  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9])\b/gi, (_, pre, d) => pre + "m" + d);
-
-  // 黏在一起的 MKII/MII（允許任意前綴）→ m2
-  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2");
-  s = s.replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
-
-  // 一般羅馬數字後綴（任意前綴，如 GRIII、A7RIV）→ 尾碼數字
-  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
-      (_, pre, r) => pre + romanMap[r.toLowerCase()]);
-
-  // 把多餘空白去掉一次（保守）
-  s = s.replace(/\s+/g, " ").trim();
-  return s;
-}
-
-// 用 alias 後的版本取代原本的 compact/tokens
 function matchRow(query, row, tokenMode = 'OR') {
   const qC = compact(query);
   if (!qC) return false;
@@ -141,19 +157,16 @@ async function loadData() {
   const obj = { id: d.id, ...d.data() };
   obj.deleted = !!obj.deleted;
 
-  // 全欄位索引
   const blobAll = `${obj.product || ""} || ${obj.market || ""} || ${obj.account || ""} || ${obj.note || ""}`;
   obj._searchCompactAll = compact(blobAll);
   obj._tokensAll = tokens(blobAll);
   obj._tokensSetAll = new Set(obj._tokensAll);
 
-  // 僅商品索引
   const prod = obj.product || "";
   obj._searchCompactProd = compact(prod);
   obj._tokensProd = tokens(prod);
   obj._tokensSetProd = new Set(obj._tokensProd);
 
-  // 帳號 + 備註索引
   const an = `${obj.account || ""} || ${obj.note || ""}`;
   obj._searchCompactAN = compact(an);
   obj._tokensAN = tokens(an);
