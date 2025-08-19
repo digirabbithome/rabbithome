@@ -124,7 +124,7 @@ function matchRow(query, row, mode = 'OR') {
 
   const tokenExactHit = (tok) => bag.has(tok);
   const tokenSafePrefixHit = (tok) => {
-    if (tok.length < 2) return false;
+    if (tok.length < 2) return false; // allow GR, RX...
     for (const w of bag) { if (w.startsWith(tok)) return true; }
     return false;
   };
@@ -134,6 +134,7 @@ function matchRow(query, row, mode = 'OR') {
     const compacted = (row._searchCompact || "");
     return compacted.includes(q) || compacted.startsWith(q);
   };
+
   const hit = (tok) => tokenExactHit(tok) || tokenSafePrefixHit(tok);
   if (mode === 'AND') { if (compactContinuousHit()) return true; return qT.every(hit); }
   else { if (compactContinuousHit()) return true; return qT.some(hit); }
@@ -194,6 +195,7 @@ allData = snap.docs.map(d => {
     const noteAccBlob = [obj.account, obj.note].join(' || ');
     obj._tokensNoteAcc = new Set(tokens(noteAccBlob));
     obj._compactNoteAcc = compact(noteAccBlob);
+    obj._lowNoteAcc = baseNormalize(noteAccBlob);
 
     // 原有索引 (全部)
     const blob = [obj.product, obj.market, obj.account, obj.note].join(' || ');
@@ -218,10 +220,25 @@ function applyFilters(list) {
   const mode = (document.querySelector('input[name="mode"]:checked')?.value) || 'OR';
   const now = new Date();
 
+  const loose = (q, rowLow) => {
+    if (!q || q.length < 2) return false;
+    const qn = baseNormalize(q);
+    return (rowLow || "").includes(qn);
+  };
+
   return list.filter(d => {
     if (d.deleted) return false;
+
+    // 商品名稱（嚴格）
     if (kwProduct && !matchRow(kwProduct, { _tokensSet: d._tokensProduct, _searchCompact: d._compactProduct }, mode)) return false;
-    if (kwNoteAcc && !matchRow(kwNoteAcc, { _tokensSet: d._tokensNoteAcc, _searchCompact: d._compactNoteAcc }, mode)) return false;
+
+    // 帳號/備註：先嚴格；若失敗再用 loose contains 後援
+    if (kwNoteAcc) {
+      const strictOK = matchRow(kwNoteAcc, { _tokensSet: d._tokensNoteAcc, _searchCompact: d._compactNoteAcc }, mode);
+      const looseOK  = strictOK ? true : loose(kwNoteAcc, d._lowNoteAcc);
+      if (!looseOK) return false;
+    }
+
     if (fMarket && d.market !== fMarket) return false;
     if (fStatus && d.status !== fStatus) return false;
     if (fTime) {
@@ -417,8 +434,6 @@ function bindSearchBar() {
 
   const kwEl = document.getElementById('searchKeyword');
   let noteEl = document.getElementById('searchNoteAccount');
-
-  // 若 HTML 沒有帳號/備註欄位，這裡自動建立並複製外觀（class）
   if (!noteEl && kwEl) {
     noteEl = document.createElement('input');
     noteEl.type = 'text';
@@ -426,6 +441,9 @@ function bindSearchBar() {
     noteEl.placeholder = '帳號/備註';
     noteEl.className = kwEl.className || '';
     kwEl.insertAdjacentElement('afterend', noteEl);
+  } else if (noteEl && kwEl) {
+    // 強制同步樣式（避免沒套到圓角等 class）
+    noteEl.className = kwEl.className || noteEl.className;
   }
 
   const ids = ['searchKeyword','searchNoteAccount','searchMarket','timeFilter','statusFilter'];
