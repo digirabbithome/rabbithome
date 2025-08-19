@@ -208,6 +208,10 @@ function applyFilters(list) {
   const now = new Date();
 
   return list.filter(d => {
+    // 商品名稱搜尋
+    if (kwProduct && !matchRow(kwProduct, { _tokensSet: d._tokensProduct, _searchCompact: d._compactProduct }, mode)) return false;
+    // 帳號/備註搜尋
+    if (kwNoteAcc && !matchRow(kwNoteAcc, { _tokensSet: d._tokensNoteAcc, _searchCompact: d._compactNoteAcc }, mode)) return false;
 
     if (d.deleted) return false;
     if (kw && !matchRow(kw, d, mode)) return false;
