@@ -1,6 +1,7 @@
+console.log('arrival.js v8.3++ cleaned - single normalizeAlias/compact/tokens');
 console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
 // Build v3 2025-08-18T17:48:19.770516Z
-console.log('arrival.js v4 loaded');
+
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
@@ -51,6 +52,369 @@ function normalizeAlias(str = "") {
        .replace(/\brx100vii\b/gi, "rx100m7");
 
   // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
+        (_, pre, d) => pre + "m" + d);
+
+  // 黏在一起：...MKII / ...MII → m2
+  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
+       .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
+
+  // 任意前綴 + 羅馬字尾（I~X）→ 尾碼數字
+  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
+// 與 alias 對齊的 compact/tokens（支援中文）
+function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
+        (_, pre, d) => pre + "m" + d);
+
+  // 黏在一起：...MKII / ...MII → m2
+  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
+       .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
+
+  // 任意前綴 + 羅馬字尾（I~X）→ 尾碼數字
+  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
+// 與 alias 對齊的 compact/tokens（支援中文）
+function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }
+function tokens(str = "") { return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean); }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
+        (_, pre, d) => pre + "m" + d);
+
+  // 黏在一起：...MKII / ...MII → m2
+  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
+       .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
+
+  // 任意前綴 + 羅馬字尾（I~X）→ 尾碼數字
+  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+        (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
+// 與 alias 對齊的 compact/tokens（支援中文）
+function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
+  const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" }console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
+// Build v3 2025-08-18T17:48:19.770516Z
+
+import { db } from '/js/firebase.js';
+import {
+  collection, addDoc, serverTimestamp, query, orderBy, getDocs,
+  updateDoc, doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+let allData = [];
+let sortField = 'createdAt';
+let sortDirection = 'desc';
+let currentPage = 1;
+const pageSize = 200;
+
+// ====== 智慧搜尋工具 ======
+function baseNormalize(str = "") {
+  return String(str)
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
+// ---- 型號別名標準化（順序很重要）----
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
+
+  // RX100 VII 全系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
   const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
         (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
@@ -72,18 +436,7 @@ function normalizeAlias(str = "") {
 function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }
 function tokens(str = "") { return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean); }
 // ====== 通用型號別名標準化（支援浮動前綴，如任意字首+羅馬數字、Mark/Mk 變體、RX100 VII/M7） ======
-function normalizeAlias(str = "") {
-  let s = baseNormalize(str);
-
-  // 先處理 RX100 VII/M7 系列 → rx100m7
-  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
-       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
-       .replace(/\brx100\s*m7\b/gi, "rx100m7")
-       .replace(/\brx100m7\b/gi, "rx100m7")
-       .replace(/\brx100vii\b/gi, "rx100m7");
-
-  // Mark / Mk + 羅馬數字或數字 → mN（任意前綴允許）
-  const romanMap = {x:"10", ix:"9", viii:"8", vii:"7", vi:"6", iv:"4", v:"5", iii:"3", ii:"2", i:"1"};
+;
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii)\b/gi,
       (_, pre, r) => pre + "m" + romanMap[r.toLowerCase()]);
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9])\b/gi, (_, pre, d) => pre + "m" + d);
@@ -102,8 +455,8 @@ function normalizeAlias(str = "") {
 }
 
 // 用 alias 後的版本取代原本的 compact/tokens
-function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }
-function tokens(str = "") { return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean); }
+
+
 function matchRow(query, row, tokenMode = 'OR') {
   const qC = compact(query);
   if (!qC) return false;
