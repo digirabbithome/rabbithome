@@ -12,7 +12,7 @@ let sortDirection = 'desc';
 let currentPage = 1;
 const pageSize = 200;
 
-// ====== 智慧搜尋工具 ======
+/// ====== 智慧搜尋工具 ======
 function baseNormalize(str = "") {
   return String(str)
     .normalize("NFKC")
@@ -22,7 +22,7 @@ function baseNormalize(str = "") {
     .trim();
 }
 
-// ====== 型號別名標準化（GRIII↔GR3、A7RIV↔A7R4、A7III↔A73、MarkII/MII/MKII/M2、RX100VII/M7/MkVII/MKVII 等） ======
+/// ====== 型號別名標準化（GRIII↔GR3、A7RIV↔A7R4、A7III↔A73、MarkII/MII/MKII/M2、RX100VII/M7/MkVII/MKVII 等） ======
 const aliasMap = [
   // GR 系列
   { regex: /\bgr\s*iii\b/g,         norm: "gr3" },
@@ -31,11 +31,11 @@ const aliasMap = [
   { regex: /\ba7\s*r\s*iv\b/g,      norm: "a7r4" },
   { regex: /\ba7\s*r4\b/g,          norm: "a7r4" },
   { regex: /\ba7\s*iii\b/g,         norm: "a73" },
-  { regex: /(mark|mk)\s*[-\s]*ii/gi,  norm: \"m2\" },
-  { regex: /(mark|mk)\s*[-\s]*2/gi,   norm: \"m2\" },
-  { regex: /mkii/gi,                  norm: \"m2\" },
-  { regex: /mii/gi,                   norm: \"m2\" },
-  { regex: /m2/gi,                    norm: \"m2\" },
+  { regex: /(mark|mk)\s*[-\s]*ii/gi,  norm: "m2" },
+  { regex: /(mark|mk)\s*[-\s]*2/gi,   norm: "m2" },
+  { regex: /mkii/gi,                  norm: "m2" },
+  { regex: /mii/gi,                   norm: "m2" },
+  { regex: /m2/gi,                    norm: "m2" },
   { regex: /\ba73\b/g,              norm: "a73" },
 
 
@@ -44,7 +44,7 @@ const aliasMap = [
   { regex: /\brx100\s*mk\s*7\b/g,           norm: "rx100m7" },
   { regex: /\brx100\s*m7\b/g,               norm: "rx100m7" }, // RX100 M7
   { regex: /\brx100m7\b/g,                  norm: "rx100m7" }, // RX100M7
-  { regex: /\brx100vii\b/g,                 norm: "rx100m7" }, // RX100VII（無空格）];
+  { regex: /\brx100vii\b/g,                 norm: "rx100m7" }, // RX100VII（無空格）
 
 function normalizeAlias(str = "") {
   // 先做 baseNormalize（全形→半形、小寫、去重音、壓空白）
@@ -81,7 +81,7 @@ function matchRow(query, row, tokenMode = 'OR') {
   return tokenMode === 'AND' ? qT.every(hit) : qT.some(hit);
 }
 
-// ====== 小工具 ======
+/// ====== 小工具 ======
 function debounce(fn, wait = 500) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
 }
@@ -95,7 +95,7 @@ function fmtDate(ts) {
 }
 
 
-// ====== 新增／載入 ======
+/// ====== 新增／載入 ======
 async function addItem() {
   const product = document.getElementById('product').value.trim();
   const market  = document.getElementById('market').value;
@@ -134,7 +134,7 @@ async function loadData() {
   renderTable();
 }
 
-// ====== 篩選／排序／分頁 ======
+/// ====== 篩選／排序／分頁 ======
 function applyFilters(list) {
   const kw = document.getElementById('searchKeyword').value.trim();
   const fMarket = document.getElementById('searchMarket').value;
@@ -278,7 +278,7 @@ function renderTable() {
   renderPagination(total);
 }
 
-// ====== 欄位拖曳（記憶寬度） ======
+/// ====== 欄位拖曳（記憶寬度） ======
 function initResizableHeaders() {
   const ths = Array.from(document.querySelectorAll('thead th.resizable'));
   const colgroup = document.getElementById('colgroup');
@@ -319,7 +319,7 @@ function initResizableHeaders() {
   });
 }
 
-// ====== 綁定 ======
+/// ====== 綁定 ======
 function bindSortHeaders() {
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', (e) => {
