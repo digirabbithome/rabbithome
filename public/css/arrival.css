@@ -74,5 +74,4 @@ th.resizable:hover .col-resizer::after{background:#ddd}
 }
 .pen-btn.active{color:#d97706}
 
-/* 商品名稱欄位三倍寬 */
 .top-form #product { flex: 3; min-width: 300px; }
