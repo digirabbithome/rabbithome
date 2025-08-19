@@ -87,7 +87,7 @@ function normalizeAlias(str = "") {
        .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
 
   // 尾碼羅馬數字 → 尾碼數字（GRIII→GR3、A7RIV→A7R4…）
-  s = s.replace(/\b([a-z0-9]+)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
+  s = s.replace(/\b([a-z]+[a-z0-9]*)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
       (_, pre, r) => pre + romanToInt(r));
 
   return s.replace(/\s+/g, " ").trim();
@@ -120,13 +120,36 @@ function compact(str = "") {
 function matchRow(query, row, mode = 'OR') {
   const qT = tokens(query);
   const bag = row._tokensSet;
-  const hit = (tok) => {
-    if (bag.has(tok)) return true;
-    for (const w of bag) if (w.includes(tok)) return true;
+  const cq = compact(query);
+
+  const tokenExactHit = (tok) => bag.has(tok);
+
+  // 前綴比對：長度 >=2 即可 (允許 GR, RX 這類短代號)
+  const tokenSafePrefixHit = (tok) => {
+    if (tok.length < 2) return false;
+    for (const w of bag) { if (w.startsWith(tok)) return true; }
     return false;
   };
-  return mode === 'AND' ? qT.every(hit) : qT.some(hit);
+
+  // compact 比對：允許包含與前綴
+  const compactContinuousHit = () => {
+    const q = cq;
+    if (!q || q.length < 2) return false;
+    const compacted = (row._searchCompact || "");
+    return compacted.includes(q) || compacted.startsWith(q);
+  };
+
+  const hit = (tok) => tokenExactHit(tok) || tokenSafePrefixHit(tok);
+
+  if (mode === 'AND') {
+    if (compactContinuousHit()) return true;
+    return qT.every(hit);
+  } else {
+    if (compactContinuousHit()) return true;
+    return qT.some(hit);
+  }
 }
+
 
 /* ========== 小工具 ========== */
 function debounce(fn, wait = 500) {
@@ -413,33 +436,33 @@ function bindSearchBar() {
     el.addEventListener('input', auto);
     el.addEventListener('change', auto);
     el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); currentPage = 1; renderTable(); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        currentPage = 1;
+        renderTable();
+      }
     });
-  });
-  document.querySelectorAll('input[name=\"mode\"]').forEach(r => {
-    r.addEventListener('change', auto);
-  });
-  const btn = document.getElementById('btnSearchNoteAcc');
-  if (btn) btn.addEventListener('click', () => { currentPage = 1; renderTable(); });
-}
-, 500);
-  ['searchKeyword','searchMarket','timeFilter','statusFilter'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('input', auto);
-    el.addEventListener('change', auto);
   });
   document.querySelectorAll('input[name="mode"]').forEach(r => {
     r.addEventListener('change', auto);
   });
+  const btn = document.getElementById('btnSearchNoteAcc');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      currentPage = 1;
+      renderTable();
+    });
+  }
 }
+
 
 // iframe 友善
 
 window.onload = () => {
   const form = document.querySelector('form');
-  if (form) form.addEventListener('submit', (e) => e.preventDefault());
-
+  if (form) {
+    form.addEventListener('submit', (e) => e.preventDefault());
+  }
   const addBtn = document.getElementById('btnAdd');
   if (addBtn) addBtn.addEventListener('click', addItem);
   bindSearchBar();
