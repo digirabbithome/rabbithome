@@ -210,16 +210,9 @@ function applyFilters(list) {
     if (d.deleted) return false;
 
     // 商品名稱搜尋
-    if (kwProduct && !matchRow(kwProduct, { 
-          _tokensSet: d._tokensProduct, 
-          _searchCompact: d._compactProduct 
-        }, mode)) return false;
-
+    if (kwProduct && !matchRow(kwProduct, { _tokensSet: d._tokensProduct, _searchCompact: d._compactProduct }, mode)) return false;
     // 帳號/備註搜尋
-    if (kwNoteAcc && !matchRow(kwNoteAcc, { 
-          _tokensSet: d._tokensNoteAcc, 
-          _searchCompact: d._compactNoteAcc 
-        }, mode)) return false;
+    if (kwNoteAcc && !matchRow(kwNoteAcc, { _tokensSet: d._tokensNoteAcc, _searchCompact: d._compactNoteAcc }, mode)) return false;
 
     if (fMarket && d.market !== fMarket) return false;
     if (fStatus && d.status !== fStatus) return false;
@@ -410,8 +403,26 @@ function bindSortHeaders() {
   });
 }
 
+
 function bindSearchBar() {
   const auto = debounce(() => { currentPage = 1; renderTable(); }, 500);
+  const ids = ['searchKeyword','searchNoteAccount','searchMarket','timeFilter','statusFilter'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', auto);
+    el.addEventListener('change', auto);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); currentPage = 1; renderTable(); }
+    });
+  });
+  document.querySelectorAll('input[name=\"mode\"]').forEach(r => {
+    r.addEventListener('change', auto);
+  });
+  const btn = document.getElementById('btnSearchNoteAcc');
+  if (btn) btn.addEventListener('click', () => { currentPage = 1; renderTable(); });
+}
+, 500);
   ['searchKeyword','searchMarket','timeFilter','statusFilter'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -424,7 +435,11 @@ function bindSearchBar() {
 }
 
 // iframe 友善
+
 window.onload = () => {
+  const form = document.querySelector('form');
+  if (form) form.addEventListener('submit', (e) => e.preventDefault());
+
   const addBtn = document.getElementById('btnAdd');
   if (addBtn) addBtn.addEventListener('click', addItem);
   bindSearchBar();
@@ -432,3 +447,4 @@ window.onload = () => {
   initResizableHeaders();
   loadData();
 };
+
