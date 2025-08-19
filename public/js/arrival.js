@@ -168,16 +168,31 @@ async function addItem() {
 async function loadData() {
   const qy = query(collection(db, 'arrival'), orderBy('createdAt','desc'));
   const snap = await getDocs(qy);
-  allData = snap.docs.map(d => {
+  
+allData = snap.docs.map(d => {
     const obj = { id: d.id, ...d.data() };
     obj.deleted = !!obj.deleted;
+
+    // 商品名稱索引
+    const prodBlob = obj.product || '';
+    obj._tokensProduct = new Set(tokens(prodBlob));
+    obj._compactProduct = compact(prodBlob);
+
+    // 帳號/備註索引
+    const noteAccBlob = [obj.account, obj.note].join(' || ');
+    obj._tokensNoteAcc = new Set(tokens(noteAccBlob));
+    obj._compactNoteAcc = compact(noteAccBlob);
+
+    // 原有索引 (全部)
     const blob = [obj.product, obj.market, obj.account, obj.note].join(' || ');
     obj._searchCompact = compact(blob);
     const ts = tokens(blob);
     obj._tokens = ts;
     obj._tokensSet = new Set(ts);
+
     return obj;
   });
+
   renderTable();
 }
 
@@ -384,6 +399,20 @@ function bindSortHeaders() {
 
 function bindSearchBar() {
   const auto = debounce(() => { currentPage = 1; renderTable(); }, 500);
+  // 兩個搜尋框：商品名稱 / 帳號備註
+  const kwEl = document.getElementById('searchKeyword');
+  let noteEl = document.getElementById('searchNoteAccount');
+  // 若尚未建立，動態建立並插在商品名稱後面（避免 HTML 沒套上）
+  if (!noteEl && kwEl && kwEl.parentNode) {
+    noteEl = document.createElement('input');
+    noteEl.type = 'text';
+    noteEl.id = 'searchNoteAccount';
+    noteEl.placeholder = '帳號/備註';
+    // 複製樣式（className）以確保外觀一致
+    noteEl.className = kwEl.className || '';
+    kwEl.insertAdjacentElement('afterend', noteEl);
+  }
+
   const ids = ['searchKeyword','searchNoteAccount','searchMarket','timeFilter','statusFilter'];
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -398,9 +427,7 @@ function bindSearchBar() {
       }
     });
   });
-  document.querySelectorAll('input[name="mode"]').forEach(r => {
-    r.addEventListener('change', auto);
-  });
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', auto));
 }
 
 
