@@ -1,6 +1,5 @@
-console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
-// Build v3 2025-08-18T17:48:19.770516Z
-console.log('arrival.js v4 loaded');
+// arrival.js — Roman/Arabic full-duplex search + better CJK handling
+// Build v9 2025-08-19
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
@@ -13,53 +12,112 @@ let sortDirection = 'desc';
 let currentPage = 1;
 const pageSize = 200;
 
-// ====== 智慧搜尋工具 ======
+/* ========== 基礎正規化（全形→半形、去重音、壓縮空白） ========== */
 function baseNormalize(str = "") {
   return String(str)
     .normalize("NFKC")
     .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // 去重音
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-// ====== 通用型號別名標準化（支援浮動前綴，如任意字首+羅馬數字、Mark/Mk 變體、RX100 VII/M7） ======
+/* ========== 羅馬數字 <-> 阿拉伯數字 ========== */
+const ROMAN_TABLE = [
+  ["M",1000],["CM",900],["D",500],["CD",400],
+  ["C",100],["XC",90],["L",50],["XL",40],
+  ["X",10],["IX",9],["V",5],["IV",4],["I",1]
+];
+function romanToInt(roman = "") {
+  let s = roman.toUpperCase();
+  let i = 0, val = 0;
+  while (i < s.length) {
+    let matched = false;
+    for (const [sym, num] of ROMAN_TABLE) {
+      if (s.startsWith(sym, i)) { val += num; i += sym.length; matched = true; break; }
+    }
+    if (!matched) return NaN;
+  }
+  return val;
+}
+function intToRoman(n) {
+  if (!Number.isInteger(n) || n <= 0 || n > 3999) return "";
+  let res = "";
+  for (const [sym, num] of ROMAN_TABLE) {
+    while (n >= num) { res += sym; n -= num; }
+  }
+  return res;
+}
+
+// 判斷 token 是否為「基底 + 尾碼（羅馬或數字）」
+function splitSuffixToken(tok) {
+  const mRoman = tok.match(/^([a-z0-9]+?)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)+$/i);
+  if (mRoman) {
+    const base = mRoman[1];
+    const roman = tok.slice(base.length);
+    const n = romanToInt(roman);
+    if (!isNaN(n)) return { base, num: String(n), roman: roman.toLowerCase() };
+  }
+  const mDigit = tok.match(/^([a-z0-9]+?)(\d{1,4})$/i);
+  if (mDigit) {
+    return { base: mDigit[1], num: mDigit[2], roman: intToRoman(parseInt(mDigit[2], 10)).toLowerCase() };
+  }
+  return null;
+}
+
+/* ========== 型號別名標準化（兼容 RX100 系列、Mark/Mk 變體等） ========== */
 function normalizeAlias(str = "") {
   let s = baseNormalize(str);
 
-  // 先處理 RX100 VII/M7 系列 → rx100m7
+  // RX100 VII/M7 的常見寫法統一到數字：rx100m7
   s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
        .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
        .replace(/\brx100\s*m7\b/gi, "rx100m7")
        .replace(/\brx100m7\b/gi, "rx100m7")
        .replace(/\brx100vii\b/gi, "rx100m7");
 
-  // Mark / Mk + 羅馬數字或數字 → mN（任意前綴允許）
-  const romanMap = {x:"10", ix:"9", viii:"8", vii:"7", vi:"6", iv:"4", v:"5", iii:"3", ii:"2", i:"1"};
-  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii)\b/gi,
-      (_, pre, r) => pre + "m" + romanMap[r.toLowerCase()]);
-  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9])\b/gi, (_, pre, d) => pre + "m" + d);
+  // Mark / Mk + 羅馬或數字 → mN（任意前綴）
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
+      (_, pre, r) => pre + "m" + romanToInt(r));
+  s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([0-9]{1,4})\b/gi,
+      (_, pre, d) => pre + "m" + d);
 
-  // 黏在一起的 MKII/MII（允許任意前綴）→ m2
-  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2");
-  s = s.replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
+  // 黏在一起的 MKII/MII → m2（任意前綴）
+  s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
+       .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
 
-  // 一般羅馬數字後綴（任意前綴，如 GRIII、A7RIV）→ 尾碼數字
-  s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
-      (_, pre, r) => pre + romanMap[r.toLowerCase()]);
+  // 尾碼羅馬數字 → 尾碼數字（GRIII→GR3、A7RIV→A7R4…）
+  s = s.replace(/\b([a-z0-9]+)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
+      (_, pre, r) => pre + romanToInt(r));
 
-  // 把多餘空白去掉一次（保守）
-  s = s.replace(/\s+/g, " ").trim();
-  return s;
+  return s.replace(/\s+/g, " ").trim();
 }
 
-// 用 alias 後的版本取代原本的 compact/tokens
-function compact(str = "") { const cleaned = normalizeAlias(baseNormalize(str)); return cleaned.replace(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]/g, ""); }
-function tokens(str = "") { const cleaned = normalizeAlias(baseNormalize(str)); return cleaned.split(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g).filter(Boolean); }
-function matchRow(query, row, tokenMode = 'OR') {
-  const qC = compact(query);
-  if (!qC) return false;
-  if (row._searchCompact.includes(qC)) return true;
+/* ========== 搜尋索引與 token 變體（數字版 + 羅馬版） ========== */
+function expandTokenVariants(tok) {
+  const out = new Set([tok]);
+  const info = splitSuffixToken(tok);
+  if (info && info.num && info.roman) {
+    out.add(info.base + info.num);
+    if (info.roman) out.add(info.base + info.roman);
+  }
+  return Array.from(out);
+}
+
+function tokens(str = "") {
+  const cleaned = normalizeAlias(baseNormalize(str));
+  const arr = cleaned.split(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F]+/gi).filter(Boolean);
+  const bag = [];
+  for (const t of arr) bag.push(...expandTokenVariants(t));
+  return bag;
+}
+
+function compact(str = "") {
+  const cleaned = normalizeAlias(baseNormalize(str));
+  return cleaned.replace(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF\u3000-\u303F]/gi, "");
+}
+
+function matchRow(query, row, mode = 'OR') {
   const qT = tokens(query);
   const bag = row._tokensSet;
   const hit = (tok) => {
@@ -67,10 +125,10 @@ function matchRow(query, row, tokenMode = 'OR') {
     for (const w of bag) if (w.includes(tok)) return true;
     return false;
   };
-  return tokenMode === 'AND' ? qT.every(hit) : qT.some(hit);
+  return mode === 'AND' ? qT.every(hit) : qT.some(hit);
 }
 
-// ====== 小工具 ======
+/* ========== 小工具 ========== */
 function debounce(fn, wait = 500) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
 }
@@ -79,12 +137,11 @@ function fmtDate(ts) {
   if (!d) return "";
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const day = String(d.getDate()).toString().padStart(2, "0");
   return `${y}/${m}/${day}`;
 }
 
-
-// ====== 新增／載入 ======
+/* ========== 新增 / 載入 ========== */
 async function addItem() {
   const product = document.getElementById('product').value.trim();
   const market  = document.getElementById('market').value;
@@ -116,14 +173,15 @@ async function loadData() {
     obj.deleted = !!obj.deleted;
     const blob = [obj.product, obj.market, obj.account, obj.note].join(' || ');
     obj._searchCompact = compact(blob);
-    obj._tokens = tokens(blob);
-    obj._tokensSet = new Set(obj._tokens);
+    const ts = tokens(blob);
+    obj._tokens = ts;
+    obj._tokensSet = new Set(ts);
     return obj;
   });
   renderTable();
 }
 
-// ====== 篩選／排序／分頁 ======
+/* ========== 篩選/排序/分頁 ========== */
 function applyFilters(list) {
   const kw = document.getElementById('searchKeyword').value.trim();
   const fMarket = document.getElementById('searchMarket').value;
@@ -267,7 +325,7 @@ function renderTable() {
   renderPagination(total);
 }
 
-// ====== 欄位拖曳（記憶寬度） ======
+/* ========== 欄位拖曳（記憶寬度） ========== */
 function initResizableHeaders() {
   const ths = Array.from(document.querySelectorAll('thead th.resizable'));
   const colgroup = document.getElementById('colgroup');
@@ -308,7 +366,7 @@ function initResizableHeaders() {
   });
 }
 
-// ====== 綁定 ======
+/* ========== 綁定 ========== */
 function bindSortHeaders() {
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', (e) => {
