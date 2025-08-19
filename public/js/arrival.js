@@ -87,7 +87,7 @@ function normalizeAlias(str = "") {
        .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
 
   // 尾碼羅馬數字 → 尾碼數字（GRIII→GR3、A7RIV→A7R4…）
-  s = s.replace(/\b([a-z0-9]+)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
+  s = s.replace(/\b([a-z]+[a-z0-9]*)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
       (_, pre, r) => pre + romanToInt(r));
 
   return s.replace(/\s+/g, " ").trim();
@@ -120,13 +120,25 @@ function compact(str = "") {
 function matchRow(query, row, mode = 'OR') {
   const qT = tokens(query);
   const bag = row._tokensSet;
-  const hit = (tok) => {
-    if (bag.has(tok)) return true;
-    for (const w of bag) if (w.includes(tok)) return true;
+  const cq = compact(query);
+
+  const tokenExactHit = (tok) => bag.has(tok);
+  const tokenSafePrefixHit = (tok) => {
+    if (tok.length < 2) return false;
+    for (const w of bag) { if (w.startsWith(tok)) return true; }
     return false;
   };
-  return mode === 'AND' ? qT.every(hit) : qT.some(hit);
+  const compactContinuousHit = () => {
+    const q = cq;
+    if (!q || q.length < 2) return false;
+    const compacted = (row._searchCompact || "");
+    return compacted.includes(q) || compacted.startsWith(q);
+  };
+  const hit = (tok) => tokenExactHit(tok) || tokenSafePrefixHit(tok);
+  if (mode === 'AND') { if (compactContinuousHit()) return true; return qT.every(hit); }
+  else { if (compactContinuousHit()) return true; return qT.some(hit); }
 }
+
 
 /* ========== 小工具 ========== */
 function debounce(fn, wait = 500) {
@@ -198,7 +210,8 @@ allData = snap.docs.map(d => {
 
 /* ========== 篩選/排序/分頁 ========== */
 function applyFilters(list) {
-  const kw = document.getElementById('searchKeyword').value.trim();
+  const kwProduct = (document.getElementById('searchKeyword')?.value || '').trim();
+  const kwNoteAcc = (document.getElementById('searchNoteAccount')?.value || '').trim();
   const fMarket = document.getElementById('searchMarket').value;
   const fTime = document.getElementById('timeFilter').value;
   const fStatus = document.getElementById('statusFilter').value;
@@ -207,7 +220,8 @@ function applyFilters(list) {
 
   return list.filter(d => {
     if (d.deleted) return false;
-    if (kw && !matchRow(kw, d, mode)) return false;
+    if (kwProduct && !matchRow(kwProduct, { _tokensSet: d._tokensProduct, _searchCompact: d._compactProduct }, mode)) return false;
+    if (kwNoteAcc && !matchRow(kwNoteAcc, { _tokensSet: d._tokensNoteAcc, _searchCompact: d._compactNoteAcc }, mode)) return false;
     if (fMarket && d.market !== fMarket) return false;
     if (fStatus && d.status !== fStatus) return false;
     if (fTime) {
@@ -220,6 +234,7 @@ function applyFilters(list) {
     return true;
   });
 }
+
 
 function sortList(list) {
   const sf = sortField; const dir = sortDirection === 'asc' ? 1 : -1;
@@ -399,16 +414,16 @@ function bindSortHeaders() {
 
 function bindSearchBar() {
   const auto = debounce(() => { currentPage = 1; renderTable(); }, 500);
-  // 兩個搜尋框：商品名稱 / 帳號備註
+
   const kwEl = document.getElementById('searchKeyword');
   let noteEl = document.getElementById('searchNoteAccount');
-  // 若尚未建立，動態建立並插在商品名稱後面（避免 HTML 沒套上）
-  if (!noteEl && kwEl && kwEl.parentNode) {
+
+  // 若 HTML 沒有帳號/備註欄位，這裡自動建立並複製外觀（class）
+  if (!noteEl && kwEl) {
     noteEl = document.createElement('input');
     noteEl.type = 'text';
     noteEl.id = 'searchNoteAccount';
     noteEl.placeholder = '帳號/備註';
-    // 複製樣式（className）以確保外觀一致
     noteEl.className = kwEl.className || '';
     kwEl.insertAdjacentElement('afterend', noteEl);
   }
@@ -420,19 +435,19 @@ function bindSearchBar() {
     el.addEventListener('input', auto);
     el.addEventListener('change', auto);
     el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        currentPage = 1;
-        renderTable();
-      }
+      if (e.key === 'Enter') { e.preventDefault(); currentPage = 1; renderTable(); }
     });
   });
+
   document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', auto));
 }
 
 
 // iframe 友善
+
 window.onload = () => {
+  const form = document.querySelector('form');
+  if (form) form.addEventListener('submit', (e) => e.preventDefault());
   const addBtn = document.getElementById('btnAdd');
   if (addBtn) addBtn.addEventListener('click', addItem);
   bindSearchBar();
@@ -440,3 +455,4 @@ window.onload = () => {
   initResizableHeaders();
   loadData();
 };
+
