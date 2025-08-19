@@ -1,4 +1,5 @@
-console.log('arrival.js v8.3+++ final cleaned build');
+console.log('arrival.js v8.3++++ fixed map return placement');
+
 console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
 // Build v3 2025-08-18T17:48:19.770516Z
 import { db } from '/js/firebase.js';
@@ -137,15 +138,30 @@ async function loadData() {
   const qy = query(collection(db, 'arrival'), orderBy('createdAt','desc'));
   const snap = await getDocs(qy);
   allData = snap.docs.map(d => {
-    const obj = { id: d.id, ...d.data() };
-    obj.deleted = !!obj.deleted;
-    const blob = [obj.product, obj.market, obj.account, obj.note].join(' || ');
-    obj._searchCompact = compact(blob);
-    obj._tokens = tokens(blob);
-    obj._tokensSet = new Set(obj._tokens);
-    return obj;
-  });
-  renderTable();
+  const obj = { id: d.id, ...d.data() };
+  obj.deleted = !!obj.deleted;
+
+  // 全欄位索引
+  const blobAll = [obj.product, obj.market, obj.account, obj.note].join(' || ');
+  obj._searchCompactAll = compact(blobAll);
+  obj._tokensAll = tokens(blobAll);
+  obj._tokensSetAll = new Set(obj._tokensAll);
+
+  // 僅商品索引
+  const prod = obj.product || '';
+  obj._searchCompactProd = compact(prod);
+  obj._tokensProd = tokens(prod);
+  obj._tokensSetProd = new Set(obj._tokensProd);
+
+  // 帳號+備註索引
+  const an = [obj.account || '', obj.note || ''].join(' || ');
+  obj._searchCompactAN = compact(an);
+  obj._tokensAN = tokens(an);
+  obj._tokensSetAN = new Set(obj._tokensAN);
+
+  return obj;
+});
+renderTable();
 }
 
 // ====== 篩選／排序／分頁 ======
