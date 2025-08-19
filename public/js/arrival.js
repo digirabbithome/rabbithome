@@ -1,6 +1,6 @@
-console.log('arrival.js v8.3 english alias fix + chinese-aware');
+console.log('arrival.js v8 with full Roman numerals (I–X) mapping');
 // Build v3 2025-08-18T17:48:19.770516Z
-console.log('arrival.js v8.3 english alias fix + chinese-aware');
+console.log('arrival.js v4 loaded');
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
@@ -23,9 +23,8 @@ function baseNormalize(str = "") {
     .trim();
 }
 
-// ====== 通用型號別名標準化（支援浮動前綴，如任意字首+羅馬數字、Mark/Mk 變體、RX100 VII/M7） ======
 
-// ---- 中文/英數共用正則（優先用 \p{L}\p{N}，不支援時退回 CJK 範圍） ----
+// ---- 中文/英數共用正則（支援 \p{L}\p{N}；不支援時退回 CJK 範圍） ----
 let RE_STRIP_NON_WORD, RE_SPLIT_NON_WORD;
 try {
   RE_STRIP_NON_WORD = /[^\p{L}\p{N}]/gu;
@@ -39,40 +38,52 @@ try {
 function normalizeAlias(str = "") {
   let s = baseNormalize(str);
 
-  // 1) 先處理容易被通用規則吃掉的特例
-  s = s.replace(/\bgr\s*iii\b/gi, "gr3")            // GRIII → gr3
-       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")        // A7RIV → a7r4
-       .replace(/\ba7\s*iii\b/gi, "a73");           // A7III → a73
+  // 特例先行（避免被通用規則吃掉）
+  s = s.replace(/\bgr\s*iii\b/gi, "gr3")
+       .replace(/\ba7\s*r\s*iv\b/gi, "a7r4")
+       .replace(/\ba7\s*iii\b/gi, "a73");
 
-  // 2) RX100 VII 全系列 → rx100m7
+  // RX100 VII 全系列 → rx100m7
   s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
        .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
        .replace(/\brx100\s*m7\b/gi, "rx100m7")
        .replace(/\brx100m7\b/gi, "rx100m7")
        .replace(/\brx100vii\b/gi, "rx100m7");
 
-  // 3) Mark / Mk 後綴：羅馬或數字 → mN（任意前綴允許）
+  // Mark / Mk 後綴：羅馬或數字 → mN（任意前綴）
   const romanToNum = { x:"10", ix:"9", viii:"8", vii:"7", vi:"6", v:"5", iv:"4", iii:"3", ii:"2", i:"1" };
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
         (_, pre, r) => pre + "m" + romanToNum[r.toLowerCase()]);
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9]|10)\b/gi,
         (_, pre, d) => pre + "m" + d);
 
-  // 黏在一起的 MKII/MII → m2
+  // 黏在一起：...MKII / ...MII → m2
   s = s.replace(/([a-z0-9]+)mkii\b/gi, (_, pre) => pre + "m2")
        .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
 
-  // 4) 最後才做通用「任意前綴 + 羅馬數字（I~X）」尾碼 → 數字
+  // 任意前綴 + 羅馬字尾（I~X）→ 尾碼數字
   s = s.replace(/\b([a-z0-9]+)(x|ix|viii|vii|vi|iv|v|iii|ii|i)\b/gi,
-        (_, pre, r) => pre + (romanToNum[r.toLowerCase()] || ""));
+        (_, pre, r) => pre + (romanToNum[r.toLowerCase()]));
 
   return s.replace(/\s+/g, " ").trim();
 }
 
-// ---- 與 alias 對齊的 compact / tokens（支援中文） ----
+// 與 alias 對齊的 compact/tokens（支援中文）
 function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }
 function tokens(str = "") { return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean); }
-;
+// ====== 通用型號別名標準化（支援浮動前綴，如任意字首+羅馬數字、Mark/Mk 變體、RX100 VII/M7） ======
+function normalizeAlias(str = "") {
+  let s = baseNormalize(str);
+
+  // 先處理 RX100 VII/M7 系列 → rx100m7
+  s = s.replace(/\brx100\s*(?:mark|mk)?\s*vii\b/gi, "rx100m7")
+       .replace(/\brx100\s*mk\s*7\b/gi, "rx100m7")
+       .replace(/\brx100\s*m7\b/gi, "rx100m7")
+       .replace(/\brx100m7\b/gi, "rx100m7")
+       .replace(/\brx100vii\b/gi, "rx100m7");
+
+  // Mark / Mk + 羅馬數字或數字 → mN（任意前綴允許）
+  const romanMap = {x:"10", ix:"9", viii:"8", vii:"7", vi:"6", iv:"4", v:"5", iii:"3", ii:"2", i:"1"};
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*(x|ix|viii|vii|vi|iv|v|iii|ii)\b/gi,
       (_, pre, r) => pre + "m" + romanMap[r.toLowerCase()]);
   s = s.replace(/\b([a-z0-9]+)\s*(?:mark|mk)\s*([2-9])\b/gi, (_, pre, d) => pre + "m" + d);
@@ -91,8 +102,8 @@ function tokens(str = "") { return normalizeAlias(str).split(RE_SPLIT_NON_WORD).
 }
 
 // 用 alias 後的版本取代原本的 compact/tokens
-function compact(str = "") { const cleaned = normalizeAlias(baseNormalize(str)); return cleaned.replace(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]/g, ""); }
-function tokens(str = "") { const cleaned = normalizeAlias(baseNormalize(str)); return cleaned.split(/[^a-z0-9\u3400-\u9FFF\uF900-\uFAFF]+/g).filter(Boolean); }
+function compact(str = "") { return normalizeAlias(str).replace(RE_STRIP_NON_WORD, ""); }
+function tokens(str = "") { return normalizeAlias(str).split(RE_SPLIT_NON_WORD).filter(Boolean); }
 function matchRow(query, row, tokenMode = 'OR') {
   const qC = compact(query);
   if (!qC) return false;

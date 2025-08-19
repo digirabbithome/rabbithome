@@ -37,7 +37,8 @@
 
     <!-- 中間搜尋工具列 -->
     <div class="toolbar">
-      <input id="searchKeyword" class="input" placeholder="搜尋：商品名稱 / 賣場 / 帳號 / 備註" />
+      <input id="searchKeyword" class="input" placeholder="搜尋：商品（支援中英數與型號別名）" />
+<input id="searchAccountNote" class="input" placeholder="搜尋：帳號 / 備註（可單獨使用）" />
       <select id="searchMarket" class="input">
         <option value="">全部賣場</option>
         <option value="露1">露1</option>
@@ -74,7 +75,7 @@
       <label class="mode-toggle">
         <input type="radio" name="mode" value="AND"> 嚴格 (AND)
       </label>
-
+      <label class="mode-toggle"><input type="checkbox" id="productOnly"> 只搜商品</label>
       
       <div class="spacer"></div>
       <div id="resultInfo" class="muted"></div>
