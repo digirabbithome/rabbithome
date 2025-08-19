@@ -87,7 +87,7 @@ function normalizeAlias(str = "") {
        .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
 
   // 尾碼羅馬數字 → 尾碼數字（GRIII→GR3、A7RIV→A7R4…）
-  s = s.replace(/\b([a-z]+[a-z0-9]*)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
+  s = s.replace(/\b([a-z0-9]+)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
       (_, pre, r) => pre + romanToInt(r));
 
   return s.replace(/\s+/g, " ").trim();
@@ -120,32 +120,13 @@ function compact(str = "") {
 function matchRow(query, row, mode = 'OR') {
   const qT = tokens(query);
   const bag = row._tokensSet;
-  const cq = compact(query);
-
-  const tokenExactHit = (tok) => bag.has(tok);
-  const tokenSafePrefixHit = (tok) => {
-    if (tok.length < 2) return false;
-    for (const w of bag) { if (w.startsWith(tok)) return true; }
+  const hit = (tok) => {
+    if (bag.has(tok)) return true;
+    for (const w of bag) if (w.includes(tok)) return true;
     return false;
   };
-  const compactContinuousHit = () => {
-    const q = cq;
-    if (!q || q.length < 2) return false;
-    const compacted = (row._searchCompact || "");
-    return compacted.includes(q) || compacted.startsWith(q);
-  };
-
-  const hit = (tok) => tokenExactHit(tok) || tokenSafePrefixHit(tok);
-
-  if (mode === 'AND') {
-    if (compactContinuousHit()) return true;
-    return qT.every(hit);
-  } else {
-    if (compactContinuousHit()) return true;
-    return qT.some(hit);
-  }
+  return mode === 'AND' ? qT.every(hit) : qT.some(hit);
 }
-
 
 /* ========== 小工具 ========== */
 function debounce(fn, wait = 500) {
@@ -187,22 +168,39 @@ async function addItem() {
 async function loadData() {
   const qy = query(collection(db, 'arrival'), orderBy('createdAt','desc'));
   const snap = await getDocs(qy);
-  allData = snap.docs.map(d => {
+  
+allData = snap.docs.map(d => {
     const obj = { id: d.id, ...d.data() };
     obj.deleted = !!obj.deleted;
+
+    // 商品名稱索引
+    const prodBlob = obj.product || '';
+    obj._tokensProduct = new Set(tokens(prodBlob));
+    obj._compactProduct = compact(prodBlob);
+
+    // 帳號/備註索引
+    const noteAccBlob = [obj.account, obj.note].join(' || ');
+    obj._tokensNoteAcc = new Set(tokens(noteAccBlob));
+    obj._compactNoteAcc = compact(noteAccBlob);
+
+    // 原有索引 (全部)
     const blob = [obj.product, obj.market, obj.account, obj.note].join(' || ');
     obj._searchCompact = compact(blob);
     const ts = tokens(blob);
     obj._tokens = ts;
     obj._tokensSet = new Set(ts);
+
     return obj;
   });
+
   renderTable();
 }
 
 /* ========== 篩選/排序/分頁 ========== */
+
 function applyFilters(list) {
-  const kw = document.getElementById('searchKeyword').value.trim();
+  const kwProduct = document.getElementById('searchKeyword').value.trim();
+  const kwNoteAcc = document.getElementById('searchNoteAccount').value.trim();
   const fMarket = document.getElementById('searchMarket').value;
   const fTime = document.getElementById('timeFilter').value;
   const fStatus = document.getElementById('statusFilter').value;
@@ -210,6 +208,7 @@ function applyFilters(list) {
   const now = new Date();
 
   return list.filter(d => {
+
     if (d.deleted) return false;
     if (kw && !matchRow(kw, d, mode)) return false;
     if (fMarket && d.market !== fMarket) return false;
