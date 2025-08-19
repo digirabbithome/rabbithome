@@ -87,7 +87,7 @@ function normalizeAlias(str = "") {
        .replace(/([a-z0-9]+)mii\b/gi,  (_, pre) => pre + "m2");
 
   // 尾碼羅馬數字 → 尾碼數字（GRIII→GR3、A7RIV→A7R4…）
-  s = s.replace(/\b([a-z0-9]+)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
+  s = s.replace(/\b([a-z]+[a-z0-9]*)(i|ii|iii|iv|v|vi|vii|viii|ix|x|xl|l|xc|c|cd|d|cm|m)\b/gi,
       (_, pre, r) => pre + romanToInt(r));
 
   return s.replace(/\s+/g, " ").trim();
@@ -123,15 +123,11 @@ function matchRow(query, row, mode = 'OR') {
   const cq = compact(query);
 
   const tokenExactHit = (tok) => bag.has(tok);
-
-  // 前綴比對：長度 >=2 即可 (允許 GR, RX 這類短代號)
   const tokenSafePrefixHit = (tok) => {
     if (tok.length < 2) return false;
     for (const w of bag) { if (w.startsWith(tok)) return true; }
     return false;
   };
-
-  // compact 比對：允許包含與前綴
   const compactContinuousHit = () => {
     const q = cq;
     if (!q || q.length < 2) return false;
