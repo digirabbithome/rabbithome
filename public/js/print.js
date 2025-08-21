@@ -1,44 +1,75 @@
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
-
   const senderMap = {
     '數位小兔': {
-      name: '數位小兔 Digital Rabbit　110 台北市信義區大道路74巷1號<BR>TEL：02-2759-2006 / 02-2759-2013　LINE：@digirabbit',
-      phone: '',
-      address: '',
-      line: ''
+      cname: '數位小兔',
+      ename: 'Digital Rabbit',
+      address: '110 台北市信義區大道路74巷1號',
+      tel: '02-2759-2006 / 02-2759-2013',
+      line: '@digirabbit',
+      logo: '/img/logo.png'
     },
     '聚焦數位': {
-      name: '聚焦數位 Focus Digital　110 台北市信義區範例路10號<BR>TEL：02-2345-6789　LINE：@focuscam',
-      phone: '',
-      address: '',
-      line: ''
+      cname: '聚焦數位',
+      ename: 'Focus Digital',
+      address: '110 台北市信義區範例路10號',
+      tel: '02-2345-6789',
+      line: '@focuscam',
+      logo: '/img/logo-focus.png'
     },
     '免睡攝影': {
-      name: '免睡攝影 No Sleep Studio　220 新北市板橋區攝影街88號<BR>TEL：02-8765-4321　LINE：@nosleep',
-      phone: '',
+      cname: '免睡攝影',
+      ename: 'NoSleep Photo',
+      address: '110 台北市信義區範例路20號',
+      tel: '02-2222-3333',
+      line: '@nosleep',
+      logo: '/img/logo-nosleep.png'
+    },
+    '其他': {
+      cname: data.customSender || '其他',
+      ename: '',
       address: '',
-      line: ''
+      tel: '',
+      line: '',
+      logo: '/img/logo.png'
     }
   };
 
-  const sender = senderMap[data.senderCompany] || {
-    name: data.customSender || '',
-    address: '',
-    phone: '',
-    line: ''
-  };
+  const senderKey = data.senderCompany && senderMap[data.senderCompany] ? data.senderCompany : '數位小兔';
+  const sender = senderMap[senderKey];
 
-  document.getElementById('senderInfo').innerHTML = `
-    ${sender.name}<br>
-    ${sender.address}<br>
-    ${sender.phone}<br>
-    ${sender.line}
-  `;
+  // Header - 公司資訊
+  const senderInfo = document.getElementById('senderInfo');
+  senderInfo.innerHTML = [
+    `${sender.cname} ${sender.ename}`.trim(),
+    sender.address || '',
+    sender.tel || sender.line ? `TEL：${sender.tel}${sender.tel && sender.line ? '　' : ''}${sender.line ? '　LINE：' + sender.line : ''}` : ''
+  ].filter(Boolean).join('<br>');
 
-  document.getElementById('receiverInfo').textContent = `TO：${data.receiverName || ''}　${data.phone || ''}　${data.address || ''}`;
-  document.getElementById('productInfo').textContent = data.product || '';
+  // Logo
+  const logoImg = document.getElementById('logoImg');
+  if (logoImg && sender.logo) logoImg.src = sender.logo;
 
+  // 收件資訊（一般信封：TO 客戶）
+  const toLine = document.getElementById('toLine');
+  const name = (data.receiverName || '').trim();
+  const phone = (data.phone || '').trim();
+  toLine.innerHTML = `TO：<span>${name}</span>${phone ? '<span class="phone">' + phone + '</span>' : ''}`;
+
+  const addrLine = document.getElementById('addrLine');
+  addrLine.textContent = data.address || '';
+
+  // 商品資訊（可選）
+  const productInfo = document.getElementById('productInfo');
+  if (data.product && String(data.product).trim() !== '') {
+    productInfo.textContent = data.product;
+    productInfo.style.display = 'block';
+  } else {
+    productInfo.style.display = 'none';
+  }
+
+  if (name) document.title = '列印信封 - ' + name;
+  await new Promise(r => setTimeout(r, 80));
   window.print();
 });

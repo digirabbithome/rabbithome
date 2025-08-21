@@ -3,51 +3,94 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>回郵信封頁面</title>
+  <title>回郵信封（9×14cm 橫式）</title>
   <style>
-    body { font-family: sans-serif; padding: 40px; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: #f6f6f6;
+    }
     .envelope {
-      border: 1px solid #ccc;
-      padding: 20px;
-      width: 900px;
-      height: 450px;
+      width: 14cm;
+      height: 9cm;
+      background: #fff;
+      margin: 10mm auto;
+      padding: 6mm 7mm;
+      border: 1pt solid #111;
       position: relative;
+      overflow: hidden;
+      letter-spacing: 0;
+    }
+    .header {
+      display: grid;
+      grid-template-columns: 1fr 3.2cm;
+      align-items: start;
+      column-gap: 6mm;
     }
     .sender-info {
-      position: absolute;
-      top: 20px;
-      left: 30px;
-      font-size: 14px;
+      font-size: 10pt;
       line-height: 1.5;
+      word-break: break-word;
     }
     .logo {
-      position: absolute;
-      top: 130px;
-      left: 30px;
-      width: 120px;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
     }
-    .receiver-info {
+    .receiver {
       position: absolute;
-      top: 130px;
-      left: 180px;
-      font-size: 20px;
-      line-height: 1.8;
+      left: 7mm;
+      right: 7mm;
+      top: 34mm;
+      letter-spacing: 0;
+    }
+    .to-line {
+      font-size: 16mm;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .to-line .phone {
+      font-size: 13mm;
+      font-weight: 600;
+      margin-left: 6mm;
+    }
+    .addr-line {
+      margin-top: 2mm;
+      font-size: 13mm;
+      font-weight: 700;
+      line-height: 1.15;
+      word-break: break-word;
     }
     .product {
       position: absolute;
-      bottom: 30px;
-      left: 30px;
-      font-size: 16px;
-      color: #333;
+      left: 7mm;
+      bottom: 5mm;
+      font-size: 9pt;
+      color: #111;
+      letter-spacing: 0;
+      max-width: calc(100% - 14mm);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media print {
+      @page { size: 14cm 9cm; margin: 0; }
+      html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
+      .envelope { margin: 0; border: 1pt solid #111; }
     }
   </style>
   <script src="/js/print-reply.js" defer></script>
 </head>
 <body>
   <div class="envelope">
-    <div class="sender-info" id="senderInfo"></div>
-    <img class="logo" src="/img/logo.png" />
-    <div class="receiver-info" id="receiverInfo"></div>
+    <div class="header">
+      <div class="sender-info" id="senderInfo"></div>
+      <img class="logo" id="logoImg" src="/img/logo.png" alt="logo">
+    </div>
+    <div class="receiver">
+      <div class="to-line" id="toLine">TO：</div>
+      <div class="addr-line" id="addrLine"></div>
+    </div>
     <div class="product" id="productInfo"></div>
   </div>
 </body>
