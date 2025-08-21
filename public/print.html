@@ -3,55 +3,96 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>列印信封頁面</title>
+  <title>列印信封（9×14cm 橫式）</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: #f6f6f6;
+    }
     .envelope {
-      border: 1px solid #ccc;
-      padding: 20px;
-      width: 900px;
-      height: 450px;
+      width: 14cm;
+      height: 9cm;
+      background: #fff;
+      margin: 10mm auto;
+      padding: 6mm 7mm;
+      border: none;            /* 移除黑色邊框 */
       position: relative;
+      overflow: hidden;
+      letter-spacing: 0;
+    }
+    .header {
+      display: grid;
+      grid-template-columns: 1fr 3.2cm;
+      column-gap: 6mm;
+      align-items: end; /* LOGO 與公司資訊底部對齊 */
     }
     .sender-info {
-      position: absolute;
-      top: 20px;
-      left: 30px;
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 10pt;
+      line-height: 1.5;
+      word-break: break-word;
     }
     .logo {
-      position: absolute;
-      top: 130px;
-      left: 30px;
-      width: 300px;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
     }
-    .receiver-info {
+    .receiver {
       position: absolute;
-      top: 130px;
-      left: 350px;
-      font-size: 34px;
-      line-height: 1.6;
-      max-width: 500px;
-      word-wrap: break-word;
+      left: 7mm;
+      right: 7mm;
+      top: 36mm;           /* 與寄件資訊之間空一行 */
+      letter-spacing: 0;
+    }
+    .addr-line {           /* 第一行：地址（含 TO：） */
+      font-size: 7mm;
+      font-weight: 700;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .to-line {             /* 第二行：姓名 + 電話 */
+      margin-top: 1.2mm;
+      font-size: 7mm;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .to-line .phone {
+      font-size: 7mm;
+      font-weight: 600;
+      margin-left: 4mm;
     }
     .product {
       position: absolute;
-      bottom: 20px;
-      left: 30px;
-      font-size: 18px;
-      color: #333;
-      max-width: 800px;
-      word-wrap: break-word;
+      left: 7mm;
+      bottom: 5mm;
+      font-size: 9pt;
+      color: #111;
+      letter-spacing: 0;
+      max-width: calc(100% - 14mm);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media print {
+      @page { size: 14cm 9cm; margin: 0; }
+      html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
+      .envelope { margin: 0; border: none; } /* 列印也不顯示邊框 */
     }
   </style>
   <script src="/js/print.js" defer></script>
 </head>
 <body>
   <div class="envelope">
-    <div class="sender-info" id="senderInfo"></div>
-    <img class="logo" src="/img/logo.png" />
-    <div class="receiver-info" id="receiverInfo"></div>
+    <div class="header">
+      <div class="sender-info" id="senderInfo"></div>
+      <img class="logo" id="logoImg" src="/img/logo.png" alt="logo">
+    </div>
+    <div class="receiver">
+      <div class="addr-line" id="addrLine"></div>
+      <div class="to-line" id="toLine"></div>
+    </div>
     <div class="product" id="productInfo"></div>
   </div>
 </body>
