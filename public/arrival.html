@@ -7,65 +7,6 @@
   <!-- 使用絕對路徑，確保在 Rabbithome 的 iframe 中正常載入 -->
   <link rel="stylesheet" href="/css/arrival.css" />
   <script type="module" src="/js/arrival.js?v=948"></script>
-
-<!-- Top scrollbar patch (light pink slim style) -->
-<style>
-  .top-scrollbar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    height: 12px; /* 更細 */
-    overflow-x: auto;
-    overflow-y: hidden;
-    background: #fff6fa;   /* 超淡粉底色 */
-    border-bottom: 1px solid #f8cfe0;  /* 淡粉邊框 */
-  }
-  .top-scrollbar::-webkit-scrollbar { height: 8px; background: #fff0f7; } /* 更細，底色更淡 */
-  .top-scrollbar::-webkit-scrollbar-thumb {
-    background: #ff99bb;   /* 柔和粉色 */
-    border-radius: 6px;
-  }
-  .top-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #ff4d88;   /* hover 時深粉 */
-  }
-  .top-scrollbar .spacer { height: 1px; }
-</style>
-<script>
-(function(){
-  function initTopScrollbar(){
-    const wrap = document.querySelector('.table-wrap');
-    if(!wrap) return;
-    let topBar = document.getElementById('top-scrollbar');
-    if(!topBar){
-      topBar = document.createElement('div');
-      topBar.id = 'top-scrollbar';
-      topBar.className = 'top-scrollbar';
-      const spacer = document.createElement('div');
-      spacer.className = 'spacer';
-      spacer.style.width = wrap.scrollWidth + 'px';
-      topBar.appendChild(spacer);
-      wrap.parentNode.insertBefore(topBar, wrap);
-    }
-    let lock = false;
-    topBar.addEventListener('scroll', () => {
-      if(lock) return; lock = true;
-      wrap.scrollLeft = topBar.scrollLeft;
-      requestAnimationFrame(()=>lock=false);
-    });
-    wrap.addEventListener('scroll', () => {
-      if(lock) return; lock = true;
-      topBar.scrollLeft = wrap.scrollLeft;
-      requestAnimationFrame(()=>lock=false);
-    });
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', initTopScrollbar);
-  }else{
-    initTopScrollbar();
-  }
-})();
-</script>
-
 </head>
 <body>
   <div class="container">
@@ -115,12 +56,14 @@
         <option value="電話">電話</option>
     </select>
       <select id="timeFilter" class="input">
-        <option value="">不限時間</option>
-        <option value="7">一週內</option>
-        <option value="14">兩週內</option>
-        <option value="30">一個月內</option>
-        <option value="60">兩個月內</option>
-      </select>
+<option value="7">一週內</option>
+  <option value="14">兩週內</option>
+  <option value="30">一個月內</option>
+  <option value="60">兩個月內</option>
+  <option value="90" selected>三個月內</option>
+  <option value="180">半年內</option>
+  <option value="">不限時間</option>
+</select>
       <select id="statusFilter" class="input">
         <option value="未完成" selected>未完成</option>
         <option value="已完成">已完成</option>
@@ -152,5 +95,13 @@
     <!-- 分頁 -->
     <div id="pagination" class="pagination"></div>
   </div>
+
+<script>
+  (function(){
+    var tf = document.getElementById('timeFilter');
+    if(tf && !tf.value){ tf.value = "90"; }
+  })();
+</script>
+
 </body>
 </html>
