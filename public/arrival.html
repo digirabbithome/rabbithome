@@ -8,30 +8,54 @@
   <link rel="stylesheet" href="/css/arrival.css" />
   <script type="module" src="/js/arrival.js?v=948"></script>
 
-<!-- Horizontal scroll fallback patch -->
-<style id="arrival-scroll-patch">
-  .table-wrap{
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    max-width: 100%;
+<!-- Top scrollbar patch -->
+<style>
+  .top-scrollbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #f5f5f5;
   }
-  table.table{ min-width: 1600px !important; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+  .top-scrollbar::-webkit-scrollbar { height: 10px; }
+  .top-scrollbar .spacer { height: 1px; }
 </style>
 <script>
-  (function ensureScrollWrapper(){
-    const tbl = document.querySelector('table.table') || document.querySelector('table');
-    if (!tbl) return;
-    const parent = tbl.parentElement;
-    if (!parent || !parent.classList || !parent.classList.contains('table-wrap')){
-      const wrap = document.createElement('div');
-      wrap.className = 'table-wrap';
-      parent.insertBefore(wrap, tbl);
-      wrap.appendChild(tbl);
+(function(){
+  function initTopScrollbar(){
+    const wrap = document.querySelector('.table-wrap');
+    if(!wrap) return;
+    let topBar = document.getElementById('top-scrollbar');
+    if(!topBar){
+      topBar = document.createElement('div');
+      topBar.id = 'top-scrollbar';
+      topBar.className = 'top-scrollbar';
+      const spacer = document.createElement('div');
+      spacer.className = 'spacer';
+      spacer.style.width = wrap.scrollWidth + 'px';
+      topBar.appendChild(spacer);
+      wrap.parentNode.insertBefore(topBar, wrap);
     }
-    if (!tbl.style.minWidth) tbl.style.minWidth = '1600px';
-  })();
+    let lock = false;
+    topBar.addEventListener('scroll', () => {
+      if(lock) return; lock = true;
+      wrap.scrollLeft = topBar.scrollLeft;
+      requestAnimationFrame(()=>lock=false);
+    });
+    wrap.addEventListener('scroll', () => {
+      if(lock) return; lock = true;
+      topBar.scrollLeft = wrap.scrollLeft;
+      requestAnimationFrame(()=>lock=false);
+    });
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', initTopScrollbar);
+  }else{
+    initTopScrollbar();
+  }
+})();
 </script>
 
 </head>
