@@ -42,26 +42,29 @@
       position: absolute;
       left: 7mm;
       right: 7mm;
-      top: 34mm;
+      top: 32mm;
       letter-spacing: 0;
     }
-    .to-line {
-      font-size: 16mm;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .to-line .phone {
-      font-size: 13mm;
-      font-weight: 600;
-      margin-left: 6mm;
-    }
+    /* 第一行：地址（含 TO：） */
     .addr-line {
-      margin-top: 2mm;
-      font-size: 13mm;
+      font-size: 10mm;
       font-weight: 700;
       line-height: 1.15;
       word-break: break-word;
     }
+    /* 第二行：姓名 + 電話 */
+    .to-line {
+      margin-top: 1.2mm;
+      font-size: 9mm;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .to-line .phone {
+      font-size: 8.5mm;
+      font-weight: 600;
+      margin-left: 4mm;
+    }
+    /* 商品資訊在左下角（有值才顯示） */
     .product {
       position: absolute;
       left: 7mm;
@@ -88,8 +91,8 @@
       <img class="logo" id="logoImg" src="/img/logo.png" alt="logo">
     </div>
     <div class="receiver">
-      <div class="to-line" id="toLine">TO：</div>
       <div class="addr-line" id="addrLine"></div>
+      <div class="to-line" id="toLine"></div>
     </div>
     <div class="product" id="productInfo"></div>
   </div>

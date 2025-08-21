@@ -39,26 +39,29 @@ window.addEventListener('load', async () => {
   const senderKey = data.senderCompany && senderMap[data.senderCompany] ? data.senderCompany : '數位小兔';
   const sender = senderMap[senderKey];
 
-  // Header - 公司資訊
+  // Header - 公司資訊（TEL 與 Line 分兩行）
   const senderInfo = document.getElementById('senderInfo');
   senderInfo.innerHTML = [
     `${sender.cname} ${sender.ename}`.trim(),
     sender.address || '',
-    sender.tel || sender.line ? `TEL：${sender.tel}${sender.tel && sender.line ? '　' : ''}${sender.line ? '　LINE：' + sender.line : ''}` : ''
+    sender.tel ? `TEL：${sender.tel}` : '',
+    sender.line ? `Line: ${sender.line}` : ''
   ].filter(Boolean).join('<br>');
 
   // Logo
   const logoImg = document.getElementById('logoImg');
   if (logoImg && sender.logo) logoImg.src = sender.logo;
 
-  // 收件資訊（一般信封：TO 客戶）
-  const toLine = document.getElementById('toLine');
+  // 收件資訊：第一行地址（含 TO：），第二行姓名 + 電話
   const name = (data.receiverName || '').trim();
   const phone = (data.phone || '').trim();
-  toLine.innerHTML = `TO：<span>${name}</span>${phone ? '<span class="phone">' + phone + '</span>' : ''}`;
+  const address = (data.address || '').trim();
 
   const addrLine = document.getElementById('addrLine');
-  addrLine.textContent = data.address || '';
+  addrLine.textContent = address ? `TO：${address}` : 'TO：';
+
+  const toLine = document.getElementById('toLine');
+  toLine.innerHTML = `${name ? '<span>' + name + '</span>' : ''}${phone ? '<span class="phone">' + phone + '</span>' : ''}`;
 
   // 商品資訊（可選）
   const productInfo = document.getElementById('productInfo');

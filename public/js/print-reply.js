@@ -39,30 +39,31 @@ window.addEventListener('load', async () => {
   const senderKey = data.senderCompany && senderMap[data.senderCompany] ? data.senderCompany : '數位小兔';
   const company = senderMap[senderKey]; // 回郵的收件人 = 公司
 
-  // Header 仍顯示公司資訊＋LOGO（保持版型一致）
+  // Header - 公司資訊（TEL 與 Line 分兩行）
   const senderInfo = document.getElementById('senderInfo');
   senderInfo.innerHTML = [
     `${company.cname} ${company.ename}`.trim(),
     company.address || '',
-    company.tel || company.line ? `TEL：${company.tel}${company.tel && company.line ? '　' : ''}${company.line ? '　LINE：' + company.line : ''}` : ''
+    company.tel ? `TEL：${company.tel}` : '',
+    company.line ? `Line: ${company.line}` : ''
   ].filter(Boolean).join('<br>');
 
   const logoImg = document.getElementById('logoImg');
   if (logoImg && company.logo) logoImg.src = company.logo;
 
-  // 收件資訊（回郵信封：TO 公司）
-  const toLine = document.getElementById('toLine');
-  toLine.innerHTML = `TO：<span>${company.cname}</span>`;
-
+  // 收件資訊（回郵）：第一行公司地址，第二行公司名稱
   const addrLine = document.getElementById('addrLine');
-  addrLine.textContent = company.address || '';
+  addrLine.textContent = company.address ? `TO：${company.address}` : 'TO：';
 
-  // 左下角改為顯示「寄件人」資訊（從使用者輸入而來）
+  const toLine = document.getElementById('toLine');
+  toLine.textContent = company.cname || '';
+
+  // 左下角顯示寄件人（客戶）
   const productInfo = document.getElementById('productInfo');
   const name = (data.receiverName || '').trim();
   const phone = (data.phone || '').trim();
-  const address = (data.address || '').trim();
-  const senderText = ['寄件人：' + name, phone ? '電話：' + phone : '', address ? '地址：' + address : '']
+  const address2 = (data.address || '').trim();
+  const senderText = ['寄件人：' + name, phone ? '電話：' + phone : '', address2 ? '地址：' + address2 : '']
     .filter(Boolean)
     .join('　');
   productInfo.textContent = senderText;
