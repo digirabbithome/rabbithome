@@ -44,25 +44,26 @@
       position: absolute;
       left: 7mm;
       right: 7mm;
-      top: 32mm;
+      top: 36mm;           /* 往下多 4mm，形成「空一行」的視覺距離 */
       letter-spacing: 0;
     }
-    /* 第一行：地址（含 TO：）— 縮小一號 */
+    /* 第一行：地址（含 TO：）→ 7mm */
     .addr-line {
-      font-size: 9mm;     /* 原 10mm → 9mm */
+      font-size: 7mm;
       font-weight: 700;
-      line-height: 1.15;
+      line-height: 1.2;
       word-break: break-word;
     }
-    /* 第二行：姓名 + 電話 — 縮小一號 */
+    /* 第二行：姓名 + 電話 → 7mm */
     .to-line {
-      margin-top: 1mm;
-      font-size: 8mm;     /* 原 9mm → 8mm */
+      margin-top: 1.2mm;
+      font-size: 7mm;
       font-weight: 700;
       white-space: nowrap;
+      line-height: 1.2;
     }
     .to-line .phone {
-      font-size: 7.5mm;   /* 原 8.5mm → 7.5mm */
+      font-size: 7mm;
       font-weight: 600;
       margin-left: 4mm;
     }
