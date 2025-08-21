@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/css/arrival.css" />
   <script type="module" src="/js/arrival.js?v=948"></script>
 
-<!-- Top scrollbar patch (dark/gray style) -->
+<!-- Top scrollbar patch (pink Rabbithome style) -->
 <style>
   .top-scrollbar {
     position: sticky;
@@ -17,13 +17,16 @@
     height: 18px;
     overflow-x: auto;
     overflow-y: hidden;
-    background: #333;       /* 深灰背景 */
-    border-bottom: 1px solid #555;
+    background: #ffe6f0;   /* 淺粉底色 */
+    border-bottom: 1px solid #f5b5c5;  /* 粉紅邊框 */
   }
-  .top-scrollbar::-webkit-scrollbar { height: 12px; background: #444; }
+  .top-scrollbar::-webkit-scrollbar { height: 12px; background: #ffd6e5; } /* 底色粉紅 */
   .top-scrollbar::-webkit-scrollbar-thumb {
-    background: #888;
+    background: #ff80aa;   /* 捲軸顏色：亮粉 */
     border-radius: 6px;
+  }
+  .top-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #ff4d88;   /* hover 時變深粉 */
   }
   .top-scrollbar .spacer { height: 1px; }
 </style>
