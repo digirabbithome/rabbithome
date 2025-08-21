@@ -263,7 +263,7 @@ async function renderMonth(){
       ? Number(daySched.requiredHoursOverride)
       : (typeof orgSched.requiredHoursOverride === 'number')
         ? Number(orgSched.requiredHoursOverride)
-        : (weekend ? 7 : 9)
+        : (weekend ? 7.5 : 9)
 
     // 假別顯示（patched: 年假優先 annualLabel；非年假用 leaveLabel）
 let leaveTag = '—'
