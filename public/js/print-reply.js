@@ -3,7 +3,7 @@ window.addEventListener('load', async () => {
   const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
   const senderMap = {
     '數位小兔': {
-      cname: '數位小兔',
+      cname: '數位小兔攝影器材批發零售',
       ename: 'Digital Rabbit',
       address: '110 台北市信義區大道路74巷1號',
       tel: '02-2759-2006 / 02-2759-2013',
