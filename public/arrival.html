@@ -7,6 +7,33 @@
   <!-- 使用絕對路徑，確保在 Rabbithome 的 iframe 中正常載入 -->
   <link rel="stylesheet" href="/css/arrival.css" />
   <script type="module" src="/js/arrival.js?v=948"></script>
+
+<!-- Horizontal scroll fallback patch -->
+<style id="arrival-scroll-patch">
+  .table-wrap{
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+  table.table{ min-width: 1600px !important; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+</style>
+<script>
+  (function ensureScrollWrapper(){
+    const tbl = document.querySelector('table.table') || document.querySelector('table');
+    if (!tbl) return;
+    const parent = tbl.parentElement;
+    if (!parent || !parent.classList || !parent.classList.contains('table-wrap')){
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      parent.insertBefore(wrap, tbl);
+      wrap.appendChild(tbl);
+    }
+    if (!tbl.style.minWidth) tbl.style.minWidth = '1600px';
+  })();
+</script>
+
 </head>
 <body>
   <div class="container">
