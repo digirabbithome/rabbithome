@@ -17,17 +17,16 @@
       background: #fff;
       margin: 10mm auto;
       padding: 6mm 7mm;
-      border: 1pt solid #111;
+      border: none;            /* 移除黑色邊框 */
       position: relative;
       overflow: hidden;
       letter-spacing: 0;
     }
-    /* Header: 兩欄，LOGO 與公司資訊底部對齊 */
     .header {
       display: grid;
       grid-template-columns: 1fr 3.2cm;
       column-gap: 6mm;
-      align-items: end; /* 底部對齊 */
+      align-items: end; /* LOGO 與公司資訊底部對齊 */
     }
     .sender-info {
       font-size: 10pt;
@@ -44,18 +43,16 @@
       position: absolute;
       left: 7mm;
       right: 7mm;
-      top: 36mm;           /* 往下多 4mm，形成「空一行」的視覺距離 */
+      top: 36mm;           /* 與寄件資訊之間空一行 */
       letter-spacing: 0;
     }
-    /* 第一行：地址（含 TO：）→ 7mm */
-    .addr-line {
+    .addr-line {           /* 第一行：地址（含 TO：） */
       font-size: 7mm;
       font-weight: 700;
       line-height: 1.2;
       word-break: break-word;
     }
-    /* 第二行：姓名 + 電話 → 7mm */
-    .to-line {
+    .to-line {             /* 第二行：姓名 + 電話 */
       margin-top: 1.2mm;
       font-size: 7mm;
       font-weight: 700;
@@ -81,7 +78,7 @@
     @media print {
       @page { size: 14cm 9cm; margin: 0; }
       html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
-      .envelope { margin: 0; border: 1pt solid #111; }
+      .envelope { margin: 0; border: none; } /* 列印也不顯示邊框 */
     }
   </style>
   <script src="/js/print.js" defer></script>
