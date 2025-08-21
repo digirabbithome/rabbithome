@@ -22,11 +22,12 @@
       overflow: hidden;
       letter-spacing: 0;
     }
+    /* Header: 兩欄，LOGO 與公司資訊底部對齊 */
     .header {
       display: grid;
       grid-template-columns: 1fr 3.2cm;
-      align-items: start;
       column-gap: 6mm;
+      align-items: end; /* 底部對齊 */
     }
     .sender-info {
       font-size: 10pt;
@@ -37,6 +38,7 @@
       width: 100%;
       height: auto;
       object-fit: contain;
+      display: block;
     }
     .receiver {
       position: absolute;
@@ -45,26 +47,25 @@
       top: 32mm;
       letter-spacing: 0;
     }
-    /* 第一行：地址（含 TO：） */
+    /* 第一行：地址（含 TO：）— 縮小一號 */
     .addr-line {
-      font-size: 10mm;
+      font-size: 9mm;     /* 原 10mm → 9mm */
       font-weight: 700;
       line-height: 1.15;
       word-break: break-word;
     }
-    /* 第二行：姓名 + 電話 */
+    /* 第二行：姓名 + 電話 — 縮小一號 */
     .to-line {
-      margin-top: 1.2mm;
-      font-size: 9mm;
+      margin-top: 1mm;
+      font-size: 8mm;     /* 原 9mm → 8mm */
       font-weight: 700;
       white-space: nowrap;
     }
     .to-line .phone {
-      font-size: 8.5mm;
+      font-size: 7.5mm;   /* 原 8.5mm → 7.5mm */
       font-weight: 600;
       margin-left: 4mm;
     }
-    /* 商品資訊在左下角（有值才顯示） */
     .product {
       position: absolute;
       left: 7mm;
