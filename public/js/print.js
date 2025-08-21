@@ -1,9 +1,12 @@
 
+/* 列印信封（固定 14cm × 9cm 橫式） */
 window.addEventListener('load', async () => {
   const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
+
+  // 寄件公司對照
   const senderMap = {
     '數位小兔': {
-      cname: '數位小兔攝影器材批發零售',
+      cname: '數位小兔',
       ename: 'Digital Rabbit',
       address: '110 台北市信義區大道路74巷1號',
       tel: '02-2759-2006 / 02-2759-2013',
@@ -39,29 +42,26 @@ window.addEventListener('load', async () => {
   const senderKey = data.senderCompany && senderMap[data.senderCompany] ? data.senderCompany : '數位小兔';
   const sender = senderMap[senderKey];
 
-  // Header - 公司資訊（TEL 與 Line 分兩行）
+  // Header - 公司資訊
   const senderInfo = document.getElementById('senderInfo');
   senderInfo.innerHTML = [
     `${sender.cname} ${sender.ename}`.trim(),
     sender.address || '',
-    sender.tel ? `TEL：${sender.tel}` : '',
-    sender.line ? `Line: ${sender.line}` : ''
+    sender.tel || sender.line ? `TEL：${sender.tel}${sender.tel && sender.line ? '　' : ''}${sender.line ? '　LINE：' + sender.line : ''}` : ''
   ].filter(Boolean).join('<br>');
 
   // Logo
   const logoImg = document.getElementById('logoImg');
   if (logoImg && sender.logo) logoImg.src = sender.logo;
 
-  // 收件資訊：第一行地址（含 TO：），第二行姓名 + 電話
+  // 收件資訊
+  const toLine = document.getElementById('toLine');
   const name = (data.receiverName || '').trim();
   const phone = (data.phone || '').trim();
-  const address = (data.address || '').trim();
+  toLine.innerHTML = `TO：<span>${name}</span>${phone ? '<span class="phone">' + phone + '</span>' : ''}`;
 
   const addrLine = document.getElementById('addrLine');
-  addrLine.textContent = address ? `TO：${address}` : 'TO：';
-
-  const toLine = document.getElementById('toLine');
-  toLine.innerHTML = `${name ? '<span>' + name + '</span>' : ''}${phone ? '<span class="phone">' + phone + '</span>' : ''}`;
+  addrLine.textContent = data.address || '';
 
   // 商品資訊（可選）
   const productInfo = document.getElementById('productInfo');
@@ -73,6 +73,8 @@ window.addEventListener('load', async () => {
   }
 
   if (name) document.title = '列印信封 - ' + name;
+
+  // 等待字體/圖片就緒後列印
   await new Promise(r => setTimeout(r, 80));
   window.print();
 });
