@@ -68,7 +68,9 @@ window.addEventListener('load', async () => {
     const receiverName = form.receiverName.value;
     const phone = form.phone.value;
     const address = form.address.value;
+    const customerAccount = form.customerAccount?.value || '';
     const product = form.product.value;
+    const product2 = form.product2?.value || '';
     const source = form.querySelector('input[name="source"]:checked')?.value || '';
     const nickname = localStorage.getItem('nickname') || '匿名';
 
@@ -84,7 +86,9 @@ window.addEventListener('load', async () => {
       receiverName,
       phone,
       address,
+      customerAccount,
       product,
+      product2,
       source: displaySource,
       account: nickname,
       timestamp: Timestamp.fromDate(now),
@@ -147,15 +151,17 @@ window.addEventListener('load', async () => {
   }
 
   function renderFilteredData() {
-    const keyword = searchInput.value.toLowerCase();
+    const keyword = (searchInput.value || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     tbody.innerHTML = '';
 
     const filtered = allData.filter(item =>
-      item.receiverName?.toLowerCase().includes(keyword) ||
-      item.phone?.toLowerCase().includes(keyword) ||
-      item.address?.toLowerCase().includes(keyword) ||
-      item.product?.toLowerCase().includes(keyword)
+      (item.receiverName || '').toLowerCase().includes(keyword) ||
+      (item.customerAccount || '').toLowerCase().includes(keyword) ||
+      (item.phone || '').toLowerCase().includes(keyword) ||
+      (item.address || '').toLowerCase().includes(keyword) ||
+      (item.product || '').toLowerCase().includes(keyword) ||
+      (item.product2 || '').toLowerCase().includes(keyword)
     );
 
     
