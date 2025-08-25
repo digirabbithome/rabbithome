@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -5,147 +6,150 @@
   <title>列印信封系統</title>
   <link rel="stylesheet" href="/css/envelop.css" />
   <script src="/js/envelop.js" type="module" defer></script>
+  
+<style>
+  /* Card + grid rows */
+  .card { background: #ffeef4; padding: 14px; border-radius: 10px; }
+  .form-compact .row3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .form-compact .row3 input { width: 100%; }
+  .form-compact .full { margin-top: 8px; }
 
-  <style>
-    /* === build 2025-08-25 17:28:26 === */
-    .card { background: #ffeef4; padding: 14px; border-radius: 10px; }
-    .form-compact .row3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 2fr; /* 姓名 / 電話 / 地址 */
-      gap: 12px;
-      margin-top: 10px;
-    }
-    .form-compact .second-row {
-      display: grid;
-      grid-template-columns: 120px 120px 1fr 1fr; /* 公司小格 / 帳號小格 / 商品一 / 商品二 */
-      gap: 12px;
-      margin-top: 10px;
-      align-items: center;
-    }
-    .toolbar-top {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-    .btn-group { display:flex; gap:10px; }
-    .btn {
-      background:#ff82a6;
-      color:#fff;
-      border:none;
-      border-radius:10px;
-      padding:10px 14px;
-      cursor:pointer;
-    }
-    fieldset.source-fieldset {
-      margin:0;
-      padding:10px 12px;
-      border:1px solid #e6cfd7;
-      border-radius:8px;
-      background:#ffeef4;
-    }
-    .source-group{
-      display:flex;
-      flex-wrap:wrap;
-      gap:18px;
-      align-items:center;
-    }
-    .source-group label{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      font-size:16px;
-    }
-    .source-group input[type="checkbox"]{ margin:0; }
-    .custom-sender-row{ margin-top:10px; }
-    .custom-sender-row input{
-      width:100%;
-      max-width:100%;
-      padding:10px;
-      border:1px solid #e0cfd6;
-      border-radius:8px;
-    }
-    /* 小螢幕調整 */
-    @media (max-width: 900px) {
-      .form-compact .row3 { grid-template-columns: 1fr; }
-      .form-compact .second-row { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
+  /* 第二行：公司(小) + 帳號(小) + 商品一二(大) */
+  .second-row {
+    display: grid;
+    grid-template-columns: 120px 120px 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .second-row select, .second-row input { width: 100%; }
+
+  /* 自訂寄件公司 */
+  .custom-sender-row { margin-top: 8px; }
+  .custom-sender-row input { width: 240px; }
+
+  /* 按鈕 + 來源 同一行 */
+  .toolbar-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-group { display: flex; gap: 10px; }
+  .pink-btn, .pink-btn-alt {
+    background: #ff82a6;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .pink-btn-alt { background: #ff98b6; }
+
+  .toolbar-top .source-fieldset {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid #e5c9d4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toolbar-top .source-group {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* 日期/搜尋工具列 */
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+  .toolbar input[type="date"] { padding: 6px 8px; }
+  .toolbar #searchInput { width: 240px; padding: 6px 8px; }
+
+  /* 表格 */
+  #recordsTable { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  #recordsTable th, #recordsTable td { padding: 10px 8px; border-bottom: 1px solid #f0dbe3; text-align: left; }
+  #recordsTable th { color: #333; }
+  h2#dateTitle { margin-top: 16px; color: #ff5a8a;}
+</style>
+
 </head>
 <body>
-  <!-- build: 2025-08-25 17:28:26 -->
-  <main class="container">
-    <form id="envelopeForm" class="card form-compact">
-      <!-- 第一行：收件人姓名 / 電話 / 地址 -->
-      <div class="row3">
-        <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
-        <input id="phone" name="phone" placeholder="電話" />
-        <input id="address" name="address" placeholder="地址" />
-      </div>
+  <h1>✉️ 列印信封系統</h1>
 
-      <!-- 第二行：寄件公司 / 客人帳號 / 商品資訊(顯示) / 商品資訊(不顯示) -->
-      <div class="second-row">
-        <select id="senderCompany" name="senderCompany">
-          <option>數位小兔</option>
-          <option>聚焦數位</option>
-          <option>免睡攝影</option>
-          <option>其他</option>
-        </select>
-        <input id="customerAccount" name="customerAccount" placeholder="客人帳號" />
-        <input id="product" name="product" placeholder="商品資訊(顯示)" />
-        <input id="product2" name="product2" placeholder="商品資訊(不顯示)" />
-      </div>
+  
+<form id="envelopeForm" class="card form-compact">
+  <!-- 第一行：收件人姓名 / 電話 / 地址 -->
+  <div class="row3 full">
+    <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
+    <input id="phone" name="phone" placeholder="電話" />
+    <input id="address" name="address" placeholder="地址" />
+  </div>
 
-      <!-- 自訂寄件公司（選擇「其他」時顯示） -->
-      <div id="customSenderField" class="custom-sender-row" style="display:none;">
-        <input id="customSender" name="customSender" placeholder="自訂寄件公司（選擇「其他」時填寫）" />
-      </div>
+  <!-- 第二行：寄件公司 / 客人帳號 / 商品顯示 / 商品不顯示 -->
+  <div class="row4 full second-row">
+    <select id="senderCompany" name="senderCompany">
+      <option>數位小兔</option>
+      <option>聚焦數位</option>
+      <option>免睡攝影</option>
+      <option>其他</option>
+    </select>
+    <input id="customerAccount" name="customerAccount" placeholder="客人帳號" />
+    <input id="product" name="product" placeholder="商品資訊(顯示)" />
+    <input id="product2" name="product2" placeholder="商品資訊(不顯示)" />
+  </div>
 
-      <!-- 同列：按鈕 + 來源 -->
-      <div class="toolbar-top">
-        <div class="btn-group">
-          <button id="printNormal" class="btn">列印信封</button>
-          <button id="printReply" class="btn">列印回郵信封</button>
-        </div>
+  <!-- 自訂寄件公司（選其他才顯示） -->
+  <div id="customSenderField" class="custom-sender-row" style="display:none;">
+    <input id="customSender" name="customSender" placeholder="自訂寄件公司（選擇其他時填寫）" />
+  </div>
 
-        <fieldset class="source-fieldset">
-          <legend>來源：</legend>
-          <div class="source-group" id="sourceGroup">
-            <label><input type="checkbox" name="source" value="Line" />Line</label>
-            <label><input type="checkbox" name="source" value="官網" />官網</label>
-            <label><input type="checkbox" name="source" value="Yahoo" />Yahoo</label>
-            <label><input type="checkbox" name="source" value="露天" />露天</label>
-            <label><input type="checkbox" name="source" value="蝦皮" />蝦皮</label>
-          </div>
-        </fieldset>
-      </div>
-    </form>
-
-    <!-- 日期/搜尋工具列（保持原位，表單外） -->
-    <div class="tools" style="margin:12px 0;">
-      <button id="btnPrevDay">前一天</button>
-      <button id="btnLast3Days">前三天</button>
-      <button id="btnLastWeek">前一週</button>
-      <input id="datePicker" type="date" />
-      <input id="searchInput" placeholder="搜尋姓名/電話/地址/商品" />
+  <!-- 按鈕 + 來源（同一行靠左） -->
+  <div class="toolbar-top">
+    <div class="btn-group">
+      <button id="printNormal" class="pink-btn">列印信封</button>
+      <button id="printReply" class="pink-btn-alt">列印回郵信封</button>
     </div>
+    <fieldset class="source-fieldset">
+      <legend>來源：</legend>
+      <div class="source-group" id="sourceGroup">
+        <label><input type="checkbox" name="source" value="Line" /> Line</label>
+        <label><input type="checkbox" name="source" value="官網" /> 官網</label>
+        <label><input type="checkbox" name="source" value="Yahoo" /> Yahoo</label>
+        <label><input type="checkbox" name="source" value="露天" /> 露天</label>
+        <label><input type="checkbox" name="source" value="蝦皮" /> 蝦皮</label>
+      </div>
+    </fieldset>
+  </div>
+</form>
+<div class="toolbar">
+    <button id="btnPrevDay">前一天</button>
+    <button id="btnLast3Days">前三天</button>
+    <button id="btnLastWeek">前一週</button>
+    <input type="date" id="datePicker" />
+    <input id="searchInput" placeholder="搜尋姓名/電話/地址/商品" />
+  </div>
 
-    <h2 id="dateTitle" style="color:#ff5f93; margin: 14px 0;">列印信封紀錄</h2>
-    <table id="recordsTable" style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>時間</th>
-          <th>收件人</th>
-          <th>地址</th>
-          <th>電話</th>
-          <th>商品</th>
-          <th>來源</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody id="recordsBody"></tbody>
-    </table>
-  </main>
+  <h2 id="dateTitle">📋 今日列印信封紀錄</h2>
+  <table id="recordsTable">
+    <thead>
+      <tr>
+        <th>時間</th>
+        <th>收件人</th>
+        <th>地址</th>
+        <th>電話</th>
+        <th>商品</th>
+        <th>來源</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="recordsBody"></tbody>
+  </table>
 </body>
 </html>
