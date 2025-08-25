@@ -6,100 +6,116 @@
   <title>列印信封系統</title>
   <link rel="stylesheet" href="/css/envelop.css" />
   <script src="/js/envelop.js" type="module" defer></script>
-  <style>
-    /* --- Compact form overrides --- */
-    .card { background: #ffeef4; padding: 14px; border-radius: 10px; }
-    .form-compact .row3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 2fr;
-      gap: 8px;
-      align-items: center;
-    }
-    .form-compact .row3 input { width: 100%; }
-    .form-compact .full { margin-top: 8px; }
-    .source-fieldset {
-      margin-top: 8px;
-      border: 1px solid #d9c8cf;
-      padding: 8px 10px;
-    }
-    .source-fieldset legend { padding: 0 6px; color: #444; }
-    .source-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 16px;
-      align-items: center;
-      padding-top: 2px;
-    }
-    .source-group label { display: inline-flex; align-items: center; gap: 6px; }
-    .toolbar { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    #recordsTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    #recordsTable th, #recordsTable td { border-bottom: 1px solid #eee; padding: 8px 6px; font-size: 14px; }
   
-.source-fieldset {
-  margin-top: 8px;
-  border: 1px solid #d9c8cf;
-  padding: 8px 10px;
-}
-.source-fieldset legend { padding: 0 6px; color: #444; }
-.source-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  align-items: center;
-  padding-top: 2px;
-  writing-mode: horizontal-tb;   /* 強制橫排 */
-}
-.source-group label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;           /* 不換行 */
-  word-break: keep-all;          /* CJK 不要拆字 */
-  letter-spacing: 0;             /* 避免被拉開 */
-  flex: 0 0 auto;                /* 不縮小，整塊一起換行 */
-}
-.source-group input[type="checkbox"] { margin: 0; }
+<style>
+  /* Card + grid rows */
+  .card { background: #ffeef4; padding: 14px; border-radius: 10px; }
+  .form-compact .row3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .form-compact .row3 input { width: 100%; }
+  .form-compact .full { margin-top: 8px; }
 
-  
-#customSenderField{display:none;margin-top:8px;}
-#customSenderField input{width:480px;max-width:100%;}
+  /* 第二行：公司(小) + 帳號(小) + 商品一二(大) */
+  .second-row {
+    display: grid;
+    grid-template-columns: 120px 120px 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .second-row select, .second-row input { width: 100%; }
 
-  .custom-sender-row{margin-top:8px;}
-  .custom-sender-row input{width:100%; max-width:100%; padding:10px; border:1px solid #e0cfd6; border-radius:8px;}
-  .source-group{display:flex; flex-wrap:wrap; gap:18px; align-items:center;}
-  .source-group label{display:inline-flex; align-items:center; gap:6px; font-size:16px;}
-  .source-group input[type="checkbox"]{margin:0;}
+  /* 自訂寄件公司 */
+  .custom-sender-row { margin-top: 8px; }
+  .custom-sender-row input { width: 240px; }
+
+  /* 按鈕 + 來源 同一行 */
+  .toolbar-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-group { display: flex; gap: 10px; }
+  .pink-btn, .pink-btn-alt {
+    background: #ff82a6;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .pink-btn-alt { background: #ff98b6; }
+
+  .toolbar-top .source-fieldset {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid #e5c9d4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toolbar-top .source-group {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* 日期/搜尋工具列 */
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+  .toolbar input[type="date"] { padding: 6px 8px; }
+  .toolbar #searchInput { width: 240px; padding: 6px 8px; }
+
+  /* 表格 */
+  #recordsTable { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  #recordsTable th, #recordsTable td { padding: 10px 8px; border-bottom: 1px solid #f0dbe3; text-align: left; }
+  #recordsTable th { color: #333; }
+  h2#dateTitle { margin-top: 16px; color: #ff5a8a;}
 </style>
 
 </head>
 <body>
   <h1>✉️ 列印信封系統</h1>
 
-  <form id="envelopeForm" class="card form-compact">
-    <label>寄件公司：
-      <select id="senderCompany" name="senderCompany">
-        <option>數位小兔</option>
-        <option>聚焦數位</option>
-        <option>免睡攝影</option>
-        <option>其他</option>
-      </select>
-    </label>
-    <div id="customSenderField" class="full" style="display:none;">
-      <input type="text" name="customSender" placeholder="自訂寄件公司（選「其他」時顯示）" />
-    </div>
+  
+<form id="envelopeForm" class="card form-compact">
+  <!-- 第一行：收件人姓名 / 電話 / 地址 -->
+  <div class="row3 full">
+    <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
+    <input id="phone" name="phone" placeholder="電話" />
+    <input id="address" name="address" placeholder="地址" />
+  </div>
 
-    <!-- 三欄同一行：姓名 / 電話 / 地址 -->
-    <div class="row3 full">
-      <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
-      <input id="phone" name="phone" placeholder="電話" />
-      <input id="address" name="address" placeholder="地址" />
-    </div>
+  <!-- 第二行：寄件公司 / 客人帳號 / 商品顯示 / 商品不顯示 -->
+  <div class="row4 full second-row">
+    <select id="senderCompany" name="senderCompany">
+      <option>數位小兔</option>
+      <option>聚焦數位</option>
+      <option>免睡攝影</option>
+      <option>其他</option>
+    </select>
+    <input id="customerAccount" name="customerAccount" placeholder="客人帳號" />
+    <input id="product" name="product" placeholder="商品資訊(顯示)" />
+    <input id="product2" name="product2" placeholder="商品資訊(不顯示)" />
+  </div>
 
-    <div class="full">
-      <input id="product" name="product" placeholder="商品資訊（選填）" />
-    </div>
+  <!-- 自訂寄件公司（選其他才顯示） -->
+  <div id="customSenderField" class="custom-sender-row" style="display:none;">
+    <input id="customSender" name="customSender" placeholder="自訂寄件公司（選擇其他時填寫）" />
+  </div>
 
-    <!-- 來源：橫式 checkbox，可複選也可不選 -->
+  <!-- 按鈕 + 來源（同一行靠左） -->
+  <div class="toolbar-top">
+    <div class="btn-group">
+      <button id="printNormal" class="pink-btn">列印信封</button>
+      <button id="printReply" class="pink-btn-alt">列印回郵信封</button>
+    </div>
     <fieldset class="source-fieldset">
       <legend>來源：</legend>
       <div class="source-group" id="sourceGroup">
@@ -110,14 +126,9 @@
         <label><input type="checkbox" name="source" value="蝦皮" /> 蝦皮</label>
       </div>
     </fieldset>
-
-    <div class="toolbar">
-      <button id="printNormal">列印信封</button>
-      <button id="printReply" style="background:#ff82a6;border:none;color:#fff;border-radius:8px;padding:8px 12px;">列印回郵信封</button>
-    </div>
-  </form>
-
-  <div class="toolbar">
+  </div>
+</form>
+<div class="toolbar">
     <button id="btnPrevDay">前一天</button>
     <button id="btnLast3Days">前三天</button>
     <button id="btnLastWeek">前一週</button>
