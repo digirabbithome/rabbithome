@@ -60,32 +60,48 @@
 }
 .source-group input[type="checkbox"] { margin: 0; }
 
+  
+.second-row {
+  display: grid;
+  grid-template-columns: 120px 120px 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.second-row select {
+  width: 100%;
+}
+
+.second-row { display: grid; grid-template-columns: 120px 120px 1fr 1fr; gap: 8px; align-items: center; }
+.second-row select { width: 100%; }
+
   </style>
 </head>
 <body>
   <h1>✉️ 列印信封系統</h1>
 
   <form id="envelopeForm" class="card form-compact">
-    <label>寄件公司：
-      <select id="senderCompany" name="senderCompany">
-        <option>數位小兔</option>
-        <option>聚焦數位</option>
-        <option>免睡攝影</option>
-        <option>其他</option>
-      </select>
-    </label>
-    <div id="customSenderField" class="full" style="display:none;">
-      <input type="text" name="customSender" placeholder="自訂寄件公司（選「其他」時顯示）" />
-    </div>
-
     <!-- 三欄同一行：姓名 / 電話 / 地址 -->
     <div class="row3 full">
-      <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
-      <input id="phone" name="phone" placeholder="電話" />
-      <input id="address" name="address" placeholder="地址" />
-    </div>
+  <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
+  <input id="phone" name="phone" placeholder="電話" />
+  <input id="address" name="address" placeholder="地址" />
+</div>
 
-    <div class="row3 full"><input id="customerAccount" name="customerAccount" placeholder="客人帳號" style="max-width:120px;" /><input id="product" name="product" placeholder="商品資訊(顯示)" /><input id="product2" name="product2" placeholder="商品資訊(不顯示)" /></div>
+<div class="row4 full second-row">
+  <select id="senderCompany" name="senderCompany">
+    <option>數位小兔</option>
+    <option>聚焦數位</option>
+    <option>免睡攝影</option>
+    <option>其他</option>
+  </select>
+  <input id="customerAccount" name="customerAccount" placeholder="客人帳號" />
+  <input id="product" name="product" placeholder="商品資訊(顯示)" />
+  <input id="product2" name="product2" placeholder="商品資訊(不顯示)" />
+</div>
+
+    <div class="full">
+      <input id="product" name="product" placeholder="商品資訊（選填）" />
+    </div>
 
     <!-- 來源：橫式 checkbox，可複選也可不選 -->
     <fieldset class="source-fieldset">
