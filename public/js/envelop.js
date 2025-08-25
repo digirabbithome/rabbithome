@@ -10,15 +10,20 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
+  
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
+  const updateCustomField = () => {
+    if (!otherField) return;
+    if (otherField) otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
+  };
   const companySelect = document.getElementById('senderCompany');
   const searchInput = document.getElementById('searchInput');
   const dateTitle = document.getElementById('dateTitle');
 
   // 初始顯示：選「其他」才打開自訂公司
   if (companySelect && otherField) {
-    const toggleOther = () => { otherField.style.display = companySelect.value === '其他' ? 'block' : 'none'; };
+    const toggleOther = () => { if (otherField) otherField.style.display = companySelect.value === '其他' ? 'block' : 'none'; };
     companySelect.addEventListener('change', toggleOther);
     toggleOther();
   }
@@ -205,3 +210,5 @@ window.addEventListener('load', async () => {
 
   await loadData();
 });
+
+  updateCustomField();
