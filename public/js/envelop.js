@@ -61,20 +61,27 @@ window.addEventListener('load', async () => {
     renderFilteredData();
   });
 
+  function getCheckedSources() {
+    const nodes = form.querySelectorAll('input[name="source"]:checked');
+    return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
+  }
+
   async function handleSubmit(type = "normal") {
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
     const phone = form.phone.value;
     const address = form.address.value;
+    const customerAccount = form.customerAccount?.value || '';
     const product = form.product.value;
-    const source = form.querySelector('input[name="source"]:checked')?.value || '';
+    const product2 = form.product2?.value || '';
+    const checkedSources = getCheckedSources();                 // 支援複選
+    const sourceStr = checkedSources.join('、');                // 例如：Line、蝦皮
     const nickname = localStorage.getItem('nickname') || '匿名';
 
-    const fullSource = source ? `${nickname}(${source})` : nickname;
     const displaySource = type === "reply"
-      ? (source ? `${nickname}(${source})(回郵)` : `${nickname}(回郵)`)
-      : (source ? `${nickname}(${source})` : nickname);
+      ? (sourceStr ? `${nickname}(${sourceStr})(回郵)` : `${nickname}(回郵)`)
+      : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
     const record = {
@@ -83,13 +90,16 @@ window.addEventListener('load', async () => {
       receiverName,
       phone,
       address,
+      customerAccount,
       product,
+      product2,
       source: displaySource,
       account: nickname,
       timestamp: Timestamp.fromDate(now),
       type
     };
 
+    // 供列印頁使用
     localStorage.setItem('envelopeData', JSON.stringify(record));
     window.open(type === "reply" ? '/print-reply.html' : '/print.html', '_blank');
 
@@ -130,7 +140,7 @@ window.addEventListener('load', async () => {
       let ts = data.timestamp;
       if (ts && typeof ts.toDate === 'function') {
         ts = ts.toDate();
-      } else if (typeof ts === 'object' && ts.seconds) {
+      } else if (typeof ts === 'object' && ts?.seconds) {
         ts = new Date(ts.seconds * 1000);
       } else {
         ts = new Date();
@@ -141,42 +151,54 @@ window.addEventListener('load', async () => {
       }
     });
 
-    dateTitle.textContent = `${currentFilter.start.getFullYear()}/${String(currentFilter.start.getMonth()+1).padStart(2,'0')}/${String(currentFilter.start.getDate()).padStart(2,'0')} 列印信封紀錄`;
+    const fmt = (d) => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    dateTitle.textContent = currentFilter.start.toDateString() === currentFilter.end.toDateString()
+      ? `${fmt(currentFilter.start)} 列印信封紀錄`
+      : `${fmt(currentFilter.start)}–${fmt(currentFilter.end)} 列印信封紀錄`;
+
     renderFilteredData();
   }
 
   function renderFilteredData() {
-    const keyword = searchInput.value.toLowerCase();
+    const keyword = (searchInput.value || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     tbody.innerHTML = '';
 
-    const filtered = allData.filter(item =>
-      item.receiverName?.toLowerCase().includes(keyword) ||
-      item.phone?.toLowerCase().includes(keyword) ||
-      item.address?.toLowerCase().includes(keyword) ||
-      item.product?.toLowerCase().includes(keyword)
+    
+const filtered = allData.filter(item =>
+      (item.receiverName || '').toLowerCase().includes(keyword) ||
+      (item.customerAccount || '').toLowerCase().includes(keyword) ||
+      (item.phone || '').toLowerCase().includes(keyword) ||
+      (item.address || '').toLowerCase().includes(keyword) ||
+      (item.product || '').toLowerCase().includes(keyword) ||
+      (item.product2 || '').toLowerCase().includes(keyword)
     );
 
-    filtered.forEach(data => {
+
+    
+filtered.forEach(data => {
       const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      const receiver = data.customerAccount ? `${data.receiverName || ''} (${data.customerAccount})` : (data.receiverName || '');
+      const productStr = [data.product, data.product2].filter(Boolean).join(', ');
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${timeStr}</td>
-        <td>${data.receiverName || ''}</td>
+        <td>${receiver}</td>
         <td>${data.address || ''}</td>
         <td>${data.phone || ''}</td>
-        <td>${data.product || ''}</td>
+        <td>${productStr}</td>
         <td>${data.source || ''}</td>
         <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
       `;
       tbody.appendChild(tr);
     });
 
+
     document.querySelectorAll('.reprint-link').forEach(link => {
       link.addEventListener('click', async (e) => {
         e.preventDefault();
-        const docId = e.target.dataset.id;
-        const type = e.target.dataset.type;
+        const docId = e.currentTarget.dataset.id;
+        const type = e.currentTarget.dataset.type;
         const record = allData.find(d => d.id === docId);
         if (record) {
           localStorage.setItem('envelopeData', JSON.stringify(record));
