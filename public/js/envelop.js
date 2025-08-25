@@ -158,15 +158,27 @@ window.addEventListener('load', async () => {
       item.product?.toLowerCase().includes(keyword)
     );
 
-    filtered.forEach(data => {
+    
+filtered.forEach(data => {
       const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      const receiverBase = (data.receiverName || '');
+      const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
+
+      // 商品顯示：可見內容 + （不顯示內容）
+      let productStr = '';
+      const p1 = (data.product || '').trim();
+      const p2 = (data.product2 || '').trim();
+      if (p1 && p2) productStr = `${p1}（${p2}）`;
+      else if (p1) productStr = p1;
+      else if (p2) productStr = `（${p2}）`;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${timeStr}</td>
-        <td>${data.receiverName || ''}</td>
+        <td>${receiver}</td>
         <td>${data.address || ''}</td>
         <td>${data.phone || ''}</td>
-        <td>${data.product || ''}</td>
+        <td>${productStr}</td>
         <td>${data.source || ''}</td>
         <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
       `;
