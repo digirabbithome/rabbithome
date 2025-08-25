@@ -18,6 +18,11 @@ window.addEventListener('load', async () => {
 
   let currentFilter = { start: getStartOfDay(new Date()), end: getEndOfDay(new Date()) };
 
+  function getCheckedSources() {
+    const nodes = form.querySelectorAll('input[name="source"]:checked');
+    return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
+  }
+
   companySelect.addEventListener('change', () => {
     if (!otherField) return;
     if (otherField) otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
@@ -71,13 +76,13 @@ window.addEventListener('load', async () => {
     const customerAccount = form.customerAccount?.value || '';
     const product = form.product.value;
     const product2 = form.product2?.value || '';
-    const source = form.querySelector('input[name="source"]:checked')?.value || '';
+    const sourceList = getCheckedSources();
     const nickname = localStorage.getItem('nickname') || '匿名';
 
-    const fullSource = source ? `${nickname}(${source})` : nickname;
+    const sourceStr = sourceList.join('、');
     const displaySource = type === "reply"
-      ? (source ? `${nickname}(${source})(回郵)` : `${nickname}(回郵)`)
-      : (source ? `${nickname}(${source})` : nickname);
+      ? (sourceStr ? `${nickname}(${sourceStr})(回郵)` : `${nickname}(回郵)`) 
+      : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
     const record = {

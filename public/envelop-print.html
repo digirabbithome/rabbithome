@@ -74,7 +74,60 @@
 .second-row { display: grid; grid-template-columns: 120px 120px 1fr 1fr; gap: 8px; align-items: center; }
 .second-row select { width: 100%; }
 
-  </style>
+  
+.toolbar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.toolbar-top .btn-group {
+  display: flex;
+  gap: 8px;
+}
+.toolbar-top .source-fieldset {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid #d9c8cf;
+}
+
+
+/* Buttons + Sources on same row */
+.toolbar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.toolbar-top .btn-group { display: flex; gap: 10px; }
+.pink-btn {
+  background: #ff6fa0;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+.pink-btn-outline {
+  background: #ff93b8;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+.toolbar-top .source-fieldset {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #e5c9d4;
+  min-height: 44px;
+}
+.toolbar-top .source-group { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+
+</style>
 </head>
 <body>
   <h1>✉️ 列印信封系統</h1>
@@ -100,21 +153,7 @@
 </div>
 
     <!-- 來源：橫式 checkbox，可複選也可不選 -->
-    <fieldset class="source-fieldset">
-      <legend>來源：</legend>
-      <div class="source-group" id="sourceGroup">
-        <label><input type="checkbox" name="source" value="Line" /> Line</label>
-        <label><input type="checkbox" name="source" value="官網" /> 官網</label>
-        <label><input type="checkbox" name="source" value="Yahoo" /> Yahoo</label>
-        <label><input type="checkbox" name="source" value="露天" /> 露天</label>
-        <label><input type="checkbox" name="source" value="蝦皮" /> 蝦皮</label>
-      </div>
-    </fieldset>
-
-    <div class="toolbar">
-      <button id="printNormal">列印信封</button>
-      <button id="printReply" style="background:#ff82a6;border:none;color:#fff;border-radius:8px;padding:8px 12px;">列印回郵信封</button>
-    </div>
+    
   </form>
 
   <div class="toolbar">
@@ -142,3 +181,22 @@
   </table>
 </body>
 </html>
+
+
+<div class="toolbar-top">
+  <div class="btn-group">
+    <button id="printNormal" class="pink-btn">列印信封</button>
+    <button id="printReply" class="pink-btn-outline">列印回郵信封</button>
+  </div>
+
+  <fieldset class="source-fieldset">
+    <legend>來源：</legend>
+    <div class="source-group" id="sourceGroup">
+      <label><input type="checkbox" name="source" value="Line" /> Line</label>
+      <label><input type="checkbox" name="source" value="官網" /> 官網</label>
+      <label><input type="checkbox" name="source" value="Yahoo" /> Yahoo</label>
+      <label><input type="checkbox" name="source" value="露天" /> 露天</label>
+      <label><input type="checkbox" name="source" value="蝦皮" /> 蝦皮</label>
+    </div>
+  </fieldset>
+</div>
