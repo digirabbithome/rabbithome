@@ -25,8 +25,9 @@ window.addEventListener('load', async () => {
 
   companySelect.addEventListener('change', () => {
     if (!otherField) return;
-    if (otherField) otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
+    otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
   });
+  if (otherField) otherField.style.display = companySelect.value === '其他' ? 'block' : 'none';
 
   document.getElementById('printNormal').addEventListener('click', e => {
     e.preventDefault();
