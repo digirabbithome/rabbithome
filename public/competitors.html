@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📊 競品每日偵查</title>
+  <link rel="stylesheet" href="/css/competitors.css" />
+  <!-- 直接沿用你現有的 Firebase 共用檔：/js/firebase.js -->
+  <script type="module" src="/js/firebase.js"></script>
+  <script type="module" src="/js/competitors.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>📊 競品每日偵查</h1>
+      <div class="actions">
+        <input type="date" id="datePicker" />
+        <button id="btnReload">重新整理</button>
+        <button id="btnManual">立即擷取</button>
+        <span id="statusText" class="status"></span>
+      </div>
+    </header>
+
+    <section class="summary">
+      <div class="card"><div>日期</div><div id="sumDate" class="big"></div></div>
+      <div class="card"><div>來源數</div><div id="sumSources" class="big">–</div></div>
+      <div class="card"><div>商品總數</div><div id="sumItems" class="big">–</div></div>
+      <div class="card"><div>總銷售增量</div><div id="sumDelta" class="big">–</div></div>
+    </section>
+
+    <section>
+      <h2>🔥 當日估計熱賣排行榜（Top 10）</h2>
+      <table id="topTable" class="table">
+        <thead><tr><th>#</th><th>來源</th><th>商品</th><th>價格</th><th>今日增量</th><th>連結</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>📦 明細（可排序／搜尋）</h2>
+      <input id="search" placeholder="搜尋 商品/品牌/備註" />
+      <table id="detailTable" class="table">
+        <thead>
+          <tr>
+            <th data-sort="source">來源</th>
+            <th data-sort="title">商品</th>
+            <th data-sort="price">價格</th>
+            <th data-sort="sold">已售</th>
+            <th data-sort="delta">今日增量</th>
+            <th>連結</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>
