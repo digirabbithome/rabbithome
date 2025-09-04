@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import * as admin from 'firebase-admin'
-import fetch from 'node-fetch'
 import * as cheerio from 'cheerio'
+
+// use Node 18+ global fetch on Vercel
 
 if (!admin.apps.length){
   admin.initializeApp({

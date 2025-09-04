@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.5.0",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
