@@ -1,5 +1,8 @@
+// categories-tree.js v1757741906
 import { db } from '/js/firebase.js'
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+
+console.log('categories-tree.js loaded v1757741906')
 
 let categories = []
 let drag = { id:null, overParent:null, overIndex:0 }
@@ -8,8 +11,9 @@ const by = f => (a,b)=> f(a) < f(b) ? -1 : f(a) > f(b) ? 1 : 0
 
 async function load(){
   try {
-    const q = query(collection(db,'categories'), orderBy('parentId'))
-    const snap = await getDocs(q)
+    // ★ 方案C：完全不使用 orderBy，避免任何索引需求
+    const ref = collection(db,'categories')
+    const snap = await getDocs(ref)
     categories = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
   } catch (e) {
     console.error(e)
@@ -48,6 +52,8 @@ function buildTree(arr){
 function render(){
   const host = $('#treeHost')
   host.innerHTML = ''
+  // 前端排序：先依 parentId，再依 order，確保畫面穩定
+  categories.sort((a,b)=> (a.parentId||'')<(b.parentId||'')?-1:(a.parentId||'')>(b.parentId||'')?1:(a.order??0)-(b.order??0))
   const tree = buildTree(categories)
   const ul = document.createElement('ul')
   ul.style.listStyle='none'; ul.style.padding='8px'; ul.style.margin=0
@@ -89,6 +95,7 @@ function renderNode(node, depth){
     e.dataTransfer?.setDragImage(row, 10, 10)
   })
   row.addEventListener('dragend', ()=>{ document.querySelectorAll('.tree-drop').forEach(el=> el.classList.remove('tree-drop')); drag = { id:null, overParent:null, overIndex:0 } })
+
   li.addEventListener('dragover', e=>{
     e.preventDefault()
     const rect = li.getBoundingClientRect()
@@ -99,6 +106,7 @@ function renderNode(node, depth){
   })
   li.addEventListener('dragleave', ()=> li.classList.remove('tree-drop'))
   li.addEventListener('drop', async e=>{ e.preventDefault(); await applyDropSort() })
+
   row.appendChild(togg); row.appendChild(name); row.appendChild(add); row.appendChild(del)
   li.appendChild(row)
   if(!node._collapsed){
