@@ -7,7 +7,6 @@ import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/fireb
 let pickupList = []
 
 window.onload = async () => {
-  // 綁定按鈕與輸入
   document.getElementById('addBtn').addEventListener('click', addPickup)
   document.getElementById('search').addEventListener('input', renderList)
   document.getElementById('showFormBtn').addEventListener('click', () => {
@@ -19,11 +18,9 @@ window.onload = async () => {
     document.getElementById('list-area').style.display = 'block'
   })
 
-  // 初始載入三個月內資料
   await fetchData()
   renderList()
 
-  // 列印
   document.addEventListener('click', e => {
     if (!e.target.classList.contains('print-link')) return
     const id = e.target.dataset.id
@@ -102,7 +99,7 @@ window.onload = async () => {
     })
   })
 
-  // 📌 設為完成 → 灰底（不移除卡片）
+  // 📌 設為完成 → 灰底（預設不顯示已完成；搜尋時才會顯示）
   document.addEventListener('click', async (e) => {
     if (!e.target.classList.contains('pin-toggle')) return
     const id = e.target.dataset.id
@@ -130,7 +127,10 @@ async function fetchData() {
 }
 
 function renderList() {
-  const kw = document.getElementById('search').value.trim().toLowerCase()
+  const kwRaw = document.getElementById('search').value || ''
+  const kw = kwRaw.trim().toLowerCase()
+  const isSearching = kw.length > 0
+
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
 
@@ -145,10 +145,15 @@ function renderList() {
   })
 
   pickupList.forEach(p => {
-    // 搜尋（serial / contact / product / note / createdBy）
-    const match = [p.serial, p.contact, p.product, p.note, p.createdBy]
-      .some(v => (v || '').toLowerCase().includes(kw))
-    if (!match) return
+    // 預設（非搜尋狀態）→ 只顯示未完成
+    if (!isSearching && p.pinStatus === 1) return
+
+    // 搜尋比對（搜尋時才需要吻合；非搜尋顯示全部未完成）
+    if (isSearching) {
+      const match = [p.serial, p.contact, p.product, p.note, p.createdBy]
+        .some(v => (v || '').toLowerCase().includes(kw))
+      if (!match) return
+    }
 
     // 底色
     let bgColor = '#fff9b1'
@@ -161,7 +166,7 @@ function renderList() {
     const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
     if (dayDiff > 14) bgColor = '#ffb1b1'
 
-    // 已取走 → 灰
+    // 已取走 → 灰（搜尋時才會出現，但顏色仍要正確）
     if (p.pinStatus === 1) bgColor = '#e0e0e0'
 
     const div = document.createElement('div')
