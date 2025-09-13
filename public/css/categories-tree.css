@@ -1,4 +1,4 @@
-:root{--tree-pink:#ff5c9a;--tree-b:#e0e0e0;--tree-t:#333}
+:root{--tree-pink:#ff5c9a;--tree-purple:#7c5cff;--tree-b:#e0e0e0;--tree-t:#333}
 body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t);margin:0}
 .tree-wrap{max-width:960px;margin:24px auto;padding:0 16px}
 .tree-title{margin:0 0 12px;font-size:20px}
@@ -7,8 +7,14 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t
 .tree-btn-primary{background:#ffe6f1;border-color:#ffc3d7}
 .tree-input{padding:.45rem .6rem;border:1px solid var(--tree-b);border-radius:8px;min-width:12rem}
 .tree-card{background:#fff;border:1px solid var(--tree-b);border-radius:12px;padding:8px}
-.tree-row{display:flex;align-items:center;gap:.5rem}
+.tree-row{display:flex;align-items:center;gap:.5rem;padding:6px;border-radius:8px}
 .tree-row .tree-name{flex:1;min-width:0}
 .tree-indent{margin-left:1.25rem}
 .tree-drop{outline:2px solid var(--tree-pink)}
 .tree-hint{color:#777;font-size:14px}
+.tree-chip{font-size:12px;padding:2px 6px;border-radius:999px;border:1px solid var(--tree-b);background:#fff}
+/* ✅ 底色規則：根=粉、子=紫（僅在顯示時） */
+.tree-node.root.visible .tree-row{background:#ffe6f0}
+.tree-node.child.visible .tree-row{background:#efe8ff}
+/* 小小的把手感 */
+.tree-handle{width:12px;height:12px;border:1px solid var(--tree-b);border-radius:3px;background:#fff;margin-right:2px}
