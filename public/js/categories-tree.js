@@ -7,9 +7,15 @@ const $ = sel => document.querySelector(sel)
 const by = f => (a,b)=> f(a) < f(b) ? -1 : f(a) > f(b) ? 1 : 0
 
 async function load(){
-  const q = query(collection(db,'categories'), orderBy('parentId'), orderBy('order'))
-  const snap = await getDocs(q)
-  categories = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+  try {
+    const q = query(collection(db,'categories'), orderBy('parentId'))
+    const snap = await getDocs(q)
+    categories = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+  } catch (e) {
+    console.error(e)
+    alert('讀取分類失敗：' + (e.message||e))
+    throw e
+  }
 }
 
 async function createRoot(name, code=''){
@@ -34,7 +40,7 @@ function buildTree(arr){
   const map = Object.fromEntries(arr.map(x=>[x.id,x]))
   const roots=[]; arr.forEach(n=> n.children=[])
   arr.forEach(n=>{ if(n.parentId && map[n.parentId]) map[n.parentId].children.push(n); else roots.push(n) })
-  const sortRec = nodes=>{ nodes.sort(by(n=>n.order)); nodes.forEach(ch=> sortRec(ch.children)) }
+  const sortRec = nodes=>{ nodes.sort(by(n=>n.order ?? 0)); nodes.forEach(ch=> sortRec(ch.children)) }
   sortRec(roots)
   return roots
 }
@@ -120,7 +126,7 @@ async function applyDropSort(){
   document.querySelectorAll('.tree-drop').forEach(el=> el.classList.remove('tree-drop'))
   const id = drag.id; if(!id) return
   const parentId = drag.overParent || null
-  const same = categories.filter(c=> (c.parentId||null)===parentId).filter(c=> c.id!==id).sort(by(c=>c.order))
+  const same = categories.filter(c=> (c.parentId||null)===parentId).filter(c=> c.id!==id).sort(by(c=>c.order ?? 0))
   const dragged = categories.find(c=> c.id===id); if(!dragged) return
   dragged.parentId = parentId
   same.splice(drag.overIndex, 0, dragged)
@@ -131,10 +137,10 @@ async function applyDropSort(){
 
 window.onload = async ()=>{
   $('#btnAdd').onclick = async ()=>{
-    const name = ($('#newName').value||'').trim(); const code = ($('#newCode')?.value||'').trim()
+    const name = ($('#newName').value||'').trim(); const code = ($('#newCode').value||'').trim()
     if(!name) return alert('請先輸入名稱')
     await createRoot(name, code)
-    $('#newName').value=''; if($('#newCode')) $('#newCode').value=''
+    $('#newName').value=''; $('#newCode').value=''
     await load(); render()
   }
   $('#btnReload').onclick = async ()=>{ await load(); render() }
