@@ -1,0 +1,14 @@
+:root{--tree-pink:#ff5c9a;--tree-b:#e0e0e0;--tree-t:#333}
+body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t);margin:0}
+.tree-wrap{max-width:960px;margin:24px auto;padding:0 16px}
+.tree-title{margin:0 0 12px;font-size:20px}
+.tree-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--tree-b);border-radius:12px;padding:12px}
+.tree-btn{padding:.45rem .7rem;border:1px solid var(--tree-b);border-radius:8px;background:#fff;cursor:pointer}
+.tree-btn-primary{background:#ffe6f1;border-color:#ffc3d7}
+.tree-input{padding:.45rem .6rem;border:1px solid var(--tree-b);border-radius:8px;min-width:12rem}
+.tree-card{background:#fff;border:1px solid var(--tree-b);border-radius:12px;padding:8px}
+.tree-row{display:flex;align-items:center;gap:.5rem}
+.tree-row .tree-name{flex:1;min-width:0}
+.tree-indent{margin-left:1.25rem}
+.tree-drop{outline:2px solid var(--tree-pink)}
+.tree-hint{color:#777;font-size:14px}
