@@ -36,8 +36,8 @@ window.onload = async () => {
       <hr style="margin: 20px 0; border-top: 2px solid #000;" />
       <h2 style="text-align: center; margin-bottom: 24px;">數位小兔取貨單</h2>
       <p><strong>取貨人：</strong>${data.contact || ''}</p>
-      <p><strong>商品：</strong>${data.product || ''}</p>
-      <p><strong>備註：</strong>${data.note || '—'}（${data.paid || '—'}）</p>
+      <p><strong>商品：</strong><span style='white-space:pre-line;'>${data.product || ''}</span></p>
+      <p><strong>備註：</strong><span style='white-space:pre-line;'>${data.note || '—'}</span>（${data.paid || '—'}）</p>
       <p><strong>服務業務：</strong>${data.createdBy || ''}</p>
     `
     document.getElementById('list-area').style.display = 'none'
@@ -180,12 +180,12 @@ function renderList() {
       </div>
       <div>
         商品：
-        <span class="editable" data-id="${p.id}" data-field="product" style="cursor:text; border-bottom: 1px dashed #666;">
+        <span class="editable multiline" data-id="${p.id}" data-field="product" style="cursor:text; border-bottom: 1px dashed #666;">
           ${p.product || ''}
         </span>
       </div>
       <small>
-        <span class="editable" data-id="${p.id}" data-field="note" style="cursor:text; border-bottom: 1px dashed #999;">
+        <span class="editable multiline" data-id="${p.id}" data-field="note" style="cursor:text; border-bottom: 1px dashed #999;">
           ${p.note || '—'}
         </span>
         （${p.paid || '—'}）(${p.createdBy || ''})

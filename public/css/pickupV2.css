@@ -87,3 +87,6 @@ button {
 #print-area p {
   margin-bottom: 12px;
 }
+
+/* 保留換行顯示 */
+.pickup-card .multiline { white-space: pre-line; }
