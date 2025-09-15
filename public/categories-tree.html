@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>樹狀分類管理（多層拖曳版）</title>
-  <link rel="stylesheet" href="css/categories-tree.css?v=v1757955918" />
+  <title>樹狀分類管理（安全拖曳＋快速顯示/隱藏）</title>
+  <link rel="stylesheet" href="css/categories-tree.css?v=v1757957006" />
 </head>
 <body>
   <div class="tree-wrap">
-    <h1 class="tree-title">樹狀分類管理（任意層級、拖進任意父層）</h1>
+    <h1 class="tree-title">樹狀分類管理（安全拖曳＋快速顯示/隱藏）</h1>
     <div class="tree-toolbar">
       <input id="newName" class="tree-input" placeholder="最上層名稱" />
       <input id="newCode" class="tree-input" placeholder="代號（選填）" />
@@ -16,10 +16,12 @@
       <button id="btnReload" class="tree-btn">重新整理</button>
       <button id="btnExpandAll" class="tree-btn">展開全部</button>
       <button id="btnCollapseAll" class="tree-btn">收合全部</button>
-      <span class="tree-hint">提示：拖曳列的上/中/下 → 放前/成為子項/放後</span>
+      <button id="btnShowAll" class="tree-btn">全部顯示</button>
+      <button id="btnHideAll" class="tree-btn">全部隱藏</button>
+      <span class="tree-hint">拖曳列的上/中/下 → 放前/放入/放後；失敗自動還原</span>
     </div>
     <div id="treeHost" class="tree-card"></div>
   </div>
-  <script type="module" src="js/categories-tree.js?v=v1757955918"></script>
+  <script type="module" src="js/categories-tree.js?v=v1757957006"></script>
 </body>
 </html>

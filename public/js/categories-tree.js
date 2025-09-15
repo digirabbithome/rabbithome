@@ -1,18 +1,24 @@
-// categories-tree.js v1757955918 (unlimited depth + inside drop + compat)
+// categories-tree.js v1757957006 (safe DnD + bulk show/hide + compat)
 import { db } from '/js/firebase.js'
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let categories = []
-let drag = { id:null, overParent:null, overIndex:0, dropType:null, hoverTimer:null }
+
+let drag = { 
+  id:null,
+  fromParent:null, fromIndex:0,
+  overParent:null, overIndex:0, dropType:null,
+  hoverTimer:null,
+  success:false
+}
 const HOVER_OPEN_MS = 600
 
 const $ = sel => document.querySelector(sel)
 const by = f => (a,b)=> f(a) < f(b) ? -1 : f(a) > f(b) ? 1 : 0
 
-// ---------- Data ----------
 async function load(){
   const ref = collection(db,'categories')
-  const snap = await getDocs(ref) // 不加 orderBy，避免索引需求
+  const snap = await getDocs(ref) // 不下 orderBy
   categories = snap.docs.map(d=> ({ id:d.id, ...d.data() })).map(x=> ({ 
     ...x,
     show: typeof x.show === 'boolean' ? x.show : (typeof x.showOnOrderPage === 'boolean' ? x.showOnOrderPage : false)
@@ -45,25 +51,46 @@ async function batchUpdate(updates){
   await batch.commit()
 }
 
-// ---------- Build tree ----------
+// 批次設定 show / showOnOrderPage（分批 400 筆，安全低於 500 上限）
+async function bulkSetShow(val){
+  if(!confirm(val ? '確定要「全部顯示」嗎？' : '確定要「全部隱藏」嗎？')) return
+  const CHUNK = 400
+  for(let i=0;i<categories.length;i+=CHUNK){
+    const batch = writeBatch(db)
+    categories.slice(i,i+CHUNK).forEach(c=>{
+      batch.update(doc(db,'categories',c.id), { show: !!val, showOnOrderPage: !!val, updatedAt:serverTimestamp() })
+    })
+    await batch.commit()
+  }
+  await load(); render()
+}
+
 function buildTree(arr){
   const map = Object.fromEntries(arr.map(x=>[x.id,x]))
   const roots=[]; arr.forEach(n=> n.children=[])
   arr.forEach(n=>{ if(n.parentId && map[n.parentId]) map[n.parentId].children.push(n); else roots.push(n) })
   const sortRec = nodes=>{ nodes.sort(by(n=>n.order ?? 0)); nodes.forEach(ch=> sortRec(ch.children)) }
   sortRec(roots)
-  return roots
+  return {roots, map}
 }
 
-// ---------- Render ----------
+function isDescendant(targetId, maybeAncestorId) {
+  if (!targetId || !maybeAncestorId) return false
+  let cur = categories.find(c => c.id === targetId)
+  while (cur && cur.parentId) {
+    if (cur.parentId === maybeAncestorId) return true
+    cur = categories.find(c => c.id === cur.parentId)
+  }
+  return false
+}
+
 function render(){
   const host = $('#treeHost')
   host.innerHTML = ''
-  // 前端排序：parentId -> order
   categories.sort((a,b)=> (a.parentId||'').localeCompare(b.parentId||'') || (a.order??0)-(b.order??0))
-  const tree = buildTree(categories)
+  const {roots} = buildTree(categories)
   const ul = document.createElement('ul')
-  tree.forEach(n=> ul.appendChild(renderNode(n,0)))
+  roots.forEach(n=> ul.appendChild(renderNode(n,0)))
   host.appendChild(ul)
 }
 
@@ -72,18 +99,26 @@ function renderNode(node, depth){
   li.dataset.id = node.id
   li.className = 'tree-node ' + (depth===0 ? 'root':'child') + (node.show ? ' visible':'' )
 
-  // --- row ---
   const row = document.createElement('div')
   row.className = 'tree-row' + (depth? ' tree-indent':'')
 
-  // 拖曳：整列可拖
+  // 拖曳：記住來源
   row.draggable = true
   row.addEventListener('dragstart', e=>{
     drag.id = node.id
+    drag.success = false
+    drag.dropType = null
+    drag.fromParent = node.parentId || null
+    const same = categories.filter(c=> (c.parentId||null)===drag.fromParent).sort(by(c=>c.order ?? 0))
+    drag.fromIndex = same.findIndex(c=> c.id === node.id)
     e.dataTransfer?.setData('text/plain', node.id)
     e.dataTransfer?.setDragImage(row, 10, 10)
   })
-  row.addEventListener('dragend', ()=>{ cleanupDrops(); drag = { id:null, overParent:null, overIndex:0, dropType:null, hoverTimer:null } })
+  row.addEventListener('dragend', ()=>{
+    cleanupDrops()
+    if(!drag.success) render() // 還原視圖
+    drag = { id:null, fromParent:null, fromIndex:0, overParent:null, overIndex:0, dropType:null, hoverTimer:null, success:false }
+  })
 
   // 目標：li (前/內/後)
   li.addEventListener('dragover', e=>{
@@ -93,23 +128,19 @@ function renderNode(node, depth){
     li.classList.add('tree-drop')
     li.classList.remove('tree-drop-before','tree-drop-after')
     if(offset < rect.height*0.25){
-      // 放前面
       li.classList.add('tree-drop-before')
       drag.dropType = 'before'
       drag.overParent = li.parentElement?.dataset.parentId || null
       drag.overIndex = calcIndex(li, true)
     } else if(offset > rect.height*0.75){
-      // 放後面
       li.classList.add('tree-drop-after')
       drag.dropType = 'after'
       drag.overParent = li.parentElement?.dataset.parentId || null
       drag.overIndex = calcIndex(li, false)
     } else {
-      // 放裡面（成為子節點）
       drag.dropType = 'inside'
       drag.overParent = node.id
-      drag.overIndex = 999999 // 先放最後
-      // 滑過中間一段時間自動展開
+      drag.overIndex = 999999
       if(!node._hoverOpenScheduled && node._collapsed){
         node._hoverOpenScheduled = true
         drag.hoverTimer = setTimeout(()=>{ node._collapsed = false; render() }, 600)
@@ -126,7 +157,7 @@ function renderNode(node, depth){
   chk.title = '顯示於前台'
   chk.addEventListener('change', async ()=>{ li.classList.toggle('visible', chk.checked); await toggleShow(node.id, chk.checked) })
 
-  // 名稱（inline rename）
+  // 名稱
   const name = document.createElement('input')
   name.className = 'tree-name tree-input'; name.value = node.name || ''
   name.onchange = async ()=>{ await rename(node.id, name.value); node.name = name.value }
@@ -142,12 +173,12 @@ function renderNode(node, depth){
     await load(); render()
   }
 
-  // 刪除（無子才可）
+  // 刪除
   const del = document.createElement('button')
   del.className='tree-btn tree-chip'; del.textContent='刪除'
   del.onclick = async ()=>{ const hasChildren = categories.some(c=> c.parentId===node.id); if(hasChildren){ alert('請先搬移或刪除子分類'); return }; if(confirm(`刪除「${node.name}」？`)){ await remove(node.id); await load(); render() } }
 
-  // 折疊切換
+  // 折疊
   const togg = document.createElement('button')
   togg.className = 'tree-btn tree-chip'
   togg.textContent = node._collapsed ? '▸' : '▾'
@@ -161,7 +192,7 @@ function renderNode(node, depth){
   row.appendChild(del)
   li.appendChild(row)
 
-  // 子清單（可掉入變成其子）
+  // 子清單
   if(!node._collapsed){
     const ul = document.createElement('ul')
     ul.dataset.parentId = node.id
@@ -178,7 +209,6 @@ function cleanupDrops(){
   document.querySelectorAll('.tree-drop').forEach(el=> el.classList.remove('tree-drop','tree-drop-before','tree-drop-after'))
 }
 
-// ---------- DnD helpers ----------
 function calcIndex(targetLi, before){
   const ul = targetLi.parentElement; if(!ul) return 0
   const items = [...ul.children]
@@ -191,34 +221,39 @@ async function applyDropSort(){
   cleanupDrops()
   if(drag.hoverTimer){ clearTimeout(drag.hoverTimer); drag.hoverTimer=null }
   const id = drag.id; if(!id) return
-  const parentId = drag.overParent || null
 
-  // 重新計算該 parent 的同層順序
-  const same = categories.filter(c=> (c.parentId||null)===parentId).filter(c=> c.id!==id).sort(by(c=>c.order ?? 0))
+  if(!drag.dropType) { drag.success=false; render(); return }
+  if(drag.overParent === id || isDescendant(drag.overParent, id)) { 
+    alert('不能把目錄拖到自己或子孫之下')
+    drag.success=false; render(); return 
+  }
+
+  const parentId = drag.overParent || null
+  const same = categories
+    .filter(c=> (c.parentId||null)===parentId && c.id!==id)
+    .sort(by(c=>c.order ?? 0))
+
   const dragged = categories.find(c=> c.id===id); if(!dragged) return
+
   dragged.parentId = parentId
-  let insertIndex = Math.min(drag.overIndex ?? same.length, same.length)
-  if(insertIndex < 0) insertIndex = 0
+  let insertIndex = Math.min(Math.max(drag.overIndex ?? same.length, 0), same.length)
   same.splice(insertIndex, 0, dragged)
 
-  // 重新編號 order
   const updates = same.map((c,i)=> ({ id:c.id, parentId:c.parentId||null, order:(i+1)*1000 }))
   await batchUpdate(updates)
+
+  drag.success = true
   await load(); render()
 }
 
-// ---------- Expand/Collapse ----------
 function setAllCollapsed(collapsed){
-  // 設置暫存旗標，實際收合是存在記憶體，不寫進 DB
-  const map = Object.fromEntries(categories.map(x=>[x.id,x]))
-  const roots=[]; categories.forEach(n=> n.children=[])
-  categories.forEach(n=>{ if(n.parentId && map[n.parentId]) map[n.parentId].children.push(n); else roots.push(n) })
-  const dfs = nodes=>{ nodes.forEach(n=>{ n._collapsed = collapsed; dfs(n.children||[]) }) }
+  const {roots} = buildTree(categories)
+  const dfs = nodes=> nodes.forEach(n=>{ n._collapsed = collapsed; dfs(n.children||[]) })
   dfs(roots)
   render()
 }
 
-// ---------- Boot ----------
+// Boot
 window.onload = async ()=>{
   $('#btnAdd').onclick = async ()=>{
     const name = ($('#newName').value||'').trim(); const code = ($('#newCode').value||'').trim()
@@ -230,5 +265,8 @@ window.onload = async ()=>{
   $('#btnReload').onclick = async ()=>{ await load(); render() }
   $('#btnExpandAll').onclick = ()=> setAllCollapsed(false)
   $('#btnCollapseAll').onclick = ()=> setAllCollapsed(true)
+  $('#btnShowAll').onclick = ()=> bulkSetShow(true)
+  $('#btnHideAll').onclick = ()=> bulkSetShow(false)
+
   await load(); render()
 }
