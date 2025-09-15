@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>樹狀分類管理</title>
-  <link rel="stylesheet" href="css/categories-tree.css?v=v1757744274" />
+  <title>樹狀分類管理（合併版）</title>
+  <link rel="stylesheet" href="css/categories-tree.css?v=v1757954847" />
 </head>
 <body>
   <div class="tree-wrap">
-    <h1 class="tree-title">樹狀分類管理</h1>
+    <h1 class="tree-title">樹狀分類管理（拖曳＋顯示 勾選）</h1>
     <div class="tree-toolbar">
       <input id="newName" class="tree-input" placeholder="最上層名稱" />
       <input id="newCode" class="tree-input" placeholder="代號（選填）" />
       <button id="btnAdd" class="tree-btn tree-btn-primary">新增最上層</button>
       <button id="btnReload" class="tree-btn">重新整理</button>
-      <span class="tree-hint">提示：拖曳排序/改層級；勾選「顯示」會決定前台購物車是否可見</span>
+      <span class="tree-hint">提示：拖曳可排序/改層級；勾選「顯示」決定前台是否可見</span>
     </div>
     <div id="treeHost" class="tree-card"></div>
   </div>
-  <script type="module" src="js/categories-tree.js?v=v1757744274"></script>
+  <script type="module" src="js/categories-tree.js?v=v1757954847"></script>
 </body>
 </html>
