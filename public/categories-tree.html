@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>樹狀分類管理（多層縮排＋導引線＋安全拖曳）</title>
-  <link rel="stylesheet" href="css/categories-tree.css?v=v1757957844" />
+  <title>樹狀分類管理（JS 縮排＋根層粗體）</title>
+  <link rel="stylesheet" href="css/categories-tree.css?v=v1757958549" />
 </head>
 <body>
   <div class="tree-wrap">
-    <h1 class="tree-title">樹狀分類管理（多層縮排＋導引線＋安全拖曳）</h1>
+    <h1 class="tree-title">樹狀分類管理（JS 縮排＋根層粗體）</h1>
     <div class="tree-toolbar">
       <input id="newName" class="tree-input" placeholder="最上層名稱" />
       <input id="newCode" class="tree-input" placeholder="代號（選填）" />
@@ -20,10 +20,10 @@
       <button id="btnHideAll" class="tree-btn">全部隱藏</button>
       <button id="btnRepair" class="tree-btn">🛠 修復遺失節點</button>
       <label class="tree-chip"><input id="toggleGuides" type="checkbox" /> 顯示層級導引線</label>
-      <span class="tree-hint">每一層自動縮排 20px；拖曳上/中/下 → 前/入/後；失敗會還原。</span>
+      <span class="tree-hint">每層縮排 20px；根層粗體；拖曳失敗自動還原。</span>
     </div>
     <div id="treeHost" class="tree-card"></div>
   </div>
-  <script type="module" src="js/categories-tree.js?v=v1757957844"></script>
+  <script type="module" src="js/categories-tree.js?v=v1757958549"></script>
 </body>
 </html>
