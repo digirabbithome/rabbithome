@@ -1,4 +1,4 @@
-// categories-tree.js v1757957006 (safe DnD + bulk show/hide + compat)
+// categories-tree.js (guides + safe DnD + orphan repair + bulk show/hide)
 import { db } from '/js/firebase.js'
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
@@ -51,9 +51,9 @@ async function batchUpdate(updates){
   await batch.commit()
 }
 
-// 批次設定 show / showOnOrderPage（分批 400 筆，安全低於 500 上限）
+// 批次設定 show / showOnOrderPage
 async function bulkSetShow(val){
-  if(!confirm(val ? '確定要「全部顯示」嗎？' : '確定要「全部隱藏」嗎？')) return
+  if(!confirm(val ? '確定「全部顯示」？' : '確定「全部隱藏」？')) return
   const CHUNK = 400
   for(let i=0;i<categories.length;i+=CHUNK){
     const batch = writeBatch(db)
@@ -65,6 +65,7 @@ async function bulkSetShow(val){
   await load(); render()
 }
 
+// ---------- Build tree ----------
 function buildTree(arr){
   const map = Object.fromEntries(arr.map(x=>[x.id,x]))
   const roots=[]; arr.forEach(n=> n.children=[])
@@ -84,8 +85,12 @@ function isDescendant(targetId, maybeAncestorId) {
   return false
 }
 
+// ---------- Render ----------
 function render(){
   const host = $('#treeHost')
+  const showGuides = $('#toggleGuides')?.checked
+  host.classList.toggle('guides', !!showGuides)
+
   host.innerHTML = ''
   categories.sort((a,b)=> (a.parentId||'').localeCompare(b.parentId||'') || (a.order??0)-(b.order??0))
   const {roots} = buildTree(categories)
@@ -100,7 +105,8 @@ function renderNode(node, depth){
   li.className = 'tree-node ' + (depth===0 ? 'root':'child') + (node.show ? ' visible':'' )
 
   const row = document.createElement('div')
-  row.className = 'tree-row' + (depth? ' tree-indent':'')
+  row.className = 'tree-row'
+  row.setAttribute('data-depth', depth) // ✅ 多層縮排
 
   // 拖曳：記住來源
   row.draggable = true
@@ -143,7 +149,7 @@ function renderNode(node, depth){
       drag.overIndex = 999999
       if(!node._hoverOpenScheduled && node._collapsed){
         node._hoverOpenScheduled = true
-        drag.hoverTimer = setTimeout(()=>{ node._collapsed = false; render() }, 600)
+        drag.hoverTimer = setTimeout(()=>{ node._collapsed = false; render() }, HOVER_OPEN_MS)
       }
     }
   })
@@ -164,7 +170,7 @@ function renderNode(node, depth){
 
   // 新增子層
   const add = document.createElement('button')
-  add.className='tree-btn tree-chip'; add.textContent='＋子層'
+  add.className='tree-btn tree-chip'; add.textContent='＋子层'
   add.onclick = async ()=>{ 
     const nm = prompt('子分類名稱？'); if(!nm) return
     const same = categories.filter(c=> (c.parentId||null)===node.id)
@@ -246,6 +252,25 @@ async function applyDropSort(){
   await load(); render()
 }
 
+// ---------- Repair orphans ----------
+async function repairOrphans(){
+  // parentId 指向不存在者 → 設為 root 並補 order
+  const idSet = new Set(categories.map(c=> c.id))
+  const orphans = categories.filter(c=> c.parentId && !idSet.has(c.parentId))
+  if(orphans.length===0){ alert('沒有發現遺失節點'); return }
+  const rootSiblings = categories.filter(c=> (c.parentId||null)===null).sort(by(c=>c.order ?? 0))
+  let base = (rootSiblings.at(-1)?.order ?? 0) + 1000
+
+  const batch = writeBatch(db)
+  orphans.forEach(o=>{
+    batch.update(doc(db,'categories',o.id), { parentId:null, order: base, updatedAt:serverTimestamp() })
+    base += 1000
+  })
+  await batch.commit()
+  await load(); render()
+}
+
+// ---------- Expand/Collapse ----------
 function setAllCollapsed(collapsed){
   const {roots} = buildTree(categories)
   const dfs = nodes=> nodes.forEach(n=>{ n._collapsed = collapsed; dfs(n.children||[]) })
@@ -267,6 +292,8 @@ window.onload = async ()=>{
   $('#btnCollapseAll').onclick = ()=> setAllCollapsed(true)
   $('#btnShowAll').onclick = ()=> bulkSetShow(true)
   $('#btnHideAll').onclick = ()=> bulkSetShow(false)
+  $('#btnRepair').onclick = ()=> repairOrphans()
+  $('#toggleGuides').onchange = ()=> render()
 
   await load(); render()
 }

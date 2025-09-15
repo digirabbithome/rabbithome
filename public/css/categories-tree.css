@@ -1,18 +1,17 @@
 :root{--tree-pink:#ff5c9a;--tree-purple:#7c5cff;--tree-b:#e0e0e0;--tree-t:#333;--drop:#8ad}
 *{box-sizing:border-box}
 body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t);margin:0}
-.tree-wrap{max-width:960px;margin:24px auto;padding:0 16px}
+.tree-wrap{max-width:1024px;margin:24px auto;padding:0 16px}
 .tree-title{margin:0 0 12px;font-size:20px}
 .tree-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--tree-b);border-radius:12px;padding:12px}
 .tree-btn{padding:.45rem .7rem;border:1px solid var(--tree-b);border-radius:8px;background:#fff;cursor:pointer}
 .tree-btn-primary{background:#ffe6f1;border-color:#ffc3d7}
 .tree-input{padding:.45rem .6rem;border:1px solid var(--tree-b);border-radius:8px;min-width:12rem}
 .tree-card{background:#fff;border:1px solid var(--tree-b);border-radius:12px;padding:8px}
-.tree-row{display:flex;align-items:center;gap:.5rem;padding:6px;border-radius:8px}
+.tree-row{display:flex;align-items:center;gap:.5rem;padding:6px;border-radius:8px;position:relative}
 .tree-row .tree-name{flex:1;min-width:0}
-.tree-indent{margin-left:1.25rem}
-.tree-hint{color:#777;font-size:14px}
-.tree-chip{font-size:12px;padding:2px 6px;border-radius:999px;border:1px solid var(--tree-b);background:#fff}
+/* 動態縮排：用 data-depth 值 * 20px */
+.tree-row[data-depth]{padding-left:calc(6px + (attr(data-depth number) * 20px))}
 /* 顯示狀態底色：根=粉、子=紫 */ 
 .tree-node.root.visible .tree-row{background:#ffe6f0}
 .tree-node.child.visible .tree-row{background:#efe8ff}
@@ -22,5 +21,17 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t
 .tree-drop-after::after{content:'';display:block;height:2px;background:var(--drop)}
 .tree-drop-before::before{position:relative;top:-2px}
 .tree-drop-after::after{position:relative;bottom:-2px}
+/* 層級導引線（可切換） */
+.guides .tree-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;
+  box-shadow:
+    inset 12px 0 0 -11px #d7e3ff,
+    inset 32px 0 0 -31px #d7e3ff,
+    inset 52px 0 0 -51px #d7e3ff,
+    inset 72px 0 0 -71px #d7e3ff,
+    inset 92px 0 0 -91px #d7e3ff,
+    inset 112px 0 0 -111px #d7e3ff,
+    inset 132px 0 0 -131px #d7e3ff,
+    inset 152px 0 0 -151px #d7e3ff;
+}
 ul{margin:0;padding-left:0}
 li{list-style:none}
