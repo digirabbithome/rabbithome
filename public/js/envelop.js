@@ -103,7 +103,6 @@ window.addEventListener('load', async () => {
       if (companySelect) companySelect.value = '數位小兔';
       if (otherField) otherField.style.display = 'none';
       await loadData();
-  await loadFavQuickButtons();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
     }
@@ -115,7 +114,6 @@ window.addEventListener('load', async () => {
   async function applyDateFilter(start, end) {
     currentFilter = { start: startOfDay(start), end: endOfDay(end) };
     await loadData();
-  await loadFavQuickButtons();
   }
 
   let allData = [];
@@ -206,48 +204,51 @@ window.addEventListener('load', async () => {
   }
 
   await loadData();
-  await loadFavQuickButtons();
-  // ===== 常用信封快捷鍵 =====
-  async function loadFavQuickButtons() {
-    const favContainer = document.getElementById('favQuickList');
-    const favSection   = document.getElementById('favSection');
-    if (!favContainer || !favSection) return;
-    favContainer.innerHTML = '';
+  // ===== 動態保險：若控制列(checkbox/單選)不存在就動態建立 =====
+  function ensureFavControls() {
+    const favSection = document.getElementById('favSection');
+    const quickList  = document.getElementById('favQuickList');
+    if (!favSection || !quickList) return;
 
-    try {
-      const snap = await getDocs(collection(db, 'favEnvelopes'));
-      let count = 0;
-      snap.forEach(docSnap => {
-        const d = docSnap.data() || {};
-        const shortName = (d.shortName || '').trim();
-        const name = d.name || '';
-        const phone = d.phone || '';
-        const address = d.address || '';
-        if (!shortName) return;
-        count++;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip';
-        btn.textContent = shortName;
-        btn.title = `${name} ${phone} ${address}`.trim();
-        btn.addEventListener('click', () => {
-          const f = document.getElementById('envelopeForm');
-          if (!f) return;
-          const rn = f.querySelector('#receiverName');
-          const ph = f.querySelector('#phone');
-          const ad = f.querySelector('#address');
-          if (rn) rn.value = name;
-          if (ph) ph.value = phone;
-          if (ad) ad.value = address;
-          document.getElementById('printNormal')?.focus();
-        });
-        favContainer.appendChild(btn);
-      });
-      favSection.style.display = count > 0 ? 'block' : 'none';
-    } catch (err) {
-      console.warn('載入常用信封失敗：', err);
-      favSection.style.display = 'none';
+    // 若沒有 topbar 就建立
+    let topbar = favSection.querySelector('.fav-topbar');
+    if (!topbar) {
+      topbar = document.createElement('div');
+      topbar.className = 'fav-topbar';
+      topbar.innerHTML = `
+        <h3 class="fav-title">常用信封快捷鍵</h3>
+        <div class="fav-auto">
+          <label><input type="checkbox" id="favClickToPrint" checked /> 點按即列印</label>
+          <label class="fav-radio"><input type="radio" name="favPrintType" value="normal" checked/> 一般</label>
+          <label class="fav-radio"><input type="radio" name="favPrintType" value="reply"/> 回郵</label>
+        </div>
+      `;
+      favSection.insertBefore(topbar, quickList);
+    } else {
+      // 確保 checkbox 存在且預設勾選
+      const cb = topbar.querySelector('#favClickToPrint');
+      if (cb && !cb.checked) cb.checked = true;
+      if (!cb) {
+        const auto = topbar.querySelector('.fav-auto') || topbar;
+        const span = document.createElement('label');
+        span.innerHTML = '<input type="checkbox" id="favClickToPrint" checked /> 點按即列印';
+        auto.prepend(span);
+      }
+      // 若沒有單選，補上
+      if (!topbar.querySelector('input[name="favPrintType"]')) {
+        const auto = topbar.querySelector('.fav-auto') || topbar;
+        const normal = document.createElement('label');
+        normal.className = 'fav-radio';
+        normal.innerHTML = '<input type="radio" name="favPrintType" value="normal" checked/> 一般';
+        const reply = document.createElement('label');
+        reply.className = 'fav-radio';
+        reply.innerHTML = '<input type="radio" name="favPrintType" value="reply"/> 回郵';
+        auto.appendChild(normal);
+        auto.appendChild(reply);
+      }
     }
+    // 讓整個區塊可見
+    favSection.style.display = 'block';
   }
 
 });
