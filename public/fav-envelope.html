@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>常用信封管理</title>
+  <link rel="stylesheet" href="/css/fav-envelope.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1>📮 常用信封管理</h1>
+      <div class="actions">
+        <button id="btnNew" class="btn ghost">＋ 新增</button>
+      </div>
+    </header>
+
+    <section class="card form-card">
+      <h2 class="card-title">新增／修改</h2>
+      <form id="favForm" autocomplete="off">
+        <input type="hidden" id="docId" />
+        <div class="grid">
+          <label class="field">
+            <span>簡稱（例如：花花、阿寶）</span>
+            <input id="shortName" type="text" placeholder="輸入簡稱" required />
+          </label>
+          <label class="field">
+            <span>收件人姓名</span>
+            <input id="name" type="text" placeholder="輸入姓名" required />
+          </label>
+          <label class="field">
+            <span>電話</span>
+            <input id="phone" type="text" placeholder="輸入電話" />
+          </label>
+          <label class="field col-2">
+            <span>地址</span>
+            <input id="address" type="text" placeholder="輸入地址" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="btnSave" class="btn primary">💾 儲存</button>
+          <button type="button" id="btnClear" class="btn">清空表單</button>
+          <button type="button" id="btnDelete" class="btn danger" disabled>🗑️ 刪除</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card list-card">
+      <div class="list-header">
+        <h2 class="card-title">常用信封清單 <small id="countBadge" class="badge">0</small></h2>
+        <div class="tools">
+          <input id="search" class="search" type="search" placeholder="搜尋 簡稱／姓名／電話／地址" />
+        </div>
+      </div>
+
+      <div class="chip-row" id="chipRow"></div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">簡稱</th>
+              <th style="width: 160px;">姓名</th>
+              <th style="width: 160px;">電話</th>
+              <th>地址</th>
+              <th style="width: 120px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="favTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="/js/fav-envelope.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+:root{
+  --pink:#f8bbd0;
+  --pink-2:#fcddec;
+  --pink-3:#ffeaf3;
+  --ink:#333;
+  --bg:#fff6fa;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"Noto Sans TC",system-ui,Arial; color:var(--ink); background:var(--bg)}
+.container{max-width:1100px;margin:24px auto;padding:0 16px}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.page-header h1{margin:0;font-size:24px}
+.card{background:#fff;border-radius:var(--radius);box-shadow:0 6px 16px rgba(0,0,0,.06);padding:16px;margin:12px 0}
+.card-title{margin:0 0 8px 0;font-size:18px;color:#d81b60}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field span{font-size:12px;color:#666}
+.field input{height:40px;border-radius:12px;border:1px solid #eee;padding:0 12px;background:#fff}
+.field input:focus{outline:none;border-color:var(--pink)}
+.col-2{grid-column:span 2}
+.form-actions{display:flex;gap:8px;margin-top:12px}
+.btn{height:38px;padding:0 14px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer}
+.btn:hover{background:var(--pink-3)}
+.btn.primary{background:var(--pink);border-color:var(--pink);color:#64223a}
+.btn.primary:hover{filter:brightness(1.04)}
+.btn.danger{border-color:#ffccd5;background:#ffe9ee;color:#b00020}
+.btn.ghost{background:#fff;border-color:#eee}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.list-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.badge{background:var(--pink-2);color:#7a2d43;border-radius:999px;padding:2px 8px;font-size:12px}
+.search{height:36px;width:280px;border-radius:999px;border:1px solid #eee;padding:0 12px}
+.search:focus{outline:none;border-color:var(--pink)}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.chip{border-radius:999px;padding:6px 10px;background:var(--pink-2);cursor:pointer;border:1px solid transparent}
+.chip:hover{background:var(--pink);}
+.table-wrap{overflow:auto}
+.table{width:100%;border-collapse:separate;border-spacing:0}
+.table thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #f1d2de;padding:10px 8px;text-align:left}
+.table tbody td{border-bottom:1px solid #f7e2eb;padding:10px 8px;vertical-align:top}
+.table tbody tr:hover{background:#fff9fc}
+@media (max-width: 720px){
+  .grid{grid-template-columns:1fr}
+  .col-2{grid-column:auto}
+  .search{width:100%}
+}
