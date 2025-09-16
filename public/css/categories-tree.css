@@ -36,3 +36,17 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t
 }
 ul{margin:0;padding-left:0}
 li{list-style:none}
+
+/* === Depth-based pastel backgrounds when node is visible === */
+.tree-node.visible .tree-row[data-depth="0"] { background:#ffe6f0; } /* root: pink */
+.tree-node.visible .tree-row[data-depth="1"] { background:#efe8ff; } /* depth 1: lavender */
+.tree-node.visible .tree-row[data-depth="2"] { background:#eaf6ff; } /* depth 2: baby blue */
+.tree-node.visible .tree-row[data-depth="3"] { background:#e9fff3; } /* depth 3: mint */
+.tree-node.visible .tree-row[data-depth="4"] { background:#fff9e6; } /* depth 4: light peach */
+/* Slight left accent to help scan depth */
+.tree-node.visible .tree-row::after{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:8px 0 0 8px; opacity:.7 }
+.tree-node.visible .tree-row[data-depth="0"]::after{ background:#ffb3cf; }
+.tree-node.visible .tree-row[data-depth="1"]::after{ background:#bea9ff; }
+.tree-node.visible .tree-row[data-depth="2"]::after{ background:#a7d4ff; }
+.tree-node.visible .tree-row[data-depth="3"]::after{ background:#a5f0c8; }
+.tree-node.visible .tree-row[data-depth="4"]::after{ background:#ffd88a; }
