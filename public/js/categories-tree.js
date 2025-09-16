@@ -204,7 +204,7 @@ function renderNode(node, depth){
   if(!node._collapsed){
     const ul = document.createElement('ul')
     ul.dataset.parentId = node.id
-    ul.addEventListener('dragover', e=>{ e.preventDefault(); ul.classList.add('tree-drop'); drag.overParent=node.id; drag.overIndex=ul.children.length; drag.dropType='inside' })
+    ul.addEventListener('dragover', e=>{ e.preventDefault(); ul.classList.add('tree-drop'); drag.overParent=node.id; drag.overIndex=calcIndexFromY(ul, e.clientY); drag.dropType='inside' })
     ul.addEventListener('dragleave', ()=> ul.classList.remove('tree-drop'))
     ul.addEventListener('drop', async e=>{ e.preventDefault(); await applyDropSort() })
     ;(node.children||[]).forEach(ch=> ul.appendChild(renderNode(ch, depth+1)))
@@ -215,6 +215,17 @@ function renderNode(node, depth){
 
 function cleanupDrops(){
   document.querySelectorAll('.tree-drop').forEach(el=> el.classList.remove('tree-drop','tree-drop-before','tree-drop-after'))
+}
+
+
+function calcIndexFromY(ul, clientY){
+  const items = [...ul.children]; if(items.length===0) return 0
+  for(let i=0;i<items.length;i++){
+    const r = items[i].getBoundingClientRect()
+    const mid = r.top + r.height/2
+    if(clientY < mid) return i
+  }
+  return items.length
 }
 
 function calcIndex(targetLi, before){
