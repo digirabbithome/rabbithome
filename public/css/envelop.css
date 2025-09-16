@@ -106,8 +106,11 @@ form button:hover {
 }
 
 
-/* === 常用信封快捷鍵（favEnvelopes） === */
-.fav-card .fav-title{margin:0 0 8px;color:#e64a83;font-weight:700}
+/* === 常用信封快捷鍵（favEnvelopes） with auto-print toggle === */
+.fav-card .fav-title{margin:0;color:#e64a83;font-weight:700}
+.fav-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:12px;flex-wrap:wrap}
+.fav-auto{display:flex;align-items:center;gap:12px}
+.fav-auto .fav-radio{display:flex;align-items:center;gap:4px}
 .chip-row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:none;border-radius:999px;padding:6px 12px;background:#fcddec;cursor:pointer;font-weight:600}
 .chip:hover{background:#ff82a6;color:#fff}

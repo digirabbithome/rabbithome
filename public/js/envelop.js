@@ -207,7 +207,7 @@ window.addEventListener('load', async () => {
 
   await loadData();
   await loadFavQuickButtons();
-  // ===== 常用信封快捷鍵 =====
+  // ===== 常用信封快捷鍵（chips + auto print） =====
   async function loadFavQuickButtons() {
     const favContainer = document.getElementById('favQuickList');
     const favSection   = document.getElementById('favSection');
@@ -230,7 +230,7 @@ window.addEventListener('load', async () => {
         btn.className = 'chip';
         btn.textContent = shortName;
         btn.title = `${name} ${phone} ${address}`.trim();
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const f = document.getElementById('envelopeForm');
           if (!f) return;
           const rn = f.querySelector('#receiverName');
@@ -239,7 +239,13 @@ window.addEventListener('load', async () => {
           if (rn) rn.value = name;
           if (ph) ph.value = phone;
           if (ad) ad.value = address;
-          document.getElementById('printNormal')?.focus();
+
+          // 若開啟「點按即列印」，自動送出並寫入紀錄
+          const clickToPrint = document.getElementById('favClickToPrint')?.checked;
+          if (clickToPrint) {
+            const type = (document.querySelector('input[name="favPrintType"]:checked')?.value === 'reply') ? 'reply' : 'normal';
+            await handleSubmit(type);
+          }
         });
         favContainer.appendChild(btn);
       });
