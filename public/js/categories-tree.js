@@ -129,18 +129,23 @@ function renderNode(node, depth){
   })
 
   // 目標：li (前/內/後)
+  
   li.addEventListener('dragover', e=>{
     e.preventDefault()
-    const rect = li.getBoundingClientRect()
+    const rect = row.getBoundingClientRect()
     const offset = e.clientY - rect.top
+    const topBand = rect.height * 0.20
+    const bottomBand = rect.height * 0.80
+
     li.classList.add('tree-drop')
     li.classList.remove('tree-drop-before','tree-drop-after')
-    if(offset < rect.height*0.25){
+
+    if(offset < topBand){
       li.classList.add('tree-drop-before')
       drag.dropType = 'before'
       drag.overParent = li.parentElement?.dataset.parentId || null
       drag.overIndex = calcIndex(li, true)
-    } else if(offset > rect.height*0.75){
+    } else if(offset > bottomBand){
       li.classList.add('tree-drop-after')
       drag.dropType = 'after'
       drag.overParent = li.parentElement?.dataset.parentId || null
