@@ -106,7 +106,9 @@ function renderNode(node, depth){
 
   const row = document.createElement('div')
   row.className = 'tree-row'
-  row.setAttribute('data-depth', depth) // ✅ 多層縮排
+  row.setAttribute('data-depth', depth) // for fallback only
+  // ✅ 改用 JS 直接設定縮排（支援度最佳）
+  row.style.paddingLeft = `${6 + depth * 20}px`
 
   // 拖曳：記住來源
   row.draggable = true

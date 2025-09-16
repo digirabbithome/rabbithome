@@ -11,7 +11,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fafafa;color:var(--tree-t
 .tree-row{display:flex;align-items:center;gap:.5rem;padding:6px;border-radius:8px;position:relative}
 .tree-row .tree-name{flex:1;min-width:0}
 /* 動態縮排：用 data-depth 值 * 20px */
-.tree-row[data-depth]{padding-left:calc(6px + (attr(data-depth number) * 20px))}
+/* Fallback：主要縮排改由 JS 設定；此段確保最少間距 */
+.tree-row[data-depth]{padding-left:6px}
 /* 顯示狀態底色：根=粉、子=紫 */ 
 .tree-node.root.visible .tree-row{background:#ffe6f0}
 .tree-node.child.visible .tree-row{background:#efe8ff}
