@@ -11,7 +11,7 @@ let drag = {
   hoverTimer:null,
   success:false
 }
-const HOVER_OPEN_MS = 600
+const HOVER_OPEN_MS = 250
 
 const $ = sel => document.querySelector(sel)
 const by = f => (a,b)=> f(a) < f(b) ? -1 : f(a) > f(b) ? 1 : 0
@@ -260,7 +260,8 @@ async function applyDropSort(){
   const dragged = categories.find(c=> c.id===id); if(!dragged) return
 
   dragged.parentId = parentId
-  let insertIndex = Math.min(Math.max(drag.overIndex ?? same.length, 0), same.length)
+  let insertIndex = (drag.dropType==='inside' && (drag.overIndex==null)) ? 0 : drag.overIndex
+  insertIndex = Math.min(Math.max(insertIndex ?? same.length, 0), same.length)
   same.splice(insertIndex, 0, dragged)
 
   const updates = same.map((c,i)=> ({ id:c.id, parentId:c.parentId||null, order:(i+1)*1000 }))
