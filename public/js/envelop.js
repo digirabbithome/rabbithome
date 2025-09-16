@@ -103,7 +103,6 @@ window.addEventListener('load', async () => {
       if (companySelect) companySelect.value = '數位小兔';
       if (otherField) otherField.style.display = 'none';
       await loadData();
-  await loadFavQuickButtons();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
     }
@@ -115,7 +114,6 @@ window.addEventListener('load', async () => {
   async function applyDateFilter(start, end) {
     currentFilter = { start: startOfDay(start), end: endOfDay(end) };
     await loadData();
-  await loadFavQuickButtons();
   }
 
   let allData = [];
@@ -206,54 +204,4 @@ window.addEventListener('load', async () => {
   }
 
   await loadData();
-  await loadFavQuickButtons();
-  // ===== 常用信封快捷鍵（chips + auto print） =====
-  async function loadFavQuickButtons() {
-    const favContainer = document.getElementById('favQuickList');
-    const favSection   = document.getElementById('favSection');
-    if (!favContainer || !favSection) return;
-    favContainer.innerHTML = '';
-
-    try {
-      const snap = await getDocs(collection(db, 'favEnvelopes'));
-      let count = 0;
-      snap.forEach(docSnap => {
-        const d = docSnap.data() || {};
-        const shortName = (d.shortName || '').trim();
-        const name = d.name || '';
-        const phone = d.phone || '';
-        const address = d.address || '';
-        if (!shortName) return;
-        count++;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip';
-        btn.textContent = shortName;
-        btn.title = `${name} ${phone} ${address}`.trim();
-        btn.addEventListener('click', async () => {
-          const f = document.getElementById('envelopeForm');
-          if (!f) return;
-          const rn = f.querySelector('#receiverName');
-          const ph = f.querySelector('#phone');
-          const ad = f.querySelector('#address');
-          if (rn) rn.value = name;
-          if (ph) ph.value = phone;
-          if (ad) ad.value = address;
-
-          // 若開啟「點按即列印」，自動送出並寫入紀錄
-          const clickToPrint = document.getElementById('favClickToPrint')?.checked;
-          if (clickToPrint) {
-            const type = (document.querySelector('input[name="favPrintType"]:checked')?.value === 'reply') ? 'reply' : 'normal';
-            await handleSubmit(type);
-          }
-        });
-        favContainer.appendChild(btn);
-      });
-      favSection.style.display = count > 0 ? 'block' : 'none';
-    } catch (err) {
-      console.warn('載入常用信封失敗：', err);
-      favSection.style.display = 'none';
-    }
-  }
-
 });
