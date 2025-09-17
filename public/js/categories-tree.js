@@ -188,24 +188,27 @@ function renderNode(node, depth){
 
     showDropChoiceMenu({
       li, node, clientX: cx, clientY: cy,
-      onPick: async (choice)=>{ if(dropLock) return; dropLock = true; try {
-        try{
+      onPick: async (choice)=>{
+        if(dropLock) return;
+        dropLock = true;
+        try {
           if(choice==='before'){
             drag.dropType = 'before'
-            drag.overParent = parentIdSame
+            drag.overParent = li.parentElement?.dataset.parentId || null
             drag.overIndex = calcIndex(li, true)
           } else if(choice==='after'){
             drag.dropType = 'after'
-            drag.overParent = parentIdSame
+            drag.overParent = li.parentElement?.dataset.parentId || null
             drag.overIndex = calcIndex(li, false)
-          } else { // inside
+          } else {
             drag.dropType = 'inside'
             drag.overParent = node.id
             drag.overIndex = 0
           }
           await applyDropSort()
         } finally {
-          dropLock=false
+          dropLock = false
+          render()
         }
       },
       onCancel: ()=>{ dropLock=false; render() }
