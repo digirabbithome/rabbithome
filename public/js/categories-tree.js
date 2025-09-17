@@ -186,14 +186,13 @@ function renderNode(node, depth){
     const parentIdSame = li.parentElement?.dataset.parentId || null
     const cx = e.clientX, cy = e.clientY
 
-    showDropChoiceMenu({
-      li,
-      node,
-      draggedId,
+    showDropChoiceMenuV21({
+      li: li,
+      node: node,
+      draggedId: draggedId,
       clientX: cx,
       clientY: cy,
       applyDropSortFn: (typeof applyDropSort==='function' ? applyDropSort : (typeof window!=='undefined' ? window.applyDropSort : undefined)),
-      onPick: undefined,
       onCancel: undefined
     })),
       onPick: undefined,
@@ -409,3 +408,107 @@ window.onload = async ()=>{
 
   await load(); render()
 }
+
+// === START::DROP_MENU_HELPER ===
+function showDropChoiceMenuV21({
+  li,
+  node,
+  draggedId,
+  clientX,
+  clientY,
+  applyDropSortFn,
+  onCancel
+}){
+  // remove old menus
+  document.querySelectorAll('.tree-drop-menu').forEach(m=>m.remove())
+
+  const menu = document.createElement('div')
+  menu.className = 'tree-drop-menu'
+  menu.addEventListener('click', ev=>ev.stopPropagation())
+
+  const btnBefore = document.createElement('button')
+  btnBefore.textContent = '和此同層（前）'
+  const btnAfter = document.createElement('button')
+  btnAfter.textContent = '和此同層（後）'
+  const btnInside = document.createElement('button')
+  btnInside.textContent = '到此下層'
+  btnInside.classList.add('primary')
+
+  menu.appendChild(btnBefore)
+  menu.appendChild(btnAfter)
+  menu.appendChild(btnInside)
+  document.body.appendChild(menu)
+
+  const x = Math.min(clientX, window.innerWidth - menu.offsetWidth - 12)
+  const y = Math.min(clientY, window.innerHeight - menu.offsetHeight - 12)
+  menu.style.left = x + 'px'
+  menu.style.top = y + 'px'
+
+  const cleanup = ()=>{
+    menu.remove()
+    document.removeEventListener('click', onDocClick, true)
+    document.removeEventListener('keydown', onKey)
+  }
+  const onDocClick = (ev)=>{
+    if(!menu.contains(ev.target)) { cleanup(); onCancel && onCancel() }
+  }
+  const onKey = (ev)=>{
+    if(ev.key==='Escape'){ cleanup(); onCancel && onCancel() }
+  }
+  setTimeout(()=>{
+    document.addEventListener('click', onDocClick, true)
+    document.addEventListener('keydown', onKey)
+  }, 0)
+
+  const resolveApply = ()=>{
+    if (typeof applyDropSortFn === 'function') return applyDropSortFn
+    if (typeof applyDropSort === 'function') return applyDropSort
+    if (typeof window !== 'undefined' && typeof window.applyDropSort === 'function') return window.applyDropSort
+    return null
+  }
+
+  const execMove = async (kind)=>{
+    const fn = resolveApply()
+    if(!fn){ alert('無法找到搬移函式（applyDropSort）'); return }
+    if(!draggedId){ alert('沒有拖曳來源'); return }
+
+    if (kind === 'before'){
+      drag.id = draggedId
+      drag.active = true
+      drag.overTargetId = node.id
+      drag.dropType = 'before'
+      drag.overParent = li.parentElement?.dataset.parentId || null
+      drag.overIndex = calcIndex(li, true)
+    } else if (kind === 'after'){
+      drag.id = draggedId
+      drag.active = true
+      drag.overTargetId = node.id
+      drag.dropType = 'after'
+      drag.overParent = li.parentElement?.dataset.parentId || null
+      drag.overIndex = calcIndex(li, false)
+    } else {
+      drag.id = draggedId
+      drag.active = true
+      drag.overTargetId = node.id
+      drag.dropType = 'inside'
+      drag.overParent = node.id
+      drag.overIndex = 0
+    }
+    await fn()
+    render()
+  }
+
+  btnBefore.addEventListener('click', async ev=>{
+    ev.preventDefault(); ev.stopPropagation(); cleanup()
+    await execMove('before')
+  })
+  btnAfter.addEventListener('click', async ev=>{
+    ev.preventDefault(); ev.stopPropagation(); cleanup()
+    await execMove('after')
+  })
+  btnInside.addEventListener('click', async ev=>{
+    ev.preventDefault(); ev.stopPropagation(); cleanup()
+    await execMove('inside')
+  })
+}
+// === END::DROP_MENU_HELPER ===
