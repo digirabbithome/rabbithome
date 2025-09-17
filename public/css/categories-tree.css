@@ -50,3 +50,28 @@ li{list-style:none}
 .tree-node.visible .tree-row[data-depth="2"]::after{ background:#a7d4ff; }
 .tree-node.visible .tree-row[data-depth="3"]::after{ background:#a5f0c8; }
 .tree-node.visible .tree-row[data-depth="4"]::after{ background:#ffd88a; }
+
+
+/* Floating drop menu */
+.tree-drop-menu{
+  position: fixed;
+  z-index: 99999;
+  background:#fff;
+  border:1px solid var(--tree-b, #e0e0e0);
+  box-shadow:0 6px 20px rgba(0,0,0,.12);
+  border-radius:12px;
+  padding:8px;
+  display:flex;
+  gap:8px;
+}
+.tree-drop-menu button{
+  padding:.38rem .6rem;
+  border:1px solid var(--tree-b, #e0e0e0);
+  border-radius:8px;
+  background:#fff;
+  cursor:pointer;
+}
+.tree-drop-menu button.primary{
+  background:#ffe6f1;
+  border-color:#ffc3d7;
+}

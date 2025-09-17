@@ -4,7 +4,8 @@ import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, writeBatch, ser
 
 let categories = []
 
-let drag = { 
+let drag = {
+ 
   id:null,
   fromParent:null, fromIndex:0,
   overParent:null, overIndex:0, dropType:null,
@@ -14,6 +15,7 @@ let drag = {
 const HOVER_OPEN_MS = 250
 
 const $ = sel => document.querySelector(sel)
+let dropLock = false
 const by = f => (a,b)=> f(a) < f(b) ? -1 : f(a) > f(b) ? 1 : 0
 
 async function load(){
@@ -163,36 +165,54 @@ function renderNode(node, depth){
   })
   li.addEventListener('dragleave', ()=>{ li.classList.remove('tree-drop','tree-drop-before','tree-drop-after') })
   
+  
   li.addEventListener('drop', async e=>{
-    e.preventDefault()
+    e.preventDefault(); e.stopPropagation(); if(dropLock) return; dropLock = true
     cleanupDrops()
     if(drag.hoverTimer){ clearTimeout(drag.hoverTimer); drag.hoverTimer=null }
 
     const draggedId = drag.id
-    if(!draggedId) return
+    if(!draggedId){ dropLock=false; return }
 
     // 防呆：不能丟到自己或自己的子孫
     if(node.id === draggedId || isDescendant(node.id, draggedId)){
       alert('不能把目錄拖到自己或子孫之下')
       drag.success = false
+      dropLock=false
       render()
       return
     }
 
-    // 選擇：下層(inside) 或 同層(after)
-    const goInside = confirm('按【確定】→ 到此目錄下層\n按【取消】→ 和此目錄同一層（插在後面）')
+    const parentIdSame = li.parentElement?.dataset.parentId || null
+    const cx = e.clientX, cy = e.clientY
 
-    if(goInside){
-      drag.dropType = 'inside'
-      drag.overParent = node.id
-      drag.overIndex = 0 // 放到子清單最前面
-    }else{
-      drag.dropType = 'after'
-      drag.overParent = li.parentElement?.dataset.parentId || null
-      drag.overIndex = calcIndex(li, false) // 插在此節點後方
-    }
-
-    await applyDropSort()
+    showDropChoiceMenu({
+      li, node, clientX: cx, clientY: cy,
+      onPick: async (choice)=>{
+        try{
+          if(choice==='before'){
+            drag.dropType = 'before'
+            drag.overParent = parentIdSame
+            drag.overIndex = calcIndex(li, true)
+          } else if(choice==='after'){
+            drag.dropType = 'after'
+            drag.overParent = parentIdSame
+            drag.overIndex = calcIndex(li, false)
+          } else { // inside
+            drag.dropType = 'inside'
+            drag.overParent = node.id
+            drag.overIndex = 0
+          }
+          await applyDropSort()
+        } finally {
+          dropLock=false
+        }
+      },
+      onCancel: ()=>{
+        dropLock=false
+        render()
+      }
+    })
   })
 
   // 顯示勾選
@@ -241,13 +261,59 @@ function renderNode(node, depth){
   if(!node._collapsed){
     const ul = document.createElement('ul')
     ul.dataset.parentId = node.id
-    ul.addEventListener('dragover', e=>{ e.preventDefault(); ul.classList.add('tree-drop'); drag.overParent=node.id; drag.overIndex=calcIndexFromY(ul, e.clientY); drag.dropType='inside' })
+    ul.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); ul.classList.add('tree-drop'); drag.overParent=node.id; drag.overIndex=calcIndexFromY(ul, e.clientY); drag.dropType='inside' })
     ul.addEventListener('dragleave', ()=> ul.classList.remove('tree-drop'))
-    ul.addEventListener('drop', async e=>{ e.preventDefault(); await applyDropSort() })
+    ul.addEventListener('drop', async e=>{ e.preventDefault(); e.stopPropagation(); if(dropLock) return; dropLock = true; try {
+      await applyDropSort()
+    } finally { dropLock = false }
+  })
     ;(node.children||[]).forEach(ch=> ul.appendChild(renderNode(ch, depth+1)))
     li.appendChild(ul)
   }
   return li
+}
+
+
+function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
+  // remove existing
+  document.querySelectorAll('.tree-drop-menu').forEach(m=>m.remove())
+  const menu = document.createElement('div')
+  menu.className = 'tree-drop-menu'
+  const btnBefore = document.createElement('button')
+  btnBefore.textContent = '和此同層（前）'
+  const btnAfter = document.createElement('button')
+  btnAfter.textContent = '和此同層（後）'
+  const btnInside = document.createElement('button')
+  btnInside.textContent = '到此下層'
+  btnInside.classList.add('primary')
+
+  menu.appendChild(btnBefore)
+  menu.appendChild(btnAfter)
+  menu.appendChild(btnInside)
+  document.body.appendChild(menu)
+
+  const x = Math.min(clientX, window.innerWidth - menu.offsetWidth - 12)
+  const y = Math.min(clientY, window.innerHeight - menu.offsetHeight - 12)
+  menu.style.left = x + 'px'
+  menu.style.top = y + 'px'
+
+  const cleanup = ()=>{
+    menu.remove()
+    document.removeEventListener('click', onDocClick, true)
+    document.removeEventListener('keydown', onKey)
+  }
+  const onDocClick = (ev)=>{
+    if(!menu.contains(ev.target)) { cleanup(); onCancel && onCancel() }
+  }
+  const onKey = (ev)=>{
+    if(ev.key==='Escape'){ cleanup(); onCancel && onCancel() }
+  }
+  document.addEventListener('click', onDocClick, true)
+  document.addEventListener('keydown', onKey)
+
+  btnBefore.onclick = ()=>{ cleanup(); onPick && onPick('before') }
+  btnAfter.onclick = ()=>{ cleanup(); onPick && onPick('after') }
+  btnInside.onclick = ()=>{ cleanup(); onPick && onPick('inside') }
 }
 
 function cleanupDrops(){
