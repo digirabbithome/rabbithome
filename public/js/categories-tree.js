@@ -186,7 +186,7 @@ function renderNode(node, depth){
     const parentIdSame = li.parentElement?.dataset.parentId || null
     const cx = e.clientX, cy = e.clientY
 
-    showDropChoiceMenu({ li, node, draggedId, clientX: cx, clientY: cy,
+    showDropChoiceMenu({ li, node, draggedId, clientX: cx, clientY: cy, applyDropSortFn: applyDropSort,
       onPick: async (choice)=>{
         if(dropLock) return;
         dropLock = true;
@@ -204,7 +204,7 @@ function renderNode(node, depth){
             drag.overParent = node.id
             drag.overIndex = 0
           }
-          await (window.applyDropSort ? window.applyDropSort() : applyDropSort())
+          await applyDropSort()
         } finally {
           dropLock = false
           render()
@@ -240,9 +240,7 @@ function renderNode(node, depth){
   // 刪除
   const del = document.createElement('button')
   del.className='tree-btn tree-chip'; del.textContent='刪除'
-  del.onclick = async ()=>{ const hasChildren = categories.some(c=> c.parentId===node.id); if(hasChildren){ alert('請先搬移或刪除子分類'); return };
-window.drag = drag
- if(confirm(`刪除「${node.name}」？`)){ await remove(node.id); await load(); render() } }
+  del.onclick = async ()=>{ const hasChildren = categories.some(c=> c.parentId===node.id); if(hasChildren){ alert('請先搬移或刪除子分類'); return }; if(confirm(`刪除「${node.name}」？`)){ await remove(node.id); await load(); render() } }
 
   // 折疊
   const togg = document.createElement('button')
@@ -265,7 +263,7 @@ window.drag = drag
     ul.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); ul.classList.add('tree-drop'); drag.overParent=node.id; drag.overIndex=calcIndexFromY(ul, e.clientY); drag.dropType='inside' })
     ul.addEventListener('dragleave', ()=> ul.classList.remove('tree-drop'))
     ul.addEventListener('drop', async e=>{ e.preventDefault(); e.stopPropagation(); if(dropLock) return; dropLock = true; try {
-      await (window.applyDropSort ? window.applyDropSort() : applyDropSort())
+      await applyDropSort()
     } finally { dropLock = false }
   })
     ;(node.children||[]).forEach(ch=> ul.appendChild(renderNode(ch, depth+1)))
@@ -343,9 +341,7 @@ function calcIndex(targetLi, before){
 async function applyDropSort(){
   cleanupDrops()
   if(drag.hoverTimer){ clearTimeout(drag.hoverTimer); drag.hoverTimer=null }
-  
-window.applyDropSort = applyDropSort
-const id = drag.id; if(!id) return
+  const id = drag.id; if(!id) return
 
   if(!drag.dropType) { drag.success=false; render(); return }
   if(drag.overParent === id || isDescendant(drag.overParent, id)) { 
