@@ -186,31 +186,15 @@ function renderNode(node, depth){
     const parentIdSame = li.parentElement?.dataset.parentId || null
     const cx = e.clientX, cy = e.clientY
 
-    showDropChoiceMenu({ li, node, draggedId, clientX: cx, clientY: cy, applyDropSortFn: applyDropSort,
-      onPick: async (choice)=>{
-        if(dropLock) return;
-        dropLock = true;
-        try {
-          if(choice==='before'){
-            drag.dropType = 'before'
-            drag.overParent = li.parentElement?.dataset.parentId || null
-            drag.overIndex = calcIndex(li, true)
-          } else if(choice==='after'){
-            drag.dropType = 'after'
-            drag.overParent = li.parentElement?.dataset.parentId || null
-            drag.overIndex = calcIndex(li, false)
-          } else {
-            drag.dropType = 'inside'
-            drag.overParent = node.id
-            drag.overIndex = 0
-          }
-          await applyDropSort()
-        } finally {
-          dropLock = false
-          render()
-        }
-      },
-      onCancel: ()=>{ dropLock=false; render() }
+    showDropChoiceMenu({
+      li,
+      node,
+      draggedId,
+      clientX: cx,
+      clientY: cy,
+      applyDropSortFn: (typeof applyDropSort==='function' ? applyDropSort : (typeof window!=='undefined' ? window.applyDropSort : undefined)),
+      onPick: undefined,
+      onCancel: undefined
     })
   })
 
