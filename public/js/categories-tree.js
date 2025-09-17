@@ -167,7 +167,7 @@ function renderNode(node, depth){
   
   
   li.addEventListener('drop', async e=>{
-    e.preventDefault(); e.stopPropagation(); if(dropLock) return; dropLock = true
+    e.preventDefault(); e.stopPropagation(); if(dropLock) return; dropLock = false // release before menu
     cleanupDrops()
     if(drag.hoverTimer){ clearTimeout(drag.hoverTimer); drag.hoverTimer=null }
 
@@ -188,7 +188,7 @@ function renderNode(node, depth){
 
     showDropChoiceMenu({
       li, node, clientX: cx, clientY: cy,
-      onPick: async (choice)=>{
+      onPick: async (choice)=>{ if(dropLock) return; dropLock = true;
         try{
           if(choice==='before'){
             drag.dropType = 'before'
@@ -275,7 +275,6 @@ function renderNode(node, depth){
 
 
 function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
-  // remove existing
   document.querySelectorAll('.tree-drop-menu').forEach(m=>m.remove())
   const menu = document.createElement('div')
   menu.className = 'tree-drop-menu'
@@ -286,6 +285,10 @@ function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
   const btnInside = document.createElement('button')
   btnInside.textContent = '到此下層'
   btnInside.classList.add('primary')
+
+  ;[btnBefore, btnAfter, btnInside].forEach(b=>{
+    b.addEventListener('click', ev=>{ ev.preventDefault(); ev.stopPropagation() }, true)
+  })
 
   menu.appendChild(btnBefore)
   menu.appendChild(btnAfter)
@@ -308,8 +311,11 @@ function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
   const onKey = (ev)=>{
     if(ev.key==='Escape'){ cleanup(); onCancel && onCancel() }
   }
-  document.addEventListener('click', onDocClick, true)
-  document.addEventListener('keydown', onKey)
+  // Delay to avoid the drop-up click closing the menu instantly
+  setTimeout(()=>{
+    document.addEventListener('click', onDocClick, true)
+    document.addEventListener('keydown', onKey)
+  }, 0)
 
   btnBefore.onclick = ()=>{ cleanup(); onPick && onPick('before') }
   btnAfter.onclick = ()=>{ cleanup(); onPick && onPick('after') }
