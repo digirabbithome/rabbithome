@@ -38,12 +38,12 @@ ul{margin:0;padding-left:0}
 li{list-style:none}
 
 /* === Depth-based pastel backgrounds when node is visible === */
-.tree-node.visible .tree-row[data-depth="0"] { background:#ffe6f0; } /* root: pink */
-.tree-node.visible .tree-row[data-depth="1"] { background:#efe8ff; } /* depth 1: lavender */
-.tree-node.visible .tree-row[data-depth="2"] { background:#eaf6ff; } /* depth 2: baby blue */
-.tree-node.visible .tree-row[data-depth="3"] { background:#e9fff3; } /* depth 3: mint */
-.tree-node.visible .tree-row[data-depth="4"] { background:#fff9e6; } /* depth 4: light peach */
-/* Left accent bar to enhance scan */
+.tree-node.visible .tree-row[data-depth="0"] { background:#ffe6f0; } /* root */
+.tree-node.visible .tree-row[data-depth="1"] { background:#efe8ff; } /* depth1 */
+.tree-node.visible .tree-row[data-depth="2"] { background:#eaf6ff; } /* depth2 */
+.tree-node.visible .tree-row[data-depth="3"] { background:#e9fff3; } /* depth3 */
+.tree-node.visible .tree-row[data-depth="4"] { background:#fff9e6; } /* depth4 */
+/* Left accent bar */
 .tree-node.visible .tree-row::after{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:8px 0 0 8px; opacity:.7 }
 .tree-node.visible .tree-row[data-depth="0"]::after{ background:#ffb3cf; }
 .tree-node.visible .tree-row[data-depth="1"]::after{ background:#bea9ff; }

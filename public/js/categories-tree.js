@@ -106,9 +106,9 @@ function renderNode(node, depth){
 
   const row = document.createElement('div')
   row.className = 'tree-row'
-  row.setAttribute('data-depth', depth) // for fallback only
-  // ✅ 改用 JS 直接設定縮排（支援度最佳）
-  row.style.paddingLeft = `${6 + depth * 20}px`
+  row.setAttribute('data-depth', depth);
+  // JS-controlled indent for broad browser support
+  row.style.paddingLeft = `${6 + depth * 20}px`;// ✅ 多層縮排
 
   // 拖曳：記住來源
   row.draggable = true
@@ -134,8 +134,8 @@ function renderNode(node, depth){
     e.preventDefault()
     const rect = row.getBoundingClientRect()
     const offset = e.clientY - rect.top
-    const topBand = rect.height * 0.20
-    const bottomBand = rect.height * 0.80
+    const topBand = rect.height * 0.15
+    const bottomBand = rect.height * 0.85
 
     li.classList.add('tree-drop')
     li.classList.remove('tree-drop-before','tree-drop-after')
@@ -151,9 +151,10 @@ function renderNode(node, depth){
       drag.overParent = li.parentElement?.dataset.parentId || null
       drag.overIndex = calcIndex(li, false)
     } else {
+      // Wide middle zone => drop inside
       drag.dropType = 'inside'
       drag.overParent = node.id
-      drag.overIndex = 999999
+      drag.overIndex = 0 // default to top when collapsed
       if(!node._hoverOpenScheduled && node._collapsed){
         node._hoverOpenScheduled = true
         drag.hoverTimer = setTimeout(()=>{ node._collapsed = false; render() }, HOVER_OPEN_MS)
@@ -161,7 +162,38 @@ function renderNode(node, depth){
     }
   })
   li.addEventListener('dragleave', ()=>{ li.classList.remove('tree-drop','tree-drop-before','tree-drop-after') })
-  li.addEventListener('drop', async e=>{ e.preventDefault(); await applyDropSort() })
+  
+  li.addEventListener('drop', async e=>{
+    e.preventDefault()
+    cleanupDrops()
+    if(drag.hoverTimer){ clearTimeout(drag.hoverTimer); drag.hoverTimer=null }
+
+    const draggedId = drag.id
+    if(!draggedId) return
+
+    // 防呆：不能丟到自己或自己的子孫
+    if(node.id === draggedId || isDescendant(node.id, draggedId)){
+      alert('不能把目錄拖到自己或子孫之下')
+      drag.success = false
+      render()
+      return
+    }
+
+    // 選擇：下層(inside) 或 同層(after)
+    const goInside = confirm('按【確定】→ 到此目錄下層\n按【取消】→ 和此目錄同一層（插在後面）')
+
+    if(goInside){
+      drag.dropType = 'inside'
+      drag.overParent = node.id
+      drag.overIndex = 0 // 放到子清單最前面
+    }else{
+      drag.dropType = 'after'
+      drag.overParent = li.parentElement?.dataset.parentId || null
+      drag.overIndex = calcIndex(li, false) // 插在此節點後方
+    }
+
+    await applyDropSort()
+  })
 
   // 顯示勾選
   const chk = document.createElement('input')
@@ -222,14 +254,9 @@ function cleanupDrops(){
   document.querySelectorAll('.tree-drop').forEach(el=> el.classList.remove('tree-drop','tree-drop-before','tree-drop-after'))
 }
 
-
 function calcIndexFromY(ul, clientY){
-  const items = [...ul.children]; if(items.length===0) return 0
-  for(let i=0;i<items.length;i++){
-    const r = items[i].getBoundingClientRect()
-    const mid = r.top + r.height/2
-    if(clientY < mid) return i
-  }
+  const items=[...ul.children]; if(items.length===0) return 0;
+  for(let i=0;i<items.length;i++){ const r=items[i].getBoundingClientRect(); const mid=r.top + r.height/2; if(clientY < mid) return i }
   return items.length
 }
 
