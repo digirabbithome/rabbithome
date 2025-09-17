@@ -195,6 +195,9 @@ function renderNode(node, depth){
       applyDropSortFn: (typeof applyDropSort==='function' ? applyDropSort : (typeof window!=='undefined' ? window.applyDropSort : undefined)),
       onPick: undefined,
       onCancel: undefined
+    })),
+      onPick: undefined,
+      onCancel: undefined
     })
   })
 
@@ -257,7 +260,16 @@ function renderNode(node, depth){
 }
 
 
-function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}, applyDropSortFn: (typeof applyDropSort==='function' ? applyDropSort : (window && window.applyDropSort)), onPick: undefined, onCancel: undefined }{
+function showDropChoiceMenu({
+      li,
+      node,
+      draggedId,
+      clientX: cx,
+      clientY: cy,
+      applyDropSortFn: (typeof applyDropSort==='function' ? applyDropSort : (typeof window!=='undefined' ? window.applyDropSort : undefined)),
+      onPick: undefined,
+      onCancel: undefined
+    })), onPick: undefined, onCancel: undefined }{
   document.querySelectorAll('.tree-drop-menu').forEach(m=>m.remove())
   const menu = document.createElement('div')
   menu.className = 'tree-drop-menu'
