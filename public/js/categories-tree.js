@@ -186,8 +186,7 @@ function renderNode(node, depth){
     const parentIdSame = li.parentElement?.dataset.parentId || null
     const cx = e.clientX, cy = e.clientY
 
-    showDropChoiceMenu({
-      li, node, clientX: cx, clientY: cy,
+    showDropChoiceMenu({ li, node, draggedId, clientX: cx, clientY: cy,
       onPick: async (choice)=>{
         if(dropLock) return;
         dropLock = true;
