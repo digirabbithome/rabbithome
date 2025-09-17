@@ -188,7 +188,7 @@ function renderNode(node, depth){
 
     showDropChoiceMenu({
       li, node, clientX: cx, clientY: cy,
-      onPick: async (choice)=>{ if(dropLock) return; dropLock = true;
+      onPick: async (choice)=>{ if(dropLock) return; dropLock = true; try {
         try{
           if(choice==='before'){
             drag.dropType = 'before'
@@ -208,10 +208,7 @@ function renderNode(node, depth){
           dropLock=false
         }
       },
-      onCancel: ()=>{
-        dropLock=false
-        render()
-      }
+      onCancel: ()=>{ dropLock=false; render() }
     })
   })
 
@@ -278,6 +275,10 @@ function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
   document.querySelectorAll('.tree-drop-menu').forEach(m=>m.remove())
   const menu = document.createElement('div')
   menu.className = 'tree-drop-menu'
+
+  // Stop outside propagation at the menu container
+  menu.addEventListener('click', ev=>{ ev.stopPropagation() }, true)
+
   const btnBefore = document.createElement('button')
   btnBefore.textContent = '和此同層（前）'
   const btnAfter = document.createElement('button')
@@ -285,10 +286,6 @@ function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
   const btnInside = document.createElement('button')
   btnInside.textContent = '到此下層'
   btnInside.classList.add('primary')
-
-  ;[btnBefore, btnAfter, btnInside].forEach(b=>{
-    b.addEventListener('click', ev=>{ ev.preventDefault(); ev.stopPropagation() }, true)
-  })
 
   menu.appendChild(btnBefore)
   menu.appendChild(btnAfter)
@@ -311,15 +308,14 @@ function showDropChoiceMenu({li, node, clientX, clientY, onPick, onCancel}){
   const onKey = (ev)=>{
     if(ev.key==='Escape'){ cleanup(); onCancel && onCancel() }
   }
-  // Delay to avoid the drop-up click closing the menu instantly
   setTimeout(()=>{
     document.addEventListener('click', onDocClick, true)
     document.addEventListener('keydown', onKey)
   }, 0)
 
-  btnBefore.onclick = ()=>{ cleanup(); onPick && onPick('before') }
-  btnAfter.onclick = ()=>{ cleanup(); onPick && onPick('after') }
-  btnInside.onclick = ()=>{ cleanup(); onPick && onPick('inside') }
+  btnBefore.addEventListener('click', async ev=>{ ev.preventDefault(); cleanup(); await onPick?.('before') })
+  btnAfter.addEventListener('click', async ev=>{ ev.preventDefault(); cleanup(); await onPick?.('after') })
+  btnInside.addEventListener('click', async ev=>{ ev.preventDefault(); cleanup(); await onPick?.('inside') })
 }
 
 function cleanupDrops(){
