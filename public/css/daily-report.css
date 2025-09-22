@@ -7,10 +7,12 @@ body { background: #fdf2f8; color:#1f2937; }
 .dr-main { padding:16px; }
 
 .dr-sidertitle { font-weight:700; margin-bottom:8px; }
+.text-muted { color:#6b7280; }
 .dr-block { display:block; font-size:14px; margin:10px 0; }
 .dr-input { width:100%; padding:8px 10px; border:1px solid #e5e7eb; border-radius:10px; }
 .dr-filter { display:flex; gap:14px; font-size:14px; margin-top:12px; }
 .dr-legend { display:flex; gap:14px; align-items:center; font-size:12px; margin-top:10px; color:#6b7280; }
+.dr-note { margin-top:12px; font-size:12px; color:#6b7280; }
 .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; }
 .dot.me { background:#60a5fa; }
 .dot.boss { background:#f59e0b; }
@@ -37,15 +39,24 @@ body { background: #fdf2f8; color:#1f2937; }
 
 /* 清單 */
 .dr-list-title { font-weight:700; margin:18px 6px; }
-.dr-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
-.dr-item { background:#fff; border:1px solid #eee; border-radius:14px; padding:12px; }
-.dr-item-head { display:flex; justify-content:space-between; gap:8px; align-items:center; border-bottom:1px dashed #eee; padding-bottom:8px; }
-.dr-item-meta { font-size:12px; color:#6b7280; }
-.dr-item-title { font-weight:700; }
-.dr-item-body { padding:10px 2px; line-height:1.8; }
+.dr-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:14px; }
+
+/* 以日期為單位的群組卡片 */
+.day-card { background:#fff; border:1px solid #eee; border-radius:16px; overflow:hidden; }
+.day-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#fff; border-bottom:1px dashed #eee; }
+.day-date { font-weight:800; }
+.day-meta { font-size:12px; color:#6b7280; }
+.day-body { padding:10px 12px; display:flex; flex-direction:column; gap:12px; }
+
+/* 個人項目 */
+.person-item { border:1px solid #f5d0fe; background:#fdf4ff; border-radius:12px; padding:10px; }
+.person-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+.person-name { font-weight:700; }
+.person-title { font-size:12px; color:#6b7280; }
+.person-content { padding:6px 2px; line-height:1.8; background:#fff; border:1px solid #f3e8ff; border-radius:8px; }
 
 /* 回覆區 */
-.reply-wrap { margin-top:10px; padding:10px; border:1px dashed #fcd34d; border-radius:10px; background:#fffaf0; }
+.reply-wrap { margin-top:8px; padding:8px; border:1px dashed #fcd34d; border-radius:10px; background:#fffaf0; }
 .reply-meta { font-size:12px; color:#92400e; margin-bottom:6px; }
 .reply-item { font-size:14px; padding:8px 10px; border-radius:8px; background:#fff; border:1px solid #fde68a; margin-top:6px; }
 .reply-form { display:flex; gap:8px; margin-top:8px; }
