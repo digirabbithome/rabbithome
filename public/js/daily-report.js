@@ -1,7 +1,7 @@
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc,
-  query, where, orderBy, serverTimestamp
+  query, where, orderBy, serverTimestamp, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
@@ -167,7 +167,7 @@ function getScope(){
   return r ? r.value : 'mine'
 }
 
-// 渲染清單（只隱藏「我自己的今天」）
+// 渲染清單（含老闆回覆）
 function renderList(){
   const keyword = (searchInput.value || '').trim().toLowerCase()
 
@@ -201,16 +201,60 @@ function renderList(){
     body.className = 'dr-item-body'
     body.innerHTML = d.contentHtml || ''
 
+    // 回覆區塊
+    const replyWrap = document.createElement('div')
+    replyWrap.className = 'reply-wrap'
+    const replies = Array.isArray(d.replies) ? d.replies : []
+    replyWrap.innerHTML = `<div class="reply-meta">💬 老闆回覆（${replies.length}）</div>`
+
+    // 列出已存在回覆
+    for (const r of replies){
+      const item = document.createElement('div')
+      item.className = 'reply-item'
+      const who = (r?.boss?.nickname || r?.boss?.email || '老闆')
+      const when = r?.createdAt?.seconds ? new Date(r.createdAt.seconds*1000).toLocaleString('zh-TW') : ''
+      item.innerHTML = `<div class="reply-meta">${escapeHtml(who)} ${when ? '｜'+when : ''}</div><div>${escapeHtml(r?.text||'')}</div>`
+      replyWrap.appendChild(item)
+    }
+
+    // 老闆才顯示回覆輸入框
+    if (canViewAll){
+      const form = document.createElement('div')
+      form.className = 'reply-form'
+      form.innerHTML = `
+        <input class="reply-input" type="text" placeholder="回覆給 ${escapeHtml(d.author?.nickname || '同事')}…" />
+        <button class="reply-btn">送出回覆</button>
+      `
+      const input = form.querySelector('input')
+      const btn = form.querySelector('button')
+      btn.addEventListener('click', async ()=>{
+        const text = (input.value || '').trim()
+        if (!text) return
+        const ref = doc(db, 'workReports', d.id)
+        await updateDoc(ref, {
+          replies: arrayUnion({
+            boss: { email: me.email || '', nickname: myNickname || '老闆' },
+            text,
+            createdAt: serverTimestamp()
+          })
+        })
+        input.value = ''
+        toast('已送出回覆')
+        await loadMonth()
+      })
+      replyWrap.appendChild(form)
+    }
+
     li.appendChild(head)
     li.appendChild(body)
+    li.appendChild(replyWrap)
     reportList.appendChild(li)
   }
 }
 
-// 工具
-function escapeHtml(s){ 
+function escapeHtml(s){
   const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
-  return (s||'').replace(/[&<>"']/g, ch => map[ch]); 
+  return (s||'').replace(/[&<>"']/g, ch => map[ch]);
 }
 
 function toast(msg){
