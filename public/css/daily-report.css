@@ -2,7 +2,7 @@
 body { background: #fdf2f8; color:#1f2937; }
 
 /* 版面骨架 */
-.dr-wrap { display:grid; grid-template-columns: 320px 1fr; min-height:100vh; }
+.dr-wrap { display:block; min-height:100vh; }
 .dr-sidebar { background:#fff; padding:16px; border-right:1px solid #eee; }
 .dr-main { padding:16px; }
 
@@ -84,3 +84,13 @@ body { background: #fdf2f8; color:#1f2937; }
 @media (max-width: 700px) {
   .day-body { grid-template-columns: 1fr; }
 }
+
+.dr-btn-secondary { background:#eef2ff; border-color:#c7d2fe; }
+.dr-btn-secondary:hover { background:#e0e7ff; }
+
+/* Top filter bar (right-aligned slim row) */
+.dr-topbar { display:flex; justify-content:flex-end; align-items:center; padding:10px 0; }
+.dr-topbar-right { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.dr-topbar-controls { display:flex; gap:10px; align-items:center; }
+.dr-inline { display:inline-flex; align-items:center; gap:6px; font-size:14px; color:#374151; }
+.dr-input-compact { width:260px; padding:6px 10px; border-radius:10px; }

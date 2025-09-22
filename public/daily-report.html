@@ -5,31 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>工作紀錄｜Rabbithome</title>
   <link rel="stylesheet" href="/css/daily-report.css" />
-  <script type="module" src="/js/daily-report.js?v=2.0"></script>
+  <script type="module" src="/js/daily-report.js?v=2.2"></script>
 </head>
 <body>
   <div class="dr-wrap">
-    <aside class="dr-sidebar">
-      <h2 class="dr-sidertitle">🔎 篩選與搜尋</h2>
-      <div class="dr-block text-sm text-muted">搜尋僅限最近 60 天</div>
-      <label class="dr-block">搜尋（標題/內文/作者）
-        <input id="searchInput" type="search" class="dr-input" placeholder="輸入關鍵字…" />
-      </label>
-      <div class="dr-filter">
-        <label><input id="viewMine" type="radio" name="viewScope" value="mine" /> 只看我的</label>
-        <label><input id="viewAll" type="radio" name="viewScope" value="all" checked /> 全部</label>
-      </div>
-      <div class="dr-legend">
-        <div><span class="dot me"></span> 我的回報</div>
-        <div><span class="dot boss"></span> 老闆回覆</div>
-      </div>
-      <div class="dr-note">
-        <div>期間：<span id="rangeText">—</span></div>
-        <div>登入：<span id="whoami">—</span></div>
-      </div>
-    </aside>
+<main class="dr-main">
 
-    <main class="dr-main">
+      <div class="dr-topbar">
+        <div class="dr-topbar-right">
+          <span class="dr-range">期間：<span id="rangeText">—</span></span>
+          <span class="dr-whoami">登入：<span id="whoami">—</span></span>
+          <div class="dr-topbar-controls">
+            <label class="dr-inline"><input id="viewMine" type="radio" name="viewScope" value="mine" /> 只看我的</label>
+            <label class="dr-inline"><input id="viewAll" type="radio" name="viewScope" value="all" checked /> 全部</label>
+            <input id="searchInput" type="search" class="dr-input dr-input-compact" placeholder="🔎 最近60天搜尋…" />
+          </div>
+        </div>
+      </div>
+
       <section class="dr-editor-card">
         <header class="dr-editor-head">
           <div class="dr-title-left">
@@ -39,6 +32,7 @@
           <div class="dr-title-right">
             <input id="reportTitle" class="dr-title-input" placeholder="今日標題（可不填）" />
             <button id="btnSave" class="dr-btn dr-btn-primary">💾 儲存/更新今天</button>
+<button id="btnGoProgress" class="dr-btn dr-btn-secondary">📊 工作進度</button>
           </div>
         </header>
 
@@ -60,7 +54,7 @@
         <div class="dr-tip">提示：選取文字即可變更字色/底色；支援 Ctrl/Cmd + B/U/I 與 Undo/Redo。</div>
       </section>
 
-      <section>
+      <section id="recordsSection">
         <h2 class="dr-list-title">工作紀錄（最近 60 天）</h2>
         <ul id="reportList" class="dr-list"></ul>
       </section>

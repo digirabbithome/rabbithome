@@ -97,6 +97,17 @@ function bindToolbar(){
 }
 
 function bindControls(){
+  const btnGoProgress = document.getElementById('btnGoProgress');
+  if (btnGoProgress){
+    btnGoProgress.addEventListener('click', ()=>{
+      const sec = document.getElementById('recordsSection') || reportList;
+      if (sec && sec.scrollIntoView){
+        sec.scrollIntoView({behavior:'smooth', block:'start'});
+        toast('已定位到工作紀錄');
+      }
+    })
+  }
+
   viewAllRadio.addEventListener('change', ()=>{ selectedScope='all'; renderList() })
   viewMineRadio.addEventListener('change', ()=>{ selectedScope='mine'; renderList() })
   searchInput.addEventListener('input', renderList)
