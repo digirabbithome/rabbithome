@@ -50,7 +50,9 @@ window.onload = () => {
     if (!user) { alert('請先登入'); return }
     me = user
     canViewAll = MANAGER_EMAILS.has((me.email || '').toLowerCase())
-    if (!canViewAll && viewAllRadio) {
+    if (canViewAll && viewAllRadio) {
+      viewAllRadio.checked = true
+    } else if (!canViewAll && viewAllRadio) {
       viewAllRadio.disabled = true
       viewAllRadio.parentElement.style.opacity = 0.35
     }
@@ -101,7 +103,7 @@ function bindToolbar(){
 function bindControls(){
   monthPicker.addEventListener('change', async ()=>{ selectedMonth = monthPicker.value; await loadMonth() })
   searchInput.addEventListener('input', renderList)
-  scopeRadios.forEach(r=> r.addEventListener('change', renderList))
+  scopeRadios.forEach(r=> r.addEventListener('change', async ()=>{ await loadMonth() }))
   btnSave.addEventListener('click', saveToday)
 }
 
