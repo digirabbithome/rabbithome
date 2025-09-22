@@ -258,8 +258,9 @@ async function buildRepliesUI(container, reportDoc){
   }
 }
 
-function escapeHtml(s){ 
-  return (s||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#39;"}[c])) 
+function escapeHtml(s){
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'};
+  return (s||'').replace(/[&<>"']/g, ch => map[ch]);
 }
 
 function toast(msg){

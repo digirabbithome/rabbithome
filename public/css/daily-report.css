@@ -1,3 +1,5 @@
+/* base colors */
+body { background: #fdf2f8; color:#1f2937; }
 /* 版面骨架 */
 .dr-wrap { display:grid; grid-template-columns: 320px 1fr; min-height:100vh; }
 .dr-sidebar { background:#fff; padding:16px; border-right:1px solid #eee; }
