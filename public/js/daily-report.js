@@ -1,7 +1,7 @@
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc,
-  query, where, orderBy, serverTimestamp, arrayUnion
+  query, where, orderBy, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
@@ -228,19 +228,20 @@ function renderList(){
       const input = form.querySelector('input')
       const btn = form.querySelector('button')
       btn.addEventListener('click', async ()=>{
-        const text = (input.value || '').trim()
-        if (!text) return
-        const ref = doc(db, 'workReports', d.id)
-        await updateDoc(ref, {
-          replies: arrayUnion({
-            boss: { email: me.email || '', nickname: myNickname || '老闆' },
-            text,
-            createdAt: serverTimestamp()
-          })
-        })
-        input.value = ''
-        toast('已送出回覆')
-        await loadMonth()
+        const text = (input.value || '').trim();
+        if (!text) return;
+        const ref = doc(db, 'workReports', d.id);
+        const snap = await getDoc(ref);
+        const current = (snap.exists() && Array.isArray(snap.data().replies)) ? snap.data().replies.slice() : [];
+        current.push({
+          boss: { email: me.email || '', nickname: myNickname || '老闆' },
+          text,
+          createdAt: Timestamp.now()
+        });
+        await updateDoc(ref, { replies: current });
+        input.value = '';
+        toast('已送出回覆');
+        await loadMonth();
       })
       replyWrap.appendChild(form)
     }
