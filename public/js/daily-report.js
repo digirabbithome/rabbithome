@@ -70,6 +70,8 @@ window.onload = () => {
     selectedMonth = monthKeyFromYMD(todayYMD())
     monthPicker.value = selectedMonth
 
+    console.log('[DailyReport] signedIn', {email: me.email, canViewAll, selectedMonth});
+
     bindToolbar()
     bindControls()
 
@@ -141,8 +143,15 @@ async function loadMonth(){
     conds.push(where('uid','==', me.uid))
   }
   const qy = query(baseCol, ...conds, orderBy('date','desc'))
+  console.log('[DailyReport] query', {
+    scope: getScope(),
+    monthKeys,
+    canViewAll,
+    email: me?.email,
+  })
   const qs = await getDocs(qy)
   currentMonthDocs = qs.docs.map(d=> ({ id:d.id, ...d.data() }))
+  console.log('[DailyReport] results', { count: currentMonthDocs.length, sample: currentMonthDocs.slice(0,3).map(x=>({id:x.id, date:x.date, uid:x.uid})) })
   renderList()
 }
 
