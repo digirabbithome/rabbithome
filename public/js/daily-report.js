@@ -162,42 +162,49 @@ function getScope(){
   return r ? r.value : 'mine'
 }
 
-function renderList(){
-  const kw = (searchInput.value||'').trim().toLowerCase()
-  const scopeNow = getScope()
-  const kw = (searchInput.value||'').trim().toLowerCase()
-  const list = currentMonthDocs
-    .filter(d => !kw || (d.title||'').toLowerCase().includes(kw) || (d.plainText||'').toLowerCase().includes(kw) || (d.author?.nickname||'').toLowerCase().includes(kw))
-    // 只隱藏「我自己的今天」，避免與上方編輯器重複。其他同事的今天要顯示給老闆看。
-    .filter(d => !(d.uid === me.uid && d.date === todayYMD()))
 
-  reportList.innerHTML = ''
-  if (list.length===0){
-    reportList.innerHTML = '<li class="dr-item"><div class="dr-item-body">這個月份目前沒有資料</div></li>'; 
-    return
+function renderList(){
+  const scopeNow = getScope();
+  const keyword = (searchInput.value || '').trim().toLowerCase();
+
+  const list = currentMonthDocs
+    .filter(d => !keyword
+      || (d.title || '').toLowerCase().includes(keyword)
+      || (d.plainText || '').toLowerCase().includes(keyword)
+      || (d.author?.nickname || '').toLowerCase().includes(keyword))
+    // 只隱藏「我自己的今天」，避免與上方編輯器重複；其他同事的今天要顯示給老闆看。
+    .filter(d => !(d.uid === me.uid && d.date === todayYMD()));
+
+  reportList.innerHTML = '';
+
+  if (list.length === 0){
+    reportList.innerHTML = '<li class="dr-item"><div class="dr-item-body">這個月份目前沒有資料</div></li>';
+    return;
   }
 
   for (const d of list){
-    const li = document.createElement('li')
-    li.className = 'dr-item'
+    const li = document.createElement('li');
+    li.className = 'dr-item';
 
-    const head = document.createElement('div')
-    head.className = 'dr-item-head'
+    const head = document.createElement('div');
+    head.className = 'dr-item-head';
     head.innerHTML = `
       <div>
-        <div class="dr-item-title">${escapeHtml(d.title||'(無標題)')}</div>
-        <div class="dr-item-meta">${d.date}｜作者：${escapeHtml(d.author?.nickname||'—')}</div>
+        <div class="dr-item-title">${escapeHtml(d.title || '(無標題)')}</div>
+        <div class="dr-item-meta">${d.date}｜作者：${escapeHtml(d.author?.nickname || '—')}</div>
       </div>
-    `
+    `;
 
-    const body = document.createElement('div')
-    body.className = 'dr-item-body'
-    body.innerHTML = d.contentHtml || ''
+    const body = document.createElement('div');
+    body.className = 'dr-item-body';
+    body.innerHTML = d.contentHtml || '';
 
-    li.appendChild(head)
-    li.appendChild(body)
-    reportList.appendChild(li)
+    li.appendChild(head);
+    li.appendChild(body);
+    reportList.appendChild(li);
   }
+}
+
 }
 
 function escapeHtml(s){ 
