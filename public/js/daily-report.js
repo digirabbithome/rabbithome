@@ -260,8 +260,6 @@ function renderList(){
           replyWrap.appendChild(form)
         }
         box.appendChild(replyWrap)
-      }
-      }
       } else if (canReply) {
         // 2) 無回覆且為老闆 → 只顯示輸入框（不顯示 (0) 計數）
         const replyWrap = document.createElement('div')
