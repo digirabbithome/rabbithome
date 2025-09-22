@@ -211,7 +211,6 @@ function renderList(){
 
       // 1) 有回覆 → 顯示回覆區與清單（同事/老闆都會看到）
       if (replies.length > 0) {
-        // 依 createdAt 排序（若無 createdAt 則保留原順序）
         const sorted = [...replies].sort((a,b)=>{
           const as = a?.createdAt?.seconds || 0
           const bs = b?.createdAt?.seconds || 0
@@ -225,15 +224,14 @@ function renderList(){
         replyWrap.className = 'reply-wrap'
         replyWrap.innerHTML = `<div class="reply-meta">💬 ${escapeHtml(latestWho)}（${replies.length}）${latestWhen ? '｜'+latestWhen : ''}</div>`
 
-        // 顯示每則回覆的純內容
-        for (const r of sorted){
+        for (let i=0; i<sorted.length; i++){
+          const r = sorted[i]
           const item = document.createElement('div')
           item.className = 'reply-item'
           item.textContent = r?.text || ''
           replyWrap.appendChild(item)
         }
 
-        // 老闆在列表下方附上輸入框
         if (canReply){
           const form = document.createElement('div')
           form.className = 'reply-form'
@@ -262,6 +260,7 @@ function renderList(){
           replyWrap.appendChild(form)
         }
         box.appendChild(replyWrap)
+      }
       }
       } else if (canReply) {
         // 2) 無回覆且為老闆 → 只顯示輸入框（不顯示 (0) 計數）
