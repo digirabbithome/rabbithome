@@ -10,6 +10,7 @@
 </head>
 <body class="bg-pink-50 text-gray-800">
   <div class="dr-wrap">
+    <!-- 側欄：月份切換＋搜尋＋篩選 -->
     <aside class="dr-sidebar">
       <h2 class="dr-sidertitle">📅 月份與搜尋</h2>
       <label class="dr-block">月份
@@ -20,7 +21,7 @@
       </label>
       <div class="dr-filter">
         <label><input type="radio" name="viewScope" value="mine" checked /> 只看我的</label>
-        <label><input type="radio" name="viewScope" value="all" /> 全部（老闆）</label>
+        <label><input id="viewAll" type="radio" name="viewScope" value="all" /> 全部（老闆）</label>
       </div>
       <div class="dr-legend">
         <div><span class="dot me"></span> 我的回報</div>
@@ -28,7 +29,9 @@
       </div>
     </aside>
 
+    <!-- 主區：今日回報編輯 + 當月清單 -->
     <main class="dr-main">
+      <!-- 頂部：今日回報編輯器 -->
       <section class="dr-editor-card">
         <header class="dr-editor-head">
           <div class="dr-title-left">
@@ -41,6 +44,7 @@
           </div>
         </header>
 
+        <!-- 工具列（Word 風） -->
         <div class="dr-toolbar">
           <button data-cmd="bold" title="粗體 (Ctrl/Cmd+B)"><b>B</b></button>
           <button data-cmd="italic" title="斜體 (Ctrl/Cmd+I)"><i>I</i></button>
@@ -55,10 +59,12 @@
           <button id="btnClear">清除格式</button>
         </div>
 
+        <!-- 今日編輯區 -->
         <div id="editor" class="dr-editor" contenteditable="true"></div>
         <div class="dr-tip">提示：選取文字即可變更字色/底色；支援 Ctrl/Cmd + B/U/I 與 Undo/Redo。</div>
       </section>
 
+      <!-- 清單：顯示當月其他日期（昨天 → 更早） -->
       <section>
         <h2 class="dr-list-title">本月紀錄</h2>
         <ul id="reportList" class="dr-list"></ul>
