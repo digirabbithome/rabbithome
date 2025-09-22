@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每日工作回報｜Rabbithome</title>
+  <link rel="stylesheet" href="/css/daily-report.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="/js/daily-report.js"></script>
+</head>
+<body class="bg-pink-50 text-gray-800">
+  <div class="dr-wrap">
+    <aside class="dr-sidebar">
+      <h2 class="dr-sidertitle">📅 月份與搜尋</h2>
+      <label class="dr-block">月份
+        <input id="monthPicker" type="month" class="dr-input" />
+      </label>
+      <label class="dr-block">搜尋（標題/內文/作者）
+        <input id="searchInput" type="search" class="dr-input" placeholder="輸入關鍵字…" />
+      </label>
+      <div class="dr-filter">
+        <label><input type="radio" name="viewScope" value="mine" checked /> 只看我的</label>
+        <label><input type="radio" name="viewScope" value="all" /> 全部（老闆）</label>
+      </div>
+      <div class="dr-legend">
+        <div><span class="dot me"></span> 我的回報</div>
+        <div><span class="dot boss"></span> 老闆回覆</div>
+      </div>
+    </aside>
+
+    <main class="dr-main">
+      <section class="dr-editor-card">
+        <header class="dr-editor-head">
+          <div class="dr-title-left">
+            <h1 class="dr-page-title">每日工作回報</h1>
+            <div class="dr-sub">登入：<span id="whoami">—</span>｜今天：<span id="todayLabel">—</span></div>
+          </div>
+          <div class="dr-title-right">
+            <input id="reportTitle" class="dr-title-input" placeholder="今日標題（可不填）" />
+            <button id="btnSave" class="dr-btn dr-btn-primary">💾 儲存/更新今天</button>
+          </div>
+        </header>
+
+        <div class="dr-toolbar">
+          <button data-cmd="bold" title="粗體 (Ctrl/Cmd+B)"><b>B</b></button>
+          <button data-cmd="italic" title="斜體 (Ctrl/Cmd+I)"><i>I</i></button>
+          <button data-cmd="underline" title="底線 (Ctrl/Cmd+U)"><u>U</u></button>
+          <span class="sep"></span>
+          <label class="colorpick"><span>字色</span><input id="foreColor" type="color" value="#111111" /></label>
+          <label class="colorpick"><span>底色</span><input id="backColor" type="color" value="#fff59d" /></label>
+          <span class="sep"></span>
+          <button id="btnUndo" title="復原 (Ctrl/Cmd+Z)">↶ Undo</button>
+          <button id="btnRedo" title="重做 (Ctrl/Cmd+Y / Shift+Ctrl+Z)">↷ Redo</button>
+          <span class="sep"></span>
+          <button id="btnClear">清除格式</button>
+        </div>
+
+        <div id="editor" class="dr-editor" contenteditable="true"></div>
+        <div class="dr-tip">提示：選取文字即可變更字色/底色；支援 Ctrl/Cmd + B/U/I 與 Undo/Redo。</div>
+      </section>
+
+      <section>
+        <h2 class="dr-list-title">本月紀錄</h2>
+        <ul id="reportList" class="dr-list"></ul>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+</body>
+</html>
