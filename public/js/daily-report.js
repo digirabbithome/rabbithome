@@ -97,6 +97,22 @@ function bindToolbar(){
 }
 
 function bindControls(){
+
+// --- autosave helpers ---
+let _autosaveTimer = null;
+function debounceSave(){
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(()=>saveToday(true), 1500);
+}
+// autosave on inputs
+editor.addEventListener('input', debounceSave);
+reportTitle.addEventListener('input', debounceSave);
+// autosave when user leaves / tab hidden
+window.addEventListener('visibilitychange', ()=>{
+  if (document.visibilityState === 'hidden') { saveToday(true); }
+});
+window.addEventListener('pagehide', ()=>{ saveToday(true); });
+
   const btnGoProgress = document.getElementById('btnGoProgress');
   if (btnGoProgress){
     btnGoProgress.addEventListener('click', ()=>{
@@ -115,7 +131,7 @@ function bindControls(){
 }
 
 // 儲存今天
-async function saveToday(){
+async function saveToday(silent=false){
   const date = todayYMD()
   const id = `${me.uid}_${date}`
   const ref = doc(db, 'workReports', id)
@@ -132,11 +148,11 @@ async function saveToday(){
   const snap = await getDoc(ref)
   if (snap.exists()){
     await updateDoc(ref, data)
-    toast('已更新今天的回報')
+    if(!silent) toast('已更新今天的回報')
   } else {
     data.createdAt = serverTimestamp()
     await setDoc(ref, data)
-    toast('已建立今天的回報')
+    if(!silent) toast('已建立今天的回報')
   }
   await loadRecent60Days()
 }
