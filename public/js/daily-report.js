@@ -202,6 +202,10 @@ function renderList(){
       content.className = 'person-content'
       content.innerHTML = d.contentHtml || ''
 
+      // 先把姓名與內容放入卡片
+      box.appendChild(head2)
+      box.appendChild(content)
+
       // 回覆區塊（有回覆才顯示列表；老闆永遠可回覆，但 0 筆時不顯示 (0) 計數）
       const replies = Array.isArray(d.replies) ? d.replies : []
 
@@ -280,6 +284,7 @@ function renderList(){
         box.appendChild(replyWrap)
       }
 
+      // 最後把這個人的卡片放進當日清單
       body.appendChild(box)
     }
 
