@@ -164,9 +164,12 @@ function getScope(){
 
 function renderList(){
   const kw = (searchInput.value||'').trim().toLowerCase()
+  const scopeNow = getScope()
+  const kw = (searchInput.value||'').trim().toLowerCase()
   const list = currentMonthDocs
     .filter(d => !kw || (d.title||'').toLowerCase().includes(kw) || (d.plainText||'').toLowerCase().includes(kw) || (d.author?.nickname||'').toLowerCase().includes(kw))
-    .filter(d => d.date !== todayYMD())
+    // 只隱藏「我自己的今天」，避免與上方編輯器重複。其他同事的今天要顯示給老闆看。
+    .filter(d => !(d.uid === me.uid && d.date === todayYMD()))
 
   reportList.innerHTML = ''
   if (list.length===0){
