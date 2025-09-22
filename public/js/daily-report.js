@@ -16,13 +16,21 @@ const fmtDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year
 const fmtHM = new Intl.DateTimeFormat('zh-TW', { timeZone:'Asia/Taipei', hour:'2-digit', minute:'2-digit', hour12:false })
 function todayYMD(){ return fmtDate.format(new Date()) }            // YYYY-MM-DD
 function addDays(ymd, delta){ const d = new Date(ymd); d.setDate(d.getDate()+delta); return fmtDate.format(d) }
+function weekdayShort(ymd){
+  const d = new Date(ymd);
+  return ['日','一','二','三','四','五','六'][d.getDay()];
+}
+function formatDayWithWeekday(ymd){
+  return `${ymd}（${weekdayShort(ymd)}）`;
+}
 
 // 狀態
 let me = null
 let myNickname = '—'
 let canReply = false        // 只有老闆可回覆
 let selectedScope = 'all'   // 所有人預設「全部」
-let docs60 = []             // 最近 60 天的原始文件
+let docs60 = []             // 最近 60 天（供搜尋）
+let docs30 = []             // 最近 30 天（供下方列表）
 
 // DOM
 const whoami = document.getElementById('whoami')
@@ -158,26 +166,38 @@ async function saveToday(silent=false){
 }
 
 // 載入最近 60 天
+
 async function loadRecent60Days(){
   const end = todayYMD()
-  const start = addDays(end, -59) // 含今天，共 60 天
-  rangeText.textContent = `${start} ~ ${end}`
+  const start60 = addDays(end, -59) // 60 天
+  const start30 = addDays(end, -29) // 30 天
+
+  // 頂部仍顯示 60 天範圍
+  rangeText.textContent = `${start60} ~ ${end}`
 
   const base = collection(db, 'workReports')
-  const conds = [ where('date','>=', start) ]
-  // 可視篩選（若只看我的，就在渲染階段過濾，避免組合索引需求）
-  const qy = query(base, ...conds, orderBy('date','desc'))
-  const qs = await getDocs(qy)
-  docs60 = qs.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // 60 天（搜尋池）
+  const q60 = query(base, where('date','>=', start60), orderBy('date','desc'))
+  const qs60 = await getDocs(q60)
+  docs60 = qs60.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // 30 天（顯示池）
+  const q30 = query(base, where('date','>=', start30), orderBy('date','desc'))
+  const qs30 = await getDocs(q30)
+  docs30 = qs30.docs.map(d => ({ id: d.id, ...d.data() }))
+
   renderList()
 }
+
 
 // 渲染（以日期分組）
 function renderList(){
   const kw = (searchInput.value||'').trim().toLowerCase()
 
   // 先依關鍵字與視角過濾
-  let pool = docs60.filter(d => {
+  const basePool = kw ? docs60 : docs30;
+  let pool = basePool.filter(d => {
     if (selectedScope==='mine' && d.uid !== me.uid) return false
     if (kw){
       const hay = [(d.title||''), (d.plainText||''), (d.author?.nickname||'')].join(' ').toLowerCase()
@@ -208,7 +228,7 @@ function renderList(){
 
     const head = document.createElement('div')
     head.className = 'day-head'
-    head.innerHTML = `<div class="day-date">📅 ${day}</div><div class="day-meta">共 ${byDate.get(day).length} 則</div>`
+    head.innerHTML = `<div class="day-date">📅 ${formatDayWithWeekday(day)}</div><div class="day-meta">共 ${byDate.get(day).length} 則</div>`
 
     const body = document.createElement('div')
     body.className = 'day-body'
