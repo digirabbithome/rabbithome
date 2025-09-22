@@ -5,26 +5,22 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
-// ===== 角色設定（老闆） =====
 const MANAGER_EMAILS = new Set([
   'swimming8250@yahoo.com.tw',
   'duckskin71@yahoo.com.tw'
 ])
 
-// ===== 日期工具（台北時區） =====
 const fmtDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit' })
 const fmtHM = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour:'2-digit', minute:'2-digit', hour12:false })
 function todayYMD(){ return fmtDate.format(new Date()) }
-function monthKeyFromYMD(ymd){ return ymd.slice(0,7) } // YYYY-MM
+function monthKeyFromYMD(ymd){ return ymd.slice(0,7) }
 
-// ===== 狀態 =====
 let me = null
 let myNickname = '—'
 let canViewAll = false
 let selectedMonth = null
 let currentMonthDocs = []
 
-// ===== DOM =====
 const whoami = document.getElementById('whoami')
 const todayLabel = document.getElementById('todayLabel')
 const monthPicker = document.getElementById('monthPicker')
@@ -37,27 +33,23 @@ const btnSave = document.getElementById('btnSave')
 const reportList = document.getElementById('reportList')
 const toastEl = document.getElementById('toast')
 
-// Toolbar
 const btnUndo = document.getElementById('btnUndo')
 const btnRedo = document.getElementById('btnRedo')
 const btnClear = document.getElementById('btnClear')
 const foreColor = document.getElementById('foreColor')
 const backColor = document.getElementById('backColor')
 
-// 選取範圍保存（避免點顏色時 selection 消失）
 let savedRange = null
 function saveSelection(){ const sel = window.getSelection(); if(sel && sel.rangeCount>0) savedRange = sel.getRangeAt(0) }
 function restoreSelection(){ if(savedRange){ const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange) } }
 editor.addEventListener('keyup', saveSelection)
 editor.addEventListener('mouseup', saveSelection)
 
-// ===== 事件繫結進入點 =====
 window.onload = () => {
   onAuthStateChanged(auth, async user => {
     if (!user) { alert('請先登入'); return }
     me = user
     canViewAll = MANAGER_EMAILS.has((me.email || '').toLowerCase())
-    // 非老闆隱藏「全部」選項
     if (!canViewAll && viewAllRadio) {
       viewAllRadio.disabled = true
       viewAllRadio.parentElement.style.opacity = 0.35
@@ -66,7 +58,6 @@ window.onload = () => {
     whoami.textContent = `${me.displayName || me.email || '使用者'}${canViewAll ? '（老闆）' : ''}`
     todayLabel.textContent = `${todayYMD()} ${fmtHM.format(new Date())}`
 
-    // 嘗試讀取 users/{uid}.nickname
     try {
       const uref = doc(db, 'users', me.uid)
       const usn = await getDoc(uref)
@@ -76,17 +67,14 @@ window.onload = () => {
       myNickname = me.displayName || me.email || '匿名'
     }
 
-    // 預設月份 = 今天
     selectedMonth = monthKeyFromYMD(todayYMD())
     monthPicker.value = selectedMonth
 
     bindToolbar()
     bindControls()
 
-    // 載入當月資料
     await loadMonth()
 
-    // 載入今日草稿（若有）
     const todayDoc = currentMonthDocs.find(d => d.uid===me.uid && d.date===todayYMD())
     editor.innerHTML = todayDoc?.contentHtml || ''
     reportTitle.value = todayDoc?.title || ''
@@ -115,20 +103,6 @@ function bindControls(){
   btnSave.addEventListener('click', saveToday)
 }
 
-// ===== Firestore 結構說明 =====
-// Collection: workReports
-// DocID: `${uid}_${date}`  例如: "abc123_2025-09-22"
-// Fields:
-// - uid, author: { email, nickname }
-// - date: 'YYYY-MM-DD'
-// - monthKey: 'YYYY-MM'
-// - title: string
-// - contentHtml: string
-// - plainText: string（供搜尋）
-// - createdAt, updatedAt: serverTimestamp
-// Subcollection: comments （僅老闆可新增）
-//   - { text, authorEmail, authorNickname, createdAt }
-
 async function saveToday(){
   const date = todayYMD()
   const id = `${me.uid}_${date}`
@@ -156,13 +130,17 @@ async function saveToday(){
 }
 
 async function loadMonth(){
-  const base = collection(db, 'workReports')
-  const conds = [ where('monthKey','==', selectedMonth) ]
+  const baseCol = collection(db, 'workReports')
+  const m1 = selectedMonth
+  const m2 = selectedMonth.replace('-', '/')
+  const monthKeys = Array.from(new Set([m1, m2]))
+
+  const conds = [ where('monthKey','in', monthKeys) ]
   const scope = getScope()
   if (scope==='mine' || !canViewAll){
     conds.push(where('uid','==', me.uid))
   }
-  const qy = query(base, ...conds, orderBy('date','desc'))
+  const qy = query(baseCol, ...conds, orderBy('date','desc'))
   const qs = await getDocs(qy)
   currentMonthDocs = qs.docs.map(d=> ({ id:d.id, ...d.data() }))
   renderList()
@@ -202,65 +180,15 @@ function renderList(){
     body.className = 'dr-item-body'
     body.innerHTML = d.contentHtml || ''
 
-    const replies = document.createElement('div')
-    replies.className = 'reply-wrap'
-    replies.innerHTML = '<div class="reply-meta">老闆回覆</div>'
-
-    buildRepliesUI(replies, d)
-
     li.appendChild(head)
     li.appendChild(body)
-    li.appendChild(replies)
     reportList.appendChild(li)
   }
 }
 
-async function buildRepliesUI(container, reportDoc){
-  container.querySelectorAll('.reply-item,.reply-form').forEach(n=>n.remove())
-
-  const cref = collection(db, 'workReports', reportDoc.id, 'comments')
-  const qs = await getDocs(query(cref, orderBy('createdAt','asc')))
-  qs.forEach(snap => {
-    const c = snap.data()
-    const item = document.createElement('div')
-    item.className = 'reply-item'
-    const created = (c.createdAt && c.createdAt.seconds) ? new Date(c.createdAt.seconds*1000).toLocaleString('zh-TW') : new Date().toLocaleString('zh-TW')
-    item.innerHTML = `
-      <div class="reply-meta">${escapeHtml(c.authorNickname||c.authorEmail||'老闆')}｜${created}</div>
-      <div>${escapeHtml(c.text||'')}</div>
-    `
-    container.appendChild(item)
-  })
-
-  if (canViewAll){
-    const form = document.createElement('div')
-    form.className = 'reply-form'
-    form.innerHTML = `
-      <input class="reply-input" type="text" placeholder="回覆給 ${escapeHtml(reportDoc.author?.nickname||'同事')}…" />
-      <button class="reply-btn">送出</button>
-    `
-    const input = form.querySelector('input')
-    const btn = form.querySelector('button')
-    btn.addEventListener('click', async ()=>{
-      const text = (input.value||'').trim()
-      if (!text) return
-      await addDoc(cref, {
-        text,
-        authorEmail: me.email||'',
-        authorNickname: myNickname,
-        createdAt: serverTimestamp(),
-      })
-      input.value=''
-      toast('已送出回覆')
-      await buildRepliesUI(container, reportDoc)
-    })
-    container.appendChild(form)
-  }
-}
-
-function escapeHtml(s){
-  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'};
-  return (s||'').replace(/[&<>"']/g, ch => map[ch]);
+function escapeHtml(s){ 
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+  return (s||'').replace(/[&<>"']/g, ch => map[ch]); 
 }
 
 function toast(msg){
