@@ -211,17 +211,28 @@ function renderList(){
 
       // 1) 有回覆 → 顯示回覆區與清單（同事/老闆都會看到）
       if (replies.length > 0) {
+        // 依 createdAt 排序（若無 createdAt 則保留原順序）
+        const sorted = [...replies].sort((a,b)=>{
+          const as = a?.createdAt?.seconds || 0
+          const bs = b?.createdAt?.seconds || 0
+          return as-bs
+        })
+        const latest = sorted[sorted.length-1]
+        const latestWho = (latest?.boss?.nickname || latest?.boss?.email || '老闆')
+        const latestWhen = latest?.createdAt?.seconds ? new Date(latest.createdAt.seconds*1000).toLocaleString('zh-TW') : ''
+
         const replyWrap = document.createElement('div')
         replyWrap.className = 'reply-wrap'
-        replyWrap.innerHTML = `<div class="reply-meta">💬 老闆回覆（${replies.length}）</div>`
-        for (const r of replies){
+        replyWrap.innerHTML = `<div class="reply-meta">💬 ${escapeHtml(latestWho)}（${replies.length}）${latestWhen ? '｜'+latestWhen : ''}</div>`
+
+        // 顯示每則回覆的純內容
+        for (const r of sorted){
           const item = document.createElement('div')
           item.className = 'reply-item'
-          const who = (r?.boss?.nickname || r?.boss?.email || '老闆')
-          const when = r?.createdAt?.seconds ? new Date(r.createdAt.seconds*1000).toLocaleString('zh-TW') : ''
-          item.innerHTML = `<div class="reply-meta">${escapeHtml(who)} ${when ? '｜'+when : ''}</div><div>${escapeHtml(r?.text||'')}</div>`
+          item.textContent = r?.text || ''
           replyWrap.appendChild(item)
         }
+
         // 老闆在列表下方附上輸入框
         if (canReply){
           const form = document.createElement('div')
@@ -251,6 +262,7 @@ function renderList(){
           replyWrap.appendChild(form)
         }
         box.appendChild(replyWrap)
+      }
       } else if (canReply) {
         // 2) 無回覆且為老闆 → 只顯示輸入框（不顯示 (0) 計數）
         const replyWrap = document.createElement('div')
