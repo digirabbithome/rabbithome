@@ -46,7 +46,14 @@ body { background: #fdf2f8; color:#1f2937; }
 .day-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#fff; border-bottom:1px dashed #eee; }
 .day-date { font-weight:800; }
 .day-meta { font-size:12px; color:#6b7280; }
-.day-body { padding:10px 12px; display:flex; flex-direction:column; gap:12px; }
+
+.day-body { 
+  display: grid; 
+  grid-template-columns: repeat(3, minmax(280px, 1fr)); 
+  gap: 12px; 
+  padding: 10px 12px;
+}
+
 
 /* 個人項目 */
 .person-item { border:1px solid #f5d0fe; background:#fdf4ff; border-radius:12px; padding:10px; }
@@ -69,3 +76,11 @@ body { background: #fdf2f8; color:#1f2937; }
 .dr-btn:hover { background:#ffe4ec; }
 .dr-btn-primary { background:#fce7f3; border-color:#f9a8d4; }
 .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:24px; background:#111827; color:#fff; padding:8px 12px; border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.15); font-size:12px; }
+
+/* Responsive columns */
+@media (max-width: 1200px) {
+  .day-body { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+}
+@media (max-width: 700px) {
+  .day-body { grid-template-columns: 1fr; }
+}
