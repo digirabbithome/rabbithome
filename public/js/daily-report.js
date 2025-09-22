@@ -202,22 +202,56 @@ function renderList(){
       content.className = 'person-content'
       content.innerHTML = d.contentHtml || ''
 
-      // 回覆區塊
-      const replyWrap = document.createElement('div')
-      replyWrap.className = 'reply-wrap'
+      // 回覆區塊（有回覆才顯示列表；老闆永遠可回覆，但 0 筆時不顯示 (0) 計數）
       const replies = Array.isArray(d.replies) ? d.replies : []
-      replyWrap.innerHTML = `<div class="reply-meta">💬 老闆回覆（${replies.length}）</div>`
-      for (const r of replies){
-        const item = document.createElement('div')
-        item.className = 'reply-item'
-        const who = (r?.boss?.nickname || r?.boss?.email || '老闆')
-        const when = r?.createdAt?.seconds ? new Date(r.createdAt.seconds*1000).toLocaleString('zh-TW') : ''
-        item.innerHTML = `<div class="reply-meta">${escapeHtml(who)} ${when ? '｜'+when : ''}</div><div>${escapeHtml(r?.text||'')}</div>`
-        replyWrap.appendChild(item)
-      }
 
-      // 只有老闆可以回覆
-      if (canReply){
+      // 1) 有回覆 → 顯示回覆區與清單（同事/老闆都會看到）
+      if (replies.length > 0) {
+        const replyWrap = document.createElement('div')
+        replyWrap.className = 'reply-wrap'
+        replyWrap.innerHTML = `<div class="reply-meta">💬 老闆回覆（${replies.length}）</div>`
+        for (const r of replies){
+          const item = document.createElement('div')
+          item.className = 'reply-item'
+          const who = (r?.boss?.nickname || r?.boss?.email || '老闆')
+          const when = r?.createdAt?.seconds ? new Date(r.createdAt.seconds*1000).toLocaleString('zh-TW') : ''
+          item.innerHTML = `<div class="reply-meta">${escapeHtml(who)} ${when ? '｜'+when : ''}</div><div>${escapeHtml(r?.text||'')}</div>`
+          replyWrap.appendChild(item)
+        }
+        // 老闆在列表下方附上輸入框
+        if (canReply){
+          const form = document.createElement('div')
+          form.className = 'reply-form'
+          form.innerHTML = `
+            <input class="reply-input" type="text" placeholder="回覆給 ${escapeHtml(d.author?.nickname || '同事')}…" />
+            <button class="reply-btn">送出回覆</button>
+          `
+          const input = form.querySelector('input')
+          const btn = form.querySelector('button')
+          btn.addEventListener('click', async ()=>{
+            const text = (input.value||'').trim()
+            if (!text) return
+            const ref = doc(db, 'workReports', d.id)
+            const snap = await getDoc(ref)
+            const current = (snap.exists() && Array.isArray(snap.data().replies)) ? snap.data().replies.slice() : []
+            current.push({
+              boss: { email: me.email || '', nickname: myNickname || '老闆' },
+              text,
+              createdAt: Timestamp.now()
+            })
+            await updateDoc(ref, { replies: current })
+            input.value = ''
+            toast('已送出回覆')
+            await loadRecent60Days()
+          })
+          replyWrap.appendChild(form)
+        }
+        box.appendChild(replyWrap)
+      } else if (canReply) {
+        // 2) 無回覆且為老闆 → 只顯示輸入框（不顯示 (0) 計數）
+        const replyWrap = document.createElement('div')
+        replyWrap.className = 'reply-wrap'
+        replyWrap.innerHTML = `<div class="reply-meta">💬 老闆回覆</div>`
         const form = document.createElement('div')
         form.className = 'reply-form'
         form.innerHTML = `
@@ -243,11 +277,9 @@ function renderList(){
           await loadRecent60Days()
         })
         replyWrap.appendChild(form)
+        box.appendChild(replyWrap)
       }
 
-      box.appendChild(head2)
-      box.appendChild(content)
-      box.appendChild(replyWrap)
       body.appendChild(box)
     }
 
