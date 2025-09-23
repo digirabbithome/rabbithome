@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每日任務（Embed）</title>
+  <!-- 沿用原有樣式與資料邏輯 -->
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* 讓做為側欄嵌入時更乾淨 */
+    body{ background:transparent; }
+    .page-wrapper{ padding:0; background:transparent; }
+    h2{ display:flex; align-items:center; gap:.5rem; margin:8px 0 12px; }
+    .date-nav{ display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 14px; }
+    .date-nav button{ padding:6px 12px; border-radius:12px; border:1px solid #f5a5bd; background:#fff; cursor:pointer; }
+    .date-nav button:hover{ background:#ffe8f0; }
+    .date-display{ display:none !important; } /* 不顯示「2025/09/23」那一行 */
+  </style>
+  <!-- 保留原本的 daily.js，讓它以 #datePicker / #task-display 繼續運作 -->
+  <script type="module" src="js/daily.js" defer></script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- 1) 標題改為「每日任務」，保留日曆 -->
+    <h2>📅 每日任務 <input type="date" id="datePicker" /></h2>
+
+    <!-- 2) 拿掉顯示「當天日期」的行（仍保留節點避免既有 JS 依賴） -->
+    <div id="selectedDate" class="date-display"></div>
+
+    <!-- 3) 快速切換：今天、前1~前5天（共 6 顆），不放「前6天」 -->
+    <div class="date-nav" id="date-nav">
+      <button data-offset="0">今天</button>
+      <button data-offset="1">前1天</button>
+      <button data-offset="2">前2天</button>
+      <button data-offset="3">前3天</button>
+      <button data-offset="4">前4天</button>
+      <button data-offset="5">前5天</button>
+    </div>
+
+    <!-- 4) 任務清單容器（沿用原 ID 讓 daily.js 渲染） -->
+    <div class="task-display" id="task-display"></div>
+  </div>
+
+  <script>
+    // ===== Embed 行為：初始化日期、處理 6 顆快速切換、與原 daily.js 協作 =====
+    (function(){
+      const $ = (sel) => document.querySelector(sel);
+      const dateInput = $('#datePicker');
+      const nav = $('#date-nav');
+
+      function toYMD(d){
+        const y = d.getFullYear();
+        const m = String(d.getMonth()+1).padStart(2,'0');
+        const day = String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${day}`;
+      }
+      function fromYMD(s){
+        const m = s.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+        if(!m) return null;
+        return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+      }
+      function setDateByOffset(days){
+        const base = dateInput.value ? fromYMD(dateInput.value) : new Date();
+        const d = new Date(base);
+        d.setDate(d.getDate() - days);
+        dateInput.value = toYMD(d);
+        // 通知原 daily.js 以目前日期重新渲染
+        dateInput.dispatchEvent(new Event('input', { bubbles:true }));
+        dateInput.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+
+      // 讀取 URL ?date=YYYY-MM-DD 或用今天
+      const url = new URL(location.href);
+      const urlDate = url.searchParams.get('date');
+      const init = urlDate ? fromYMD(urlDate.replaceAll('/','-')) : new Date();
+      dateInput.value = toYMD(init);
+
+      // 點快速鍵 → 更新 datePicker
+      nav.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button[data-offset]');
+        if(!btn) return;
+        const offset = Number(btn.getAttribute('data-offset') || '0');
+        setDateByOffset(offset);
+      });
+
+      // 初始觸發一次，讓 daily.js 讀到目前日期
+      dateInput.dispatchEvent(new Event('input', { bubbles:true }));
+      dateInput.dispatchEvent(new Event('change', { bubbles:true }));
+    })();
+  </script>
+</body>
+</html>
