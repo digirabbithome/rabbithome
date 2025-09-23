@@ -112,13 +112,14 @@ body { background: #fdf2f8; color:#1f2937; }
 
 /* === 左側「每日工作」側欄 === */
 .dr-wrap{ display:grid; grid-template-columns: 320px 1fr; gap:16px; }
-.dr-sidebar{ background:#fff; border:1px solid #eee; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.04); }
+.dr-sidebar{ background:#fff; border:1px solid #eee; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.04); padding:16px; }
 .dr-iframe{ width:100%; min-height:70vh; border:0; border-radius:12px; background:#fff; }
 
-/* RWD：寬度小於 1200px 時可折疊側欄 */
 @media (max-width: 900px){
   .dr-wrap{ grid-template-columns: 1fr; }
-  /* 不自動隱藏側欄，改為堆疊在上方 */
   .dr-sidebar{ display:block; margin-bottom:12px; }
   .dr-main{ padding-left:0; }
 }
+
+/* v2.14: 強制顯示側欄 */
+#dailyPane{ display:block !important; }

@@ -548,7 +548,6 @@ const btnToggleDaily = document.getElementById('btnToggleDaily')
 function setDailyFrameSrc(){
   if (!dailyFrame) return
   const ymd = todayYMD()
-  // 帶入日期參數；若該頁有支援，可用 ?date=YYYY-MM-DD&embed=1
   dailyFrame.src = `/daily.html?date=${ymd}&embed=1`
 }
 function adjustDailyHeight(){
@@ -561,11 +560,8 @@ if (dailyFrame){
   adjustDailyHeight()
   window.addEventListener('resize', adjustDailyHeight)
 }
-if (btnToggleDaily){
-  btnToggleDaily.addEventListener('click', () => {
-    const pane = document.getElementById('dailyPane')
-    if (!pane) return
-    const isHidden = pane.style.display === 'none'
-    pane.style.display = isHidden ? '' : 'none'
-  })
-}
+
+;
+
+// v2.14: 移除側欄開關，清除舊設定（若有）
+try{ localStorage.removeItem('dr.dailyPane.open'); }catch(e){}
