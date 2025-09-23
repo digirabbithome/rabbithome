@@ -441,3 +441,102 @@ window.addEventListener('DOMContentLoaded', ()=>{
   if (btnBg) btnBg.addEventListener('click', ()=> togglePop(popBg, btnBg));
   if (btnEmoji) btnEmoji.addEventListener('click', ()=> togglePop(popEmoji, btnEmoji));
 });
+
+/* DR_TOOLBAR_DYNAMIC_INJECTOR */
+(function(){ 
+  function ensureButtons(){ 
+    const toolbar = document.querySelector('.dr-toolbar');
+    if (!toolbar) return false;
+    let btnU = toolbar.querySelector('#btnUnderline');
+    if (!btnU) { 
+      btnU = Array.from(toolbar.querySelectorAll('button')).find(b=>b.textContent && b.textContent.trim()==='U');
+    }
+    if (!btnU) return false;
+    if (toolbar.querySelector('#btnEmoji')) return true;
+
+    function el(tag, attrs, html){ 
+      const e=document.createElement(tag); 
+      if (attrs) Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v)); 
+      if (html) e.innerHTML=html; 
+      return e; 
+    }
+
+    const btnColor = el('button',{id:'btnColor',class:'dr-btn','data-pop':'color'},'字色 ▼');
+    const btnBg    = el('button',{id:'btnBg',class:'dr-btn','data-pop':'bg'},'底色 ▼');
+    const btnEmoji = el('button',{id:'btnEmoji',class:'dr-btn','data-pop':'emoji'},'😀 Emoji');
+    btnU.insertAdjacentElement('afterend', btnColor);
+    btnColor.insertAdjacentElement('afterend', btnBg);
+    btnBg.insertAdjacentElement('afterend', btnEmoji);
+
+    const anchor = document.querySelector('.dr-editor-card') || document.querySelector('.dr-editor') || document.body;
+    const popColor = el('div',{id:'popColor',class:'dr-pop dr-pop-colors'});
+    const popBg    = el('div',{id:'popBg',class:'dr-pop dr-pop-colors'});
+    const popEmoji = el('div',{id:'popEmoji',class:'dr-pop dr-pop-emoji'});
+    anchor.appendChild(popColor); anchor.appendChild(popBg); anchor.appendChild(popEmoji);
+
+    const COLORS=['#000','#434343','#666','#999','#b7b7b7','#ccc','#d9d9d9','#efefef','#f3f4f6','#fff','#e53935','#d81b60','#8e24aa','#5e35b1','#3949ab','#1e88e5','#039be5','#00acc1','#00897b','#43a047','#7cb342','#c0ca33','#fdd835','#ffb300','#fb8c00','#f4511e','#6d4c41','#757575','#546e7a','#263238','#ffebee','#fce4ec','#f3e5f5','#ede7f6','#e8eaf6','#e3f2fd','#e1f5fe','#e0f7fa','#e0f2f1','#e8f5e9','#f1f8e9','#f9fbe7','#fffde7','#fff8e1','#fff3e0','#fbe9e7','#efebe9','#fafafa','#eceff1','#e0e0e0'];
+    const EMOJIS=['✅','🐇','🌸','⭐','📦','🔥','⏳','🚧','👏','👍','💡','📝','📌','🗂️','🛠️','🎯','⚠️','💬','📈','📆','🕒','💤','🍀','💪','❤️'];
+
+    function buildColors(el,onPick){ 
+      el.innerHTML=''; 
+      const g=el.appendChild(document.createElement('div')); 
+      g.className='dr-color-grid';
+      COLORS.forEach(c=>{ 
+        const b=document.createElement('button'); 
+        b.type='button'; b.className='dr-color-swatch'; b.style.backgroundColor=c; b.title=c; 
+        b.addEventListener('click',()=>onPick(c)); 
+        g.appendChild(b); 
+      });
+      const f=document.createElement('div'); f.className='dr-pop-footer'; 
+      f.innerHTML='<span>自訂</span><input type="color" class="dr-input-color" value="#000000">'; 
+      f.querySelector('input').addEventListener('input', e=>onPick(e.target.value)); 
+      el.appendChild(f); 
+    }
+
+    function buildEmojis(el,onPick){ 
+      el.innerHTML=''; 
+      const g=el.appendChild(document.createElement('div')); 
+      g.className='dr-emoji-grid';
+      EMOJIS.forEach(m=>{ 
+        const b=document.createElement('button'); 
+        b.type='button'; b.className='dr-emoji'; b.textContent=m; 
+        b.addEventListener('click',()=>onPick(m)); 
+        g.appendChild(b); 
+      });
+    }
+
+    function show(pop,btn){ 
+      const r=btn.getBoundingClientRect(); 
+      pop.style.top = window.scrollY + r.bottom + 8 + 'px'; 
+      pop.style.left = window.scrollX + r.left + 'px';
+      document.querySelectorAll('.dr-pop').forEach(p=>p.classList.remove('show')); 
+      pop.classList.add('show'); 
+    }
+
+    document.addEventListener('click', e=>{ 
+      const pops=document.querySelectorAll('.dr-pop'); 
+      if ([...pops].some(p=>p.contains(e.target))) return; 
+      if (e.target.closest('.dr-btn')) return; 
+      pops.forEach(p=>p.classList.remove('show')); 
+    });
+
+    buildColors(popColor, c=>{ document.execCommand('foreColor',false,c); popColor.classList.remove('show'); });
+    buildColors(popBg, c=>{ document.execCommand('hiliteColor',false,c); popBg.classList.remove('show'); });
+    buildEmojis(popEmoji, m=>{ document.execCommand('insertText',false,m); popEmoji.classList.remove('show'); });
+
+    btnColor.addEventListener('click', ()=>show(popColor,btnColor));
+    btnBg.addEventListener('click', ()=>show(popBg,btnBg));
+    btnEmoji.addEventListener('click', ()=>show(popEmoji,btnEmoji));
+
+    return true;
+  }
+
+  function boot(){ 
+    let tries=0; 
+    const t=setInterval(()=>{ 
+      if (ensureButtons() || tries++>25) clearInterval(t); 
+    }, 200); 
+  }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();    
