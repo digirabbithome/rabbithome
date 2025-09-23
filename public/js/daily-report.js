@@ -361,3 +361,83 @@ function toast(msg){
   toastEl.hidden = false
   setTimeout(()=>{ toastEl.hidden = true }, 1600)
 }
+
+
+// ----- Color Palettes & Emoji Picker (integrated) -----
+const COLORS = [
+  '#000000','#434343','#666666','#999999','#b7b7b7','#cccccc','#d9d9d9','#efefef','#f3f4f6','#ffffff',
+  '#e53935','#d81b60','#8e24aa','#5e35b1','#3949ab','#1e88e5','#039be5','#00acc1','#00897b','#43a047',
+  '#7cb342','#c0ca33','#fdd835','#ffb300','#fb8c00','#f4511e','#6d4c41','#757575','#546e7a','#263238',
+  '#ffebee','#fce4ec','#f3e5f5','#ede7f6','#e8eaf6','#e3f2fd','#e1f5fe','#e0f7fa','#e0f2f1','#e8f5e9',
+  '#f1f8e9','#f9fbe7','#fffde7','#fff8e1','#fff3e0','#fbe9e7','#efebe9','#fafafa','#eceff1','#e0e0e0'
+];
+const EMOJIS = ['✅','🐇','🌸','⭐','📦','🔥','⏳','🚧','👏','👍','💡','📝','📌','🗂️','🛠️','🎯','⚠️','💬','📈','📆','🕒','💤','🍀','💪','❤️'];
+
+function buildColorPanel(el, onPick){
+  el.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'dr-color-grid';
+  COLORS.forEach(c=>{
+    const b = document.createElement('button');
+    b.type='button'; b.className='dr-color-swatch'; b.style.backgroundColor=c; b.title=c;
+    b.addEventListener('click', ()=> onPick(c));
+    grid.appendChild(b);
+  });
+  const foot = document.createElement('div'); foot.className='dr-pop-footer';
+  foot.innerHTML = `<span>自訂</span><input type="color" class="dr-input-color" value="#000000">`;
+  foot.querySelector('input').addEventListener('input', e=> onPick(e.target.value));
+  el.appendChild(grid); el.appendChild(foot);
+}
+
+function buildEmojiPanel(el, onPick){
+  el.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'dr-emoji-grid';
+  EMOJIS.forEach(emoji=>{
+    const b = document.createElement('button');
+    b.type='button'; b.className='dr-emoji'; b.textContent=emoji;
+    b.addEventListener('click', ()=> onPick(emoji));
+    grid.appendChild(b);
+  });
+  el.appendChild(grid);
+}
+
+function togglePop(pop, anchor){
+  const rect = anchor.getBoundingClientRect();
+  pop.style.top = window.scrollY + rect.bottom + 8 + 'px';
+  pop.style.left = window.scrollX + rect.left + 'px';
+  document.querySelectorAll('.dr-pop').forEach(p=> p.classList.remove('show'));
+  pop.classList.add('show');
+}
+function closePops(e){
+  const pops = document.querySelectorAll('.dr-pop');
+  if ([...pops].some(p=> p.contains(e.target)) ) return;
+  if (e.target.closest('.dr-btn')) return;
+  pops.forEach(p=> p.classList.remove('show'));
+}
+document.addEventListener('click', closePops);
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  const popColor = document.getElementById('popColor');
+  const popBg = document.getElementById('popBg');
+  const popEmoji = document.getElementById('popEmoji');
+  if (popColor && !popColor.dataset.ready){
+    buildColorPanel(popColor, (c)=> { document.execCommand('foreColor', false, c); closePops({target:document.body}); });
+    popColor.dataset.ready = '1';
+  }
+  if (popBg && !popBg.dataset.ready){
+    buildColorPanel(popBg, (c)=> { document.execCommand('hiliteColor', false, c); closePops({target:document.body}); });
+    popBg.dataset.ready = '1';
+  }
+  if (popEmoji && !popEmoji.dataset.ready){
+    buildEmojiPanel(popEmoji, (e)=> { document.execCommand('insertText', false, e); closePops({target:document.body}); });
+    popEmoji.dataset.ready = '1';
+  }
+
+  const btnColor = document.getElementById('btnColor');
+  const btnBg = document.getElementById('btnBg');
+  const btnEmoji = document.getElementById('btnEmoji');
+  if (btnColor) btnColor.addEventListener('click', ()=> togglePop(popColor, btnColor));
+  if (btnBg) btnBg.addEventListener('click', ()=> togglePop(popBg, btnBg));
+  if (btnEmoji) btnEmoji.addEventListener('click', ()=> togglePop(popEmoji, btnEmoji));
+});
