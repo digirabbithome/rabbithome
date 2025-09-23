@@ -548,6 +548,7 @@ const btnToggleDaily = document.getElementById('btnToggleDaily')
 function setDailyFrameSrc(){
   if (!dailyFrame) return
   const ymd = todayYMD()
+  // 帶入日期參數；若該頁有支援，可用 ?date=YYYY-MM-DD&embed=1
   dailyFrame.src = `/daily.html?date=${ymd}&embed=1`
 }
 function adjustDailyHeight(){
@@ -560,37 +561,11 @@ if (dailyFrame){
   adjustDailyHeight()
   window.addEventListener('resize', adjustDailyHeight)
 }
-
-// === 側欄 開/關＋記憶（URL 參數 daily=1|0 可覆寫一次） ===
-;(function(){
-  const pane = document.getElementById('dailyPane')
-  const btn = document.getElementById('btnToggleDaily')
-  if (!pane || !btn) return
-
-  function q(name){
-    const m = location.search.match(new RegExp('[?&]'+name+'=([^&]+)'))
-    return m ? decodeURIComponent(m[1]) : null
-  }
-  const ov = q('daily')
-  let isOpen = ov !== null ? ov !== '0' : (localStorage.getItem('dr.dailyPane.open') !== 'false')
-
-  function apply(){
-    pane.style.display = isOpen ? '' : 'none'
-    btn.setAttribute('aria-pressed', isOpen ? 'true' : 'false')
-    btn.textContent = isOpen ? '🗓 收合每日工作' : '🗓 顯示每日工作'
-  }
-  apply()
-
-  btn.addEventListener('click', () => {
-    isOpen = !isOpen
-    localStorage.setItem('dr.dailyPane.open', isOpen ? 'true' : 'false')
-    apply()
+if (btnToggleDaily){
+  btnToggleDaily.addEventListener('click', () => {
+    const pane = document.getElementById('dailyPane')
+    if (!pane) return
+    const isHidden = pane.style.display === 'none'
+    pane.style.display = isHidden ? '' : 'none'
   })
-
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')){
-      e.preventDefault()
-      btn.click()
-    }
-  })
-})();
+}
