@@ -549,7 +549,7 @@ function setDailyFrameSrc(){
   if (!dailyFrame) return
   const ymd = todayYMD()
   // 帶入日期參數；若該頁有支援，可用 ?date=YYYY-MM-DD&embed=1
-  dailyFrame.src = `/daily-work.html?date=${ymd}&embed=1`
+  dailyFrame.src = `/daily.html?date=${ymd}&embed=1`
 }
 function adjustDailyHeight(){
   if (!dailyFrame) return
