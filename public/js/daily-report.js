@@ -548,7 +548,7 @@ const btnToggleDaily = document.getElementById('btnToggleDaily')
 function setDailyFrameSrc(){
   if (!dailyFrame) return
   const ymd = todayYMD()
-  dailyFrame.src = `/daily.html?date=${ymd}&embed=1`
+  dailyFrame.src = `/daily-embed.html?date=${ymd}&embed=1`
 }
 function adjustDailyHeight(){
   if (!dailyFrame) return
