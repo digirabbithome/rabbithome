@@ -9,13 +9,21 @@
 </head>
 <body>
   <div class="dr-wrap">
+    <aside class="dr-sidebar" id="dailyPane">
+      <div class="dr-sidertitle">🗓️ 每日工作</div>
+      <div class="text-muted dr-block">（僅供快速查看）</div>
+      <div class="dr-block">
+        <iframe id="dailyFrame" class="dr-iframe" src="/daily-work.html#embed"></iframe>
+      </div>
+    </aside>
+
 <main class="dr-main">
 
       <div class="dr-topbar">
         <div class="dr-topbar-right">
           <span class="dr-range">期間：<span id="rangeText">—</span></span>
           <span class="dr-whoami">登入：<span id="whoami">—</span></span>
-          <div class="dr-topbar-controls">
+          <button id="btnToggleDaily" class="dr-btn">🗓 每日工作</button><div class="dr-topbar-controls">
             <label class="dr-inline"><input id="viewMine" type="radio" name="viewScope" value="mine" /> 只看我的</label>
             <label class="dr-inline"><input id="viewAll" type="radio" name="viewScope" value="all" checked /> 全部</label>
             <input id="searchInput" type="search" class="dr-input dr-input-compact" placeholder="🔎 最近60天搜尋…" />

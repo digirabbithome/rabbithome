@@ -108,3 +108,16 @@ body { background: #fdf2f8; color:#1f2937; }
 .dr-emoji-grid{ display:grid; grid-template-columns: repeat(12, 1fr); gap:6px; max-height:220px; overflow:auto; }
 .dr-emoji{ font-size:20px; padding:6px; border-radius:8px; cursor:pointer; text-align:center; }
 .dr-emoji:hover{ background:#f3f4f6; }
+
+
+/* === 左側「每日工作」側欄 === */
+.dr-wrap{ display:grid; grid-template-columns: 320px 1fr; gap:16px; }
+.dr-sidebar{ background:#fff; border:1px solid #eee; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.04); }
+.dr-iframe{ width:100%; min-height:70vh; border:0; border-radius:12px; background:#fff; }
+
+/* RWD：寬度小於 1200px 時可折疊側欄 */
+@media (max-width: 1200px){
+  .dr-wrap{ grid-template-columns: 1fr; }
+  .dr-sidebar{ display:none; }
+  .dr-main{ padding-left:0; }
+}
