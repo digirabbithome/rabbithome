@@ -1,10 +1,10 @@
-// cash-diff.js — Rabbithome 營業額誤差紀錄（管理員限定歸零）
+// cash-diff.js — Rabbithome 營業額誤差紀錄（管理員限定歸零 + 綽號顯示）
 // 需已載入 /js/firebase.js (v11.10.0)
 
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, serverTimestamp, query, where, orderBy, getDocs,
-  doc, updateDoc
+  doc, updateDoc, getDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
@@ -37,7 +37,20 @@ window.onload = () => {
   onAuthStateChanged(auth, async user => {
     if (!user) { alert('請先登入'); return }
     me = user
-    profileName = user.displayName || (user.email ? user.email.split('@')[0] : '未命名')
+
+    // 優先讀取 profiles/{uid}.nickname 作為綽號
+    try{
+      const profSnap = await getDoc(doc(db, 'profiles', user.uid))
+      if (profSnap.exists() && profSnap.data().nickname){
+        profileName = profSnap.data().nickname
+      } else {
+        profileName = user.displayName || (user.email ? user.email.split('@')[0] : '未命名')
+      }
+    } catch(err){
+      console.warn('讀取 nickname 失敗，改用 displayName/email：', err)
+      profileName = user.displayName || (user.email ? user.email.split('@')[0] : '未命名')
+    }
+
     amIAdmin = isAdmin(user)
     $('#nickname').textContent = profileName + (amIAdmin ? '（管理員）' : '')
 
