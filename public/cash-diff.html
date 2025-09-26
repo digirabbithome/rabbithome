@@ -1,97 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
   <title>營業額誤差紀錄</title>
-  <link rel="stylesheet" href="/css/cash-diff.css" />
-  <script type="module" src="/js/cash-diff.js" defer></script>
+  <link rel="stylesheet" href="/css/cash-diff.css">
+  <script type="module" src="/js/cash-diff.js"></script>
 </head>
 <body>
   <div class="page-wrapper">
     <header class="topbar">
       <h2>💰 營業額誤差紀錄</h2>
-      <div class="user-info">
-        <span id="nickname">—</span>
-      </div>
+      <div class="user-info"><span id="nickname">—</span></div>
     </header>
 
-    <section class="toolbar">
-      <div class="date-tools">
-        <label>日期：<input type="date" id="datePicker" /></label>
-        <button id="todayBtn" class="btn">今天</button>
-        <span class="spacer"></span>
-        <button id="prevMonth" class="btn ghost">← 上個月</button>
-        <div class="month-label" id="monthLabel">0000-00</div>
-        <button id="nextMonth" class="btn ghost">下個月 →</button>
-      </div>
-      <div class="month-sum">
-        本月有效誤差合計：<strong id="monthTotal">0</strong> 元
-      </div>
-    </section>
-
-    <section class="card">
-      <h3>➕ 新增誤差紀錄</h3>
-      <form id="diffForm" class="grid-form">
-        <label>誤差金額（可正負）
-          <input id="amount" type="number" step="1" placeholder="例如 -200 或 300" required />
-        </label>
-        <label class="col-span-2">備註（選填）
-          <input id="note" placeholder="例：已對點，少 200，疑似找零錯" />
-        </label>
-        <div class="actions col-span-2">
-          <button class="btn primary" id="addBtn" type="submit">送出紀錄</button>
-          <span class="hint">＊一天可多筆，系統以時間與填寫人區分。</span>
-        </div>
-      </form>
-    </section>
-
     <section class="card">
       <div class="card-head">
-        <h3>📅 <span id="listDate">—</span> 的誤差紀錄</h3>
-        <div class="filters">
-          <input id="searchInput" placeholder="搜尋：備註／填寫人" />
-        </div>
+        <h3>📅 <span id="listDate">—</span> 的誤差紀錄 <small>（當日合計：<span id="dayTotal">0</span> 元）</small></h3>
+        <div class="filters"><input id="searchInput" placeholder="搜尋：備註／填寫人"></div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>時間</th>
-              <th class="right">金額</th>
-              <th>填寫人</th>
-              <th>備註</th>
-              <th>狀態 / 操作</th>
-            </tr>
-          </thead>
-          <tbody id="diffTbody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h3>📦 本月所有紀錄（僅顯示所選月份）</h3>
-        <div class="legend">
-          <span class="tag">有效：未歸零</span>
-          <span class="tag gray">歸零：不計入合計</span>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>時間</th>
-              <th class="right">金額</th>
-              <th>填寫人</th>
-              <th>備註</th>
-              <th>歸零資訊</th>
-            </tr>
-          </thead>
-          <tbody id="monthTbody"></tbody>
-        </table>
-      </div>
+      <div class="table-wrap"><table><thead><tr><th>時間</th><th class="right">金額</th><th>填寫人</th><th>備註</th><th>狀態/操作</th></tr></thead><tbody id="diffTbody"></tbody></table></div>
     </section>
   </div>
 </body>
