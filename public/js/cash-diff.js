@@ -162,6 +162,7 @@ function renderDayTable(rows){
         btn.textContent = '✔️ 歸零'
         btn.onclick = async () => {
           const reason = prompt('歸零原因（可填誰結錯／在哪找到錢）\n\n例如：已在收銀機側邊找到 200 元，A 同事結帳找零遺漏。')
+          if (reason === null) { return } // 按取消就不動作
           await updateDoc(doc(db,'cashbox-diffs', r.id), {
             zeroed:true,
             zeroedAt: serverTimestamp(),
