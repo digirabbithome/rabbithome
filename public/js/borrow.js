@@ -1,9 +1,8 @@
-// borrow.js v1.0 - 借貨管理
-// 注意：請先在 /js/firebase.js 匯出 db/auth/storage 物件 (Firebase v11.10.0)
+// borrow.js v1.1 - 借貨管理 (只在表格顯示縮圖 + hover 放大)
 import { db, auth, storage } from '/js/firebase.js'
 import {
   collection, addDoc, serverTimestamp, query, orderBy, where,
-  getDocs, doc, updateDoc, onSnapshot, limit, startAfter
+  getDocs, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import {
   ref, uploadBytesResumable, getDownloadURL
@@ -14,7 +13,7 @@ const fmtDate = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', year
 const fmtTime = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hour12: false })
 const pageSize = 30
 
-let me, nickname = '', currentFilter = 'pending', kw = '', pageCursor = null, lastSnapshot = null
+let me, nickname = '', currentFilter = 'pending', kw = ''
 
 window.onload = () => {
   bindUI()
@@ -33,7 +32,7 @@ async function loadNickname(user){
     const dref = docFn(db, 'profiles', user.uid)
     const snap = await getDoc(dref)
     return snap.exists() ? (snap.data().nickname || '') : ''
-  }catch(e){ console.warn('loadNickname failed', e); return '' }
+  }catch(e){ return '' }
 }
 
 function bindUI(){
@@ -42,13 +41,11 @@ function bindUI(){
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'))
       btn.classList.add('active')
       currentFilter = btn.dataset.filter
-      pageCursor = null
       loadList()
     })
   })
   document.getElementById('kw').addEventListener('input', e=>{
     kw = e.target.value.trim()
-    pageCursor = null
     loadList()
   })
   document.getElementById('borrowForm').addEventListener('submit', onSubmit)
@@ -76,7 +73,6 @@ async function onSubmit(ev){
   const assignee = document.getElementById('assignee').value.trim()
   const desc = document.getElementById('desc').value.trim()
   const files = Array.from(document.getElementById('photos').files||[])
-
   if(!itemName || !assignee){ alert('商品與取走者為必填'); return }
 
   const data = {
@@ -85,15 +81,13 @@ async function onSubmit(ev){
     deliveredByUid: me.uid,
     deliveredAt: serverTimestamp(),
     status: 'pending',
-    photos: [], // {url, path, name, contentType}
+    photos: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }
-
   const col = collection(db, 'borrows')
   const docRef = await addDoc(col, data)
 
-  // 上傳圖片到 borrows/<docId>/
   if(files.length){
     const prog = document.getElementById('upProgress')
     let done = 0
@@ -102,19 +96,11 @@ async function onSubmit(ev){
       const sref = ref(storage, p)
       await new Promise((resolve,reject)=>{
         const task = uploadBytesResumable(sref, f, { contentType: f.type })
-        task.on('state_changed', snap=>{
-          const pct = Math.round(snap.bytesTransferred*100/snap.totalBytes)
-          prog.textContent = `上傳中… ${done + pct/100 | 0}/${files.length} 張`
-        }, reject, async ()=>{
+        task.on('state_changed', null, reject, async ()=>{
           const url = await getDownloadURL(sref)
-          await updateDoc(docRef, {
-            photos: window.firebase?.firestore?.FieldValue?.arrayUnion?.({url, path:p, name:f.name, contentType:f.type}) || [
-              ...((await (await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')).getDoc(docRef)).data().photos||[]),
-              {url, path:p, name:f.name, contentType:f.type}
-            ]
-          }).catch(()=>{})
+          await updateDoc(docRef, { photos: [ ...(data.photos||[]), {url, path:p, name:f.name, contentType:f.type} ] })
           done++
-          prog.textContent = `上傳中… ${done}/${files.length} 張`
+          prog.textContent = `上傳 ${done}/${files.length}`
           resolve()
         })
       })
@@ -122,15 +108,12 @@ async function onSubmit(ev){
     prog.textContent = '上傳完成'
   }
 
-  // 重置表單
   ev.target.reset()
   document.getElementById('photoPreview').innerHTML=''
-  pageCursor = null
   loadList()
-  alert('已新增借貨紀錄')
 }
 
-function sanitizeName(n){ return n.replace(/[^一-鿿\w.-]+/g,'_') }
+function sanitizeName(n){ return n.replace(/[^\u4E00-\u9FFF\w.-]+/g,'_') }
 
 async function buildQuery(){
   const col = collection(db, 'borrows')
@@ -140,7 +123,6 @@ async function buildQuery(){
   }else if(currentFilter==='completed'){
     q = query(col, where('status','in',['returned','refunded']), orderBy('createdAt','desc'))
   }
-  // 關鍵字 (client 側篩選)
   const snaps = await getDocs(q)
   let rows = snaps.docs.map(d=>({ id:d.id, ...d.data() }))
   if(kw){
@@ -156,9 +138,6 @@ async function buildQuery(){
 
 async function loadList(){
   const rows = await buildQuery()
-  renderThumbs(rows)
-  renderTable(rows)
-  // 簡單分頁（client 側）
   window._rows = rows
   window._page = 1
   updatePage()
@@ -182,22 +161,6 @@ function paginate(dir){
   updatePage()
 }
 
-function renderThumbs(rows){
-  const box = document.getElementById('thumbs')
-  box.innerHTML = ''
-  rows.slice(0,24).forEach(r=>{
-    const first = (r.photos && r.photos[0]?.url) || ''
-    const div = document.createElement('div')
-    div.className = 'thumb'
-    div.innerHTML = `
-      ${ first ? `<img src="${first}" alt="thumb">` : `<div class="noimg">無圖</div>`}
-      <small>${(r.itemName||'未命名')}</small>
-      <small>${badgeHTML(r.status)}</small>
-    `
-    box.appendChild(div)
-  })
-}
-
 function badgeHTML(s){
   const map = { pending:'未完成', returned:'已還回', refunded:'已退款' }
   return `<span class="badge ${s}">${map[s]||s}</span>`
@@ -209,7 +172,11 @@ function renderTable(rows){
   for(const r of rows){
     const t = r.deliveredAt?.toDate ? r.deliveredAt.toDate() : (r.createdAt?.toDate ? r.createdAt.toDate() : new Date())
     const time = `${fmtDate.format(t)} ${fmtTime.format(t)}`
-    const img = (r.photos && r.photos[0]?.url) ? `<img src="${r.photos[0].url}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #eee">` : ''
+    const img = (r.photos && r.photos[0]?.url) ? `
+      <div class="thumb-wrap">
+        <img src="${r.photos[0].url}" class="thumb">
+        <img src="${r.photos[0].url}" class="thumb-large">
+      </div>` : ''
     const tr = document.createElement('tr')
     tr.innerHTML = `
       <td>${time}</td>
@@ -227,7 +194,6 @@ function renderTable(rows){
     `
     tb.appendChild(tr)
   }
-  // 委派事件
   tb.querySelectorAll('button[data-id]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.dataset.id
@@ -244,4 +210,3 @@ function renderTable(rows){
 
 function escapeHTML(s){ return s.replace(/[&<>"]/g, ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[ch])) }
 function shorten(s, n){ return s.length>n ? (s.slice(0,n)+'…') : s }
-
