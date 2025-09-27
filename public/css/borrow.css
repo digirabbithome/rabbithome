@@ -51,8 +51,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","
 .debugbar{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px;margin-bottom:8px}
 .debugbar .warn{color:#b20}
 
-/* 縮圖 hover 放大 */
+/* 縮圖 hover 放大 + 點擊開新視窗 */
 .thumb-wrap { position: relative; display: inline-block; }
+.thumb-link { display:inline-block; text-decoration:none; }
 .thumb { width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #eee;cursor:zoom-in; }
 .thumb-large {
   display:none!important; position:absolute; top:-10px; left:60px; width:200px; height:200px;
