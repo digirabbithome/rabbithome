@@ -1,14 +1,15 @@
 import { db, auth } from '/js/firebase.js'
 import { 
   collection, addDoc, getDocs, onSnapshot, updateDoc, doc, 
-  deleteDoc, serverTimestamp, arrayUnion 
+  deleteDoc, serverTimestamp, arrayUnion, getDoc 
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 // ---------- Utils ----------
 const $ = (s)=>document.querySelector(s)
 const todayISO = () => new Date().toISOString().slice(0,10)
-const nickname = () => new URLSearchParams(location.search).get('nick') || 'JOSH'
+let currentNickname = '未登入'
+const nickname = () => currentNickname
 const daysSince = (dstr) => Math.floor((Date.now()-new Date(dstr).getTime())/86400000)
 
 function levelPercent(item){
@@ -36,26 +37,23 @@ let currentSort = 'stale' // name | location | stale
 
 // ---------- Render ----------
 function render(list){
-  // KPI
   $('#kpiTotal').textContent = list.length
   const over=list.filter(x=>levelPercent(x)===0).length; $('#kpiOver').textContent=over
   const soon=list.filter(x=>{const cd=Math.max(1,Number(x.cycleDays)||30);const d=new Date(x.lastCharge);d.setDate(d.getDate()+cd);return (d-new Date())/86400000<=30 && (d-new Date())>0}).length; $('#kpiSoon').textContent=soon
   if(list.length){const avg=(list.reduce((a,b)=>a+(Number(b.cycleDays)||30),0)/list.length).toFixed(1);$('#kpiAvg').textContent=avg}else{$('#kpiAvg').textContent='—'}
 
-  // Filters
-  const q=$('#q').value.trim().toLowerCase()
+  const q=$('#q')?.value.trim().toLowerCase() || ''
   let data=[...list]
   if(q){data=data.filter(x=>`${x.name} ${x.location} ${x.note}`.toLowerCase().includes(q))}
   if(currentFilter.overdue){data=data.filter(x=>levelPercent(x)===0)}
   if(currentFilter.location){data=data.filter(x=>(x.location||'')===currentFilter.location)}
 
-  // Sort: 電量低→高 永遠優先，其次依選項
   data.sort((a,b)=>{
     const pa=levelPercent(a), pb=levelPercent(b)
     if(pa!==pb) return pa-pb
     if(currentSort==='name') return (a.name||'').localeCompare(b.name||'')
     if(currentSort==='location') return (a.location||'').localeCompare(b.location||'')
-    return daysSince(b.lastCharge||0)-daysSince(a.lastCharge||0) // stale
+    return daysSince(b.lastCharge||0)-daysSince(a.lastCharge||0)
   })
 
   const listEl=$('#list')
@@ -171,7 +169,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('#q').addEventListener('input', ()=>loadRealtime())
   $('#sortBy').addEventListener('change', (e)=>{ currentSort=e.target.value; loadRealtime() })
 
-  // 清單委派
   $('#list').addEventListener('click', async (e)=>{
     const a=e.target.closest('a'); if(!a) return; e.preventDefault()
     const act=a.dataset.act; const id=a.dataset.id; const loc=a.dataset.loc
@@ -181,7 +178,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(act==='edit' && id){ await openEditById(id); return }
   })
 
-  // 表單送出
   frm.addEventListener('submit', async (e)=>{
     e.preventDefault()
     const fd=new FormData(frm)
@@ -204,7 +200,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     dlg.close()
   })
 
-  // 刪除
   deleteBtn.addEventListener('click', async ()=>{
     if(editingId && confirm('確定刪除？')){
       await removeBatteryDoc(editingId)
@@ -213,8 +208,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
   })
 })
 
-// ---------- Auth & start ----------
+// ---------- Auth & nickname ----------
 onAuthStateChanged(auth, async (user)=>{
-  if(!user){ try{ await signInAnonymously(auth) }catch(e){ console.error(e) } }
-  else{ loadRealtime() }
+  if(!user){
+    try{ await signInAnonymously(auth) }catch(e){ console.error(e) }
+  }else{
+    try{
+      const u = await getDoc(doc(db,'users',user.uid))
+      if(u.exists()){
+        currentNickname = u.data().nickname || user.displayName || user.email || '匿名'
+      }else{
+        currentNickname = user.displayName || user.email || '匿名'
+      }
+    }catch(e){ console.warn('讀取暱稱失敗', e) }
+    loadRealtime()
+  }
 })

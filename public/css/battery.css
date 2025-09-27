@@ -1,12 +1,5 @@
-/* 粉紅色風格 */
-:root{
-  --pink:#ec4899;
-  --pink-dark:#db2777;
-  --bg:#fff0f5;
-  --muted:#6b7280;
-  --card:#fff;
-  --border:#f9a8d4;
-}
+/* 粉紅主題 + 電池 hover 才顯示 tooltip（不佔位） */
+:root{--pink:#ec4899;--pink-dark:#db2777;--bg:#fff0f5;--muted:#6b7280;--card:#fff;--border:#f9a8d4}
 *{box-sizing:border-box}
 body{background:var(--bg);color:#333;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0}
 .wrap{max-width:1120px;margin:0 auto;padding:16px 20px}
@@ -41,21 +34,7 @@ h1{color:#db2777;margin:.2rem 0;font-size:28px;font-weight:800}
 .cell{border-radius:4px;opacity:.25}
 .cell.on{opacity:1}
 
-/* 卡片 & Tooltip */
-.card-item{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .15s ease}
-.card-item:hover{box-shadow:0 6px 24px rgba(0,0,0,.08)}
-.title{margin-top:8px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
-.actions a{color:var(--muted);text-decoration:none;font-size:12px;margin-left:8px}
-.actions a:hover{text-decoration:underline}
-.hint{pointer-events:none;opacity:0;transform:translateY(6px);transition:all .15s ease;background:#111827;color:#fff;padding:8px 10px;border-radius:10px;margin-top:8px;font-size:12px}
-.item:hover .hint{opacity:1;transform:translateY(0)}
-
-/* 對話框 */
-dialog{border:none;border-radius:16px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-dialog::backdrop{background:rgba(0,0,0,.25)}
-.dlg-body{padding:20px}
-.dlg-body h3{margin:0 0 8px 0;font-size:20px;font-weight:700}
-.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.form-grid .full{grid-column:1/-1}
-.dlg-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+/* Tooltip 絕對定位，僅在 hover 電池時顯示 */ 
+.hint{position:absolute;left:12px;right:12px;bottom:12px;pointer-events:none;opacity:0;transform:translateY(6px);transition:all .15s ease;background:#0f172a;color:#fff;padding:8px 10px;border-radius:10px;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+/* 只有滑到電池本體才顯示 */ 
+.item .battery:hover ~ .hint{opacity:1;transform:translateY(0)}
