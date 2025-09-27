@@ -18,10 +18,16 @@
       </div>
     </header>
 
-    <!-- KPI + 工具列（已精簡） -->
+    <!-- KPI + 工具列（精簡，KPI 可點擊篩選） -->
     <section class="kpi-grid merged">
-      <div class="card"><div class="kpi-label">品相總數</div><div id="kpiTotal" class="kpi-value">0</div></div>
-      <div id="kpiOverWrap" class="card clickable"><div class="kpi-label">逾期需充</div><div id="kpiOver" class="kpi-value">0</div></div>
+      <div class="card clickable" id="kpiAll">
+        <div class="kpi-label">品相總數</div>
+        <div id="kpiTotal" class="kpi-value">0</div>
+      </div>
+      <div class="card clickable" id="kpiOverWrap">
+        <div class="kpi-label">逾期需充</div>
+        <div id="kpiOver" class="kpi-value">0</div>
+      </div>
       <div class="toolbar-inline">
         <input id="q" class="input" placeholder="搜尋：品相／位置／備註…" />
         <select id="sortBy" class="input">
@@ -29,8 +35,6 @@
           <option value="name">排序：品相名稱</option>
           <option value="location">排序：倉庫位置</option>
         </select>
-        <button id="filterAll" class="btn ghost">全部</button>
-        <button id="filterOver" class="btn ghost">逾期需充</button>
       </div>
     </section>
     <div id="activeFilters" class="mini muted" style="margin-top:6px"></div>

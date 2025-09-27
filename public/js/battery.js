@@ -178,9 +178,8 @@ async function openEditById(id){
 // ---------- Events ----------
 document.addEventListener('DOMContentLoaded', ()=>{
   $('#newBtn').addEventListener('click', openNew)
-  $('#kpiOverWrap').addEventListener('click', ()=>{ currentFilter.overdue = !currentFilter.overdue; loadRealtime() })
-  $('#filterOver').addEventListener('click', ()=>{ currentFilter.overdue = true; loadRealtime() })
-  $('#filterAll').addEventListener('click', ()=>{ currentFilter.overdue = false; currentFilter.location=null; $('#q').value=''; loadRealtime() })
+  $('#kpiOverWrap').addEventListener('click', ()=>{ currentFilter.overdue = true; loadRealtime() })
+  $('#kpiAll').addEventListener('click', ()=>{ currentFilter.overdue = false; currentFilter.location=null; $('#q').value=''; loadRealtime() })
   $('#q').addEventListener('input', ()=>loadRealtime())
   $('#sortBy').addEventListener('change', (e)=>{ currentSort=e.target.value; loadRealtime() })
 
