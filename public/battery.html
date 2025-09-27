@@ -18,17 +18,11 @@
       </div>
     </header>
 
-    <!-- KPI -->
-    <section class="kpi-grid">
+    <!-- KPI + 工具列（已精簡） -->
+    <section class="kpi-grid merged">
       <div class="card"><div class="kpi-label">品相總數</div><div id="kpiTotal" class="kpi-value">0</div></div>
       <div id="kpiOverWrap" class="card clickable"><div class="kpi-label">逾期需充</div><div id="kpiOver" class="kpi-value">0</div></div>
-      <div class="card"><div class="kpi-label">30 日內將到期</div><div id="kpiSoon" class="kpi-value">0</div></div>
-      <div class="card"><div class="kpi-label">平均週期(天)</div><div id="kpiAvg" class="kpi-value">—</div></div>
-    </section>
-
-    <!-- 工具列 -->
-    <section class="card toolbar">
-      <div class="row">
+      <div class="toolbar-inline">
         <input id="q" class="input" placeholder="搜尋：品相／位置／備註…" />
         <select id="sortBy" class="input">
           <option value="stale">排序：越久未充在前</option>
@@ -38,15 +32,15 @@
         <button id="filterAll" class="btn ghost">全部</button>
         <button id="filterOver" class="btn ghost">逾期需充</button>
       </div>
-      <div id="activeFilters" class="mini muted"></div>
     </section>
+    <div id="activeFilters" class="mini muted" style="margin-top:6px"></div>
 
     <!-- 清單 -->
     <section id="list" class="grid"></section>
     <div id="empty" class="card empty" style="display:none">尚無資料，請新增。</div>
   </div>
 
-  <!-- 對話框 -->
+  <!-- 對話框：新增/編輯 -->
   <dialog id="dlg">
     <form id="frm" class="dlg-body">
       <h3><span id="dlgTitle">新增 / 編輯品相</span></h3>

@@ -1,4 +1,4 @@
-/* 粉紅主題 + 卡片 + Tooltip（不佔位，hover 卡片顯示） */
+/* 粉紅主題 */
 :root{--pink:#ec4899;--pink-dark:#db2777;--bg:#fff0f5;--muted:#6b7280;--card:#fff;--border:#f9a8d4}
 *{box-sizing:border-box}
 body{background:var(--bg);color:#333;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0}
@@ -8,11 +8,11 @@ h1{color:#db2777;margin:.2rem 0;font-size:28px;font-weight:800}
 .sub{margin:0;color:var(--muted);font-size:12px}
 .row{display:flex;gap:8px;align-items:center}
 .card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
-@media (min-width:900px){.kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi-grid.merged{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:12px;margin-top:12px;align-items:center}
 .kpi-label{font-size:12px;color:var(--muted)}
 .kpi-value{font-size:24px;font-weight:700}
-.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}
+
+.toolbar-inline{display:flex;gap:8px;align-items:center}
 .input{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff}
 .btn{border:none;border-radius:999px;padding:10px 14px;background:var(--pink);color:#fff;cursor:pointer}
 .btn:hover{background:var(--pink-dark)}
@@ -28,15 +28,14 @@ h1{color:#db2777;margin:.2rem 0;font-size:28px;font-weight:800}
 .clickable{cursor:pointer}
 
 /* 電池圖示（四等份） */
-.battery{position:relative;width:80px;height:44px;border:3px solid #cbd5e1;border-radius:8px;padding:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;transition:transform .15s ease}
-.battery::after{content:"";position:absolute;right:-10px;top:12px;width:8px;height:18px;border-radius:3px;background:#cbd5e1}
+.battery{--tip-color:#cbd5e1;position:relative;width:80px;height:44px;border:3px solid #cbd5e1;border-radius:8px;padding:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;transition:transform .15s ease}
+.battery::after{content:"";position:absolute;right:-10px;top:12px;width:8px;height:18px;border-radius:3px;background:var(--tip-color)}
 .battery:hover{transform:translateY(-2px)}
 .cell{border-radius:4px;opacity:.25}
 .cell.on{opacity:1}
 
-/* Tooltip 絕對定位，不佔版面；改為 hover 卡片即可顯示，避免層級問題 */
-.hint{position:absolute;left:12px;right:12px;bottom:12px;pointer-events:none;opacity:0;transform:translateY(6px);transition:all .15s ease;background:#0f172a;color:#fff;padding:8px 10px;border-radius:10px;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-.item:hover .hint{opacity:1;transform:translateY(0)}
+/* 浮動 Tooltip：跟著滑鼠，不佔位 */
+.hint{position:fixed;z-index:1000;display:none;background:#0f172a;color:#fff;padding:8px 10px;border-radius:10px;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);pointer-events:none;white-space:nowrap}
 
 /* 每個品項卡片 */
 .card-item{background:#fff;border-radius:16px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:6px}
@@ -46,3 +45,12 @@ h1{color:#db2777;margin:.2rem 0;font-size:28px;font-weight:800}
 .meta{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
 .meta .actions a{margin-left:6px;color:var(--pink-dark);font-size:13px;text-decoration:none}
 .meta .actions a:hover{text-decoration:underline}
+
+/* 對話框 */
+dialog{border:none;border-radius:16px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+dialog::backdrop{background:rgba(0,0,0,.25)}
+.dlg-body{padding:20px}
+.dlg-body h3{margin:0 0 8px 0;font-size:20px;font-weight:700}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.form-grid .full{grid-column:1/-1}
+.dlg-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px}

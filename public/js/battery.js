@@ -35,12 +35,22 @@ let unsubscribe=null
 let currentFilter = { overdue:false, location:null }
 let currentSort = 'stale' // name | location | stale
 
+// single floating hint
+const hintEl = document.createElement('div')
+hintEl.className = 'hint'
+document.body.appendChild(hintEl)
+document.body.addEventListener('mousemove', e => {
+  if (hintEl.style.display === 'block') {
+    hintEl.style.left = (e.pageX + 16) + 'px'
+    hintEl.style.top  = (e.pageY + 12) + 'px'
+  }
+})
+
 // ---------- Render ----------
 function render(list){
+  // KPI
   $('#kpiTotal').textContent = list.length
   const over=list.filter(x=>levelPercent(x)===0).length; $('#kpiOver').textContent=over
-  const soon=list.filter(x=>{const cd=Math.max(1,Number(x.cycleDays)||30);const d=new Date(x.lastCharge);d.setDate(d.getDate()+cd);return (d-new Date())/86400000<=30 && (d-new Date())>0}).length; $('#kpiSoon').textContent=soon
-  if(list.length){const avg=(list.reduce((a,b)=>a+(Number(b.cycleDays)||30),0)/list.length).toFixed(1);$('#kpiAvg').textContent=avg}else{$('#kpiAvg').textContent='—'}
 
   const q=$('#q')?.value.trim().toLowerCase() || ''
   let data=[...list]
@@ -67,12 +77,13 @@ function render(list){
     const onCells=p===100?4:p===75?3:p===50?2:p===25?1:0
     const overdue=p===0
     const history=(item.history||[]).slice(-5).reverse()
+    const historyHtml = history.length?history.map(h=>`• ${h.user||h.by||'—'}：${h.date||''}`).join('<br>'):'— 無紀錄 —'
 
     const div=document.createElement('div')
     div.className='item card-item'
     div.innerHTML = `
       <div class="row" style="justify-content:space-between">
-        <div class="battery" style="border-color:${border}">
+        <div class="battery" style="border-color:${border}; --tip-color:${cells}" data-hint="${historyHtml.replace(/"/g,'&quot;')}">
           <div class="cell ${onCells>=1?'on':''}" style="background:${cells}"></div>
           <div class="cell ${onCells>=2?'on':''}" style="background:${cells}"></div>
           <div class="cell ${onCells>=3?'on':''}" style="background:${cells}"></div>
@@ -90,13 +101,19 @@ function render(list){
           <a href="#" data-act="charge" data-id="${item.id}">已充電</a>
         </span>
       </div>
-      <div class="hint">
-        <div style="opacity:.7;margin-bottom:4px">最近 5 次充電：</div>
-        <div>${history.length?history.map(h=>`• ${h.user||h.by||'—'}：${h.date||''}`).join('<br>'):'— 無紀錄 —'}</div>
-      </div>
     `
     listEl.appendChild(div)
   }
+
+  // 綁定 hover 顯示歷史（跟著滑鼠）
+  listEl.querySelectorAll('.battery').forEach(bat=>{
+    bat.addEventListener('mouseenter',()=>{
+      hintEl.innerHTML = '<div style="opacity:.7;margin-bottom:4px">最近 5 次充電：</div>'+bat.dataset.hint
+      hintEl.style.display='block'
+    })
+    bat.addEventListener('mouseleave',()=>{ hintEl.style.display='none' })
+  })
+
   updateFilterChips()
 }
 
@@ -172,7 +189,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const act=a.dataset.act; const id=a.dataset.id; const loc=a.dataset.loc
     if(act==='filterLoc'){ currentFilter.location = (currentFilter.location===loc)? null : loc; loadRealtime(); return }
     if(act==='charge' && id){ await chargeBatteryDoc(id); return }
-    
     if(act==='edit' && id){ await openEditById(id); return }
   })
 
