@@ -1,4 +1,4 @@
-// borrow.js v1.3 - 修正：單張縮圖、hover 才放大、已完成只查半年內、商品名稱可空白
+// borrow.js v1.4 - 暱稱改抓 users/{uid}.nickname + v1.3 修正延續
 import { db, auth, storage } from '/js/firebase.js'
 import {
   collection, addDoc, serverTimestamp, query, orderBy, where,
@@ -30,10 +30,11 @@ window.onload = () => {
 async function loadNickname(user){
   try{
     const { doc:docFn, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')
-    const dref = docFn(db, 'profiles', user.uid)
+    // 改抓 users/{uid}
+    const dref = docFn(db, 'users', user.uid)
     const snap = await getDoc(dref)
     return snap.exists() ? (snap.data().nickname || '') : ''
-  }catch(e){ return '' }
+  }catch(e){ console.error('loadNickname error', e); return '' }
 }
 
 function bindUI(){
@@ -104,7 +105,7 @@ async function onSubmit(ev){
           const url = await getDownloadURL(sref)
           await updateDoc(docRef, { photos: arrayUnion({url, path:p, name:f.name, contentType:f.type}), updatedAt: serverTimestamp() })
           done++
-          if(prog) prog.textContent = `上傳 ${done}/${files.length}`
+          if(prog) prog.textContent = `上傳 ${done}/{n}`.replace('{n}', files.length)
           resolve()
         })
       })
