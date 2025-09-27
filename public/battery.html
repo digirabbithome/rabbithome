@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🔋 電池管理程式</title>
+  <link rel="stylesheet" href="/css/battery.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div>
+        <h1>🔋 電池管理程式</h1>
+        <p class="sub">粉紅色風格｜Firestore 即時同步｜多人共用</p>
+      </div>
+      <div class="row">
+        <button id="newBtn" class="btn">＋ 新增需要充電品相</button>
+      </div>
+    </header>
+
+    <!-- KPI 區塊 -->
+    <section class="kpi-grid">
+      <div class="card"><div class="kpi-label">品相總數</div><div id="kpiTotal" class="kpi-value">0</div></div>
+      <div id="kpiOverWrap" class="card clickable"><div class="kpi-label">逾期需充</div><div id="kpiOver" class="kpi-value">0</div></div>
+      <div class="card"><div class="kpi-label">30 日內將到期</div><div id="kpiSoon" class="kpi-value">0</div></div>
+      <div class="card"><div class="kpi-label">平均週期(天)</div><div id="kpiAvg" class="kpi-value">—</div></div>
+    </section>
+
+    <!-- 工具列：搜尋 / 排序 / 篩選提示 -->
+    <section class="card toolbar">
+      <div class="row">
+        <input id="q" class="input" placeholder="搜尋：品相／位置／備註…" />
+        <select id="sortBy" class="input">
+          <option value="stale">排序：越久未充在前</option>
+          <option value="name">排序：品相名稱</option>
+          <option value="location">排序：倉庫位置</option>
+        </select>
+        <button id="filterAll" class="btn ghost">全部</button>
+        <button id="filterOver" class="btn ghost">逾期需充</button>
+      </div>
+      <div id="activeFilters" class="mini muted"></div>
+    </section>
+
+    <!-- 清單 -->
+    <section id="list" class="grid"></section>
+    <div id="empty" class="card empty" style="display:none">尚無資料，請新增。</div>
+  </div>
+
+  <!-- 對話框：新增/編輯 -->
+  <dialog id="dlg">
+    <form id="frm" class="dlg-body">
+      <h3><span id="dlgTitle">新增 / 編輯品相</span></h3>
+      <div class="form-grid">
+        <label class="field">品相名稱<input name="name" class="input" required placeholder="例如：NP-FZ100 #01" /></label>
+        <label class="field">充電週期(天)<input name="cycleDays" type="number" min="1" value="30" class="input" /></label>
+        <label class="field">上次充電日<input name="lastCharge" type="date" class="input" /></label>
+        <label class="field">位置<input name="location" class="input" placeholder="如：倉庫A-2" /></label>
+        <label class="field full">備註<textarea name="note" rows="3" class="input" placeholder="備註"></textarea></label>
+      </div>
+      <div class="dlg-actions">
+        <button type="button" id="deleteBtn" class="btn ghost danger">刪除</button>
+        <div class="row">
+          <button type="button" class="btn ghost" onclick="document.getElementById('dlg').close()">取消</button>
+          <button class="btn">儲存</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 既有的 firebase.js 由 Rabbithome 提供 -->
+  <script type="module" src="/js/firebase.js"></script>
+  <script type="module" src="/js/battery.js"></script>
+</body>
+</html>
