@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📦 借貨管理｜數位小兔</title>
+  <link rel="stylesheet" href="/css/borrow.css" />
+  <!-- 以 iframe 方式載入到 Rabbithome 時相容 -->
+  <script type="module" src="/js/borrow.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>📦 借貨管理</h1>
+      <div class="right">
+        <span id="whoami">未登入</span>
+        <div class="filters">
+          <button class="tab active" data-filter="pending">未完成</button>
+          <button class="tab" data-filter="completed">已完成</button>
+          <button class="tab" data-filter="all">全部</button>
+          <input id="kw" class="kw" placeholder="搜尋 商品/說明/業務…" />
+        </div>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>➕ 新增借貨紀錄</h2>
+      <form id="borrowForm">
+        <div class="grid">
+          <label class="field">
+            <span>商品名稱 *</span>
+            <input id="itemName" required placeholder="例：Godox V1 閃光燈" />
+          </label>
+
+          <label class="field">
+            <span>取走者（業務/同事）*</span>
+            <input id="assignee" required placeholder="例：花花" />
+          </label>
+
+          <label class="field">
+            <span>說明</span>
+            <textarea id="desc" rows="3" placeholder="用途/台數/序號…"></textarea>
+          </label>
+
+          <div class="field">
+            <span>拍照上傳（可多張）</span>
+            <input id="photos" type="file" accept="image/*" capture="environment" multiple />
+            <div id="photoPreview" class="preview"></div>
+            <div id="upProgress" class="progress"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary">送出</button>
+          <button type="reset" class="ghost">清空</button>
+        </div>
+        <p class="hint">提示：手機版可直接拍照；圖片將儲存於 Firebase Storage 的 <code>borrows/&lt;docId&gt;/</code> 路徑。</p>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>🖼️ 縮圖與列表</h2>
+      <div id="thumbs" class="thumbs"></div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>時間</th>
+            <th>商品</th>
+            <th>業務</th>
+            <th>交付者</th>
+            <th>狀態</th>
+            <th>說明</th>
+            <th>動作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="pager">
+        <button id="prevPage">上一頁</button>
+        <span id="pageInfo"></span>
+        <button id="nextPage">下一頁</button>
+      </div>
+    </section>
+
+    <footer class="footer">小兔 Rabbithome｜借貨管理 v1.0</footer>
+  </div>
+</body>
+</html>
