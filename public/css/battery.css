@@ -1,4 +1,4 @@
-/* 粉紅主題 + 電池 hover 才顯示 tooltip（不佔位） */
+/* 粉紅主題 + 卡片 + Tooltip（不佔位，hover 卡片顯示） */
 :root{--pink:#ec4899;--pink-dark:#db2777;--bg:#fff0f5;--muted:#6b7280;--card:#fff;--border:#f9a8d4}
 *{box-sizing:border-box}
 body{background:var(--bg);color:#333;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0}
@@ -34,38 +34,15 @@ h1{color:#db2777;margin:.2rem 0;font-size:28px;font-weight:800}
 .cell{border-radius:4px;opacity:.25}
 .cell.on{opacity:1}
 
-/* Tooltip 絕對定位，僅在 hover 電池時顯示 */ 
+/* Tooltip 絕對定位，不佔版面；改為 hover 卡片即可顯示，避免層級問題 */
 .hint{position:absolute;left:12px;right:12px;bottom:12px;pointer-events:none;opacity:0;transform:translateY(6px);transition:all .15s ease;background:#0f172a;color:#fff;padding:8px 10px;border-radius:10px;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-/* 只有滑到電池本體才顯示 */ 
-.item .battery:hover ~ .hint{opacity:1;transform:translateY(0)}
+.item:hover .hint{opacity:1;transform:translateY(0)}
 
 /* 每個品項卡片 */
-.card-item {
-  background: #fff;
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.08);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.title {
-  font-weight: 600;
-  margin-top: 6px;
-}
-.meta {
-  font-size: 13px;
-  color: var(--muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.meta .actions a {
-  margin-left: 6px;
-  color: var(--pink-dark);
-  font-size: 13px;
-  text-decoration: none;
-}
-.meta .actions a:hover {
-  text-decoration: underline;
-}
+.card-item{background:#fff;border-radius:16px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:6px}
+.title{font-weight:600;margin-top:6px}
+.title a{color:#0f172a;text-decoration:none}
+.title a:hover{text-decoration:underline}
+.meta{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.meta .actions a{margin-left:6px;color:var(--pink-dark);font-size:13px;text-decoration:none}
+.meta .actions a:hover{text-decoration:underline}

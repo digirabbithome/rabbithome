@@ -83,13 +83,11 @@ function render(list){
           <div class="mini" style="color:${overdue?'#ef4444':'#6b7280'}">上次充電：${item.lastCharge||'—'}</div>
         </div>
       </div>
-      <div class="title" title="${item.name||''}">${item.name||''}</div>
+      <div class="title" title="${item.name||''}"><a href="#" data-act="edit" data-id="${item.id}">${item.name||''}</a></div>
       <div class="meta" title="${item.location||''}">
         <a href="#" data-act="filterLoc" data-loc="${item.location||''}" class="muted">${item.location||''}</a>
         <span class="actions">
           <a href="#" data-act="charge" data-id="${item.id}">已充電</a>
-          <a href="#" data-act="edit" data-id="${item.id}">編輯</a>
-          <a href="#" data-act="remove" data-id="${item.id}">移除</a>
         </span>
       </div>
       <div class="hint">
@@ -174,7 +172,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const act=a.dataset.act; const id=a.dataset.id; const loc=a.dataset.loc
     if(act==='filterLoc'){ currentFilter.location = (currentFilter.location===loc)? null : loc; loadRealtime(); return }
     if(act==='charge' && id){ await chargeBatteryDoc(id); return }
-    if(act==='remove' && id){ if(confirm('確定要移除此品相嗎？')) await removeBatteryDoc(id); return }
+    
     if(act==='edit' && id){ await openEditById(id); return }
   })
 
