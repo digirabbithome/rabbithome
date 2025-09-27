@@ -9,7 +9,7 @@
   --border:#e9d9e4;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family: "Noto Sans TC","Microsoft JhengHei",system-ui,Arial}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,Arial}
 .page{max-width:1100px;margin:0 auto;padding:16px}
 .header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 16px 0}
 .header h1{margin:0;font-size:22px}
@@ -36,7 +36,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family: "Noto Sans TC",
 .table{width:100%;border-collapse:separate;border-spacing:0 8px}
 .table thead th{font-size:12px;color:var(--muted);text-align:left;padding:6px 8px}
 .table tbody tr{background:#fff;border:1px solid var(--border)}
-.table tbody td{padding:10px 8px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.table tbody td{padding:10px 8px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:top}
 .table tbody tr:first-child td{border-top-left-radius:10px;border-top-right-radius:10px}
 .table tbody tr:last-child td{border-bottom-left-radius:10px;border-bottom-right-radius:10px}
 .badge{border-radius:999px;padding:4px 8px;font-size:12px;border:1px solid var(--border)}
@@ -46,9 +46,16 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family: "Noto Sans TC",
 .row-actions{display:flex;gap:6px}
 .btn{padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
 .btn.primary{background:var(--pink);border-color:var(--pink-strong)}
-.thumbs{display:grid;grid-template-columns:repeat(auto-fill, minmax(120px,1fr));gap:8px;margin-bottom:10px}
-.thumbs .thumb{background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px}
-.thumbs img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px}
-.thumb small{color:var(--muted)}
 .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:8px}
 .footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
+.debugbar{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px;margin-bottom:8px}
+.debugbar .warn{color:#b20}
+
+/* 縮圖 hover 放大 */
+.thumb-wrap { position: relative; display: inline-block; }
+.thumb { width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #eee;cursor:zoom-in; }
+.thumb-large {
+  display:none!important; position:absolute; top:-10px; left:60px; width:200px; height:200px;
+  object-fit:cover; border-radius:12px; border:1px solid #ccc; box-shadow:0 4px 12px rgba(0,0,0,.15); background:#fff; z-index:20; pointer-events:none;
+}
+.thumb-wrap:hover .thumb-large { display:block!important; }

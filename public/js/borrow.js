@@ -1,8 +1,8 @@
-// borrow.js v1.1 - 借貨管理 (只在表格顯示縮圖 + hover 放大)
+// borrow.js v1.3 - 修正：單張縮圖、hover 才放大、已完成只查半年內、商品名稱可空白
 import { db, auth, storage } from '/js/firebase.js'
 import {
   collection, addDoc, serverTimestamp, query, orderBy, where,
-  getDocs, doc, updateDoc
+  doc, updateDoc, onSnapshot, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import {
   ref, uploadBytesResumable, getDownloadURL
@@ -14,6 +14,7 @@ const fmtTime = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour
 const pageSize = 30
 
 let me, nickname = '', currentFilter = 'pending', kw = ''
+let unsub = null, lastCreatedId = null
 
 window.onload = () => {
   bindUI()
@@ -22,7 +23,7 @@ window.onload = () => {
     me = user
     document.getElementById('whoami').textContent = user.email || user.uid
     nickname = await loadNickname(user) || user.displayName || (user.email ? user.email.split('@')[0] : '未命名')
-    loadList()
+    attachRealtime()
   })
 }
 
@@ -41,12 +42,12 @@ function bindUI(){
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'))
       btn.classList.add('active')
       currentFilter = btn.dataset.filter
-      loadList()
+      attachRealtime()
     })
   })
   document.getElementById('kw').addEventListener('input', e=>{
     kw = e.target.value.trim()
-    loadList()
+    updatePage()
   })
   document.getElementById('borrowForm').addEventListener('submit', onSubmit)
   document.getElementById('photos').addEventListener('change', previewFiles)
@@ -69,14 +70,15 @@ function previewFiles(e){
 async function onSubmit(ev){
   ev.preventDefault()
   if(!me){ alert('請先登入'); return }
+  if(!nickname || nickname==='未命名'){ alert('請先在個人資料設定暱稱'); return }
   const itemName = document.getElementById('itemName').value.trim()
   const assignee = document.getElementById('assignee').value.trim()
   const desc = document.getElementById('desc').value.trim()
   const files = Array.from(document.getElementById('photos').files||[])
-  if(!itemName || !assignee){ alert('商品與取走者為必填'); return }
+  if(!assignee){ alert('請填寫取走者'); return }
 
   const data = {
-    itemName, assignee, desc,
+    itemName: itemName || '', assignee, desc,
     deliveredBy: nickname,
     deliveredByUid: me.uid,
     deliveredAt: serverTimestamp(),
@@ -85,8 +87,10 @@ async function onSubmit(ev){
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }
-  const col = collection(db, 'borrows')
-  const docRef = await addDoc(col, data)
+  const colRef = collection(db, 'borrows')
+  const docRef = await addDoc(colRef, data)
+  lastCreatedId = docRef.id
+  const debug = document.getElementById('debugDocId'); if (debug) debug.textContent = lastCreatedId
 
   if(files.length){
     const prog = document.getElementById('upProgress')
@@ -98,53 +102,58 @@ async function onSubmit(ev){
         const task = uploadBytesResumable(sref, f, { contentType: f.type })
         task.on('state_changed', null, reject, async ()=>{
           const url = await getDownloadURL(sref)
-          await updateDoc(docRef, { photos: [ ...(data.photos||[]), {url, path:p, name:f.name, contentType:f.type} ] })
+          await updateDoc(docRef, { photos: arrayUnion({url, path:p, name:f.name, contentType:f.type}), updatedAt: serverTimestamp() })
           done++
-          prog.textContent = `上傳 ${done}/${files.length}`
+          if(prog) prog.textContent = `上傳 ${done}/${files.length}`
           resolve()
         })
       })
     }
-    prog.textContent = '上傳完成'
+    if(prog) prog.textContent = '上傳完成'
   }
 
   ev.target.reset()
   document.getElementById('photoPreview').innerHTML=''
-  loadList()
 }
 
 function sanitizeName(n){ return n.replace(/[^\u4E00-\u9FFF\w.-]+/g,'_') }
 
-async function buildQuery(){
-  const col = collection(db, 'borrows')
-  let q = query(col, orderBy('createdAt','desc'))
-  if(currentFilter==='pending'){
-    q = query(col, where('status','==','pending'), orderBy('createdAt','desc'))
-  }else if(currentFilter==='completed'){
-    q = query(col, where('status','in',['returned','refunded']), orderBy('createdAt','desc'))
-  }
-  const snaps = await getDocs(q)
-  let rows = snaps.docs.map(d=>({ id:d.id, ...d.data() }))
-  if(kw){
-    const K = kw.toLowerCase()
-    rows = rows.filter(r=>(
-      (r.itemName||'').toLowerCase().includes(K) ||
-      (r.assignee||'').toLowerCase().includes(K) ||
-      (r.desc||'').toLowerCase().includes(K)
-    ))
-  }
-  return rows
+function sixMonthsAgo(){
+  const d = new Date(); d.setMonth(d.getMonth()-6); return d
 }
 
-async function loadList(){
-  const rows = await buildQuery()
-  window._rows = rows
-  window._page = 1
-  updatePage()
+function attachRealtime(){
+  if(unsub){ unsub(); unsub = null }
+  const colRef = collection(db, 'borrows')
+  let q = query(colRef, orderBy('createdAt', 'desc'))
+  if(currentFilter==='pending'){
+    q = query(colRef, where('status','==','pending'), orderBy('createdAt','desc'))
+  }else if(currentFilter==='completed'){
+    // 只查半年內
+    q = query(colRef, where('status','in',['returned','refunded']), where('createdAt','>=', sixMonthsAgo()), orderBy('createdAt','desc'))
+  }
+  unsub = onSnapshot(q, snap => {
+    let rows = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+    const dbg = document.getElementById('debugCount'); if (dbg) dbg.textContent = rows.length
+    if(kw){
+      const K = kw.toLowerCase()
+      rows = rows.filter(r=>(
+        (r.itemName||'').toLowerCase().includes(K) ||
+        (r.assignee||'').toLowerCase().includes(K) ||
+        (r.desc||'').toLowerCase().includes(K)
+      ))
+    }
+    window._rows = rows
+    window._page = 1
+    updatePage()
+  }, err => {
+    console.error('onSnapshot error', err)
+    const warn = document.getElementById('ruleWarn'); if (warn) warn.style.display = 'inline'
+  })
 }
 
 function updatePage(){
-  const rows = window._rows || []
+  const rows = (window._rows || [])
   const page = window._page || 1
   const start = (page-1)*pageSize
   const end = start + pageSize
@@ -172,10 +181,11 @@ function renderTable(rows){
   for(const r of rows){
     const t = r.deliveredAt?.toDate ? r.deliveredAt.toDate() : (r.createdAt?.toDate ? r.createdAt.toDate() : new Date())
     const time = `${fmtDate.format(t)} ${fmtTime.format(t)}`
-    const img = (r.photos && r.photos[0]?.url) ? `
+    const firstUrl = (r.photos && r.photos[0]?.url) || ''
+    const img = firstUrl ? `
       <div class="thumb-wrap">
-        <img src="${r.photos[0].url}" class="thumb">
-        <img src="${r.photos[0].url}" class="thumb-large">
+        <img src="${firstUrl}" class="thumb" alt="thumb">
+        <img src="${firstUrl}" class="thumb-large" alt="preview" style="display:none">
       </div>` : ''
     const tr = document.createElement('tr')
     tr.innerHTML = `
@@ -203,7 +213,6 @@ function renderTable(rows){
       }else if(act==='reopen'){
         await updateDoc(doc(db,'borrows',id), { status: 'pending', updatedAt: serverTimestamp() })
       }
-      loadList()
     })
   })
 }

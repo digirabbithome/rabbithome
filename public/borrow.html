@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>📦 借貨管理｜數位小兔</title>
   <link rel="stylesheet" href="/css/borrow.css" />
-  <!-- 以 iframe 方式載入到 Rabbithome 時相容 -->
   <script type="module" src="/js/borrow.js" defer></script>
 </head>
 <body>
@@ -28,8 +27,8 @@
       <form id="borrowForm">
         <div class="grid">
           <label class="field">
-            <span>商品名稱 *</span>
-            <input id="itemName" required placeholder="例：Godox V1 閃光燈" />
+            <span>商品名稱（可空白）</span>
+            <input id="itemName" placeholder="例：Godox V1 閃光燈" />
           </label>
 
           <label class="field">
@@ -59,8 +58,12 @@
     </section>
 
     <section class="card">
-      <h2>🖼️ 縮圖與列表</h2>
-      <div id="thumbs" class="thumbs"></div>
+      <h2>📋 借貨紀錄</h2>
+      <div class="debugbar">
+        <span>🟢 讀取中筆數：<b id="debugCount">0</b></span>
+        <span>🆔 最新建立ID：<b id="debugDocId">—</b></span>
+        <span id="ruleWarn" class="warn" style="display:none">！可能為權限/規則導致他人看不到</span>
+      </div>
       <table class="table">
         <thead>
           <tr>
@@ -82,7 +85,7 @@
       </div>
     </section>
 
-    <footer class="footer">小兔 Rabbithome｜借貨管理 v1.0</footer>
+    <footer class="footer">小兔 Rabbithome｜借貨管理 v1.3</footer>
   </div>
 </body>
 </html>
