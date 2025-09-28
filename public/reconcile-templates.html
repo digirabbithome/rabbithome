@@ -3,48 +3,45 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>廠商模板管理器</title>
+  <title>對帳樣板管理</title>
   <link rel="stylesheet" href="css/reconcile-templates.css"/>
 </head>
 <body>
 <header>
   <div class="wrap row">
-    <h1>📦 廠商模板管理器 <span class="tag">可離線／可接 Firestore／可列印手冊</span></h1>
+    <h1>⚙ 對帳樣板管理 <span class="tag">綁定 suppliers</span></h1>
     <div class="grow"></div>
-    <div class="small">共 <span id="count">0</span> 筆模板</div>
   </div>
 </header>
 
-<main class="wrap grid">
+<main class="wrap">
   <section class="card">
-    <div class="row" style="justify-content:space-between">
-      <div class="small">模板清單</div>
-      <div class="row">
-        <button class="btn ghost" onclick="newTemplate()">新增</button>
-        <button class="btn outline" onclick="exportAll()">匯出 JSON</button>
-        <label class="btn outline" for="imp">匯入 JSON</label>
-        <input id="imp" type="file" accept="application/json" style="display:none" onchange="importAll(event)"/>
-      </div>
+    <div class="row">
+      <strong>綁定供應商</strong>
+      <select id="mgrSupplierSelect" style="min-width:300px"></select>
+      <button class="btn outline" id="mgrLoad">載入該供應商樣板</button>
+      <button class="btn" id="mgrSave">儲存到該供應商</button>
+      <span class="small" id="mgrStatus"></span>
     </div>
-    <ul id="tplList" class="list"></ul>
+    <div class="small">清單顯示「代號-簡稱」。此頁儲存後會寫回 suppliers/{id}.reconcileTemplate。</div>
   </section>
 
   <section class="card">
-    <h3 id="formTitle">新增 / 編輯模板</h3>
+    <h3>樣板內容</h3>
     <div class="kv">
-      <label>廠商名稱</label>
-      <input id="vendorName" placeholder="例如：勤力屋 / Godox / 億亞尚"/>
       <label>容忍值（元）</label>
       <input id="tolerance" type="number" step="0.01" value="3"/>
       <label>stripLines（每行一個關鍵字）</label>
       <textarea id="strip" class="code" placeholder="忽略行的關鍵字，一行一個"></textarea>
       <label>aliases（JSON 格式）</label>
       <textarea id="aliases" class="code" placeholder='{"KS2830":"不織布背景布"}'></textarea>
+      <label>費用關鍵字（逗號分隔）</label>
+      <input id="kwFreight" placeholder="運費, 服務費, 包裝費"/>
+      <label>折讓關鍵字（逗號分隔）</label>
+      <input id="kwDiscount" placeholder="折讓, 折扣"/>
+      <label>標頭規則（自訂正則，群組1=日期、群組2=單號）</label>
+      <input id="headerRegex" placeholder="留白使用預設規則"/>
     </div>
-    <div class="footer">
-      <button class="btn" onclick="saveTemplate()">儲存</button>
-    </div>
-    <p class="small">說明：stripLines：含有任一關鍵字的行會在 OCR 解析時被忽略。aliases：把 OCR 辨識到的文字做名稱統一。</p>
   </section>
 </main>
 

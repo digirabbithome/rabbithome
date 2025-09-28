@@ -7,41 +7,92 @@ let auth = window.TemplateManagerAuth || null;
 function parseNumber(x){ if(x==null) return NaN; if(typeof x==='number') return x; let s=String(x).trim(); s=s.replace(/[,\s\u3000]/g,''); s=s.replace(/[^0-9.\-]/g,''); const v=parseFloat(s); return isNaN(v)?NaN:v; }
 function cleanText(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
 function keyOf(s){ return cleanText(s).toLowerCase().replace(/[^a-z0-9一-龥x\-/_,]/g,''); }
+function hasAnyKeyword(s, arr){ if(!arr||!arr.length) return false; const t = s.toLowerCase(); return arr.some(k=> t.includes(String(k).toLowerCase())); }
 
 let posRows=[], venRows=[], showPosSimple=true, compareMode='orders';
-let vendorGroups=[];
+let vendorGroups=[]; let rejectedLines=[];
 let vendorTemplate=null;
 
 window.addEventListener('DOMContentLoaded',()=>{
+  // POS
   $('#loadPos').onclick=loadPosCSV;
   $('#applyPosMap').onclick=applyPosMap;
   $('#togglePosView').onchange=e=>{ showPosSimple=e.target.checked; renderPosTable(); };
+
+  // Compare mode
   document.querySelectorAll('input[name="compareMode"]').forEach(r=> r.onchange = e=>{ compareMode=e.target.value; });
+
+  // OCR / Parse
   $('#runOcr').onclick=runOcrImages;
   $('#smartParse').onclick=smartParseVendor;
-  $('#runMatch').onclick=runMatch;
+  const pft=$('#parseFromText'); if(pft){ pft.onclick=()=>{ const t=$('#rawText').value||''; if(!t.trim()){ alert('請先貼上文字或執行 OCR'); return;} window.__venText=t; smartParseVendor(); }; }
+
+  // Suppliers
+  loadSuppliersForSelect();
   $('#btnApplyTpl').onclick=applyTemplateFromStore;
   $('#btnSaveTpl').onclick=saveTemplateToStore;
-
-  const overlay = document.getElementById('mgrOverlay');
-  const frame = document.getElementById('mgrFrame');
-  const btnOpenMgr = document.getElementById('openMgr');
-  const btnMgrClose = document.getElementById('mgrClose');
-  if (overlay && frame && btnOpenMgr && btnMgrClose) {
-    btnOpenMgr.onclick = ()=>{
-      overlay.style.display='flex';
-      document.documentElement.style.overflow='hidden';
-      document.body.style.overflow='hidden';
-      try{
-        if (window.TemplateManagerDB){
-          frame.contentWindow.postMessage({type:'setFirebase', db: window.TemplateManagerDB, auth: window.TemplateManagerAuth||null}, '*');
-        }
-      }catch(e){}
-    };
-    btnMgrClose.onclick = ()=>{ overlay.style.display='none'; document.documentElement.style.overflow=''; document.body.style.overflow=''; };
-    overlay.addEventListener('click', e=>{ if(e.target===overlay){ overlay.style.display='none'; document.documentElement.style.overflow=''; document.body.style.overflow=''; } });
-  }
 });
+
+// Suppliers helpers (Firestore)
+async function loadSuppliersForSelect(){
+  try{
+    const sel = document.getElementById('supplierSelect');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">（載入中…）</option>';
+    if(!window.TemplateManagerDB){
+      sel.innerHTML = '<option value="">未連線 Firebase（僅可離線測試）</option>';
+      return;
+    }
+    const { getDocs, collection, query, orderBy } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+    const q = query(collection(window.TemplateManagerDB,'suppliers'), orderBy('code'));
+    const snap = await getDocs(q);
+    const items = [];
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const label = `${d.code||''}-${d.shortName||d.name||doc.id}`.trim();
+      items.push({id:doc.id, label});
+    });
+    sel.innerHTML = '<option value="">請選擇供應商</option>' + items.map(it=>`<option value="${it.id}">${it.label}</option>`).join('');
+  }catch(e){
+    const sel = document.getElementById('supplierSelect');
+    if(sel) sel.innerHTML = '<option value="">載入供應商失敗</option>';
+    console.error(e);
+  }
+}
+async function applyTemplateFromStore(){
+  const supplierId = document.getElementById('supplierSelect')?.value || '';
+  if(!supplierId){ alert('請先選擇供應商'); return; }
+  if(!window.TemplateManagerDB){ alert('未連線 Firebase，無法從 suppliers 讀取樣板'); return; }
+  const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+  const snap = await getDoc(doc(window.TemplateManagerDB,'suppliers', supplierId));
+  if(!snap.exists()){ $('#tplStatus').textContent='找不到供應商文件'; return; }
+  const data = snap.data();
+  vendorTemplate = data.reconcileTemplate || null;
+  if(!vendorTemplate){ $('#tplStatus').textContent='此供應商尚未設定樣板'; return; }
+  if(vendorTemplate.tolerance!=null) $('#tol').value = vendorTemplate.tolerance;
+  $('#tplStatus').textContent='已套用樣板（suppliers）';
+}
+async function saveTemplateToStore(){
+  const supplierId = document.getElementById('supplierSelect')?.value || '';
+  if(!supplierId){ alert('請先選擇供應商'); return; }
+  if(!window.TemplateManagerDB){ alert('未連線 Firebase，無法寫入 suppliers'); return; }
+  const payload={
+    stripLines: vendorTemplate?.stripLines || [],
+    aliases: vendorTemplate?.aliases || {},
+    tolerance: parseNumber($('#tol').value) || 3.0,
+    freightKeywords: vendorTemplate?.freightKeywords || ['運費','服務費','包裝費'],
+    discountKeywords: vendorTemplate?.discountKeywords || ['折讓','折扣','折抵'],
+    headerRegex: vendorTemplate?.headerRegex || null,
+    updatedAt: new Date().toISOString()
+  };
+  const { doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+  const ref = doc(window.TemplateManagerDB,'suppliers', supplierId);
+  const snap = await getDoc(ref);
+  if(!snap.exists()){ alert('供應商文件不存在'); return; }
+  await setDoc(ref, { reconcileTemplate: payload }, { merge:true });
+  vendorTemplate = payload;
+  $('#tplStatus').textContent='樣板已儲存到 suppliers';
+}
 
 // POS
 let RawPos=[], PosCols=[];
@@ -93,7 +144,6 @@ async function ocrImages(files){
     $('#ocrStatus').textContent=`辨識中 ${i+1}/${files.length}：${f.name}`;
     const {data}=await worker.recognize(f);
     out.push(data.text);
-    $('#ocrBar').style.width=Math.round(((i+1)/files.length)*100)+'%';
   }
   await worker.terminate();
   $('#ocrStatus').textContent='完成';
@@ -105,6 +155,7 @@ async function runOcrImages(){
   for(const f of fs){ if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){ alert('請將 PDF 轉成 PNG/JPG 再上傳'); return; } }
   const texts = await ocrImages(fs);
   window.__venText = texts.join('\\n');
+  const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }
   $('#venTable thead').innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
   $('#venTable tbody').innerHTML='';
 }
@@ -129,93 +180,101 @@ function smartParseVendor(){
     '本期合計','本期折讓','營業稅','前期應收','本期已收','預收款','本期應收款','總計','備註','收款方式'
   ];
   const mergedStrips = new Set([...(vendorTemplate?.stripLines||[]), ...builtIns]);
+  const freightKW = vendorTemplate?.freightKeywords || ['運費','服務費','包裝費','物流'];
+  const discountKW = vendorTemplate?.discountKeywords || ['折讓','折扣','折抵'];
+  const headerReg = (vendorTemplate?.headerRegex && vendorTemplate.headerRegex.trim()) ? new RegExp(vendorTemplate.headerRegex.trim()) : null;
 
-  const raw = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const raw = text.split(/\\n+/).map(s=>s.trim()).filter(Boolean);
   const lines = raw.filter(ln=> ![...mergedStrips].some(w=> w && ln.includes(w)));
 
   // header detection
   const headers=[];
   for(let i=0;i<lines.length;i++){
     const ln=lines[i];
-    const tokens=ln.split(/\s+/);
-    const hasDate=tokens.some(isDateToken);
-    const orderNo=findLongNumber(ln);
-    if(hasDate && orderNo){
-      const dateTok = tokens.find(isDateToken).replace(/[^\d\/\.\-]/g,'');
-      headers.push({idx:i, date:dateTok, orderNo});
+    let dateTok='', orderNo=null;
+    if(headerReg){
+      const m = ln.match(headerReg);
+      if(m){ dateTok = (m[1]||'').toString(); orderNo = (m[2]||'').toString(); }
+    }else{
+      const tokens=ln.split(/\\s+/);
+      const hasDate=tokens.some(isDateToken);
+      orderNo=findLongNumber(ln);
+      if(hasDate){ dateTok = tokens.find(isDateToken).replace(/[^\\d\\/\\.\\-]/g,''); }
     }
+    if(dateTok && orderNo){ headers.push({idx:i, date:dateTok, orderNo}); }
   }
 
-  vendorGroups=[];
+  vendorGroups=[]; rejectedLines=[];
   const tol = parseNumber($('#tol')?.value) || vendorTemplate?.tolerance || 3;
 
+  const acceptLine = (ln0)=>{
+    const ln = ln0.replace(/[|│—–\\-]+/g,' ').trim();
+    if(!ln) return null;
+
+    const bigNum = (ln.match(/\\d{7,}/)? true:false);
+    if(bigNum && !hasAnyKeyword(ln, freightKW) && !hasAnyKeyword(ln, discountKW)){
+      rejectedLines.push({line:ln0, reason:'可疑超大數字'}); return null;
+    }
+
+    const nums=[...ln.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\\.[0-9]{1,2})?/g)].map(m=>m[0]);
+    if(nums.length===0){ rejectedLines.push({line:ln0, reason:'找不到數字'}); return null; }
+
+    if(hasAnyKeyword(ln, freightKW) || hasAnyKeyword(ln, discountKW)){
+      const last = parseNumber(nums[nums.length-1]);
+      if(Number.isFinite(last)){
+        const sub = hasAnyKeyword(ln, discountKW)? -Math.abs(last) : last;
+        return {item: cleanText(ln.replace(/[0-9.,]+/g,'')).slice(0,64), qty: 1, price: sub, sub};
+      }
+    }
+
+    let accepted=null;
+    for(let p2=nums.length-1; p2>=1; p2--){
+      const sub=parseNumber(nums[p2]);
+      const price=parseNumber(nums[p2-1]);
+      if(!Number.isFinite(sub)) continue;
+      let qty=NaN, qIdx=-1;
+      for(let k=p2-2; k>=0; k--){
+        const v=parseNumber(nums[k]);
+        if(Number.isInteger(v) && v>=0 && v<10000){ qty=v; qIdx=k; break; }
+      }
+      const est=(Number.isFinite(qty)&&Number.isFinite(price))? qty*price : NaN;
+      const ok=Number.isFinite(est)? Math.abs(est - sub) <= tol : false;
+      if(ok){
+        let head=ln;
+        const idxSub=head.lastIndexOf(nums[p2]); head = idxSub>0? head.slice(0,idxSub): head;
+        const idxPrice=head.lastIndexOf(nums[p2-1]); head = idxPrice>0? head.slice(0,idxPrice): head;
+        if(qIdx>=0){ const idxQty=head.lastIndexOf(nums[qIdx]); if(idxQty>0) head = head.slice(0, idxQty); }
+        let item=cleanText(head);
+        if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
+        if(item && !/^\\d+(\\.\\d+)?$/.test(item)){ accepted = {item, qty, price, sub}; break; }
+      }
+    }
+    if(!accepted){ rejectedLines.push({line:ln0, reason:'不符合 qty*price≈sub'}); }
+    return accepted;
+  };
+
   if(headers.length===0){
-    // Fallback：整頁當一組，盡量抓第一個日期與最長編號
-    const anyDate = (text.match(/(\d{2,4}[\/\.\-]\d{1,2}[\/\.\-]\d{1,2})/)||[])[1] || '';
+    const anyDate = (text.match(/(\\d{2,4}[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{1,2})/)||[])[1] || '';
     const anyOrder = findLongNumber(text) || '';
     const rows=[];
-    for(const ln0raw of lines){
-      const ln0=ln0raw.replace(/[|│—–\-]+/g,' ').trim();
-      const nums=[...ln0.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?/g)].map(m=>m[0]);
-      if(nums.length<2) continue;
-      let accepted=null;
-      for(let p2=nums.length-1; p2>=1; p2--){
-        const sub=parseNumber(nums[p2]); const price=parseNumber(nums[p2-1]); if(!Number.isFinite(sub)) continue;
-        let qty=NaN, qIdx=-1;
-        for(let k=p2-2;k>=0;k--){ const v=parseNumber(nums[k]); if(Number.isInteger(v)&&v>=0&&v<10000){ qty=v; qIdx=k; break; } }
-        const est=(Number.isFinite(qty)&&Number.isFinite(price))? qty*price : NaN;
-        const ok=Number.isFinite(est)? Math.abs(est-sub)<=tol : false;
-        if(ok){
-          let head=ln0;
-          const idxSub=head.lastIndexOf(nums[p2]); head = idxSub>0? head.slice(0,idxSub): head;
-          const idxPrice=head.lastIndexOf(nums[p2-1]); head = idxPrice>0? head.slice(0,idxPrice): head;
-          if(qIdx>=0){ const idxQty=head.lastIndexOf(nums[qIdx]); if(idxQty>0) head = head.slice(0, idxQty); }
-          let item=cleanText(head); if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
-          if(item && !/^\d+(\.\d+)?$/.test(item)){ accepted={item,qty,price,sub}; break; }
-        }
-      }
-      if(accepted) rows.push(accepted);
-    }
+    for(const ln0 of lines){ const r = acceptLine(ln0); if(r) rows.push(r); }
     vendorGroups.push({date:anyDate, orderNo:anyOrder, rows});
   }else{
     for(let h=0; h<headers.length; h++){
       const start=headers[h].idx+1;
       const end=(h+1<headers.length)? headers[h+1].idx : lines.length;
       const rows=[];
-      for(let i=start;i<end;i++){
-        const ln0=lines[i].replace(/[|│—–\-]+/g,' ').trim();
-        if(!ln0) continue;
-        const nums=[...ln0.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?/g)].map(m=>m[0]);
-        if(nums.length<2) continue;
-        let accepted=null;
-        for(let p2=nums.length-1; p2>=1; p2--){
-          const sub=parseNumber(nums[p2]); const price=parseNumber(nums[p2-1]); if(!Number.isFinite(sub)) continue;
-          let qty=NaN, qIdx=-1;
-          for(let k=p2-2; k>=0; k--){ const v=parseNumber(nums[k]); if(Number.isInteger(v)&&v>=0&&v<10000){ qty=v; qIdx=k; break; } }
-          const est=(Number.isFinite(qty)&&Number.isFinite(price))? qty*price : NaN;
-          const ok=Number.isFinite(est)? Math.abs(est - sub) <= tol : false;
-          if(ok){
-            let head=ln0;
-            const idxSub=head.lastIndexOf(nums[p2]); head = idxSub>0? head.slice(0,idxSub): head;
-            const idxPrice=head.lastIndexOf(nums[p2-1]); head = idxPrice>0? head.slice(0,idxPrice): head;
-            if(qIdx>=0){ const idxQty=head.lastIndexOf(nums[qIdx]); if(idxQty>0) head = head.slice(0, idxQty); }
-            let item=cleanText(head);
-            if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
-            if(item && !/^\d+(\.\d+)?$/.test(item)){ accepted = {item, qty, price, sub}; break; }
-          }
-        }
-        if(accepted) rows.push(accepted);
-      }
+      for(let i=start;i<end;i++){ const r = acceptLine(lines[i]); if(r) rows.push(r); }
       vendorGroups.push({ date: headers[h].date, orderNo: headers[h].orderNo, rows });
     }
   }
 
   venRows = vendorGroups.flatMap(g=> g.rows);
   renderVendorGroupedTable();
+  renderRejected();
   updateTotals();
-  if(status){ const h=vendorGroups.length; const items=venRows.length; status.textContent = `解析完成：${h} 組貨單、${items} 筆品項`; }
+  if(status){ const h=vendorGroups.length; const items=venRows.length; status.textContent = `解析完成：${h} 組貨單、${items} 筆品項（未採用 ${rejectedLines.length} 行）`; }
 }
-
 
 function renderVendorGroupedTable(){
   const thead=$('#venTable thead'), tbody=$('#venTable tbody');
@@ -230,49 +289,17 @@ function renderVendorGroupedTable(){
   const total = venRows.reduce((a,b)=> a + sumRow(b), 0);
   $('#venSum').textContent = nf.format(total);
 }
-
-// Templates (Firestore or localStorage fallback)
-async function applyTemplateFromStore(){
-  const name = ($('#vendorName').value || '').trim();
-  if(!name){ alert('請先輸入廠商名稱'); return }
-  if (db){
-    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-    const snap = await getDoc(doc(db,'vendor_templates', name));
-    if(!snap.exists()){ vendorTemplate=null; $('#tplStatus').textContent = `找不到模板（${name}）`; return; }
-    vendorTemplate = snap.data(); $('#tplStatus').textContent = `已套用模板：${name}`;
-    if(vendorTemplate.tolerance!=null) $('#tol').value = vendorTemplate.tolerance;
-  }else{
-    const all = JSON.parse(localStorage.getItem('vendor_templates_store_v1')||'{}');
-    vendorTemplate = all[name] || null;
-    $('#tplStatus').textContent = vendorTemplate? `已套用模板（離線）：${name}` : `找不到模板（離線）：${name}`;
-    if(vendorTemplate?.tolerance!=null) $('#tol').value = vendorTemplate.tolerance;
-  }
-}
-async function saveTemplateToStore(){
-  const name = ($('#vendorName').value || '').trim();
-  if(!name){ alert('請先輸入廠商名稱'); return }
-  const payload={
-    vendorName:name,
-    stripLines: vendorTemplate?.stripLines || [],
-    aliases: vendorTemplate?.aliases || {},
-    tolerance: parseNumber($('#tol').value) || 3.0,
-    updatedAt: new Date().toISOString()
-  };
-  if (db){
-    const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-    payload.updatedAt = serverTimestamp();
-    await setDoc(doc(db,'vendor_templates', name), payload, {merge:true});
-    $('#tplStatus').textContent = `已儲存模板：${name}`;
-  }else{
-    const all = JSON.parse(localStorage.getItem('vendor_templates_store_v1')||'{}');
-    all[name]=payload; localStorage.setItem('vendor_templates_store_v1', JSON.stringify(all));
-    $('#tplStatus').textContent = `已儲存模板（離線）：${name}`;
-  }
-  vendorTemplate = payload;
+function renderRejected(){
+  const tbody = document.querySelector('#venRejected tbody');
+  if(!tbody) return;
+  if(!rejectedLines || !rejectedLines.length){ tbody.innerHTML = '<tr><td colspan="2" class="small">（無）</td></tr>'; return; }
+  tbody.innerHTML = rejectedLines.slice(0,200).map(x=> `<tr><td>${(x.line||'').replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</td><td class="small">${x.reason||''}</td></tr>`).join('');
 }
 
 // Matching
 function runMatch(){ if(document.querySelector('input[name="compareMode"]:checked')?.value==='orders'){ runMatchOrders(); } else { runMatchItems(); } }
+$('#runMatch').onclick = runMatch;
+
 function renderCompareRows(sel, arr, ok){
   const thead=document.querySelector(sel+' thead'); const tbody=document.querySelector(sel+' tbody');
   thead.innerHTML=`<tr><th>POS 品名</th><th>數量</th><th>小計</th><th></th><th>廠商 品名</th><th>數量</th><th>小計</th><th>差額</th><th>相似度</th></tr>`;
