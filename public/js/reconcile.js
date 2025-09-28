@@ -1,336 +1,325 @@
-// reconcile.js (ES Module) — Rabbithome iframe safe + Firebase Auth
-import { db, auth } from '/js/firebase.js';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+const $=sel=>document.querySelector(sel);
+const nf=new Intl.NumberFormat('zh-TW',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-// 3rd libs loaded by HTML: PapaParse + Tesseract
-const $ = sel => document.querySelector(sel);
-const $on = (el, ev, fn) => el.addEventListener(ev, fn);
-const nf = new Intl.NumberFormat('zh-TW', {minimumFractionDigits:2, maximumFractionDigits:2});
+let db = window.TemplateManagerDB || null;
+let auth = window.TemplateManagerAuth || null;
 
-function parseNumber(x){
-  if(x==null) return NaN;
-  if(typeof x === 'number') return x;
-  const s = String(x).replace(/[, \u3000]/g,'').replace(/[^0-9.\-]/g,'');
-  const v = parseFloat(s);
-  return isNaN(v)? NaN : v;
-}
-function cleanText(s){
-  return String(s||'').trim().replace(/[\u3000\s]+/g,' ').replace(/[\(（][^)）]*[\)）]/g,'').replace(/[*＊×xＸ]/g,'x');
-}
-function keyOf(s){
-  return cleanText(s).toLowerCase().replace(/[^a-z0-9一-龥x\-/_,]/g,'');
-}
-function dice(a,b){
-  a = keyOf(a); b = keyOf(b); if(!a||!b) return 0;
-  if(a===b) return 1;
-  const bigrams = s=>{const r=new Set(); for(let i=0;i<s.length-1;i++) r.add(s.slice(i,i+2)); return r}
-  const A=bigrams(a), B=bigrams(b);
-  let inter=0; A.forEach(x=>{ if(B.has(x)) inter++ });
-  return (2*inter)/(A.size+B.size||1);
-}
-function escapeHtml(s){ return String(s).replace(/[&<>\"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])) }
+function parseNumber(x){ if(x==null) return NaN; if(typeof x==='number') return x; let s=String(x).trim(); s=s.replace(/[,\s\u3000]/g,''); s=s.replace(/[^0-9.\-]/g,''); const v=parseFloat(s); return isNaN(v)?NaN:v; }
+function cleanText(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+function keyOf(s){ return cleanText(s).toLowerCase().replace(/[^a-z0-9一-龥x\-/_,]/g,''); }
 
-let posRows=[], venRows=[], runner=null, runnerProfile=null;
+let posRows=[], venRows=[], showPosSimple=true, compareMode='orders';
+let vendorGroups=[];
+let vendorTemplate=null;
 
-// ===== iframe-safe init =====
-window.onload = () => {
-  // 標示運行環境
-  const envBadge = $('#envBadge');
-  try {
-    if (window.self !== window.top) envBadge.textContent = 'Rabbithome iframe 模式';
-    else envBadge.textContent = '獨立頁模式';
-  } catch { envBadge.textContent = '獨立頁模式'; }
+window.addEventListener('DOMContentLoaded',()=>{
+  $('#loadPos').onclick=loadPosCSV;
+  $('#applyPosMap').onclick=applyPosMap;
+  $('#togglePosView').onchange=e=>{ showPosSimple=e.target.checked; renderPosTable(); };
+  document.querySelectorAll('input[name="compareMode"]').forEach(r=> r.onchange = e=>{ compareMode=e.target.value; });
+  $('#runOcr').onclick=runOcrImages;
+  $('#smartParse').onclick=smartParseVendor;
+  $('#runMatch').onclick=runMatch;
+  $('#btnApplyTpl').onclick=applyTemplateFromStore;
+  $('#btnSaveTpl').onclick=saveTemplateToStore;
 
-  // 綁定事件
-  bindEvents();
+  const overlay = document.getElementById('mgrOverlay');
+  const frame = document.getElementById('mgrFrame');
+  const btnOpenMgr = document.getElementById('openMgr');
+  const btnMgrClose = document.getElementById('mgrClose');
+  if (overlay && frame && btnOpenMgr && btnMgrClose) {
+    btnOpenMgr.onclick = ()=>{
+      overlay.style.display='flex';
+      document.documentElement.style.overflow='hidden';
+      document.body.style.overflow='hidden';
+      try{
+        if (window.TemplateManagerDB){
+          frame.contentWindow.postMessage({type:'setFirebase', db: window.TemplateManagerDB, auth: window.TemplateManagerAuth||null}, '*');
+        }
+      }catch(e){}
+    };
+    btnMgrClose.onclick = ()=>{ overlay.style.display='none'; document.documentElement.style.overflow=''; document.body.style.overflow=''; };
+    overlay.addEventListener('click', e=>{ if(e.target===overlay){ overlay.style.display='none'; document.documentElement.style.overflow=''; document.body.style.overflow=''; } });
+  }
+});
 
-  // 讀取登入者
-  onAuthStateChanged(auth, async user => {
-    if (!user) {
-      $('#runner').textContent = '未登入（僅本機試用）';
-      return;
-    }
-    runner = user;
-    $('#runner').textContent = (user.displayName || user.email || user.uid);
-    // 嘗試讀 nickname
-    try {
-      const p = await getDoc(doc(db, 'profiles', user.uid));
-      if (p.exists()) {
-        runnerProfile = p.data();
-        const nick = runnerProfile.nickname || runnerProfile.nick || runnerProfile.name;
-        if (nick) $('#runner').textContent = `${nick}（${user.email||user.uid}）`;
-      }
-    } catch {}
-  });
-};
-
-function bindEvents(){
-  $('#btnExport').addEventListener('click', exportCSV);
-  $('#loadPos').addEventListener('click', loadPosCSV);
-  $('#runOcr').addEventListener('click', runOcrImages);
-  $('#smartParse').addEventListener('click', smartParseVendor);
-  $('#runMatch').addEventListener('click', runMatch);
-  $('#btnSave').addEventListener('click', saveSummaryToFirestore);
-}
-
-// ===== POS CSV =====
+// POS
+let RawPos=[], PosCols=[];
 function loadPosCSV(){
-  const f = $('#posFile').files[0];
-  if(!f){ alert('請先選擇 POS CSV 檔'); return }
-  Papa.parse(f, { header:true, skipEmptyLines:true, complete: res => {
-    const rows = res.data;
-    if(!rows.length){ alert('CSV 無資料'); return }
-    const cols = Object.keys(rows[0]);
-    for(const id of ['posColItem','posColQty','posColPrice','posColSub','posColVendor']){
-      const sel = document.getElementById(id); sel.innerHTML='';
-      cols.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; sel.appendChild(opt) });
-    }
-    $('#posMap').style.display='flex';
-    const guess = (keys, cands)=> keys.find(k=> cands.some(c=> k.toLowerCase().includes(c)));
-    const kset = cols.map(c=>c);
-    $('#posColItem').value = guess(kset, ['品','名','型號','品名','名稱','商品','描述','品項']) || cols[0];
-    $('#posColQty').value  = guess(kset, ['數量','qty']) || cols[1];
-    $('#posColPrice').value= guess(kset, ['單價','價格','price']) || cols[2];
-    $('#posColSub').value  = guess(kset, ['小計','金額','總額','合計','total','amount']) || cols[3];
-    $('#posColVendor').value= guess(kset, ['廠商','供應','vendor']) || cols[4] || cols[0];
-
-    $('#applyPosMap').onclick = () => {
-      const ci=$('#posColItem').value, cq=$('#posColQty').value, cp=$('#posColPrice').value, cs=$('#posColSub').value, cv=$('#posColVendor').value;
-      posRows = rows.map(r=>({
-        item: cleanText(r[ci]),
-        qty: parseNumber(r[cq]),
-        price: parseNumber(r[cp]),
-        sub: parseNumber(r[cs]),
-        vendor: cleanText(r[cv])
-      })).filter(r=> r.item);
-      renderTable('#posTable', ['品名','數量','單價','小計','廠商'], posRows, ['item','qty','price','sub','vendor']);
-      updateKPI();
+  const f=$('#posFile').files[0]; if(!f){ alert('請先選擇 POS CSV'); return }
+  Papa.parse(f,{header:true,skipEmptyLines:true,complete:res=>{
+    RawPos=res.data; if(!RawPos.length){ alert('CSV 無資料'); return }
+    PosCols=Object.keys(RawPos[0]||{});
+    for(const id of ['posColItem','posColQty','posColPrice','posColSub','posColVendor','posColDate','posColOrder']){
+      const sel=document.getElementById(id); sel.innerHTML=''; const optEmpty=document.createElement('option'); optEmpty.value=''; optEmpty.textContent='（無）'; sel.appendChild(optEmpty);
+      PosCols.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
     }
   }})
 }
-
-function renderTable(sel, headers, rows, keys, editable=false){
-  const thead = document.querySelector(sel+' thead');
-  const tbody = document.querySelector(sel+' tbody');
-  thead.innerHTML = '<tr>'+ headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
-  tbody.innerHTML = rows.map((r,i)=> '<tr>'+ keys.map(k=>{
-    const v = (r[k]??'');
-    const cell = (typeof v === 'number' && isFinite(v)) ? nf.format(v) : String(v);
-    return `<td ${editable?`contenteditable data-row="${i}" data-key="${k}"`:''}>${cell}</td>`;
-  }).join('') + '</tr>').join('');
-  if(editable){
-    tbody.querySelectorAll('[contenteditable]').forEach(td=>{
-      td.addEventListener('blur', e=>{
-        const i = +td.dataset.row, k = td.dataset.key;
-        let val = td.textContent.trim();
-        if(['qty','price','sub'].includes(k)) val = parseNumber(val);
-        venRows[i][k] = val;
-        updateKPI();
-      })
-    })
-  }
+function applyPosMap(){
+  if(!RawPos.length){ alert('請先讀取 CSV'); return }
+  const ci=$('#posColItem').value, cq=$('#posColQty').value, cp=$('#posColPrice').value, cs=$('#posColSub').value, cv=$('#posColVendor').value, cd=$('#posColDate').value, co=$('#posColOrder').value;
+  posRows = RawPos.map(r=>({
+    date: cleanText(r[cd]||''),
+    vendor: cleanText(r[cv]||''),
+    order: cleanText(r[co]||''),
+    item: cleanText(r[ci]||''),
+    qty: parseNumber(r[cq]),
+    price: parseNumber(r[cp]),
+    sub: parseNumber(r[cs])
+  })).filter(r=> (r.item || Number.isFinite(r.sub) || r.order));
+  renderPosTable(); updateTotals();
 }
+function renderPosTable(){
+  const thead=$('#posTable thead'), tbody=$('#posTable tbody');
+  if(showPosSimple){
+    thead.innerHTML='<tr><th>日期</th><th>廠商</th><th>貨單編號</th><th>金額</th></tr>';
+    tbody.innerHTML=posRows.map(r=>`<tr><td>${r.date||''}</td><td>${r.vendor||''}</td><td>${r.order||''}</td><td>${Number.isFinite(r.sub)?nf.format(r.sub):(Number.isFinite(r.qty)&&Number.isFinite(r.price)?nf.format(r.qty*r.price):'')}</td></tr>`).join('');
+  }else{
+    thead.innerHTML='<tr><th>日期</th><th>廠商</th><th>貨單編號</th><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
+    tbody.innerHTML=posRows.map(r=>`<tr><td>${r.date||''}</td><td>${r.vendor||''}</td><td>${r.order||''}</td><td>${r.item}</td><td>${Number.isFinite(r.qty)?nf.format(r.qty):''}</td><td>${Number.isFinite(r.price)?nf.format(r.price):''}</td><td>${Number.isFinite(r.sub)?nf.format(r.sub):(Number.isFinite(r.qty)&&Number.isFinite(r.price)?nf.format(r.qty*r.price):'')}</td></tr>`).join('');
+  }
+  $('#posSum').textContent = nf.format(sumPos());
+}
+function sumRow(r){ return Number.isFinite(r.sub)? r.sub : (Number.isFinite(r.qty)&&Number.isFinite(r.price)? r.qty*r.price : 0); }
+function sumPos(){ return posRows.reduce((a,b)=> a + sumRow(b), 0) }
 
-// ===== OCR Vendor =====
+// OCR
 async function ocrImages(files){
-  const worker = await Tesseract.createWorker('eng+chi_tra');
-  const out = [];
+  const worker=await Tesseract.createWorker('eng+chi_tra');
+  const out=[];
   for(let i=0;i<files.length;i++){
-    const f = files[i];
-    $('#ocrStatus').textContent = `辨識中 ${i+1}/${files.length}：${f.name}`;
-    const { data } = await worker.recognize(f, { rectangle: null });
+    const f=files[i];
+    $('#ocrStatus').textContent=`辨識中 ${i+1}/${files.length}：${f.name}`;
+    const {data}=await worker.recognize(f);
     out.push(data.text);
-    const p = Math.round(((i+1)/files.length)*100);
-    $('#ocrBar').style.width = p+'%';
+    $('#ocrBar').style.width=Math.round(((i+1)/files.length)*100)+'%';
   }
   await worker.terminate();
-  $('#ocrStatus').textContent = '完成';
+  $('#ocrStatus').textContent='完成';
   return out;
 }
-
 async function runOcrImages(){
-  const fs = $('#imgFiles').files;
+  const fs=$('#imgFiles').files;
   if(!fs.length){ alert('請先選擇圖片'); return }
+  for(const f of fs){ if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){ alert('請將 PDF 轉成 PNG/JPG 再上傳'); return; } }
   const texts = await ocrImages(fs);
-  window.__rawVendorText = texts.join('\n');
-  venRows = [];
-  renderTable('#venTable', ['品名','數量','單價','小計'], venRows, ['item','qty','price','sub'], true);
+  window.__venText = texts.join('\\n');
+  $('#venTable thead').innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
+  $('#venTable tbody').innerHTML='';
 }
 
+// Vendor parse
+function isDateToken(tok){ tok = tok.replace(/^[^\\d]+/, '').replace(/[^\\d\\/\\.\\-]/g,''); return /^(\\d{2,4})[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{1,2}$/.test(tok); }
+function findLongNumber(s){ const digits = s.replace(/\\D/g,''); const m = digits.match(/(\\d{8,14})\\d*$/); return m? m[1] : null; }
 function smartParseVendor(){
-  const text = window.__rawVendorText || '';
+  let text = window.__venText || '';
   if(!text){ alert('尚未有 OCR 結果'); return }
-  const lines = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-  const rows=[];
-  for(const ln of lines){
-    const nums = [...ln.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?/g)].map(m=>m[0]);
-    if(nums.length>=2){
-      const maybeSub = parseNumber(nums.at(-1));
-      const maybePrice = parseNumber(nums.at(-2));
-      let qty = NaN;
-      for(let i=nums.length-3;i>=0;i--){ const v = parseNumber(nums[i]); if(Number.isInteger(v)){ qty=v; break } }
-      let cutIdx = ln.lastIndexOf(nums.at(-1));
-      let head = ln.slice(0, cutIdx);
-      if(nums.length>=2){
-        const idx2 = head.lastIndexOf(nums.at(-2));
-        if(idx2>0) head = head.slice(0, idx2);
-      }
-      head = head.replace(/[\s\t]+$/,'');
-      const item = cleanText(head);
-      if(item && !isNaN(maybeSub)){
-        rows.push({ item, qty: isNaN(qty)?1:qty, price: isNaN(maybePrice)? NaN: maybePrice, sub: maybeSub });
-      }
+
+  const builtIns = [
+    '客戶對帳單','TEL','FAX','電話','傳真','地址','統一編號','統編',
+    '客戶編號','客戶名稱','日期區間','頁','台 北市','大 同 區','民權 西 路',
+    '本期合計','本期折讓','營業稅','前期應收','本期已收','預收款','本期應收款','總計','備註','收款方式'
+  ];
+  const mergedStrips = new Set([...(vendorTemplate?.stripLines||[]), ...builtIns]);
+
+  const raw = text.split(/\\n+/).map(s=>s.trim()).filter(Boolean);
+  const lines = raw.filter(ln=> ![...mergedStrips].some(w=> w && ln.includes(w)));
+
+  const headers=[];
+  for(let i=0;i<lines.length;i++){
+    const ln=lines[i];
+    const tokens=ln.split(/\\s+/);
+    const hasDate=tokens.some(isDateToken);
+    const orderNo=findLongNumber(ln);
+    if(hasDate && orderNo){
+      const dateTok = tokens.find(isDateToken).replace(/[^\\d\\/\\.\\-]/g,'');
+      headers.push({idx:i, date:dateTok, orderNo});
     }
   }
-  if(!rows.length){ alert('解析失敗：請確認圖片清晰或手動編輯表格'); }
-  venRows = rows;
-  renderTable('#venTable', ['品名','數量','單價','小計'], venRows, ['item','qty','price','sub'], true);
-  updateKPI();
-}
 
-function sumSub(rows){ return rows.reduce((a,b)=> a + (isFinite(b.sub)? b.sub : (isFinite(b.qty)&&isFinite(b.price)? b.qty*b.price : 0)), 0) }
-function updateKPI(){
-  $('#kPos').textContent = posRows.length? nf.format(sumSub(posRows)) : '–';
-  $('#kVen').textContent = venRows.length? nf.format(sumSub(venRows)) : '–';
-  if(posRows.length||venRows.length){
-    const diff = sumSub(posRows) - sumSub(venRows);
-    $('#kDiff').textContent = nf.format(diff);
-  } else $('#kDiff').textContent = '–';
-}
-
-function runMatch(){
-  const tol = parseNumber($('#tol').value)||0;
-  const usedVen = new Set();
-  const oks=[], bads=[];
-
-  for(const p of posRows){
-    const k = keyOf(p.item);
-    let bestIdx=-1, bestScore=0;
-    for(let i=0;i<venRows.length;i++){
-      if(usedVen.has(i)) continue;
-      const v = venRows[i];
-      const score = (keyOf(v.item)===k) ? 1 : dice(p.item, v.item);
-      if(score>bestScore){ bestScore=score; bestIdx=i }
-    }
-    if(bestIdx>=0 && bestScore>=0.55){
-      const v = venRows[bestIdx];
-      usedVen.add(bestIdx);
-      const pSub = isFinite(p.sub)? p.sub : (p.qty||0)*(p.price||0);
-      const vSub = isFinite(v.sub)? v.sub : (v.qty||0)*(v.price||0);
-      const gap = pSub - vSub;
-      if(Math.abs(gap) <= tol){
-        oks.push({ pos:p, ven:v, score:bestScore, gap });
-      } else {
-        bads.push({ pos:p, ven:v, score:bestScore, gap });
+  vendorGroups=[];
+  const tol = parseNumber($('#tol')?.value) || vendorTemplate?.tolerance || 3;
+  for(let h=0; h<headers.length; h++){
+    const start=headers[h].idx+1;
+    const end=(h+1<headers.length)? headers[h+1].idx : lines.length;
+    const rows=[];
+    for(let i=start;i<end;i++){
+      const ln0=lines[i].replace(/[|│—–\\-]+/g,' ').trim();
+      if(!ln0) continue;
+      const nums=[...ln0.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\\.[0-9]{1,2})?/g)].map(m=>m[0]);
+      if(nums.length<2) continue;
+      let accepted=null;
+      for(let p2=nums.length-1; p2>=1; p2--){
+        const sub=parseNumber(nums[p2]);
+        const price=parseNumber(nums[p2-1]);
+        if(!Number.isFinite(sub)) continue;
+        let qty=NaN, qIdx=-1;
+        for(let k=p2-2; k>=0; k--){
+          const v=parseNumber(nums[k]);
+          if(Number.isInteger(v) && v>=0 && v<10000){ qty=v; qIdx=k; break; }
+        }
+        const est = (Number.isFinite(qty)&&Number.isFinite(price)) ? qty*price : NaN;
+        const ok = Number.isFinite(est) ? Math.abs(est - sub) <= tol : false;
+        if(ok){
+          let head=ln0;
+          const idxSub=head.lastIndexOf(nums[p2]); head = idxSub>0? head.slice(0,idxSub): head;
+          const idxPrice=head.lastIndexOf(nums[p2-1]); head = idxPrice>0? head.slice(0,idxPrice): head;
+          if(qIdx>=0){
+            const idxQty=head.lastIndexOf(nums[qIdx]);
+            if(idxQty>0) head = head.slice(0, idxQty);
+          }
+          let item=cleanText(head);
+          if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
+          if(item && !/^\\d+(\\.\\d+)?$/.test(item)){
+            accepted = {item, qty, price, sub};
+            break;
+          }
+        }
       }
-    } else {
-      bads.push({ pos:p, ven:null, score:bestScore, gap:NaN });
+      if(accepted) rows.push(accepted);
     }
+    vendorGroups.push({ date: headers[h].date, orderNo: headers[h].orderNo, rows });
   }
-  venRows.forEach((v,i)=>{ if(!usedVen.has(i)) bads.push({ pos:null, ven:v, score:0, gap:NaN }) });
 
-  renderCompare('#tblOK', oks, true);
-  renderCompare('#tblBad', bads, false);
-
-  $('#kMatch').textContent = String(oks.length);
-
-  // 暫存結果在 window 供儲存
-  window.__matchOK = oks;
-  window.__matchBAD = bads;
+  venRows = vendorGroups.flatMap(g=> g.rows);
+  renderVendorGroupedTable();
+  updateTotals();
 }
 
-function renderCompare(sel, arr, isOK){
-  const thead = document.querySelector(sel+' thead');
-  const tbody = document.querySelector(sel+' tbody');
-  thead.innerHTML = `<tr>
-    <th class="nowrap">POS 品名</th><th>數量</th><th>小計</th>
-    <th></th>
-    <th class="nowrap">廠商 品名</th><th>數量</th><th>小計</th>
-    <th class="nowrap">差額</th><th>相似度</th></tr>`;
+function renderVendorGroupedTable(){
+  const thead=$('#venTable thead'), tbody=$('#venTable tbody');
+  thead.innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
+  const html=[];
+  for(const g of vendorGroups){
+    const sum = g.rows.reduce((a,b)=> a + sumRow(b), 0);
+    html.push(`<tr class="groupRow"><td colspan="4">貨單：${g.date || ''}　#${g.orderNo || ''}　<span class="small">小計合計：${nf.format(sum)}</span></td></tr>`);
+    html.push(...g.rows.map(r=> `<tr><td>${r.item}</td><td>${Number.isFinite(r.qty)?nf.format(r.qty):''}</td><td>${Number.isFinite(r.price)?nf.format(r.price):''}</td><td>${Number.isFinite(r.sub)?nf.format(r.sub):''}</td></tr>`));
+  }
+  tbody.innerHTML = html.join('');
+  const total = venRows.reduce((a,b)=> a + sumRow(b), 0);
+  $('#venSum').textContent = nf.format(total);
+}
+
+// Templates (Firestore or localStorage fallback)
+async function applyTemplateFromStore(){
+  const name = ($('#vendorName').value || '').trim();
+  if(!name){ alert('請先輸入廠商名稱'); return }
+  if (db){
+    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+    const snap = await getDoc(doc(db,'vendor_templates', name));
+    if(!snap.exists()){ vendorTemplate=null; $('#tplStatus').textContent = `找不到模板（${name}）`; return; }
+    vendorTemplate = snap.data(); $('#tplStatus').textContent = `已套用模板：${name}`;
+    if(vendorTemplate.tolerance!=null) $('#tol').value = vendorTemplate.tolerance;
+  }else{
+    const all = JSON.parse(localStorage.getItem('vendor_templates_store_v1')||'{}');
+    vendorTemplate = all[name] || null;
+    $('#tplStatus').textContent = vendorTemplate? `已套用模板（離線）：${name}` : `找不到模板（離線）：${name}`;
+    if(vendorTemplate?.tolerance!=null) $('#tol').value = vendorTemplate.tolerance;
+  }
+}
+async function saveTemplateToStore(){
+  const name = ($('#vendorName').value || '').trim();
+  if(!name){ alert('請先輸入廠商名稱'); return }
+  const payload={
+    vendorName:name,
+    stripLines: vendorTemplate?.stripLines || [],
+    aliases: vendorTemplate?.aliases || {},
+    tolerance: parseNumber($('#tol').value) || 3.0,
+    updatedAt: new Date().toISOString()
+  };
+  if (db){
+    const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+    payload.updatedAt = serverTimestamp();
+    await setDoc(doc(db,'vendor_templates', name), payload, {merge:true});
+    $('#tplStatus').textContent = `已儲存模板：${name}`;
+  }else{
+    const all = JSON.parse(localStorage.getItem('vendor_templates_store_v1')||'{}');
+    all[name]=payload; localStorage.setItem('vendor_templates_store_v1', JSON.stringify(all));
+    $('#tplStatus').textContent = `已儲存模板（離線）：${name}`;
+  }
+  vendorTemplate = payload;
+}
+
+// Matching
+function runMatch(){ if(document.querySelector('input[name="compareMode"]:checked')?.value==='orders'){ runMatchOrders(); } else { runMatchItems(); } }
+function renderCompareRows(sel, arr, ok){
+  const thead=document.querySelector(sel+' thead'); const tbody=document.querySelector(sel+' tbody');
+  thead.innerHTML=`<tr><th>POS 品名</th><th>數量</th><th>小計</th><th></th><th>廠商 品名</th><th>數量</th><th>小計</th><th>差額</th><th>相似度</th></tr>`;
   tbody.innerHTML = arr.map(r=>{
-    const p = r.pos, v = r.ven;
-    const pSub = p? (isFinite(p.sub)?p.sub:(p.qty||0)*(p.price||0)) : NaN;
-    const vSub = v? (isFinite(v.sub)?v.sub:(v.qty||0)*(v.price||0)) : NaN;
-    const gap = (isFinite(pSub)&&isFinite(vSub))? (pSub - vSub) : NaN;
-    const pill = isOK? '<span class="pill ok">OK</span>' : '<span class="pill bad">Check</span>';
-    return `<tr>
-      <td>${p?escapeHtml(p.item):'<span class="small">—</span>'}</td>
-      <td>${p&&isFinite(p.qty)? nf.format(p.qty):'<span class="small">—</span>'}</td>
-      <td>${p&&isFinite(pSub)? nf.format(pSub):'<span class="small">—</span>'}</td>
-      <td>${pill}</td>
-      <td>${v?escapeHtml(v.item):'<span class="small">—</span>'}</td>
-      <td>${v&&isFinite(v.qty)? nf.format(v.qty):'<span class="small">—</span>'}</td>
-      <td>${v&&isFinite(vSub)? nf.format(vSub):'<span class="small">—</span>'}</td>
-      <td>${isFinite(gap)? nf.format(gap):'<span class="small">—</span>'}</td>
-      <td>${r.score? r.score.toFixed(2): '0.00'}</td>
-    </tr>`;
+    const p=r.pos, v=r.ven; const pSub=sumRow(p), vSub=sumRow(v);
+    const gap=(Number.isFinite(pSub)&&Number.isFinite(vSub))? (pSub - vSub): NaN;
+    const pill = ok? '<span class="pill ok">OK</span>' : '<span class="pill bad">Check</span>';
+    return `<tr><td>${p?p.item:'—'}</td><td>${p&&Number.isFinite(p.qty)?nf.format(p.qty):''}</td><td>${p&&Number.isFinite(pSub)?nf.format(pSub):''}</td>
+      <td>${pill}</td><td>${v?v.item:'—'}</td><td>${v&&Number.isFinite(v.qty)?nf.format(v.qty):''}</td><td>${v&&Number.isFinite(vSub)?nf.format(vSub):''}</td>
+      <td>${Number.isFinite(gap)?nf.format(gap):''}</td><td>${r.score? r.score.toFixed(2): '—'}</td></tr>`;
   }).join('');
 }
-
-// ===== Export CSV =====
-function exportCSV(){
-  const rows=[];
-  const tol = parseNumber($('#tol').value)||0;
-  const usedVen = new Set();
+function runMatchItems(){
+  const tol = parseNumber($('#tol').value)||0; const used=new Set(); const ok=[], bad=[];
   for(const p of posRows){
-    let bestIdx=-1, bestScore=0;
+    let best=-1,score=0;
     for(let i=0;i<venRows.length;i++){
-      if(usedVen.has(i)) continue;
-      const v = venRows[i];
-      const score = (keyOf(v.item)===keyOf(p.item)) ? 1 : dice(p.item, v.item);
-      if(score>bestScore){ bestScore=score; bestIdx=i }
+      if(used.has(i)) continue;
+      const v=venRows[i];
+      const s=(keyOf(v.item)===keyOf(p.item))?1:(()=>{ const a=keyOf(p.item), b=keyOf(v.item); const big=s=>{const r=new Set(); for(let i=0;i<s.length-1;i++) r.add(s.slice(i,i+2)); return r}; const A=big(a),B=big(b); let inter=0; A.forEach(x=>{if(B.has(x)) inter++}); return (2*inter)/(A.size+B.size||1); })();
+      if(s>score){ score=s; best=i; }
     }
-    if(bestIdx>=0 && bestScore>=0.55){
-      const v = venRows[bestIdx]; usedVen.add(bestIdx);
-      const pSub = isFinite(p.sub)? p.sub : (p.qty||0)*(p.price||0);
-      const vSub = isFinite(v.sub)? v.sub : (v.qty||0)*(v.price||0);
-      const gap = pSub - vSub;
-      rows.push({
-        類型: Math.abs(gap)<=tol? 'OK':'金額不符',
-        POS品名:p.item, POS數量:p.qty||'', POS小計:pSub,
-        廠商品名:v.item, 廠商數量:v.qty||'', 廠商小計:vSub,
-        差額: gap.toFixed(2), 相似度: bestScore.toFixed(2)
-      });
-    } else {
-      rows.push({ 類型:'POS未配對', POS品名:p.item, POS數量:p.qty||'', POS小計:(isFinite(p.sub)?p.sub:(p.qty||0)*(p.price||0)), 廠商品名:'', 廠商數量:'', 廠商小計:'', 差額:'', 相似度:'' });
-    }
+    const pSub = sumRow(p);
+    if(best>=0 && score>=0.55){ const v=venRows[best]; used.add(best); const vSub = sumRow(v); const gap = pSub - vSub; (Math.abs(gap)<=tol? ok: bad).push({pos:p, ven:v, score, gap}); }
+    else{ bad.push({pos:p, ven:null, score, gap:NaN}); }
   }
-  venRows.forEach((v,i)=>{ if(!usedVen.has(i)) rows.push({ 類型:'廠商未配對', POS品名:'', POS數量:'', POS小計:'', 廠商品名:v.item, 廠商數量:v.qty||'', 廠商小計:(isFinite(v.sub)?v.sub:(v.qty||0)*(v.price||0)), 差額:'', 相似度:'0.00' }) });
+  venRows.forEach((v,i)=>{ if(!used.has(i)) bad.push({pos:null, ven:v, score:0, gap:NaN}); });
+  renderCompareRows('#tblOK', ok, true); renderCompareRows('#tblBad', bad, false); updateTotals();
+}
+function runMatchOrders(){
+  const tol = parseNumber($('#tol').value)||0;
+  const posMap = new Map();
+  for(const r of posRows){ const key = `${r.date||''}|${r.order||''}`; const tot = sumRow(r); if(!posMap.has(key)) posMap.set(key, {date:r.date||'', order:r.order||'', total:0}); posMap.get(key).total += Number.isFinite(tot)? tot : 0; }
+  const posOrders = [...posMap.values()];
+  const venOrders = vendorGroups.map(g=> ({ date: g.date || '', order: g.orderNo || '', total: g.rows.reduce((a,b)=> a + sumRow(b), 0) }));
+  const used = new Set(); const ok=[], bad=[];
+  for(const p of posOrders){
+    let matchIndex=-1, matchScore=-1;
+    for(let i=0;i<venOrders.length;i++){
+      if(used.has(i)) continue; const v=venOrders[i]; let score = 0;
+      if(p.order && v.order && p.order.replace(/\D/g,'')===v.order.replace(/\D/g,'')){ score = 2; }
+      else if(p.date && v.date && p.date===v.date && Math.abs((p.total||0)-(v.total||0))<=tol){ score = 1; }
+      if(score>matchScore){ matchScore=score; matchIndex=i; }
+    }
+    if(matchIndex>=0 && matchScore>0){ const v=venOrders[matchIndex]; used.add(matchIndex); const gap=(p.total||0)-(v.total||0); (Math.abs(gap)<=tol? ok: bad).push({posOrder:p, venOrder:v, method:(matchScore===2?'單號匹配':'日期+金額匹配'), gap}); }
+    else{ bad.push({posOrder:p, venOrder:null, method:'未匹配', gap:NaN}); }
+  }
+  venOrders.forEach((v,i)=>{ if(!used.has(i)) bad.push({posOrder:null, venOrder:v, method:'供應商多出', gap:NaN}); });
 
-  const csv = Papa.unparse(rows);
-  const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='reconcile_diff.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500);
+  const okTHead = `<tr><th>POS 日期</th><th>POS 單號</th><th>POS 合計</th><th></th><th>廠商 日期</th><th>廠商 單號</th><th>廠商 合計</th><th>差額</th><th>匹配方式</th></tr>`;
+  $('#tblOK thead').innerHTML = okTHead;
+  $('#tblOK tbody').innerHTML = ok.map(r=>`<tr>
+    <td>${r.posOrder?.date||'—'}</td><td>${r.posOrder?.order||'—'}</td><td>${Number.isFinite(r.posOrder?.total)?nf.format(r.posOrder.total):''}</td>
+    <td><span class="pill ok">OK</span></td>
+    <td>${r.venOrder?.date||'—'}</td><td>${r.venOrder?.order||'—'}</td><td>${Number.isFinite(r.venOrder?.total)?nf.format(r.venOrder.total):''}</td>
+    <td>${Number.isFinite(r.gap)?nf.format(r.gap):''}</td><td>${r.method||'—'}</td>
+  </tr>`).join('');
+
+  $('#tblBad thead').innerHTML = okTHead;
+  $('#tblBad tbody').innerHTML = bad.map(r=>`<tr>
+    <td>${r.posOrder?.date||'—'}</td><td>${r.posOrder?.order||'—'}</td><td>${Number.isFinite(r.posOrder?.total)?nf.format(r.posOrder.total):''}</td>
+    <td><span class="pill bad">Check</span></td>
+    <td>${r.venOrder?.date||'—'}</td><td>${r.venOrder?.order||'—'}</td><td>${Number.isFinite(r.venOrder?.total)?nf.format(r.venOrder.total):''}</td>
+    <td>${Number.isFinite(r.gap)?nf.format(r.gap):''}</td><td>${r.method||'—'}</td>
+  </tr>`).join('');
+
+  const posTot = posOrders.reduce((a,b)=>a+(Number.isFinite(b.total)?b.total:0),0);
+  const venTot = venOrders.reduce((a,b)=>a+(Number.isFinite(b.total)?b.total:0),0);
+  const diff = posTot - venTot;
+  const diffClass = diff===0 ? 'diff-zero' : 'diff-pos';
+  document.getElementById('ordersTotals').innerHTML = `<div class="totals">
+    <div class="small">POS 合計：</div><div class="mono">${nf.format(posTot)}</div>
+    <div class="small">廠商合計：</div><div class="mono">${nf.format(venTot)}</div>
+    <div class="small">差額：</div><div class="mono ${diffClass}">${nf.format(diff)}</div>
+  </div>`;
+
+  updateTotals();
 }
 
-// ===== Save to Firestore =====
-async function saveSummaryToFirestore(){
-  const btn = $('#btnSave');
-  btn.disabled = true;
-  try {
-    if (!db) throw new Error('Firebase 尚未就緒或 /js/firebase.js 未載入');
-    const payload = {
-      ranAt: serverTimestamp(),
-      runnerUid: runner?.uid || null,
-      runnerEmail: runner?.email || null,
-      runnerName: runner?.displayName || null,
-      runnerNickname: (runnerProfile?.nickname || runnerProfile?.nick || null),
-      posTotal: sumSub(posRows),
-      vendorTotal: sumSub(venRows),
-      diffTotal: sumSub(posRows) - sumSub(venRows),
-      okCount: (window.__matchOK||[]).length || 0,
-      badCount: (window.__matchBAD||[]).length || 0,
-      posSample: posRows.slice(0,50),  // 避免文件過大
-      vendorSample: venRows.slice(0,50),
-      // 若需完整結果，可改成上傳到 Storage，這裡先只放摘要
-    };
-    const ref = await addDoc(collection(db, 'reconciliations'), payload);
-    alert('已儲存摘要至 Firestore：' + ref.id);
-  } catch (err){
-    console.error(err);
-    alert('儲存失敗：' + err.message);
-  } finally {
-    btn.disabled = false;
-  }
-}
+function updateTotals(){ const pos=sumPos(), ven=venRows.reduce((a,b)=> a + sumRow(b), 0), diff=pos-ven; $('#posSum').textContent=nf.format(pos); $('#venSum').textContent=nf.format(ven); $('#diffSum').textContent=nf.format(diff); }

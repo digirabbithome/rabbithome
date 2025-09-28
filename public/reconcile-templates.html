@@ -3,99 +3,51 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>對帳工具（逐貨單強化解析 v4）</title>
-  <link rel="stylesheet" href="css/reconcile.css"/>
+  <title>廠商模板管理器</title>
+  <link rel="stylesheet" href="css/reconcile-templates.css"/>
 </head>
 <body>
 <header>
   <div class="wrap row">
-    <h1>📑 對帳工具 <span class="tag">逐貨單強化：算式驗證 + 過濾統編/地址/合計行</span></h1>
+    <h1>📦 廠商模板管理器 <span class="tag">可離線／可接 Firestore／可列印手冊</span></h1>
     <div class="grow"></div>
-    <div class="small">執行者：<strong id="runner">—</strong></div>
+    <div class="small">共 <span id="count">0</span> 筆模板</div>
   </div>
 </header>
 
-<main class="wrap">
-  <div class="grid">
-    <section class="card">
-      <h2>① POS 入庫清單（CSV）</h2>
+<main class="wrap grid">
+  <section class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="small">模板清單</div>
       <div class="row">
-        <input type="file" id="posFile" accept=".csv"/>
-        <button class="btn" id="loadPos">讀取 CSV</button>
-        <label class="small"><input type="checkbox" id="togglePosView" checked/> 只顯示「日期／廠商／貨單編號／金額」</label>
+        <button class="btn ghost" onclick="newTemplate()">新增</button>
+        <button class="btn outline" onclick="exportAll()">匯出 JSON</button>
+        <label class="btn outline" for="imp">匯入 JSON</label>
+        <input id="imp" type="file" accept="application/json" style="display:none" onchange="importAll(event)"/>
       </div>
-      <div class="row small" style="margin-top:6px">
-        欄位對應：
-        品名<select id="posColItem"></select>
-        數量<select id="posColQty"></select>
-        單價<select id="posColPrice"></select>
-        小計<select id="posColSub"></select>
-        廠商<select id="posColVendor"></select>
-        日期<select id="posColDate"></select>
-        貨單編號<select id="posColOrder"></select>
-        <button class="btn outline" id="applyPosMap">套用</button>
-      </div>
-      <div style="max-height:260px;overflow:auto;margin-top:8px">
-        <table id="posTable"><thead></thead><tbody></tbody></table>
-      </div>
-      <div class="row" style="justify-content:flex-end;margin-top:8px">
-        <div class="small">POS 合計：</div><div class="mono" id="posSum">–</div>
-      </div>
-    </section>
+    </div>
+    <ul id="tplList" class="list"></ul>
+  </section>
 
-    <section class="card">
-      <h2>② 廠商對帳單（圖片 / 截圖）</h2>
-      <div class="row">
-        <input type="file" id="imgFiles" multiple accept="image/*,.pdf"/>
-        <button class="btn" id="runOcr">OCR 文字辨識</button>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <div class="progress" style="flex:1"><div class="bar" id="ocrBar"></div></div>
-        <div class="small" id="ocrStatus">尚未開始</div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button class="btn outline" id="smartParse">↻ 智慧解析（分組 + 算式驗證）</button>
-      </div>
-      <div style="max-height:260px;overflow:auto;margin-top:8px">
-        <table id="venTable"><thead></thead><tbody></tbody></table>
-      </div>
-      <div class="row" style="justify-content:flex-end;margin-top:8px">
-        <div class="small">廠商合計：</div><div class="mono" id="venSum">–</div>
-      </div>
-    </section>
-  </div>
-
-  <section class="card" style="margin-top:16px">
-    <h2>③ 逐貨單比對</h2>
-    <div class="row small" style="margin-bottom:8px">
-      <label>金額容忍 ± <input id="tol" type="number" step="0.01" value="3" style="width:80px"/> 元</label>
-      <div class="grow"></div>
-      <div class="small">差額（POS - 廠商）：<span class="mono" id="diffSum">–</span></div>
+  <section class="card">
+    <h3 id="formTitle">新增 / 編輯模板</h3>
+    <div class="kv">
+      <label>廠商名稱</label>
+      <input id="vendorName" placeholder="例如：勤力屋 / Godox / 億亞尚"/>
+      <label>容忍值（元）</label>
+      <input id="tolerance" type="number" step="0.01" value="3"/>
+      <label>stripLines（每行一個關鍵字）</label>
+      <textarea id="strip" class="code" placeholder="忽略行的關鍵字，一行一個"></textarea>
+      <label>aliases（JSON 格式）</label>
+      <textarea id="aliases" class="code" placeholder='{"KS2830":"不織布背景布"}'></textarea>
     </div>
-    <div class="row" style="margin-bottom:8px">
-      <button class="btn" id="runMatch">開始比對</button>
-      <span class="small">結果分兩張表：「金額一致」與「金額不符或未配對（誰有誰沒有）」</span>
+    <div class="footer">
+      <button class="btn" onclick="saveTemplate()">儲存</button>
     </div>
-    <div class="grid">
-      <div>
-        <h3 class="small">金額一致（於容忍內）</h3>
-        <div style="max-height:240px;overflow:auto">
-          <table id="tblOK"><thead></thead><tbody></tbody></table>
-        </div>
-      </div>
-      <div>
-        <h3 class="small">金額不符或未找到配對（誰有誰沒有）</h3>
-        <div style="max-height:240px;overflow:auto">
-          <table id="tblBad"><thead></thead><tbody></tbody></table>
-        </div>
-      </div>
-    </div>
-    <div id="ordersTotals"></div>
+    <p class="small">說明：stripLines：含有任一關鍵字的行會在 OCR 解析時被忽略。aliases：把 OCR 辨識到的文字做名稱統一。</p>
   </section>
 </main>
 
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
-<script type="module" src="js/reconcile-templates.js"></script>
+<script src="js/reconcile-templates.js"></script>
 </body>
 </html>

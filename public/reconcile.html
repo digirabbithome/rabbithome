@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>對帳工具（套件 v6.1 flat）</title>
+  <link rel="stylesheet" href="css/reconcile.css"/>
+</head>
+<body>
+<header>
+  <div class="wrap row">
+    <h1>📑 對帳工具 <span class="tag">雙模式＋模板＋管理器</span></h1>
+    <div class="grow"></div>
+    <a class="btn outline" href="reconcile-templates.html" target="_blank" rel="noopener">開啟樣板管理器</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2>🧰 廠商模板</h2>
+    <div class="row">
+      <label>廠商名稱 <input id="vendorName" style="min-width:240px" placeholder="例如：勤力屋 / Godox / 億亞尚"/></label>
+      <button class="btn outline" id="btnApplyTpl">套用模板</button>
+      <button class="btn" id="btnSaveTpl">儲存模板</button>
+      <label class="small">金額容忍 ± <input id="tol" type="number" step="0.01" value="3" style="width:80px"/> 元</label>
+      <span class="small" id="tplStatus"></span>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>① POS 入庫清單（CSV）</h2>
+      <div class="row">
+        <input type="file" id="posFile" accept=".csv"/>
+        <button class="btn" id="loadPos">讀取 CSV</button>
+        <label class="small"><input type="checkbox" id="togglePosView" checked/> 只顯示「日期／廠商／貨單編號／金額」</label>
+      </div>
+      <div class="row small" style="margin-top:6px">
+        欄位對應：
+        品名<select id="posColItem"></select>
+        數量<select id="posColQty"></select>
+        單價<select id="posColPrice"></select>
+        小計<select id="posColSub"></select>
+        廠商<select id="posColVendor"></select>
+        日期<select id="posColDate"></select>
+        貨單編號<select id="posColOrder"></select>
+        <button class="btn outline" id="applyPosMap">套用</button>
+      </div>
+      <div style="max-height:260px;overflow:auto;margin-top:8px">
+        <table id="posTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <div class="small">POS 合計：</div><div class="mono" id="posSum">–</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>② 廠商對帳單（圖片 / 截圖）</h2>
+      <div class="row">
+        <input type="file" id="imgFiles" multiple accept="image/*,.pdf"/>
+        <button class="btn" id="runOcr">OCR 文字辨識</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div class="progress" style="flex:1"><div class="bar" id="ocrBar"></div></div>
+        <div class="small" id="ocrStatus">尚未開始</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn outline" id="smartParse">↻ 智慧解析（分組 + 算式驗證）</button>
+      </div>
+      <div style="max-height:260px;overflow:auto;margin-top:8px">
+        <table id="venTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <div class="small">廠商合計：</div><div class="mono" id="venSum">–</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <h2>③ 對帳（選擇模式）</h2>
+    <div class="row small" style="margin-bottom:8px">
+      模式：
+      <label><input type="radio" name="compareMode" value="items"/> 逐品項</label>
+      <label><input type="radio" name="compareMode" value="orders" checked/> 逐貨單</label>
+      <span id="modeHint" class="tag">目前以貨單為單位比對</span>
+      <div class="grow"></div>
+      <div class="small">差額（POS - 廠商）：<span class="mono" id="diffSum">–</span></div>
+    </div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn" id="runMatch">開始比對</button>
+      <span class="small">結果分兩張表：「金額一致」與「金額不符或未配對（誰有誰沒有）」</span>
+    </div>
+    <div class="grid">
+      <div>
+        <h3 class="small">金額一致（於容忍內）</h3>
+        <div style="max-height:240px;overflow:auto">
+          <table id="tblOK"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div>
+        <h3 class="small">金額不符或未找到配對（誰有誰沒有）</h3>
+        <div style="max-height:240px;overflow:auto">
+          <table id="tblBad"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+    <div id="ordersTotals"></div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
+<script src="js/reconcile.js"></script>
+</body>
+</html>
