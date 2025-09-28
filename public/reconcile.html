@@ -116,6 +116,14 @@
   </section>
 </main>
 
+<!-- Firebase bridge: expose db/auth to window for reconcile scripts -->
+<script type="module">
+  import { db, auth } from '/js/firebase.js';
+  window.TemplateManagerDB = db;
+  window.TemplateManagerAuth = auth;
+</script>
+
+
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
 <script src="js/reconcile.js"></script>

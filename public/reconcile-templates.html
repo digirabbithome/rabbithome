@@ -45,6 +45,14 @@
   </section>
 </main>
 
+<!-- Firebase bridge: expose db/auth to window for reconcile scripts -->
+<script type="module">
+  import { db, auth } from '/js/firebase.js';
+  window.TemplateManagerDB = db;
+  window.TemplateManagerAuth = auth;
+</script>
+
+
 <script src="js/reconcile-templates.js"></script>
 </body>
 </html>
