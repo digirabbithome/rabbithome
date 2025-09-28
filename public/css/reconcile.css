@@ -1,40 +1,12 @@
-:root{--pink:#ff7fb6;--soft:#ffe7f1;--ink:#2b2b2b;--muted:#6b7280;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444}
-html,body{height:100%}
-body{font-family: system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif; margin:0; color:var(--ink); background:#fff}
-header{position:sticky;top:0;background:#fff;border-bottom:1px solid #f0f0f0;z-index:50}
-.wrap{max-width:1100px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:8px 0 12px;display:flex;align-items:center;gap:8px}
-h1 .tag{font-size:12px;background:var(--soft);color:#bf206a;padding:2px 8px;border-radius:999px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.card{background:#fff;border:1px solid #eee;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.04);overflow:hidden}
-.card h2{font-size:16px;margin:0;padding:10px 12px;background:linear-gradient(180deg,#fff, #fff8fb);border-bottom:1px solid #f5d6e4}
-.card .body{padding:12px}
-.hint{font-size:12px;color:var(--muted)}
-.btn{appearance:none;border:none;background:var(--pink);color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.outline{background:#fff;color:#bf206a;border:1px solid #f8b6d1}
-.btn.row{width:100%}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.row > *{flex:0 0 auto}
-.row .grow{flex:1 1 auto}
-input[type="file"],input[type="number"],input[type="text"],select,textarea{padding:8px;border-radius:10px;border:1px solid #e5e7eb;font:inherit}
+body{font-family:"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;margin:0;background:#fff;color:#333}
+header{background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10;padding:10px}
+.wrap{max-width:1000px;margin:0 auto;padding:12px}
+.card{background:#fff;border:1px solid #eee;border-radius:12px;margin:10px 0;padding:12px}
+.btn{background:#ff7fb6;color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{border-bottom:1px solid #f1f1f1;padding:6px 8px;text-align:left}
-th{background:#fff9fc;position:sticky;top:0;z-index:1}
-tr:hover{background:#fff5fb}
-.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
-.pill.ok{background:#e6fbf4;color:#047857}
-.pill.bad{background:#fee2e2;color:#991b1b}
-.pill.warn{background:#fff3c4;color:#92400e}
-.small{font-size:12px;color:var(--muted)}
-.footer{margin:24px 0 16px;color:var(--muted);font-size:12px}
-.progress{height:8px;background:#f1f1f1;border-radius:999px;overflow:hidden}
-.bar{height:100%;background:var(--pink);width:0%}
-.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
-.kpi .box{border:1px solid #f4cfe0;background:#fff;border-radius:12px;padding:10px;text-align:center}
-.box .big{font-weight:800;font-size:18px}
-.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
-.sticky-tools{position:sticky;top:56px;background:#fff;padding:6px 0;z-index:40}
-.nowrap{white-space:nowrap}
-.badge{font-size:12px;background:#faf5ff;color:#6b21a8;border:1px dashed #e9d5ff;padding:3px 8px;border-radius:999px}
-.code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px; background:#f7f7f7; border:1px solid #eee; padding:6px 8px; border-radius:8px}
+th,td{border-bottom:1px solid #f0f0f0;padding:4px 6px;text-align:left}
+th{background:#fff9fc}
+.small{font-size:12px;color:#666}
+.mono{font-family:monospace}
+.progress{height:8px;background:#eee;border-radius:6px;overflow:hidden}
+.bar{height:100%;background:#ff7fb6;width:0%}

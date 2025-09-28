@@ -1,124 +1,38 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>reconcile-templates｜對帳小工具（完整版 Fixed）</title>
-  <link rel="stylesheet" href="css/reconcile.css" />
-  <link rel="preconnect" href="https://unpkg.com"/>
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+<meta charset="utf-8"/>
+<title>對帳工具 POS 簡化版</title>
+<link rel="stylesheet" href="css/reconcile.css"/>
 </head>
 <body>
-  <header>
-    <div class="wrap row">
-      <h1>📑 對帳小工具 <span class="tag">模板記憶 + POS/OCR/比對 + Rabbithome + Firebase</span></h1>
-      <span id="envBadge" class="badge">檢測中…</span>
-      <div class="grow"></div>
-      <div class="small">執行者：<strong id="runner">—</strong></div>
-      <button id="btnExport" class="btn outline">匯出差異 CSV</button>
-      <button id="btnSave" class="btn">儲存摘要到 Firestore</button>
-    </div>
-  </header>
+<header class="wrap"><h1>📑 對帳工具（POS簡化版）</h1><div class="small">執行者：<span id="runner">—</span></div></header>
+<main class="wrap">
+<section class="card">
+<h2>① POS 匯入</h2>
+<input type="file" id="posFile" accept=".csv"/>
+<button class="btn" id="loadPos">讀取 CSV</button>
+<div class="small">選擇欄位</div>
+<label>日期<select id="posColDate"></select></label>
+<label>廠商<select id="posColVendor"></select></label>
+<label>金額<select id="posColAmount"></select></label>
+<button class="btn" id="applyPosMap">套用</button>
+<table id="posTable"><thead><tr><th>日期</th><th>廠商</th><th>金額</th></tr></thead><tbody></tbody></table>
+<div class="small">POS 合計：<span id="posTotal">0</span></div>
+</section>
 
-  <main class="wrap">
-    <section class="card">
-      <h2>🧰 廠商模板</h2>
-      <div class="body">
-        <div class="row">
-          <label>廠商名稱 <input type="text" id="vendorName" placeholder="例如：Godox / 億亞尚 / PS-Homewell" style="min-width:260px"></label>
-          <button id="btnApplyTpl" class="btn outline">套用模板</button>
-          <button id="btnSaveTpl" class="btn">儲存模板</button>
-          <div class="small" id="tplStatus">尚未套用模板</div>
-        </div>
-        <div class="small" style="margin-top:6px">
-          模板存於 Firestore <span class="code">vendor_templates/{vendorName}</span>，包含：stripLines、別名、容忍值等。
-        </div>
-      </div>
-    </section>
-
-    <div class="grid">
-      <section class="card">
-        <h2>① 匯入 POS 入庫清單（CSV）</h2>
-        <div class="body">
-          <div class="row">
-            <input type="file" id="posFile" accept=".csv" />
-            <button class="btn" id="loadPos">讀取 CSV</button>
-            <span class="hint">建議欄位：廠商、品名/型號、數量、單價、小計…</span>
-          </div>
-          <div id="posMap" class="row" style="margin-top:10px; display:none">
-            <div class="small">欄位對應：</div>
-            <label>品名<select id="posColItem"></select></label>
-            <label>數量<select id="posColQty"></select></label>
-            <label>單價<select id="posColPrice"></select></label>
-            <label>小計<select id="posColSub"></select></label>
-            <label>廠商<select id="posColVendor"></select></label>
-            <button class="btn outline" id="applyPosMap">套用</button>
-          </div>
-          <div style="max-height:220px; overflow:auto; margin-top:8px">
-            <table id="posTable"><thead></thead><tbody></tbody></table>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>② 廠商對帳單（圖片 / PDF 截圖）</h2>
-        <div class="body">
-          <div class="row">
-            <input type="file" id="imgFiles" accept="image/*,.pdf" multiple />
-            <button class="btn" id="runOcr">OCR 文字辨識</button>
-            <span class="hint">可一次選多張照片；PDF 建議先截圖成圖片。</span>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <div class="grow progress"><div class="bar" id="ocrBar"></div></div>
-            <div class="small" id="ocrStatus">尚未開始</div>
-          </div>
-          <div class="sticky-tools row">
-            <button class="btn outline" id="smartParse">↻ 智慧解析為表格（會先套模板 stripLines/別名/容忍值）</button>
-            <label class="small">數字容忍 ± <input id="tol" type="number" min="0" step="0.01" value="1" style="width:80px"/> 元</label>
-          </div>
-          <div style="max-height:220px; overflow:auto; margin-top:8px">
-            <table id="venTable"><thead></thead><tbody></tbody></table>
-          </div>
-          <div class="small" style="margin-top:6px">解析不正確可直接點表格編輯（品名、數量、單價、小計）。</div>
-        </div>
-      </section>
-    </div>
-
-    <section class="card" style="margin-top:16px">
-      <h2>③ 自動比對結果</h2>
-      <div class="body">
-        <div class="kpi">
-          <div class="box"><div class="small">POS 小計合計</div><div class="big mono" id="kPos">–</div></div>
-          <div class="box"><div class="small">廠商小計合計</div><div class="big mono" id="kVen">–</div></div>
-          <div class="box"><div class="small">總差額</div><div class="big mono" id="kDiff">–</div></div>
-          <div class="box"><div class="small">配對成功筆數</div><div class="big mono" id="kMatch">–</div></div>
-        </div>
-        <div class="row" style="margin:8px 0">
-          <button class="btn" id="runMatch">開始比對</button>
-          <span class="small">流程：① 確認欄位→② OCR＋智慧解析→③ 比對與匯出。</span>
-        </div>
-        <div class="grid">
-          <div>
-            <h3 class="small">金額一致（於容忍範圍內）</h3>
-            <div style="max-height:220px;overflow:auto">
-              <table id="tblOK"><thead></thead><tbody></tbody></table>
-            </div>
-          </div>
-          <div>
-            <h3 class="small">金額不符或未找到配對</h3>
-            <div style="max-height:220px;overflow:auto">
-              <table id="tblBad"><thead></thead><tbody></tbody></table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="footer">Made with ❤ for 數位小兔｜此頁在瀏覽器本機運作。模板與摘要需 Rabbithome 的 <code>/js/firebase.js</code> 並具存取權限。</div>
-  </main>
-
-  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
-  <script type="module" src="js/reconcile-templates.js"></script>
+<section class="card">
+<h2>② 廠商對帳單</h2>
+<input type="file" id="imgFiles" multiple accept="image/*"/>
+<button class="btn" id="runOcr">OCR 文字辨識</button>
+<div class="progress"><div class="bar" id="ocrBar"></div></div><div id="ocrStatus" class="small">尚未開始</div>
+<button class="btn" id="smartParse">智慧解析</button>
+<table id="venTable"><thead><tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr></thead><tbody></tbody></table>
+<div class="small">廠商合計：<span id="venTotal">0</span></div>
+</section>
+</main>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
+<script type="module" src="js/reconcile-templates.js"></script>
 </body>
 </html>
