@@ -17,7 +17,7 @@ h1 .tag{font-size:12px;background:var(--soft);color:#bf206a;padding:2px 8px;bord
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row > *{flex:0 0 auto}
 .row .grow{flex:1 1 auto}
-input[type="file"],input[type="number"],select,textarea{padding:8px;border-radius:10px;border:1px solid #e5e7eb;font:inherit}
+input[type="file"],input[type="number"],input[type="text"],select,textarea{padding:8px;border-radius:10px;border:1px solid #e5e7eb;font:inherit}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{border-bottom:1px solid #f1f1f1;padding:6px 8px;text-align:left}
 th{background:#fff9fc;position:sticky;top:0;z-index:1}
@@ -37,3 +37,4 @@ tr:hover{background:#fff5fb}
 .sticky-tools{position:sticky;top:56px;background:#fff;padding:6px 0;z-index:40}
 .nowrap{white-space:nowrap}
 .badge{font-size:12px;background:#faf5ff;color:#6b21a8;border:1px dashed #e9d5ff;padding:3px 8px;border-radius:999px}
+.code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px; background:#f7f7f7; border:1px solid #eee; padding:6px 8px; border-radius:8px}
