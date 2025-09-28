@@ -13,6 +13,36 @@ let posRows=[], venRows=[], showPosSimple=true, compareMode='orders';
 let vendorGroups=[]; let rejectedLines=[];
 let vendorTemplate=null;
 
+// ==== Template-driven guard & parser mode ====
+function currentParserMode(){
+  const tplMode = (vendorTemplate && vendorTemplate.parserMode) ? String(vendorTemplate.parserMode).toLowerCase() : null;
+  const lsMode = (localStorage.getItem('reconcile:parserMode')||'').toLowerCase() || null;
+  return tplMode || lsMode || 'auto';
+}
+function guardCheckBeforeParse(text){
+  const gs = vendorTemplate && vendorTemplate.vendorGuard;
+  if(!gs) return true;
+  const g = buildHeaderRegex(gs);
+  if(g && !g.test(text)){
+    alert('這份 OCR 內容不像是此供應商（vendorGuard 未通過），請確認是否選錯樣板。');
+    console.warn('[guard] not matched', gs);
+    return false;
+  }
+  return true;
+}
+function parseLinesByMode(lines, strictFn, fallbackFn){
+  const mode = currentParserMode();
+  let rows = [];
+  if(mode === 'fallback'){
+    rows = fallbackFn(lines);
+  }else{
+    for(const ln of lines){ const r = strictFn(ln); if(r) rows.push(r); }
+    if(mode === 'auto' && rows.length === 0){ rows = fallbackFn(lines); }
+  }
+  console.log('[parse] mode=', mode, 'rows=', rows.length);
+  return rows;
+}
+
 // Normalize OCR text: collapse spaces between CJK to help headerRegex match
 function normalizeCJKSpacing(s){
   if(!s) return '';
@@ -306,6 +336,8 @@ function isDateToken(tok){ tok = tok.replace(/^[^\\d]+/, '').replace(/[^\\d\\/\\
 function findLongNumber(s){ const digits = s.replace(/\\D/g,''); const m = digits.match(/(\\d{8,14})\\d*$/); return m? m[1] : null; }
 
 function smartParseVendor(){
+  if(!guardCheckBeforeParse(window.__venText||'')) return;
+
   let text = window.__venText || '';
   const status = $('#parseStatus');
   if(!text){
@@ -403,8 +435,7 @@ function smartParseVendor(){
     for(let h=0; h<headers.length; h++){
       const start=headers[h].idx+1;
       const end=(h+1<headers.length)? headers[h+1].idx : lines.length;
-      const rows=[];
-      for(let i=start;i<end;i++){ const r = acceptLine(lines[i]); if(r) rows.push(r); }
+      const rows = parseLinesByMode(lines.slice(start,end), acceptLine, _fallbackParseLines);
       vendorGroups.push({ date: headers[h].date, orderNo: headers[h].orderNo, rows });
     }
   }
