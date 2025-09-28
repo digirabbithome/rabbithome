@@ -223,21 +223,34 @@ async function ocrImages(files){
   $('#ocrStatus').textContent='完成';
   return out;
 }
+
 async function runOcrImages(){
   const fs=$('#imgFiles').files;
   if(!fs.length){ alert('請先選擇圖片'); return }
-  for(const f of fs){ if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){ alert('請將 PDF 轉成 PNG/JPG 再上傳'); return; } }
+  for(const f of fs){
+    const name = (f.name||'').toLowerCase();
+    if(f.type==='application/pdf' || name.endsWith('.pdf')){
+      alert('請將 PDF 轉成 PNG/JPG 再上傳'); 
+      return;
+    }
+  }
   const sorted = naturalSortFiles(fs);
   const texts = await ocrImages(sorted);
   const ordered = reorderPageTextsByTag(texts.map(t=>({text:t})));
-  let merged = ordered.map(p=>p.text).join('
+  const merged = ordered.map(p=>p.text).join('
 ');
   window.__venText = normalizeCJKSpacing(merged);
   const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }
-  const vt = extractVendorTotal(window.__venText); if(vt){ window.__vendorTotal = vt.value; const vtEl=document.getElementById('vendorTotal'); if(vtEl) vtEl.textContent = nf.format(vt.value); }
+  const vt = extractVendorTotal(window.__venText);
+  if(vt){ 
+    window.__vendorTotal = vt.value; 
+    const vtEl = document.getElementById('vendorTotal'); 
+    if(vtEl) vtEl.textContent = nf.format(vt.value); 
+  }
   $('#venTable thead').innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
   $('#venTable tbody').innerHTML='';
 }
+
 
 // Vendor parse
 function isDateToken(tok){ tok = tok.replace(/^[^\\d]+/, '').replace(/[^\\d\\/\\.\\-]/g,''); return /^(\\d{2,4})[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{1,2}$/.test(tok); }
