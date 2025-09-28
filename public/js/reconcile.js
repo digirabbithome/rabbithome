@@ -13,6 +13,66 @@ let posRows=[], venRows=[], showPosSimple=true, compareMode='orders';
 let vendorGroups=[]; let rejectedLines=[];
 let vendorTemplate=null;
 
+// ===== Added helpers: page sorting, vendor total extraction, safe header regex =====
+const RE_PAGE_TAGS = [
+  /(\d+)\s*\/\s*(\d+)/g,
+  /第\s*(\d+)\s*頁\s*\/\s*共\s*(\d+)\s*頁/g,
+  /Page\s*(\d+)\s*(?:of|\/)\s*(\d+)/gi
+];
+function naturalSortFiles(fileList){
+  const arr = Array.from(fileList || []);
+  return arr.sort((a,b)=>{
+    const an=(a.name||'').toLowerCase();
+    const bn=(b.name||'').toLowerCase();
+    const cmp = an.localeCompare(bn, 'zh-Hant', { numeric:true, sensitivity:'base' });
+    if(cmp!==0) return cmp;
+    return (a.lastModified||0) - (b.lastModified||0);
+  });
+}
+function extractPageInfoFromText(t){
+  for(const re of RE_PAGE_TAGS){
+    re.lastIndex = 0;
+    const m = re.exec(t||''); if(m){ const i=+m[1], tot=+m[2]; if(i>=1 && Number.isFinite(i)) return {i,tot,ok:true}; }
+  }
+  return {ok:false};
+}
+function reorderPageTextsByTag(pages){
+  const withTag=[], noTag=[];
+  for(const p of pages){
+    const info = extractPageInfoFromText(p.text||'');
+    if(info.ok) withTag.push({ ...p, _i: info.i });
+    else noTag.push(p);
+  }
+  if(withTag.length){
+    withTag.sort((a,b)=>a._i-b._i);
+    return [...withTag, ...noTag];
+  }
+  return pages;
+}
+const RE_VENDOR_TOTAL = /(本期(?:總計|應收款|合計))\s*[:：]\s*([\d,]+(?:\.\d{1,2})?)/g;
+function extractVendorTotal(allText){
+  let m, last=null;
+  while((m = RE_VENDOR_TOTAL.exec(allText||''))){ const v=parseFloat(m[2].replace(/,/g,'')); if(Number.isFinite(v)) last={label:m[1], value:v}; }
+  return last;
+}
+function buildHeaderRegex(str){
+  if(!str) return null;
+  let s = String(str).trim();
+  // normalize full-width parens
+  s = s.replace(/（/g,'(').replace(/）/g,')');
+  // allow simple wildcard *
+  s = s.replace(/\*/g, '.*');
+  try{ return new RegExp(s, 'i'); }
+  catch(e){
+    try{
+      const esc = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(esc, 'i');
+    }catch(e2){ return null; }
+  }
+}
+// ===== End helpers =====
+
+
 window.addEventListener('DOMContentLoaded',()=>{
   // POS
   $('#loadPos').onclick=loadPosCSV;
@@ -155,7 +215,7 @@ async function runOcrImages(){
   for(const f of fs){ if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){ alert('請將 PDF 轉成 PNG/JPG 再上傳'); return; } }
   const texts = await ocrImages(fs);
   window.__venText = texts.join('\\n');
-  const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }
+  const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }\n  const vt = extractVendorTotal(window.__venText); if(vt){ window.__vendorTotal = vt.value; const vtEl=document.getElementById('vendorTotal'); if(vtEl) vtEl.textContent = nf.format(vt.value); }
   $('#venTable thead').innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
   $('#venTable tbody').innerHTML='';
 }
@@ -182,7 +242,7 @@ function smartParseVendor(){
   const mergedStrips = new Set([...(vendorTemplate?.stripLines||[]), ...builtIns]);
   const freightKW = vendorTemplate?.freightKeywords || ['運費','服務費','包裝費','物流'];
   const discountKW = vendorTemplate?.discountKeywords || ['折讓','折扣','折抵'];
-  const headerReg = (vendorTemplate?.headerRegex && vendorTemplate.headerRegex.trim()) ? new RegExp(vendorTemplate.headerRegex.trim()) : null;
+  const headerReg = buildHeaderRegex(vendorTemplate?.headerRegex);
 
   const raw = text.split(/\\n+/).map(s=>s.trim()).filter(Boolean);
   const lines = raw.filter(ln=> ![...mergedStrips].some(w=> w && ln.includes(w)));
