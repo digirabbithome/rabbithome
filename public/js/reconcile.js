@@ -21,11 +21,6 @@ function normalizeCJKSpacing(s){
   t = t.replace(/[ \t]{2,}/g, ' ');
   return t;
 }
-  // collapse multi spaces
-  t = t.replace(/[ \t]{2,}/g, ' ');
-  return t;
-}
-
 
 // ===== Added helpers: page sorting, vendor total extraction, safe header regex =====
 const RE_PAGE_TAGS = [
