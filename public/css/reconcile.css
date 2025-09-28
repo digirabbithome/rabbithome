@@ -24,4 +24,6 @@ tr:hover{background:#fff5fb}
 .pill.bad{background:#fee2e2;color:#991b1b}
 .progress{height:8px;background:#eee;border-radius:999px;overflow:hidden}
 .bar{height:100%;background:var(--pink);width:0%}
-.code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px; background:#f7f7f7; border:1px solid #eee; padding:6px 8px; border-radius:8px}
+.groupRow td{background:#faf5ff;font-weight:700;border-top:2px solid #e9d5ff}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.badge{font-size:12px;background:#faf5ff;color:#6b21a8;border:1px dashed #e9d5ff;padding:3px 8px;border-radius:999px}
