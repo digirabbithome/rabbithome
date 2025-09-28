@@ -1,36 +1,97 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<title>對帳工具 POS 簡化版</title>
-<link rel="stylesheet" href="css/reconcile.css"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>對帳工具（Compare 版）</title>
+  <link rel="stylesheet" href="css/reconcile.css"/>
 </head>
 <body>
-<header class="wrap"><h1>📑 對帳工具（POS簡化版）</h1><div class="small">執行者：<span id="runner">—</span></div></header>
-<main class="wrap">
-<section class="card">
-<h2>① POS 匯入</h2>
-<input type="file" id="posFile" accept=".csv"/>
-<button class="btn" id="loadPos">讀取 CSV</button>
-<div class="small">選擇欄位</div>
-<label>日期<select id="posColDate"></select></label>
-<label>廠商<select id="posColVendor"></select></label>
-<label>金額<select id="posColAmount"></select></label>
-<button class="btn" id="applyPosMap">套用</button>
-<table id="posTable"><thead><tr><th>日期</th><th>廠商</th><th>金額</th></tr></thead><tbody></tbody></table>
-<div class="small">POS 合計：<span id="posTotal">0</span></div>
-</section>
+<header>
+  <div class="wrap">
+    <h1>📑 對帳工具 <span class="tag">POS 簡化顯示切換 + 明細比對 + 差額 + 誰有誰沒有</span></h1>
+    <div class="small">POS 可切換「只看日期/廠商/金額」或「明細」。右側 OCR 解析後即可比對。</div>
+  </div>
+</header>
 
-<section class="card">
-<h2>② 廠商對帳單</h2>
-<input type="file" id="imgFiles" multiple accept="image/*"/>
-<button class="btn" id="runOcr">OCR 文字辨識</button>
-<div class="progress"><div class="bar" id="ocrBar"></div></div><div id="ocrStatus" class="small">尚未開始</div>
-<button class="btn" id="smartParse">智慧解析</button>
-<table id="venTable"><thead><tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr></thead><tbody></tbody></table>
-<div class="small">廠商合計：<span id="venTotal">0</span></div>
-</section>
+<main class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>① POS 入庫清單（CSV）</h2>
+      <div class="row">
+        <input type="file" id="posFile" accept=".csv"/>
+        <button class="btn" id="loadPos">讀取 CSV</button>
+        <label class="small"><input type="checkbox" id="togglePosView" checked/> 只顯示「日期／廠商／金額」</label>
+      </div>
+      <div class="row small" style="margin-top:6px">
+        欄位對應：
+        品名<select id="posColItem"></select>
+        數量<select id="posColQty"></select>
+        單價<select id="posColPrice"></select>
+        小計<select id="posColSub"></select>
+        廠商<select id="posColVendor"></select>
+        日期<select id="posColDate"></select>
+        <button class="btn outline" id="applyPosMap">套用</button>
+      </div>
+      <div style="max-height:260px;overflow:auto;margin-top:8px">
+        <table id="posTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <div class="small">POS 合計：</div><div class="mono" id="posTotal">–</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>② 廠商對帳單（圖片 / 截圖）</h2>
+      <div class="row">
+        <input type="file" id="imgFiles" multiple accept="image/*,.pdf"/>
+        <button class="btn" id="runOcr">OCR 文字辨識</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div class="progress" style="flex:1"><div class="bar" id="ocrBar"></div></div>
+        <div class="small" id="ocrStatus">尚未開始</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn outline" id="smartParse">↻ 智慧解析為表格</button>
+        <label class="small">金額容忍 ± <input id="tol" type="number" min="0" step="0.01" value="1" style="width:80px"/> 元</label>
+      </div>
+      <div style="max-height:260px;overflow:auto;margin-top:8px">
+        <table id="venTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <div class="small">廠商合計：</div><div class="mono" id="venTotal">–</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <h2>③ 明細比對結果</h2>
+    <div class="kpi" style="margin:10px 0 14px">
+      <div class="box"><div class="small">POS 合計</div><div class="big mono" id="posTotal">–</div></div>
+      <div class="box"><div class="small">廠商合計</div><div class="big mono" id="venTotal">–</div></div>
+      <div class="box"><div class="small">差額（POS - 廠商）</div><div class="big mono" id="diffTotal">–</div></div>
+    </div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn" id="runMatch">開始比對</button>
+      <span class="small">比對後下方會分成兩張表：「金額一致」與「金額不符或未配對（誰有誰沒有）」。</span>
+    </div>
+    <div class="grid">
+      <div>
+        <h3 class="small">金額一致（於容忍內）</h3>
+        <div style="max-height:240px;overflow:auto">
+          <table id="tblOK"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div>
+        <h3 class="small">金額不符或未找到配對（誰有誰沒有）</h3>
+        <div style="max-height:240px;overflow:auto">
+          <table id="tblBad"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
+
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
 <script type="module" src="js/reconcile-templates.js"></script>
