@@ -66,6 +66,11 @@
       </div>
       <div class="row" style="margin-top:8px">
         <button class="btn outline" id="smartParse">↻ 智慧解析（分組 + 算式驗證）</button>
+        <button class="btn outline" id="parseFromText">直接解析上方文字</button>
+        <span class="small" id="parseStatus">尚未解析</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <textarea id="rawText" placeholder="（可貼上廠商對帳單的純文字；OCR 完成會自動帶入）" style="width:100%;min-height:120px"></textarea>
       </div>
       <div style="max-height:260px;overflow:auto;margin-top:8px">
         <table id="venTable"><thead></thead><tbody></tbody></table>

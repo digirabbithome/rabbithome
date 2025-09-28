@@ -112,9 +112,16 @@ async function runOcrImages(){
 // Vendor parse
 function isDateToken(tok){ tok = tok.replace(/^[^\\d]+/, '').replace(/[^\\d\\/\\.\\-]/g,''); return /^(\\d{2,4})[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{1,2}$/.test(tok); }
 function findLongNumber(s){ const digits = s.replace(/\\D/g,''); const m = digits.match(/(\\d{8,14})\\d*$/); return m? m[1] : null; }
+
 function smartParseVendor(){
   let text = window.__venText || '';
-  if(!text){ alert('尚未有 OCR 結果'); return }
+  const status = $('#parseStatus');
+  if(!text){
+    if(status) status.textContent = '沒有 OCR 文字，請先辨識或貼上文字';
+    try{ alert('尚未有 OCR 結果'); }catch(e){}
+    return;
+  }
+  if(status) status.textContent = '解析中…';
 
   const builtIns = [
     '客戶對帳單','TEL','FAX','電話','傳真','地址','統一編號','統編',
@@ -123,69 +130,92 @@ function smartParseVendor(){
   ];
   const mergedStrips = new Set([...(vendorTemplate?.stripLines||[]), ...builtIns]);
 
-  const raw = text.split(/\\n+/).map(s=>s.trim()).filter(Boolean);
+  const raw = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
   const lines = raw.filter(ln=> ![...mergedStrips].some(w=> w && ln.includes(w)));
 
+  // header detection
   const headers=[];
   for(let i=0;i<lines.length;i++){
     const ln=lines[i];
-    const tokens=ln.split(/\\s+/);
+    const tokens=ln.split(/\s+/);
     const hasDate=tokens.some(isDateToken);
     const orderNo=findLongNumber(ln);
     if(hasDate && orderNo){
-      const dateTok = tokens.find(isDateToken).replace(/[^\\d\\/\\.\\-]/g,'');
+      const dateTok = tokens.find(isDateToken).replace(/[^\d\/\.\-]/g,'');
       headers.push({idx:i, date:dateTok, orderNo});
     }
   }
 
   vendorGroups=[];
   const tol = parseNumber($('#tol')?.value) || vendorTemplate?.tolerance || 3;
-  for(let h=0; h<headers.length; h++){
-    const start=headers[h].idx+1;
-    const end=(h+1<headers.length)? headers[h+1].idx : lines.length;
+
+  if(headers.length===0){
+    // Fallback：整頁當一組，盡量抓第一個日期與最長編號
+    const anyDate = (text.match(/(\d{2,4}[\/\.\-]\d{1,2}[\/\.\-]\d{1,2})/)||[])[1] || '';
+    const anyOrder = findLongNumber(text) || '';
     const rows=[];
-    for(let i=start;i<end;i++){
-      const ln0=lines[i].replace(/[|│—–\\-]+/g,' ').trim();
-      if(!ln0) continue;
-      const nums=[...ln0.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\\.[0-9]{1,2})?/g)].map(m=>m[0]);
+    for(const ln0raw of lines){
+      const ln0=ln0raw.replace(/[|│—–\-]+/g,' ').trim();
+      const nums=[...ln0.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?/g)].map(m=>m[0]);
       if(nums.length<2) continue;
       let accepted=null;
       for(let p2=nums.length-1; p2>=1; p2--){
-        const sub=parseNumber(nums[p2]);
-        const price=parseNumber(nums[p2-1]);
-        if(!Number.isFinite(sub)) continue;
+        const sub=parseNumber(nums[p2]); const price=parseNumber(nums[p2-1]); if(!Number.isFinite(sub)) continue;
         let qty=NaN, qIdx=-1;
-        for(let k=p2-2; k>=0; k--){
-          const v=parseNumber(nums[k]);
-          if(Number.isInteger(v) && v>=0 && v<10000){ qty=v; qIdx=k; break; }
-        }
-        const est = (Number.isFinite(qty)&&Number.isFinite(price)) ? qty*price : NaN;
-        const ok = Number.isFinite(est) ? Math.abs(est - sub) <= tol : false;
+        for(let k=p2-2;k>=0;k--){ const v=parseNumber(nums[k]); if(Number.isInteger(v)&&v>=0&&v<10000){ qty=v; qIdx=k; break; } }
+        const est=(Number.isFinite(qty)&&Number.isFinite(price))? qty*price : NaN;
+        const ok=Number.isFinite(est)? Math.abs(est-sub)<=tol : false;
         if(ok){
           let head=ln0;
           const idxSub=head.lastIndexOf(nums[p2]); head = idxSub>0? head.slice(0,idxSub): head;
           const idxPrice=head.lastIndexOf(nums[p2-1]); head = idxPrice>0? head.slice(0,idxPrice): head;
-          if(qIdx>=0){
-            const idxQty=head.lastIndexOf(nums[qIdx]);
-            if(idxQty>0) head = head.slice(0, idxQty);
-          }
-          let item=cleanText(head);
-          if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
-          if(item && !/^\\d+(\\.\\d+)?$/.test(item)){
-            accepted = {item, qty, price, sub};
-            break;
-          }
+          if(qIdx>=0){ const idxQty=head.lastIndexOf(nums[qIdx]); if(idxQty>0) head = head.slice(0, idxQty); }
+          let item=cleanText(head); if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
+          if(item && !/^\d+(\.\d+)?$/.test(item)){ accepted={item,qty,price,sub}; break; }
         }
       }
       if(accepted) rows.push(accepted);
     }
-    vendorGroups.push({ date: headers[h].date, orderNo: headers[h].orderNo, rows });
+    vendorGroups.push({date:anyDate, orderNo:anyOrder, rows});
+  }else{
+    for(let h=0; h<headers.length; h++){
+      const start=headers[h].idx+1;
+      const end=(h+1<headers.length)? headers[h+1].idx : lines.length;
+      const rows=[];
+      for(let i=start;i<end;i++){
+        const ln0=lines[i].replace(/[|│—–\-]+/g,' ').trim();
+        if(!ln0) continue;
+        const nums=[...ln0.matchAll(/[-+]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?/g)].map(m=>m[0]);
+        if(nums.length<2) continue;
+        let accepted=null;
+        for(let p2=nums.length-1; p2>=1; p2--){
+          const sub=parseNumber(nums[p2]); const price=parseNumber(nums[p2-1]); if(!Number.isFinite(sub)) continue;
+          let qty=NaN, qIdx=-1;
+          for(let k=p2-2; k>=0; k--){ const v=parseNumber(nums[k]); if(Number.isInteger(v)&&v>=0&&v<10000){ qty=v; qIdx=k; break; } }
+          const est=(Number.isFinite(qty)&&Number.isFinite(price))? qty*price : NaN;
+          const ok=Number.isFinite(est)? Math.abs(est - sub) <= tol : false;
+          if(ok){
+            let head=ln0;
+            const idxSub=head.lastIndexOf(nums[p2]); head = idxSub>0? head.slice(0,idxSub): head;
+            const idxPrice=head.lastIndexOf(nums[p2-1]); head = idxPrice>0? head.slice(0,idxPrice): head;
+            if(qIdx>=0){ const idxQty=head.lastIndexOf(nums[qIdx]); if(idxQty>0) head = head.slice(0, idxQty); }
+            let item=cleanText(head);
+            if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
+            if(item && !/^\d+(\.\d+)?$/.test(item)){ accepted = {item, qty, price, sub}; break; }
+          }
+        }
+        if(accepted) rows.push(accepted);
+      }
+      vendorGroups.push({ date: headers[h].date, orderNo: headers[h].orderNo, rows });
+    }
   }
 
   venRows = vendorGroups.flatMap(g=> g.rows);
   renderVendorGroupedTable();
   updateTotals();
+  if(status){ const h=vendorGroups.length; const items=venRows.length; status.textContent = `解析完成：${h} 組貨單、${items} 筆品項`; }
 }
+
 
 function renderVendorGroupedTable(){
   const thead=$('#venTable thead'), tbody=$('#venTable tbody');
