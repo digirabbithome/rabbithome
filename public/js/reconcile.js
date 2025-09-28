@@ -237,8 +237,7 @@ async function runOcrImages(){
   const sorted = naturalSortFiles(fs);
   const texts = await ocrImages(sorted);
   const ordered = reorderPageTextsByTag(texts.map(t=>({text:t})));
-  const merged = ordered.map(p=>p.text).join('
-');
+  const merged = ordered.map(p=>p.text).join('\n');
   window.__venText = normalizeCJKSpacing(merged);
   const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }
   const vt = extractVendorTotal(window.__venText);
