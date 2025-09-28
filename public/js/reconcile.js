@@ -90,19 +90,48 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Suppliers
   loadSuppliersForSelect();
   $('#btnApplyTpl').onclick=applyTemplateFromStore;
+  $('#btnReloadSuppliers').onclick=loadSuppliersForSelect;
+  $('#btnApplyTplManual').onclick=applyTemplateFromManual;
   $('#btnSaveTpl').onclick=saveTemplateToStore;
 });
 
 // Suppliers helpers (Firestore)
 async function loadSuppliersForSelect(){
+  const sel = document.getElementById('supplierSelect');
+  const hint = document.getElementById('supplierLoadHint');
   try{
-    const sel = document.getElementById('supplierSelect');
     if(!sel) return;
     sel.innerHTML = '<option value="">（載入中…）</option>';
+    if(hint) hint.textContent = 'loading suppliers…';
     if(!window.TemplateManagerDB){
       sel.innerHTML = '<option value="">未連線 Firebase（僅可離線測試）</option>';
+      if(hint) hint.textContent = 'no Firebase db detected';
       return;
     }
+    const { getDocs, collection, query, orderBy } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+    const q = query(collection(window.TemplateManagerDB,'suppliers'), orderBy('code'));
+    const snap = await getDocs(q);
+    const items = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      const label = `${d.code||''}-${d.shortName||d.name||doc.id}`.trim();
+      items.push({id:doc.id, label});
+    });
+    if(items.length===0){
+      sel.innerHTML = '<option value="">（目前沒有 suppliers 文件）</option>';
+      if(hint) hint.textContent = '0 docs';
+      return;
+    }
+    sel.innerHTML = '<option value="">請選擇供應商</option>' + items.map(it=>`<option value="${it.id}">${it.label}</option>`).join('');
+    if(hint) hint.textContent = `loaded ${items.length} docs`;
+    const last = localStorage.getItem('reconcile:lastSupplierId');
+    if(last && items.some(it=>it.id===last)){ sel.value = last; }
+  }catch(e){
+    console.error('[suppliers] load error', e);
+    if(sel) sel.innerHTML = '<option value="">載入供應商失敗（看 console）</option>';
+    const hint = document.getElementById('supplierLoadHint'); if(hint) hint.textContent = 'error';
+  }
+}
     const { getDocs, collection, query, orderBy } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
     const q = query(collection(window.TemplateManagerDB,'suppliers'), orderBy('code'));
     const snap = await getDocs(q);
@@ -213,9 +242,12 @@ async function runOcrImages(){
   const fs=$('#imgFiles').files;
   if(!fs.length){ alert('請先選擇圖片'); return }
   for(const f of fs){ if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){ alert('請將 PDF 轉成 PNG/JPG 再上傳'); return; } }
-  const texts = await ocrImages(fs);
-  window.__venText = texts.join('\\n');
-  const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }\n  const vt = extractVendorTotal(window.__venText); if(vt){ window.__vendorTotal = vt.value; const vtEl=document.getElementById('vendorTotal'); if(vtEl) vtEl.textContent = nf.format(vt.value); }
+  const sorted = naturalSortFiles(fs);
+  const texts = await ocrImages(sorted);
+  const ordered = reorderPageTextsByTag(texts.map(t=>({text:t})));
+  window.__venText = ordered.map(p=>p.text).join('\\n');
+  const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }
+  const vt = extractVendorTotal(window.__venText); if(vt){ window.__vendorTotal = vt.value; const vtEl=document.getElementById('vendorTotal'); if(vtEl) vtEl.textContent = nf.format(vt.value); }
   $('#venTable thead').innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
   $('#venTable tbody').innerHTML='';
 }
@@ -440,3 +472,18 @@ function runMatchOrders(){
 }
 
 function updateTotals(){ const pos=sumPos(), ven=venRows.reduce((a,b)=> a + sumRow(b), 0), diff=pos-ven; $('#posSum').textContent=nf.format(pos); $('#venSum').textContent=nf.format(ven); $('#diffSum').textContent=nf.format(diff); }
+async function applyTemplateFromManual(){
+  const id = (document.getElementById('supplierIdManual')?.value || '').trim();
+  if(!id){ alert('請輸入 suppliers 文件 ID'); return; }
+  if(!window.TemplateManagerDB){ alert('未連線 Firebase'); return; }
+  const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+  const ref = doc(window.TemplateManagerDB,'suppliers', id);
+  const snap = await getDoc(ref);
+  if(!snap.exists()){ alert('找不到此文件'); return; }
+  const data = snap.data() || {};
+  vendorTemplate = data.reconcileTemplate || null;
+  if(!vendorTemplate){ alert('此供應商尚未設定樣板'); return; }
+  if(vendorTemplate.tolerance!=null) document.getElementById('tol').value = vendorTemplate.tolerance;
+  document.getElementById('tplStatus').textContent='已套用樣板（手動 ID）';
+  localStorage.setItem('reconcile:lastSupplierId', id);
+}

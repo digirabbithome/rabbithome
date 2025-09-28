@@ -21,6 +21,14 @@
     <div class="row">
       <label>選擇供應商
         <select id="supplierSelect" style="min-width:260px"></select>
+
+<div class="row" style="margin:.5rem 0 0;">
+  <input id="supplierIdManual" type="text" placeholder="直接輸入 suppliers 文件 ID（或 code-簡稱）" class="input" style="width:320px;margin-right:8px;">
+  <button id="btnApplyTplManual" class="btn">以輸入的 ID 套用樣板</button>
+  <button id="btnReloadSuppliers" class="btn">重新載入供應商清單</button>
+  <small id="supplierLoadHint" class="small mono" style="margin-left:8px;"></small>
+</div>
+
       </label>
       <button class="btn outline" id="btnApplyTpl">套用樣板</button>
       <button class="btn" id="btnSaveTpl">儲存樣板</button>
@@ -119,5 +127,13 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
 <script src="js/reconcile.js"></script>
+
+<!-- Firebase bridge: expose db/auth to window -->
+<script type="module">
+  import { db, auth } from '/js/firebase.js';
+  window.TemplateManagerDB = db;
+  window.TemplateManagerAuth = auth;
+</script>
+
 </body>
 </html>
