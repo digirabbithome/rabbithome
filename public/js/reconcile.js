@@ -25,15 +25,22 @@ function normalizeCJKSpacing(s){
 // ---- Fallback parsing helpers (tolerant) ----
 function _toNumLoose(x){
   if(x==null) return NaN;
-  let s = String(x).replace(/[,，\s]/g,'');
+  let s = String(x);
+  s = s.replace(/，/g, ',').replace(/[．。]/g, '.');
   const parts = s.split('.');
   if(parts.length>2){ const frac = parts.pop(); s = parts.join('') + '.' + frac; }
+  s = s.replace(/,/g, '');
+  const n = parseFloat(s);
+  return Number.isFinite(n)? n : NaN;
+}
   const n = parseFloat(s); return Number.isFinite(n)? n : NaN;
 }
 function _grabMoniesLoose(line){
   const re = /(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{1,2}))?/g;
   const list=[]; let m;
-  while((m=re.exec(line))){ const raw = m[0].replace(/,/g,'.'); const v=_toNumLoose(raw); list.push({v,i:m.index}); }
+  while((m=re.exec(line))){ const v=_toNumLoose(m[0]); list.push({v,i:m.index}); }
+  return list;
+}
   return list;
 }
 function _stripLeadingColsLoose(s){
@@ -53,7 +60,7 @@ function _parseLineLoose(ln){
   if(!(sub>0 && price>0)) return null;
   const left = s.slice(0, monies[monies.length-2].i);
   let qty = NaN;
-  const mQty = left.match(/(\d+)\s*(?:片|組|個|支|卷|捲|台|套|張|米|公分|KR|x)?\s*$/);
+  const mQty = left.match(/(\d+)\s*(?:片|組|個|支|枝|卷|捲|台|套|張|米|公分|KR|x)?\s*$/);
   if(mQty) qty = parseInt(mQty[1],10);
   if(!Number.isFinite(qty)){ const q = Math.round(sub/price); if(q>0) qty=q; }
   let item = _stripLeadingColsLoose(left).replace(/\s*\d+\s*(?:片|組|個|支|卷|捲|台|套|張|米|公分|KR|x)?\s*$/,'');
