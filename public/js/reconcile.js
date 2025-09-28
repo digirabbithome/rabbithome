@@ -13,6 +13,21 @@ let posRows=[], venRows=[], showPosSimple=true, compareMode='orders';
 let vendorGroups=[]; let rejectedLines=[];
 let vendorTemplate=null;
 
+// Normalize OCR text: collapse spaces between CJK to help headerRegex match
+function normalizeCJKSpacing(s){
+  if(!s) return '';
+  let t = String(s).replace(/\r\n/g,'\n').replace(/\u3000/g,' ');
+  try{
+    t = t.replace(/(?<=\p{Script=Han})\s+(?=\p{Script=Han})/gu, '');
+  }catch(e){
+    t = t.replace(/([\u4E00-\u9FFF])\s+(?=[\u4E00-\u9FFF])/g, '$1');
+  }
+  // collapse multi spaces
+  t = t.replace(/[ \t]{2,}/g, ' ');
+  return t;
+}
+
+
 // ===== Added helpers: page sorting, vendor total extraction, safe header regex =====
 const RE_PAGE_TAGS = [
   /(\d+)\s*\/\s*(\d+)/g,
@@ -85,7 +100,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   // OCR / Parse
   $('#runOcr').onclick=runOcrImages;
   $('#smartParse').onclick=smartParseVendor;
-  const pft=$('#parseFromText'); if(pft){ pft.onclick=()=>{ const t=$('#rawText').value||''; if(!t.trim()){ alert('請先貼上文字或執行 OCR'); return;} window.__venText=t; smartParseVendor(); }; }
+  const pft=$('#parseFromText'); if(pft){ pft.onclick=()=>{ const t=$('#rawText').value||''; if(!t.trim()){ alert('請先貼上文字或執行 OCR'); return;} window.__venText = normalizeCJKSpacing(t); smartParseVendor(); }; }
 
   // Suppliers
   loadSuppliersForSelect();
@@ -221,7 +236,9 @@ async function runOcrImages(){
   const sorted = naturalSortFiles(fs);
   const texts = await ocrImages(sorted);
   const ordered = reorderPageTextsByTag(texts.map(t=>({text:t})));
-  window.__venText = ordered.map(p=>p.text).join('\\n');
+  let merged = ordered.map(p=>p.text).join('
+');
+  window.__venText = normalizeCJKSpacing(merged);
   const rt=$('#rawText'); if(rt){ rt.value = window.__venText; }
   const vt = extractVendorTotal(window.__venText); if(vt){ window.__vendorTotal = vt.value; const vtEl=document.getElementById('vendorTotal'); if(vtEl) vtEl.textContent = nf.format(vt.value); }
   $('#venTable thead').innerHTML='<tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>';
