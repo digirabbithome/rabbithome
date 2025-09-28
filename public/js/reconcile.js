@@ -22,6 +22,52 @@ function normalizeCJKSpacing(s){
   return t;
 }
 
+// ---- Fallback parsing helpers (tolerant) ----
+function _toNumLoose(x){
+  if(x==null) return NaN;
+  let s = String(x).replace(/[,，\s]/g,'');
+  const parts = s.split('.');
+  if(parts.length>2){ const frac = parts.pop(); s = parts.join('') + '.' + frac; }
+  const n = parseFloat(s); return Number.isFinite(n)? n : NaN;
+}
+function _grabMoniesLoose(line){
+  const re = /(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{1,2}))?/g;
+  const list=[]; let m;
+  while((m=re.exec(line))){ const raw = m[0].replace(/,/g,'.'); const v=_toNumLoose(raw); list.push({v,i:m.index}); }
+  return list;
+}
+function _stripLeadingColsLoose(s){
+  let t = s.trim();
+  t = t.replace(/^\d{2,4}[\/\.\-]\d{1,2}[\/\.\-]\d{1,2}\s+/, '');
+  t = t.replace(/^(?:銷貨|進貨)?\s*\d{6,}\s+/, '');
+  t = t.replace(/^[A-Z0-9\-/（）()]+(?:\s+[A-Z0-9\-/（）()]+)*\s+/, '');
+  return t;
+}
+function _parseLineLoose(ln){
+  let s = normalizeCJKSpacing(ln).replace(/[，]/g,',').replace(/[．。]/g,'.');
+  if(/(本期|總計|應收|折讓|營業稅|已收|預收)/.test(s)) return null;
+  const monies = _grabMoniesLoose(s);
+  if(monies.length<2) return null;
+  const sub = monies[monies.length-1].v;
+  const price = monies[monies.length-2].v;
+  if(!(sub>0 && price>0)) return null;
+  const left = s.slice(0, monies[monies.length-2].i);
+  let qty = NaN;
+  const mQty = left.match(/(\d+)\s*(?:片|組|個|支|卷|捲|台|套|張|米|公分|KR|x)?\s*$/);
+  if(mQty) qty = parseInt(mQty[1],10);
+  if(!Number.isFinite(qty)){ const q = Math.round(sub/price); if(q>0) qty=q; }
+  let item = _stripLeadingColsLoose(left).replace(/\s*\d+\s*(?:片|組|個|支|卷|捲|台|套|張|米|公分|KR|x)?\s*$/,'');
+  item = item.replace(/[()（）]/g,'').trim();
+  if(!item) return null;
+  return { item, qty, price, sub };
+}
+function _fallbackParseLines(allLines){
+  const rows=[];
+  for(const ln of allLines){ const r=_parseLineLoose(ln); if(r) rows.push(r); }
+  return rows;
+}
+// ---- end fallback helpers ----
+
 // ===== Added helpers: page sorting, vendor total extraction, safe header regex =====
 const RE_PAGE_TAGS = [
   /(\d+)\s*\/\s*(\d+)/g,
@@ -345,10 +391,11 @@ function smartParseVendor(){
   };
 
   if(headers.length===0){
-    const anyDate = (text.match(/(\\d{2,4}[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{1,2})/)||[])[1] || '';
+    const anyDate = (text.match(/(\d{2,4}[\/\.\-]\d{1,2}[\/\.\-]\d{1,2})/)||[])[1] || '';
     const anyOrder = findLongNumber(text) || '';
-    const rows=[];
+    let rows=[];
     for(const ln0 of lines){ const r = acceptLine(ln0); if(r) rows.push(r); }
+    if(rows.length===0){ rows = _fallbackParseLines(lines); }
     vendorGroups.push({date:anyDate, orderNo:anyOrder, rows});
   }else{
     for(let h=0; h<headers.length; h++){
