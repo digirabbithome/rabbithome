@@ -55,5 +55,13 @@
   console.log('[bridge] Firebase bridge ready', !!db);
 </script>
 
+
+<!-- Preload Firestore helpers into window.__Fire for non-module scripts -->
+<script type="module">
+  import { collection, getDocs, query, orderBy, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  window.__Fire = { collection, getDocs, query, orderBy, doc, getDoc, setDoc };
+  console.log('[bridge] Firestore helpers ready', Object.keys(window.__Fire||{}));
+</script>
+
 </body>
 </html>

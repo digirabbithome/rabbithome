@@ -17,11 +17,10 @@ let vendorTemplate=null;
 function normalizeCJKSpacing(s){
   if(!s) return '';
   let t = String(s).replace(/\r\n/g,'\n').replace(/\u3000/g,' ');
-  try{
-    t = t.replace(/(?<=\p{Script=Han})\s+(?=\p{Script=Han})/gu, '');
-  }catch(e){
-    t = t.replace(/([\u4E00-\u9FFF])\s+(?=[\u4E00-\u9FFF])/g, '$1');
-  }
+  t = t.replace(/([\u4E00-\u9FFF])\s+(?=[\u4E00-\u9FFF])/g, '$1');
+  t = t.replace(/[ \t]{2,}/g, ' ');
+  return t;
+}
   // collapse multi spaces
   t = t.replace(/[ \t]{2,}/g, ' ');
   return t;
@@ -123,9 +122,9 @@ async function loadSuppliersForSelect(){
       if(hint) hint.textContent = 'no Firebase db detected';
       return;
     }
-    const { getDocs, collection, query, orderBy } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-    const q = query(collection(window.TemplateManagerDB,'suppliers'), orderBy('code'));
-    const snap = await getDocs(q);
+    const F = window.__Fire;
+    const q = F.query(F.collection(window.TemplateManagerDB,'suppliers'), F.orderBy('code'));
+    const snap = await F.getDocs(q);
     const items = [];
     snap.forEach(doc=>{
       const d = doc.data();
@@ -143,8 +142,8 @@ async function applyTemplateFromStore(){
   const supplierId = document.getElementById('supplierSelect')?.value || '';
   if(!supplierId){ alert('請先選擇供應商'); return; }
   if(!window.TemplateManagerDB){ alert('未連線 Firebase，無法從 suppliers 讀取樣板'); return; }
-  const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-  const snap = await getDoc(doc(window.TemplateManagerDB,'suppliers', supplierId));
+  const F = window.__Fire;
+  const snap = await F.getDoc(F.doc(window.TemplateManagerDB,'suppliers', supplierId));
   if(!snap.exists()){ $('#tplStatus').textContent='找不到供應商文件'; return; }
   const data = snap.data();
   vendorTemplate = data.reconcileTemplate || null;
@@ -165,11 +164,11 @@ async function saveTemplateToStore(){
     headerRegex: vendorTemplate?.headerRegex || null,
     updatedAt: new Date().toISOString()
   };
-  const { doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-  const ref = doc(window.TemplateManagerDB,'suppliers', supplierId);
-  const snap = await getDoc(ref);
+  const F = window.__Fire;
+  const ref = F.doc(window.TemplateManagerDB,'suppliers', supplierId);
+  const snap = await F.getDoc(ref);
   if(!snap.exists()){ alert('供應商文件不存在'); return; }
-  await setDoc(ref, { reconcileTemplate: payload }, { merge:true });
+  await F.setDoc(ref, { reconcileTemplate: payload }, { merge:true });
   vendorTemplate = payload;
   $('#tplStatus').textContent='樣板已儲存到 suppliers';
 }
@@ -469,9 +468,9 @@ async function applyTemplateFromManual(){
   const id = (document.getElementById('supplierIdManual')?.value || '').trim();
   if(!id){ alert('請輸入 suppliers 文件 ID'); return; }
   if(!window.TemplateManagerDB){ alert('未連線 Firebase'); return; }
-  const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-  const ref = doc(window.TemplateManagerDB,'suppliers', id);
-  const snap = await getDoc(ref);
+  const F = window.__Fire;
+  const ref = F.doc(window.TemplateManagerDB,'suppliers', id);
+  const snap = await F.getDoc(ref);
   if(!snap.exists()){ alert('找不到此文件'); return; }
   const data = snap.data() || {};
   vendorTemplate = data.reconcileTemplate || null;
