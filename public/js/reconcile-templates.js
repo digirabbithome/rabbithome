@@ -1,4 +1,4 @@
-// reconcile-templates.js — Compare版：保留POS簡化顯示選項 + 明細比對 + 差額 + 誰有誰沒有
+// reconcile-templates.js — Compare + Templates 版：POS顯示切換 + 明細比對 + 差額 + 誰有誰沒有 + 模板 套用/儲存
 import { db, auth } from '/js/firebase.js';
 import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -13,6 +13,7 @@ function dice(a,b){ a=keyOf(a); b=keyOf(b); if(!a||!b) return 0; if(a===b) retur
 
 let posRows=[], venRows=[], showPosSimple=true;
 let __matchOK=[], __matchBAD=[];
+let vendorTemplate=null, runner=null, runnerProfile=null;
 
 window.onload=()=>{
   $('#loadPos').onclick=loadPosCSV;
@@ -21,6 +22,19 @@ window.onload=()=>{
   $('#runOcr').onclick=runOcrImages;
   $('#smartParse').onclick=smartParseVendor;
   $('#runMatch').onclick=runMatch;
+
+  $('#btnApplyTpl').onclick=applyTemplateFromFirestore;
+  $('#btnSaveTpl').onclick=saveTemplateToFirestore;
+
+  onAuthStateChanged(auth, async user => {
+    if (!user) { $('#runner').textContent = '未登入（僅本機試用）'; return; }
+    runner=user;
+    $('#runner').textContent=user.displayName||user.email||user.uid;
+    try{
+      const p = await getDoc(doc(db,'profiles',user.uid));
+      if(p.exists()){ runnerProfile=p.data(); const nick=runnerProfile.nickname||runnerProfile.nick||runnerProfile.name; if(nick) $('#runner').textContent=`${nick}（${user.email||user.uid}）`; }
+    }catch{}
+  });
 };
 
 // ===== POS CSV（支援完整欄位，但可切換簡化顯示） =====
@@ -53,8 +67,7 @@ function applyPosMap(){
     price: parseNumber(r[cp]),
     sub: parseNumber(r[cs])
   })).filter(r=> r.item || isFinite(r.sub));
-  renderPosTable();
-  updateTotals();
+  renderPosTable(); updateTotals();
 }
 function renderPosTable(){
   const thead=$('#posTable thead'), tbody=$('#posTable tbody');
@@ -69,7 +82,7 @@ function renderPosTable(){
 }
 function sumPos(){ return posRows.reduce((a,b)=> a + (isFinite(b.sub)?b.sub: (isFinite(b.qty)&&isFinite(b.price)? b.qty*b.price:0)), 0) }
 
-// ===== Vendor OCR & Parse =====
+// ===== Vendor OCR & Parse + Templates =====
 async function ocrImages(files){
   const worker=await Tesseract.createWorker('eng+chi_tra');
   const out=[];
@@ -96,6 +109,14 @@ async function runOcrImages(){
 function smartParseVendor(){
   let text = window.__venText || '';
   if(!text){ alert('尚未有 OCR 結果'); return }
+
+  if (vendorTemplate?.stripLines?.length){
+    const strips = vendorTemplate.stripLines.map(s=>s.trim()).filter(Boolean);
+    const lines = text.split(/\n+/);
+    const kept = lines.filter(ln => !strips.some(s => ln.includes(s)));
+    text = kept.join('\n');
+  }
+
   const lines=text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
   const rows=[];
   for(const ln of lines){
@@ -105,7 +126,8 @@ function smartParseVendor(){
       const maybePrice=parseNumber(nums.at(-2));
       let qty=NaN; for(let i=nums.length-3;i>=0;i--){ const v=parseNumber(nums[i]); if(Number.isInteger(v)){ qty=v; break } }
       let head=ln.slice(0, ln.lastIndexOf(nums.at(-1))); if(nums.length>=2){ const idx2=head.lastIndexOf(nums.at(-2)); if(idx2>0) head=head.slice(0,idx2); }
-      const item=cleanText(head);
+      let item=cleanText(head);
+      if (vendorTemplate?.aliases && vendorTemplate.aliases[item]) item = vendorTemplate.aliases[item];
       if(item && !isNaN(maybeSub)) rows.push({ item, qty:isNaN(qty)?1:qty, price:isNaN(maybePrice)?NaN:maybePrice, sub:maybeSub });
     }
   }
@@ -117,6 +139,54 @@ function smartParseVendor(){
   updateTotals();
 }
 function sumVen(){ return venRows.reduce((a,b)=> a + (isFinite(b.sub)?b.sub:(isFinite(b.qty)&&isFinite(b.price)?b.qty*b.price:0)), 0) }
+
+// ===== Templates Firestore =====
+async function applyTemplateFromFirestore(){
+  const name = ($('#vendorName').value || '').trim();
+  if(!name){ alert('請先輸入廠商名稱'); return }
+  try{
+    const ref = doc(db, 'vendor_templates', name);
+    const snap = await getDoc(ref);
+    if(!snap.exists()){
+      vendorTemplate = null;
+      $('#tplStatus').textContent = `找不到模板（${name}），請解析後按「儲存模板」`; 
+      return;
+    }
+    vendorTemplate = snap.data();
+    $('#tplStatus').textContent = `已套用模板：${name}`;
+    if (vendorTemplate.tolerance != null) {
+      $('#tol').value = vendorTemplate.tolerance;
+    }
+  }catch(err){
+    console.error(err);
+    alert('讀取模板失敗：' + err.message);
+  }
+}
+async function saveTemplateToFirestore(){
+  const name = ($('#vendorName').value || '').trim();
+  if(!name){ alert('請先輸入廠商名稱'); return }
+  const payload = {
+    vendorName: name,
+    parseMode: (vendorTemplate?.parseMode || 'tail-sub-v2'),
+    stripLines: vendorTemplate?.stripLines || [],
+    qtyHintWords: vendorTemplate?.qtyHintWords || ['數量','Qty'],
+    priceHintWords: vendorTemplate?.priceHintWords || ['單價','Price'],
+    subHintWords: vendorTemplate?.subHintWords || ['金額','小計','Amount'],
+    aliases: vendorTemplate?.aliases || {},
+    tolerance: parseNumber($('#tol').value) || 1.0,
+    updatedAt: serverTimestamp(),
+    updatedBy: { uid: runner?.uid || null, nickname: (runnerProfile?.nickname||null) }
+  };
+  try{
+    await setDoc(doc(db, 'vendor_templates', name), payload, { merge:true });
+    vendorTemplate = payload;
+    $('#tplStatus').textContent = `已儲存模板：${name}`;
+    alert('模板已儲存');
+  }catch(err){
+    console.error(err);
+    alert('儲存模板失敗：' + err.message);
+  }
+}
 
 // ===== Matching & Diff =====
 function runMatch(){

@@ -3,18 +3,29 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>對帳工具（Compare 版）</title>
+  <title>對帳工具（Compare + Templates 版）</title>
   <link rel="stylesheet" href="css/reconcile.css"/>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <h1>📑 對帳工具 <span class="tag">POS 簡化顯示切換 + 明細比對 + 差額 + 誰有誰沒有</span></h1>
-    <div class="small">POS 可切換「只看日期/廠商/金額」或「明細」。右側 OCR 解析後即可比對。</div>
+    <h1>📑 對帳工具 <span class="tag">POS 顯示切換 + 明細比對 + 差額 + 模板 套用/儲存</span></h1>
+    <div class="small">執行者：<strong id="runner">—</strong></div>
   </div>
 </header>
 
 <main class="wrap">
+  <section class="card">
+    <h2>🧰 廠商模板</h2>
+    <div class="row">
+      <label>廠商名稱 <input type="text" id="vendorName" placeholder="例如：Godox / 億亞尚 / PS-Homewell" style="min-width:240px"></label>
+      <button class="btn outline" id="btnApplyTpl">套用模板</button>
+      <button class="btn" id="btnSaveTpl">儲存模板</button>
+      <label class="small">數字容忍 ± <input id="tol" type="number" min="0" step="0.01" value="1" style="width:80px"/> 元</label>
+    </div>
+    <div class="small" id="tplStatus" style="margin-top:6px">尚未套用模板。模板存於 Firestore <span class="code">vendor_templates/{vendorName}</span>，包含 stripLines / 別名 / 容忍值等。</div>
+  </section>
+
   <div class="grid">
     <section class="card">
       <h2>① POS 入庫清單（CSV）</h2>
