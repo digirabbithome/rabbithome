@@ -152,6 +152,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Suppliers
   loadSuppliersForSelect();
   $('#btnApplyTpl').onclick=applyTemplateFromStore;
+  const _btnV=$('#btnValidateTemplate'); if(_btnV){ _btnV.onclick=validateTemplate; }
   $('#btnReloadSuppliers').onclick=loadSuppliersForSelect;
   $('#btnApplyTplManual').onclick=applyTemplateFromManual;
   $('#btnSaveTpl').onclick=saveTemplateToStore;
@@ -400,9 +401,7 @@ function smartParseVendor(){
   if(headers.length===0){
     const anyDate = (text.match(/(\d{2,4}[\/\.\-]\d{1,2}[\/\.\-]\d{1,2})/)||[])[1] || '';
     const anyOrder = findLongNumber(text) || '';
-    let rows=[];
-    for(const ln0 of lines){ const r = acceptLine(ln0); if(r) rows.push(r); }
-    if(rows.length===0){ rows = _fallbackParseLines(lines); }
+    const rows = parseLinesByMode(lines, acceptLine, _fallbackParseLines);
     vendorGroups.push({date:anyDate, orderNo:anyOrder, rows});
   }else{
     for(let h=0; h<headers.length; h++){
