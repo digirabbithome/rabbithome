@@ -26,4 +26,7 @@ tr:hover{background:#fff5fb}
 .bar{height:100%;background:var(--pink);width:0%}
 .groupRow td{background:#faf5ff;font-weight:700;border-top:2px solid #e9d5ff}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-.badge{font-size:12px;background:#faf5ff;color:#6b21a8;border:1px dashed #e9d5ff;padding:3px 8px;border-radius:999px}
+.totals{display:flex;gap:18px;justify-content:flex-end;margin-top:8px}
+.totals .mono{min-width:120px;text-align:right}
+.diff-pos{color:#ef4444}
+.diff-zero{color:#10b981}

@@ -1,4 +1,4 @@
-// Compare + Groups: 逐品項 / 逐貨單 兩種對帳模式 + 模板 + 強化解析
+// Compare + Groups v3
 import { db, auth } from '/js/firebase.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -11,32 +11,21 @@ function cleanText(s){ return String(s||'').trim().replace(/[\u3000\s]+/g,' ').r
 function keyOf(s){ return cleanText(s).toLowerCase().replace(/[^a-z0-9一-龥x\-/_,]/g,''); }
 function dice(a,b){ a=keyOf(a); b=keyOf(b); if(!a||!b) return 0; if(a===b) return 1; const big=s=>{const r=new Set(); for(let i=0;i<s.length-1;i++) r.add(s.slice(i,i+2)); return r}; const A=big(a),B=big(b); let inter=0; A.forEach(x=>{if(B.has(x)) inter++}); return (2*inter)/(A.size+B.size||1); }
 
-let posRows=[], venRows=[], showPosSimple=true, compareMode='items'; // 'items' 或 'orders'
-let vendorTemplate=null, runner=null;
+let posRows=[], venRows=[], showPosSimple=true, compareMode='orders';
 let vendorGroups=[]; // [{date, orderNo, rows:[{item,qty,price,sub}]}]
 
 window.onload=()=>{
   $('#loadPos').onclick=loadPosCSV;
   $('#applyPosMap').onclick=applyPosMap;
   $('#togglePosView').onchange=e=>{ showPosSimple=e.target.checked; renderPosTable(); };
-  document.querySelectorAll('input[name="compareMode"]').forEach(r=> r.onchange = e=>{ compareMode=e.target.value; updateModeHint(); });
+  document.querySelectorAll('input[name="compareMode"]').forEach(r=> r.onchange = e=>{ compareMode=e.target.value; });
   $('#runOcr').onclick=runOcrImages;
   $('#smartParse').onclick=smartParseVendor;
   $('#runMatch').onclick=runMatch;
-  $('#btnApplyTpl').onclick=applyTemplateFromFirestore;
-  $('#btnSaveTpl').onclick=saveTemplateToFirestore;
   onAuthStateChanged(auth, u=> $('#runner').textContent = u ? (u.displayName||u.email||u.uid) : '未登入（僅本機）');
-  updateModeHint();
 };
 
-function updateModeHint(){
-  const hint = (compareMode==='orders')
-    ? '目前以「貨單（日期＋貨單編號）」為單位比對：每筆貨單金額＝該區段小計總和'
-    : '目前以「品項」為單位比對：逐筆比對 POS 與廠商明細';
-  $('#modeHint').textContent = hint;
-}
-
-// POS CSV
+// POS
 let RawPos=[], PosCols=[];
 function loadPosCSV(){
   const f=$('#posFile').files[0]; if(!f){ alert('請先選擇 POS CSV'); return }
@@ -44,17 +33,9 @@ function loadPosCSV(){
     RawPos=res.data; if(!RawPos.length){ alert('CSV 無資料'); return }
     PosCols=Object.keys(RawPos[0]||{});
     for(const id of ['posColItem','posColQty','posColPrice','posColSub','posColVendor','posColDate','posColOrder']){
-      const sel=document.getElementById(id); sel.innerHTML=''; PosCols.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
-      const optEmpty=document.createElement('option'); optEmpty.value=''; optEmpty.textContent='（無）'; sel.insertBefore(optEmpty, sel.firstChild);
+      const sel=document.getElementById(id); sel.innerHTML=''; const optEmpty=document.createElement('option'); optEmpty.value=''; optEmpty.textContent='（無）'; sel.appendChild(optEmpty);
+      PosCols.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
     }
-    const guess=(keys,cands)=>keys.find(k=>cands.some(c=>k.toLowerCase().includes(c)));
-    $('#posColItem').value  = guess(PosCols,['品','型號','名稱','商品','描述','品項']) || '';
-    $('#posColQty').value   = guess(PosCols,['數量','qty']) || '';
-    $('#posColPrice').value = guess(PosCols,['單價','價格','price']) || '';
-    $('#posColSub').value   = guess(PosCols,['小計','金額','合計','total','amount']) || '';
-    $('#posColVendor').value= guess(PosCols,['廠商','供應','vendor']) || '';
-    $('#posColDate').value  = guess(PosCols,['日期','採購','結算','入庫']) || '';
-    $('#posColOrder').value = guess(PosCols,['貨單','單號','發票','單據','單號碼','編號']) || '';
   }})
 }
 function applyPosMap(){
@@ -82,9 +63,10 @@ function renderPosTable(){
   }
   $('#posSum').textContent = nf.format(sumPos());
 }
-function sumPos(){ return posRows.reduce((a,b)=> a + (isFinite(b.sub)?b.sub: (isFinite(b.qty)&&isFinite(b.price)? b.qty*b.price:0)), 0) }
+function sumRow(r){ return isFinite(r.sub)? r.sub : (isFinite(r.qty)&&isFinite(r.price)? r.qty*r.price : 0); }
+function sumPos(){ return posRows.reduce((a,b)=> a + sumRow(b), 0) }
 
-// Vendor OCR + Parse with grouping
+// Vendor OCR + Parse
 async function ocrImages(files){
   const worker=await Tesseract.createWorker('eng+chi_tra');
   const out=[];
@@ -93,7 +75,7 @@ async function ocrImages(files){
     $('#ocrStatus').textContent=`辨識中 ${i+1}/${files.length}：${f.name}`;
     const {data}=await worker.recognize(f);
     out.push(data.text);
-    $('#ocrBar').style.width=Math.round(((i+1)/fs.length)*100)+'%';
+    $('#ocrBar').style.width=Math.round(((i+1)/files.length)*100)+'%'; // 修正：files.length
   }
   await worker.terminate();
   $('#ocrStatus').textContent='完成';
@@ -131,7 +113,7 @@ function smartParseVendor(){
   const raw = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
   const lines = raw.filter(ln=> ![...stripWords].some(w=> w && ln.includes(w)));
 
-  // 找 header（日期 + 貨單編號）
+  // headers: 日期 + 貨單編號
   const headers=[];
   for(let i=0;i<lines.length;i++){
     const ln=lines[i];
@@ -181,117 +163,10 @@ function renderVendorGroupedTable(){
   $('#venSum').textContent = nf.format(total);
 }
 
-// Templates
-async function applyTemplateFromFirestore(){
-  const name = ($('#vendorName').value || '').trim();
-  if(!name){ alert('請先輸入廠商名稱'); return }
-  const snap = await getDoc(doc(db,'vendor_templates', name));
-  if(!snap.exists()){ vendorTemplate=null; $('#tplStatus').textContent = `找不到模板（${name}）`; return; }
-  vendorTemplate = snap.data(); $('#tplStatus').textContent = `已套用模板：${name}`;
-  if(vendorTemplate.tolerance!=null) $('#tol').value = vendorTemplate.tolerance;
-}
-async function saveTemplateToFirestore(){
-  const name = ($('#vendorName').value || '').trim();
-  if(!name){ alert('請先輸入廠商名稱'); return }
-  const payload={
-    vendorName:name,
-    stripLines: vendorTemplate?.stripLines || [],
-    aliases: vendorTemplate?.aliases || {},
-    tolerance: parseNumber($('#tol').value) || 1.0,
-    updatedAt: serverTimestamp()
-  };
-  await setDoc(doc(db,'vendor_templates', name), payload, {merge:true});
-  vendorTemplate = payload; $('#tplStatus').textContent = `已儲存模板：${name}`;
-}
-
-// ===== Matching =====
-function sumRow(r){ return isFinite(r.sub)? r.sub : (isFinite(r.qty)&&isFinite(r.price)? r.qty*r.price : 0); }
-
+// Matching
 function runMatch(){
-  if(compareMode==='orders'){ runMatchOrders(); return; }
-  runMatchItems();
-}
-
-function runMatchItems(){
-  const tol = parseNumber($('#tol').value)||0;
-  const used=new Set(); const ok=[], bad=[];
-  for(const p of posRows){
-    let best=-1,score=0;
-    for(let i=0;i<venRows.length;i++){
-      if(used.has(i)) continue;
-      const v=venRows[i];
-      const s=(keyOf(v.item)===keyOf(p.item))?1: dice(p.item,v.item);
-      if(s>score){ score=s; best=i; }
-    }
-    const pSub = sumRow(p);
-    if(best>=0 && score>=0.55){
-      const v=venRows[best]; used.add(best);
-      const vSub = sumRow(v);
-      const gap = pSub - vSub;
-      (Math.abs(gap)<=tol? ok: bad).push({pos:p, ven:v, score, gap});
-    }else{
-      bad.push({pos:p, ven:null, score, gap:NaN});
-    }
-  }
-  venRows.forEach((v,i)=>{ if(!used.has(i)) bad.push({pos:null, ven:v, score:0, gap:NaN}); });
-
-  renderCompareRows('#tblOK', ok, true);
-  renderCompareRows('#tblBad', bad, false);
-  updateTotals();
-}
-
-function runMatchOrders(){
-  const tol = parseNumber($('#tol').value)||0;
-
-  // 1) 聚合 POS -> 按 (date, order?) 求和
-  const posMap = new Map(); // key -> {date, order, total}
-  for(const r of posRows){
-    const key = `${r.date||''}|${r.order||''}`;
-    const tot = sumRow(r);
-    if(!posMap.has(key)) posMap.set(key, {date:r.date||'', order:r.order||'', total:0});
-    posMap.get(key).total += isFinite(tot)? tot : 0;
-  }
-  const posOrders = [...posMap.values()];
-
-  // 2) 聚合 Vendor -> 直接從 vendorGroups
-  const venOrders = vendorGroups.map(g=> ({
-    date: g.date || '',
-    order: g.orderNo || '',
-    total: g.rows.reduce((a,b)=> a + sumRow(b), 0)
-  }));
-
-  // 3) 配對：優先以單號精準匹配；若 POS 無單號，則用日期+金額（容忍內）匹配
-  const used = new Set();
-  const ok=[], bad=[];
-
-  for(const p of posOrders){
-    let matchIndex=-1, matchScore=-1;
-    for(let i=0;i<venOrders.length;i++){
-      if(used.has(i)) continue;
-      const v=venOrders[i];
-      let score = 0;
-      if(p.order && v.order && p.order.replace(/\D/g,'')===v.order.replace(/\D/g,'')){
-        score = 2; // 強匹配：單號相同
-      }else if(p.date && v.date && p.date===v.date && Math.abs((p.total||0)-(v.total||0))<=tol){
-        score = 1; // 次匹配：日期相同且金額落在容忍內
-      }
-      if(score>matchScore){ matchScore=score; matchIndex=i; }
-    }
-    if(matchIndex>=0 && matchScore>0){
-      const v=venOrders[matchIndex]; used.add(matchIndex);
-      const gap=(p.total||0)-(v.total||0);
-      (Math.abs(gap)<=tol? ok: bad).push({
-        posOrder:p, venOrder:v, method:(matchScore===2?'單號匹配':'日期+金額匹配'), gap
-      });
-    }else{
-      bad.push({posOrder:p, venOrder:null, method:'未匹配', gap:NaN});
-    }
-  }
-  venOrders.forEach((v,i)=>{ if(!used.has(i)) bad.push({posOrder:null, venOrder:v, method:'供應商多出', gap:NaN}); });
-
-  renderCompareOrders('#tblOK', ok, true);
-  renderCompareOrders('#tblBad', bad, false);
-  updateTotals();
+  if(document.querySelector('input[name="compareMode"]:checked')?.value==='orders'){ runMatchOrders(); }
+  else { runMatchItems(); }
 }
 
 function renderCompareRows(sel, arr, ok){
@@ -337,6 +212,100 @@ function renderCompareOrders(sel, arr, ok){
       <td>${isFinite(gap)?nf.format(gap):''}</td><td>${r.method||'—'}</td>
     </tr>`;
   }).join('');
+}
+
+// Items mode
+function runMatchItems(){
+  const tol = parseNumber($('#tol').value)||0;
+  const used=new Set(); const ok=[], bad=[];
+  for(const p of posRows){
+    let best=-1,score=0;
+    for(let i=0;i<venRows.length;i++){
+      if(used.has(i)) continue;
+      const v=venRows[i];
+      const s=(keyOf(v.item)===keyOf(p.item))?1: dice(p.item,v.item);
+      if(s>score){ score=s; best=i; }
+    }
+    const pSub = sumRow(p);
+    if(best>=0 && score>=0.55){
+      const v=venRows[best]; used.add(best);
+      const vSub = sumRow(v);
+      const gap = pSub - vSub;
+      (Math.abs(gap)<=tol? ok: bad).push({pos:p, ven:v, score, gap});
+    }else{
+      bad.push({pos:p, ven:null, score, gap:NaN});
+    }
+  }
+  venRows.forEach((v,i)=>{ if(!used.has(i)) bad.push({pos:null, ven:v, score:0, gap:NaN}); });
+
+  renderCompareRows('#tblOK', ok, true);
+  renderCompareRows('#tblBad', bad, false);
+  updateTotals();
+}
+
+// Orders mode
+function runMatchOrders(){
+  const tol = parseNumber($('#tol').value)||0;
+
+  // 聚合 POS
+  const posMap = new Map();
+  for(const r of posRows){
+    const key = `${r.date||''}|${r.order||''}`;
+    const tot = sumRow(r);
+    if(!posMap.has(key)) posMap.set(key, {date:r.date||'', order:r.order||'', total:0});
+    posMap.get(key).total += isFinite(tot)? tot : 0;
+  }
+  const posOrders = [...posMap.values()];
+
+  // 聚合 Vendor
+  const venOrders = vendorGroups.map(g=> ({
+    date: g.date || '',
+    order: g.orderNo || '',
+    total: g.rows.reduce((a,b)=> a + sumRow(b), 0)
+  }));
+
+  const used = new Set();
+  const ok=[], bad=[];
+
+  for(const p of posOrders){
+    let matchIndex=-1, matchScore=-1;
+    for(let i=0;i<venOrders.length;i++){
+      if(used.has(i)) continue;
+      const v=venOrders[i];
+      let score = 0;
+      if(p.order && v.order && p.order.replace(/\D/g,'')===v.order.replace(/\D/g,'')){
+        score = 2;
+      }else if(p.date && v.date && p.date===v.date && Math.abs((p.total||0)-(v.total||0))<=tol){
+        score = 1;
+      }
+      if(score>matchScore){ matchScore=score; matchIndex=i; }
+    }
+    if(matchIndex>=0 && matchScore>0){
+      const v=venOrders[matchIndex]; used.add(matchIndex);
+      const gap=(p.total||0)-(v.total||0);
+      (Math.abs(gap)<=tol? ok: bad).push({
+        posOrder:p, venOrder:v, method:(matchScore===2?'單號匹配':'日期+金額匹配'), gap
+      });
+    }else{
+      bad.push({posOrder:p, venOrder:null, method:'未匹配', gap:NaN});
+    }
+  }
+  venOrders.forEach((v,i)=>{ if(!used.has(i)) bad.push({posOrder:null, venOrder:v, method:'供應商多出', gap:NaN}); });
+
+  renderCompareOrders('#tblOK', ok, true);
+  renderCompareOrders('#tblBad', bad, false);
+
+  // totals footer for orders
+  const posTot = posOrders.reduce((a,b)=>a+(isFinite(b.total)?b.total:0),0);
+  const venTot = venOrders.reduce((a,b)=>a+(isFinite(b.total)?b.total:0),0);
+  const diff = posTot - venTot;
+  const diffClass = diff===0 ? 'diff-zero' : 'diff-pos';
+  $('#ordersTotals').innerHTML = `<div class="totals">
+    <div class="small">POS 合計：</div><div class="mono">${nf.format(posTot)}</div>
+    <div class="small">廠商合計：</div><div class="mono">${nf.format(venTot)}</div>
+    <div class="small">差額：</div><div class="mono ${diffClass}">${nf.format(diff)}</div>
+  </div>`;
+  updateTotals();
 }
 
 function updateTotals(){

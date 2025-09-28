@@ -3,31 +3,19 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>對帳工具（逐品項 / 逐貨單 雙模式）</title>
+  <title>對帳工具（逐品項 / 逐貨單 雙模式 v3）</title>
   <link rel="stylesheet" href="css/reconcile.css"/>
 </head>
 <body>
 <header>
   <div class="wrap row">
     <h1>📑 對帳工具 <span class="tag">雙模式：逐品項 / 逐貨單</span></h1>
-    <span class="badge" id="modeHint">模式說明</span>
     <div class="grow"></div>
     <div class="small">執行者：<strong id="runner">—</strong></div>
   </div>
 </header>
 
 <main class="wrap">
-  <section class="card">
-    <h2>🧰 廠商模板</h2>
-    <div class="row">
-      <label>廠商名稱 <input id="vendorName" style="min-width:240px" placeholder="例如：勤力屋 / Godox / 億亞尚"/></label>
-      <button class="btn outline" id="btnApplyTpl">套用模板</button>
-      <button class="btn" id="btnSaveTpl">儲存模板</button>
-      <label class="small">金額容忍 ± <input id="tol" type="number" step="0.01" value="1" style="width:80px"/> 元</label>
-    </div>
-    <div id="tplStatus" class="small" style="margin-top:6px">stripLines/aliases/tolerance 來源：Firestore <code>vendor_templates/{vendorName}</code></div>
-  </section>
-
   <div class="grid">
     <section class="card">
       <h2>① POS 入庫清單（CSV）</h2>
@@ -66,7 +54,7 @@
         <div class="small" id="ocrStatus">尚未開始</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <button class="btn outline" id="smartParse">↻ 智慧解析為表格（會自動分組：貨單日期＋貨單編號）</button>
+        <button class="btn outline" id="smartParse">↻ 智慧解析為表格（自動分組：貨單日期＋貨單編號）</button>
       </div>
       <div style="max-height:260px;overflow:auto;margin-top:8px">
         <table id="venTable"><thead></thead><tbody></tbody></table>
@@ -81,9 +69,8 @@
     <h2>③ 對帳（選擇模式）</h2>
     <div class="row small" style="margin-bottom:8px">
       模式：
-      <label><input type="radio" name="compareMode" value="items" checked/> 逐品項</label>
-      <label><input type="radio" name="compareMode" value="orders"/> 逐貨單</label>
-      <span id="modeHint" class="badge">—</span>
+      <label><input type="radio" name="compareMode" value="items"/> 逐品項</label>
+      <label><input type="radio" name="compareMode" value="orders" checked/> 逐貨單</label>
       <div class="grow"></div>
       <div class="small">差額（POS - 廠商）：<span class="mono" id="diffSum">–</span></div>
     </div>
@@ -105,6 +92,7 @@
         </div>
       </div>
     </div>
+    <div id="ordersTotals"></div>
   </section>
 </main>
 
