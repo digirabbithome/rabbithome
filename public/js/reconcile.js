@@ -113,30 +113,6 @@ async function loadSuppliersForSelect(){
     const snap = await getDocs(q);
     const items = [];
     snap.forEach(doc=>{
-      const d = doc.data() || {};
-      const label = `${d.code||''}-${d.shortName||d.name||doc.id}`.trim();
-      items.push({id:doc.id, label});
-    });
-    if(items.length===0){
-      sel.innerHTML = '<option value="">（目前沒有 suppliers 文件）</option>';
-      if(hint) hint.textContent = '0 docs';
-      return;
-    }
-    sel.innerHTML = '<option value="">請選擇供應商</option>' + items.map(it=>`<option value="${it.id}">${it.label}</option>`).join('');
-    if(hint) hint.textContent = `loaded ${items.length} docs`;
-    const last = localStorage.getItem('reconcile:lastSupplierId');
-    if(last && items.some(it=>it.id===last)){ sel.value = last; }
-  }catch(e){
-    console.error('[suppliers] load error', e);
-    if(sel) sel.innerHTML = '<option value="">載入供應商失敗（看 console）</option>';
-    const hint = document.getElementById('supplierLoadHint'); if(hint) hint.textContent = 'error';
-  }
-}
-    const { getDocs, collection, query, orderBy } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
-    const q = query(collection(window.TemplateManagerDB,'suppliers'), orderBy('code'));
-    const snap = await getDocs(q);
-    const items = [];
-    snap.forEach(doc=>{
       const d = doc.data();
       const label = `${d.code||''}-${d.shortName||d.name||doc.id}`.trim();
       items.push({id:doc.id, label});
