@@ -33,14 +33,10 @@ function _toNumLoose(x){
   const n = parseFloat(s);
   return Number.isFinite(n)? n : NaN;
 }
-  const n = parseFloat(s); return Number.isFinite(n)? n : NaN;
-}
 function _grabMoniesLoose(line){
   const re = /(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{1,2}))?/g;
   const list=[]; let m;
   while((m=re.exec(line))){ const v=_toNumLoose(m[0]); list.push({v,i:m.index}); }
-  return list;
-}
   return list;
 }
 function _stripLeadingColsLoose(s){
