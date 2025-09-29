@@ -1,222 +1,166 @@
-/*! reconcile-templates.js (patched v1.1) — customParserJS field + supplier hydrator | 2025-09-30 */
+/*! reconcile-templates.js (patched v1.2) — old IDs + customParserJS + supplier index | 2025-09-30 */
 (function(){
   'use strict';
 
-  function findSupplierSelect(){
-    var sel = document.querySelector('[name="supplier"]') || document.querySelector('#supplierSelect');
-    if (sel) return sel;
-    // fallback: pick the first select that seems relevant
-    var cands = Array.from(document.querySelectorAll('select'));
-    var cand = cands.find(function(s){
-      var id=(s.id||'')+(s.name||''); id=id.toLowerCase();
-      return /supplier|vendor|廠商|供應商/.test(id);
-    }) || cands[0];
-    return cand || null;
-  }
+  function F(){ return window.__Fire || {}; }
+  function DB(){ return window.TemplateManagerDB || window.firebaseDb || window.db || undefined; }
 
-  function getSupplierKey(){
-    var el = findSupplierSelect();
-    if (el){
-      var val = (el.value || '').trim();
-      if (val) return val;
-      var opt = el.options && el.options[el.selectedIndex];
-      if (opt && opt.textContent) return opt.textContent.trim();
-    }
-    return (window.currentSupplierKey || '').trim();
-  }
-
-  // -------- Hydrate supplier select (Firestore -> LocalStorage -> leave as-is) --------
-  async function hydrateSupplierSelect(){
-    var sel = findSupplierSelect();
-    if (!sel) return;
-    if (sel.__hydrated) return;
-    // If already has options beyond placeholder, keep it
-    if (sel.options && sel.options.length > 1) { sel.__hydrated = true; return; }
-
-    // Put loading indicator
-    sel.innerHTML = '';
-    var opt0 = document.createElement('option');
-    opt0.value = ''; opt0.textContent = '（載入供應商中…）';
-    sel.appendChild(opt0);
-
-    let filled = false;
-
-    // Try Firestore
+  // -------- Suppliers list (uses old IDs) --------
+  async function mgrLoadSuppliers(){
     try{
-      var g = window;
-      if (g.getDocs && g.collection){
-        var db = g.firebaseDb || g.db || undefined;
-        var coll = g.collection(db || undefined, 'suppliers');
-        var q = (g.query && g.orderBy) ? g.query(coll, g.orderBy('name')) : coll;
-        var snap = await g.getDocs(q);
-        if (snap && snap.forEach){
-          sel.innerHTML = '';
-          snap.forEach(function(doc){
-            var d = doc.data ? doc.data() : {};
-            var code = d.code || d.id || doc.id;
-            var name = d.name || d.title || d.displayName || d.vendorName || '';
-            var key = (code && name) ? (code + '-' + name) : (name || code || doc.id);
-            var op = document.createElement('option');
-            op.value = key; op.textContent = key;
-            sel.appendChild(op);
-          });
-          if (sel.options.length === 0){
-            // nothing produced
-            throw new Error('empty suppliers in Firestore');
-          }
-          filled = true;
-        }
+      const sel = document.getElementById('mgrSupplierSelect');
+      if(!sel){ console.warn('#mgrSupplierSelect 不存在'); return; }
+
+      if(!DB()){
+        sel.innerHTML = '<option value="">未連線 Firebase（僅可離線）</option>';
+        return;
       }
-    }catch(e){ console.warn('[templates] Firestore suppliers load failed:', e); }
 
-    // Fallback to LocalStorage cached templates
-    if (!filled){
-      try{
-        sel.innerHTML = '';
-        var keys = [];
-        for (var i=0;i<localStorage.length;i++){
-          var k = localStorage.key(i);
-          var m = /^reconcile\.suppliers\.(.+)\.template$/.exec(k);
-          if (m) keys.push(m[1]);
-        }
-        keys.sort();
-        keys.forEach(function(k){
-          var op = document.createElement('option');
-          op.value = k; op.textContent = k;
-          sel.appendChild(op);
-        });
-        if (sel.options.length) filled = true;
-      }catch(e){ console.warn('[templates] local suppliers scan failed:', e); }
+      const FF = F();
+      const coll = FF.collection(DB(), 'suppliers');
+      let q = coll;
+      if (FF.query && FF.orderBy) q = FF.query(coll, FF.orderBy('code'));
+
+      let snap = await FF.getDocs(q);
+      // fallback order by name if empty (or code not indexed)
+      if (!snap || snap.empty){
+        console.warn('[mgr] suppliers orderBy("code") 無結果，改用 name');
+        if (FF.query && FF.orderBy) q = FF.query(coll, FF.orderBy('name'));
+        snap = await FF.getDocs(q);
+      }
+
+      const items = [];
+      snap.forEach(function(doc){
+        const d = (doc.data && doc.data()) || {};
+        const code = d.code || '';
+        const shortName = d.shortName || d.name || doc.id;
+        const label = (code ? (code + '-' + shortName) : shortName);
+        items.push({ id: doc.id, code, label });
+      });
+
+      items.sort(function(a,b){ return (a.label||'').localeCompare(b.label||''); });
+
+      sel.innerHTML = '<option value="">請選擇</option>' +
+        items.map(it=>`<option value="${it.id}">${it.label}</option>`).join('');
+
+      // build & store index for reconcile page (label<->id<->code)
+      const index = { byId:{}, byLabel:{}, byCode:{} };
+      items.forEach(it=>{
+        index.byId[it.id] = it.label;
+        index.byLabel[it.label] = it.id;
+        if (it.code) index.byCode[it.code] = it.id;
+      });
+      try{ localStorage.setItem('reconcile.suppliers.index', JSON.stringify(index)); }catch(e){}
+    }catch(e){
+      console.error('[mgrLoadSuppliers] error:', e);
+      const sel = document.getElementById('mgrSupplierSelect');
+      if (sel) sel.innerHTML = '<option value="">載入失敗</option>';
     }
-
-    // Last resort: keep whatever was there
-    if (!filled){
-      sel.innerHTML = '';
-      var op = document.createElement('option');
-      op.value = ''; op.textContent = '（請先建立廠商或手動輸入）';
-      sel.appendChild(op);
-    }
-
-    sel.__hydrated = true;
   }
 
-  // -------- Custom Parser field --------
+  // -------- Load template for selected supplier --------
+  async function mgrLoadFromSupplier(){
+    const supplierId = document.getElementById('mgrSupplierSelect')?.value||'';
+    if(!supplierId){ alert('請先選擇供應商'); return; }
+    if(!DB()){ alert('未連線 Firebase'); return; }
+
+    const FF = F();
+    const ref = FF.doc(FF.collection(DB(), 'suppliers'), supplierId);
+    const snap = await FF.getDoc(ref);
+    if(!snap.exists()){ document.getElementById('mgrStatus').textContent='找不到供應商'; return; }
+
+    const root = (snap.data && snap.data()) || {};
+    const data = root.reconcileTemplate || {};
+
+    // Fields
+    setValNum('tolerance', (data.tolerance!=null? data.tolerance: 3));
+    setVal('strip', (data.stripLines||[]).join('\n'));
+    setVal('aliases', safeStringify(data.aliases||{}, 2));
+    setVal('kwFreight', (data.freightKeywords||[]).join(', '));
+    setVal('kwDiscount', (data.discountKeywords||[]).join(', '));
+    setVal('headerRegex', data.headerRegex || '');
+
+    // customParserJS (template field is preferred; fallback to root for backward compat)
+    ensureCustomParserField();
+    setVal('customParserJS', String(data.customParserJS || root.customParserJS || ''));
+
+    // also cache locally for reconcile page usage
+    try{
+      const cache = Object.assign({}, data);
+      localStorage.setItem('reconcile.suppliers.'+supplierId+'.template', JSON.stringify(cache));
+    }catch(e){}
+
+    setStatus('已載入 suppliers 樣板');
+  }
+
+  // -------- Save template for selected supplier --------
+  async function mgrSaveToSupplier(){
+    const supplierId = document.getElementById('mgrSupplierSelect')?.value||'';
+    if(!supplierId){ alert('請先選擇供應商'); return; }
+    if(!DB()){ alert('未連線 Firebase'); return; }
+
+    const payload = {
+      tolerance: toNum(getVal('tolerance'), 3),
+      stripLines: splitLines(getVal('strip')),
+      aliases: parseJSON(getVal('aliases')),
+      freightKeywords: splitCSV(getVal('kwFreight')),
+      discountKeywords: splitCSV(getVal('kwDiscount')),
+      headerRegex: (getVal('headerRegex')||'').trim() || null,
+      customParserJS: (getVal('customParserJS')||'').trim(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const FF = F();
+    const ref = FF.doc(FF.collection(DB(), 'suppliers'), supplierId);
+    await FF.setDoc(ref, { reconcileTemplate: payload, customParserJS: payload.customParserJS }, { merge:true });
+
+    try{
+      localStorage.setItem('reconcile.suppliers.'+supplierId+'.template', JSON.stringify(payload));
+    }catch(e){}
+
+    setStatus('已儲存到 suppliers');
+  }
+
+  // -------- Helpers --------
+  function setVal(id, v){ var el=document.getElementById(id); if(el) el.value = v; }
+  function setValNum(id, v){ var el=document.getElementById(id); if(el) el.value = String(v); }
+  function getVal(id){ var el=document.getElementById(id); return el ? el.value : ''; }
+  function splitLines(s){ return (s||'').split(/\n+/).map(function(x){return x.trim();}).filter(Boolean); }
+  function splitCSV(s){ return (s||'').split(',').map(function(x){return x.trim();}).filter(Boolean); }
+  function parseJSON(s){ try{ return s ? JSON.parse(s) : {}; } catch(e){ alert('aliases 不是合法 JSON'); throw e; } }
+  function safeStringify(o, n){ try{ return JSON.stringify(o,null,n); }catch(e){ return '{}'; } }
+  function toNum(s, def){ var x=parseFloat(s); return isFinite(x)?x:def; }
+  function setStatus(msg){ var el=document.getElementById('mgrStatus'); if(el) el.textContent = msg; }
+
   function ensureCustomParserField(){
     if (document.getElementById('customParserJS')) return;
-    var anchors = Array.from(document.querySelectorAll('h2,h3,h4,legend,label,.title,.card-header'))
-      .filter(function(n){ return /(樣板|template|廠商樣板|Suppliers)/i.test(n.textContent||''); });
-    var host = (anchors[0] && anchors[0].parentElement) || document.querySelector('.card-body') || document.body;
-
-    var wrap = document.createElement('div');
-    wrap.className = 'card';
-    wrap.style.cssText = 'margin-top:12px;border:1px solid #eee;border-radius:8px;overflow:hidden;';
-    wrap.innerHTML = ''
-      + '<div class="card-header" style="padding:8px 12px;background:#fafafa;border-bottom:1px solid #eee;font-weight:600;">自訂解析器（customParserJS，可直接貼進 JS）</div>'
-      + '<div class="card-body" style="padding:8px 12px;">'
-      + '  <textarea id="customParserJS" placeholder="(可選) 貼上此供應商的專用解析器 JS，存檔後在對帳頁會自動套用" '
-      + '    style="width:100%;height:260px;white-space:pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;"></textarea>'
-      + '  <div style="margin-top:8px; font-size:12px; color:#666;">'
-      + '    小提醒：這段 JS 會在瀏覽器執行，請只貼信任的內容。支援 <code>window.reconcilePlugins[key] = function(opts){...}</code> 註冊。'
-      + '  </div>'
-      + '</div>';
-    host.appendChild(wrap);
+    var main = document.querySelector('main .wrap') || document.querySelector('main') || document.body;
+    // 插進「樣板內容」卡片之後，保持風格一致
+    var card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = '<h3>自訂解析器（customParserJS）</h3>' +
+      '<div class="kv">' +
+      '  <label>customParserJS（貼上 JS 原始碼）</label>' +
+      '  <textarea id="customParserJS" class="code" style="height:260px" placeholder="貼上此供應商的專用解析器 JS；儲存後對帳頁會優先套用"></textarea>' +
+      '  <div class="small">會存到 suppliers/{id}.reconcileTemplate.customParserJS（同時鏡射到根 customParserJS 便於其它頁讀取）</div>' +
+      '</div>';
+    var blocks = document.querySelectorAll('main .card');
+    var anchor = blocks[blocks.length-1] || main;
+    anchor.parentNode.insertBefore(card, anchor.nextSibling);
   }
 
-  async function tryLoadFromFirestore(key){
-    try{
-      var g = window; if(!g.getDoc || !g.doc || !g.collection) return null;
-      var db = g.firebaseDb || g.db || undefined;
-      var dref = g.doc(g.collection(db || undefined, 'suppliers'), key);
-      var snap = await g.getDoc(dref);
-      if (!snap || !snap.exists) return null;
-      var data = snap.data ? snap.data() : (snap._document && snap._document.data) || {};
-      var tpl = data.reconcileTemplate || data.template || data.reconcile || {};
-      if (!tpl.customParserJS && typeof data.customParserJS === 'string') tpl.customParserJS = data.customParserJS;
-      if (!tpl.parserOptions && data.parserOptions) tpl.parserOptions = data.parserOptions;
-      return tpl;
-    }catch(e){ console.warn('[templates] Firestore load fail:', e); return null; }
-  }
-  function tryLoadFromLocal(key){
-    try{
-      var raw = localStorage.getItem('reconcile.suppliers.'+key+'.template')
-             || localStorage.getItem('supplierTemplates:'+key)
-             || localStorage.getItem('suppliers:'+key+':reconcileTemplate');
-      if (!raw) return null;
-      return JSON.parse(raw);
-    }catch(e){ console.warn('[templates] local parse fail:', e); return null; }
-  }
-  async function loadTpl(key){
-    var tpl = tryLoadFromLocal(key);
-    var cloud = await tryLoadFromFirestore(key);
-    return cloud || tpl || {};
-  }
-
-  async function populateField(){
-    var key = getSupplierKey();
-    if (!key) return;
+  // -------- Bind old buttons --------
+  window.addEventListener('DOMContentLoaded', function(){
     ensureCustomParserField();
-    var area = document.getElementById('customParserJS');
-    var tpl = await loadTpl(key);
-    area.value = (tpl && tpl.customParserJS) ? String(tpl.customParserJS) : '';
-  }
+    mgrLoadSuppliers();
+    var ld = document.getElementById('mgrLoad'); if (ld) ld.onclick = mgrLoadFromSupplier;
+    var sv = document.getElementById('mgrSave'); if (sv) sv.onclick = mgrSaveToSupplier;
+  });
 
-  function attachSaveHook(){
-    var btns = Array.from(document.querySelectorAll('button, [role="button"], .btn'))
-      .filter(function(b){ return /(儲存到該供應商|儲存|保存)/.test((b.textContent||'').trim()); });
-    if(!btns.length) return;
-    btns.forEach(function(btn){
-      if(btn.__tpl_save_hooked) return;
-      btn.__tpl_save_hooked = true;
-      btn.addEventListener('click', async function(){
-        try{
-          var key = getSupplierKey();
-          if(!key) return;
-          var area = document.getElementById('customParserJS');
-          if(!area) return;
-          var js = area.value || '';
+  // Expose for console testing
+  window.mgrLoadSuppliers = mgrLoadSuppliers;
+  window.mgrLoadFromSupplier = mgrLoadFromSupplier;
+  window.mgrSaveToSupplier = mgrSaveToSupplier;
 
-          var tpl = await loadTpl(key);
-          tpl = tpl || {};
-          tpl.customParserJS = js;
-
-          try{ localStorage.setItem('reconcile.suppliers.'+key+'.template', JSON.stringify(tpl)); }
-          catch(e){ console.warn('[templates] local save fail:', e); }
-
-          try{
-            var g = window; if(g.setDoc && g.doc && g.collection){
-              var db = g.firebaseDb || g.db || undefined;
-              var dref = g.doc(g.collection(db || undefined, 'suppliers'), key);
-              await g.setDoc(dref, { reconcileTemplate: tpl, customParserJS: js }, { merge: true });
-            }
-          }catch(e){ console.warn('[templates] firestore save fail:', e); }
-
-          var t=document.createElement('div');
-          t.textContent='customParserJS 已儲存到『'+key+'』';
-          t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:.92;z-index:9999;';
-          document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 1500);
-        }catch(e){ console.error('[templates] save hook error:', e); }
-      }, true);
-    });
-  }
-
-  function init(){
-    hydrateSupplierSelect().then(function(){
-      ensureCustomParserField();
-      attachSaveHook();
-      populateField();
-      var sel = findSupplierSelect();
-      if (sel && !sel.__tpl_change_hooked){
-        sel.__tpl_change_hooked = true;
-        sel.addEventListener('change', function(){ setTimeout(populateField, 0); });
-      }
-    });
-  }
-
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 0); });
-  }else{
-    setTimeout(init, 0);
-  }
-
-  console.log('[reconcile-templates] patch v1.1 ready (supplier hydrator + customParserJS field)');
+  console.log('[reconcile-templates] patch v1.2 ready (old IDs + customParserJS + index)');
 })();
