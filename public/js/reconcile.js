@@ -1,8 +1,6 @@
-/*! reconcile.js (patched) — adds vendor parser loader from template.customParserJS | 2025-09-30 */
+/*! reconcile.js (patched v1.1) — template.customParserJS loader | 2025-09-30 */
 (function(){
   'use strict';
-
-  // ---- Utilities ----
   function getSupplierKey(){
     var el = document.querySelector('[name="supplier"]')
           || document.querySelector('#supplierSelect')
@@ -15,8 +13,6 @@
     }
     return (window.currentSupplierKey || '').trim();
   }
-
-  // Optional Firestore helpers (best-effort)
   async function tryLoadFromFirestore(key){
     try{
       var g = window; if(!g.getDoc || !g.doc || !g.collection) return null;
@@ -25,45 +21,35 @@
       var snap = await g.getDoc(dref);
       if (!snap || !snap.exists) return null;
       var data = snap.data ? snap.data() : (snap._document && snap._document.data) || {};
-      // try common fields
       var tpl = data.reconcileTemplate || data.template || data.reconcile || {};
-      // also surface customParserJS if set at root
       if (!tpl.customParserJS && typeof data.customParserJS === 'string') tpl.customParserJS = data.customParserJS;
       if (!tpl.parserOptions && data.parserOptions) tpl.parserOptions = data.parserOptions;
       return tpl;
     }catch(e){ console.warn('[reconcile] Firestore load failed:', e); return null; }
   }
-
   function tryLoadFromLocal(key){
     try{
       var raw = localStorage.getItem('reconcile.suppliers.'+key+'.template')
              || localStorage.getItem('supplierTemplates:'+key)
              || localStorage.getItem('suppliers:'+key+':reconcileTemplate');
       if (!raw) return null;
-      var tpl = JSON.parse(raw);
-      return tpl;
+      return JSON.parse(raw);
     }catch(e){ console.warn('[reconcile] local template parse fail:', e); return null; }
   }
-
   async function loadCurrentTemplate(key){
-    // local first (faster), then Firestore
     var tpl = tryLoadFromLocal(key);
     if (tpl && (tpl.customParserJS || tpl.headerRegex || tpl.stripLines)) return tpl;
     var cloud = await tryLoadFromFirestore(key);
     if (cloud) return cloud;
     return tpl || {};
   }
-
-  // ---- Template-embedded parser loader ----
   window.reconcilePlugins = window.reconcilePlugins || {};
   window.__vendorJSCache = window.__vendorJSCache || new Map();
-
   async function ensureVendorParserLoaded(tpl, supplierKey) {
     try {
       if (!tpl || !tpl.customParserJS || !supplierKey) return;
       var sig = supplierKey + '|' + tpl.customParserJS.length;
       if (window.__vendorJSCache.has(sig)) return;
-
       var factory = new Function('key','tpl',
         '"use strict";\n' + tpl.customParserJS + '\n//# sourceURL=tpl:' + encodeURIComponent(supplierKey)
       );
@@ -74,20 +60,17 @@
       console.error('[reconcile] ensureVendorParserLoaded failed:', e);
     }
   }
-
-  // ---- Auto hook the Smart Parse button (non-invasive) ----
   async function onSmartParseIntercept(ev){
     try{
       var key = getSupplierKey();
-      if (!key) return; // let default flow run
+      if (!key) return;
       var tpl = await loadCurrentTemplate(key);
       await ensureVendorParserLoaded(tpl, key);
       if (window.reconcilePlugins && window.reconcilePlugins[key]){
         var box = document.querySelector('#rawText');
-        if (!box || !box.value || !/\\d/.test(box.value)) return; // nothing to parse, let default run
+        if (!box || !box.value || !/\d/.test(box.value)) return;
         ev.stopImmediatePropagation(); ev.preventDefault();
         window.reconcilePlugins[key]({ showFees:true, countFees:true, italicFees:false });
-        // toast
         var t=document.createElement('div');
         t.textContent='已套用『'+key+'』專用解析（樣板）';
         t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:.92;z-index:9999;';
@@ -95,7 +78,6 @@
       }
     }catch(e){ console.error(e); }
   }
-
   function attachSmartParseHook(){
     var btns = Array.from(document.querySelectorAll('button, [role="button"], .btn'))
       .filter(function(b){ return /智慧解析/.test((b.textContent||'').trim()); });
@@ -103,19 +85,15 @@
     btns.forEach(function(btn){
       if (btn.__reconcile_tpl_hooked) return;
       btn.__reconcile_tpl_hooked = true;
-      btn.addEventListener('click', onSmartParseIntercept, true); // capture
+      btn.addEventListener('click', onSmartParseIntercept, true);
     });
   }
-
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(attachSmartParseHook, 0); });
   }else{
     setTimeout(attachSmartParseHook, 0);
   }
-
-  // Expose for manual use by existing handlers
   window.reconcileEnsureVendorParserLoaded = ensureVendorParserLoaded;
   window.reconcileLoadCurrentTemplate = loadCurrentTemplate;
-
-  console.log('[reconcile] patch ready: template-embedded parser support');
+  console.log('[reconcile] patch v1.1 ready');
 })();

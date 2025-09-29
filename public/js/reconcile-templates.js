@@ -1,12 +1,21 @@
-/*! reconcile-templates.js (patched) — adds customParserJS field & saving | 2025-09-30 */
+/*! reconcile-templates.js (patched v1.1) — customParserJS field + supplier hydrator | 2025-09-30 */
 (function(){
   'use strict';
 
-  // Heuristics: find the supplier select and the save button by text
+  function findSupplierSelect(){
+    var sel = document.querySelector('[name="supplier"]') || document.querySelector('#supplierSelect');
+    if (sel) return sel;
+    // fallback: pick the first select that seems relevant
+    var cands = Array.from(document.querySelectorAll('select'));
+    var cand = cands.find(function(s){
+      var id=(s.id||'')+(s.name||''); id=id.toLowerCase();
+      return /supplier|vendor|廠商|供應商/.test(id);
+    }) || cands[0];
+    return cand || null;
+  }
+
   function getSupplierKey(){
-    var el = document.querySelector('[name="supplier"]')
-          || document.querySelector('#supplierSelect')
-          || document.querySelector('select');
+    var el = findSupplierSelect();
     if (el){
       var val = (el.value || '').trim();
       if (val) return val;
@@ -16,10 +25,84 @@
     return (window.currentSupplierKey || '').trim();
   }
 
-  // Inject a textarea for customParserJS under the template form
+  // -------- Hydrate supplier select (Firestore -> LocalStorage -> leave as-is) --------
+  async function hydrateSupplierSelect(){
+    var sel = findSupplierSelect();
+    if (!sel) return;
+    if (sel.__hydrated) return;
+    // If already has options beyond placeholder, keep it
+    if (sel.options && sel.options.length > 1) { sel.__hydrated = true; return; }
+
+    // Put loading indicator
+    sel.innerHTML = '';
+    var opt0 = document.createElement('option');
+    opt0.value = ''; opt0.textContent = '（載入供應商中…）';
+    sel.appendChild(opt0);
+
+    let filled = false;
+
+    // Try Firestore
+    try{
+      var g = window;
+      if (g.getDocs && g.collection){
+        var db = g.firebaseDb || g.db || undefined;
+        var coll = g.collection(db || undefined, 'suppliers');
+        var q = (g.query && g.orderBy) ? g.query(coll, g.orderBy('name')) : coll;
+        var snap = await g.getDocs(q);
+        if (snap && snap.forEach){
+          sel.innerHTML = '';
+          snap.forEach(function(doc){
+            var d = doc.data ? doc.data() : {};
+            var code = d.code || d.id || doc.id;
+            var name = d.name || d.title || d.displayName || d.vendorName || '';
+            var key = (code && name) ? (code + '-' + name) : (name || code || doc.id);
+            var op = document.createElement('option');
+            op.value = key; op.textContent = key;
+            sel.appendChild(op);
+          });
+          if (sel.options.length === 0){
+            // nothing produced
+            throw new Error('empty suppliers in Firestore');
+          }
+          filled = true;
+        }
+      }
+    }catch(e){ console.warn('[templates] Firestore suppliers load failed:', e); }
+
+    // Fallback to LocalStorage cached templates
+    if (!filled){
+      try{
+        sel.innerHTML = '';
+        var keys = [];
+        for (var i=0;i<localStorage.length;i++){
+          var k = localStorage.key(i);
+          var m = /^reconcile\.suppliers\.(.+)\.template$/.exec(k);
+          if (m) keys.push(m[1]);
+        }
+        keys.sort();
+        keys.forEach(function(k){
+          var op = document.createElement('option');
+          op.value = k; op.textContent = k;
+          sel.appendChild(op);
+        });
+        if (sel.options.length) filled = true;
+      }catch(e){ console.warn('[templates] local suppliers scan failed:', e); }
+    }
+
+    // Last resort: keep whatever was there
+    if (!filled){
+      sel.innerHTML = '';
+      var op = document.createElement('option');
+      op.value = ''; op.textContent = '（請先建立廠商或手動輸入）';
+      sel.appendChild(op);
+    }
+
+    sel.__hydrated = true;
+  }
+
+  // -------- Custom Parser field --------
   function ensureCustomParserField(){
     if (document.getElementById('customParserJS')) return;
-    // find a container near "樣板" or fallback to body
     var anchors = Array.from(document.querySelectorAll('h2,h3,h4,legend,label,.title,.card-header'))
       .filter(function(n){ return /(樣板|template|廠商樣板|Suppliers)/i.test(n.textContent||''); });
     var host = (anchors[0] && anchors[0].parentElement) || document.querySelector('.card-body') || document.body;
@@ -39,7 +122,6 @@
     host.appendChild(wrap);
   }
 
-  // Best-effort Firestore helpers
   async function tryLoadFromFirestore(key){
     try{
       var g = window; if(!g.getDoc || !g.doc || !g.collection) return null;
@@ -78,7 +160,6 @@
     area.value = (tpl && tpl.customParserJS) ? String(tpl.customParserJS) : '';
   }
 
-  // hook save button by caption
   function attachSaveHook(){
     var btns = Array.from(document.querySelectorAll('button, [role="button"], .btn'))
       .filter(function(b){ return /(儲存到該供應商|儲存|保存)/.test((b.textContent||'').trim()); });
@@ -94,17 +175,13 @@
           if(!area) return;
           var js = area.value || '';
 
-          // Merge into existing template object
           var tpl = await loadTpl(key);
           tpl = tpl || {};
           tpl.customParserJS = js;
 
-          // Save to local
-          try{
-            localStorage.setItem('reconcile.suppliers.'+key+'.template', JSON.stringify(tpl));
-          }catch(e){ console.warn('[templates] local save fail:', e); }
+          try{ localStorage.setItem('reconcile.suppliers.'+key+'.template', JSON.stringify(tpl)); }
+          catch(e){ console.warn('[templates] local save fail:', e); }
 
-          // Save to Firestore if available
           try{
             var g = window; if(g.setDoc && g.doc && g.collection){
               var db = g.firebaseDb || g.db || undefined;
@@ -113,7 +190,6 @@
             }
           }catch(e){ console.warn('[templates] firestore save fail:', e); }
 
-          // toast
           var t=document.createElement('div');
           t.textContent='customParserJS 已儲存到『'+key+'』';
           t.style.cssText='position:fixed;right:12px;bottom:12px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:.92;z-index:9999;';
@@ -124,15 +200,16 @@
   }
 
   function init(){
-    ensureCustomParserField();
-    attachSaveHook();
-    populateField();
-    // also repopulate when supplier changes
-    var sel = document.querySelector('[name="supplier"]') || document.querySelector('#supplierSelect') || document.querySelector('select');
-    if (sel && !sel.__tpl_change_hooked){
-      sel.__tpl_change_hooked = true;
-      sel.addEventListener('change', function(){ setTimeout(populateField, 0); });
-    }
+    hydrateSupplierSelect().then(function(){
+      ensureCustomParserField();
+      attachSaveHook();
+      populateField();
+      var sel = findSupplierSelect();
+      if (sel && !sel.__tpl_change_hooked){
+        sel.__tpl_change_hooked = true;
+        sel.addEventListener('change', function(){ setTimeout(populateField, 0); });
+      }
+    });
   }
 
   if (document.readyState === 'loading'){
@@ -141,5 +218,5 @@
     setTimeout(init, 0);
   }
 
-  console.log('[reconcile-templates] patch ready: customParserJS field added');
+  console.log('[reconcile-templates] patch v1.1 ready (supplier hydrator + customParserJS field)');
 })();
