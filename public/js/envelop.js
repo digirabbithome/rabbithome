@@ -193,7 +193,7 @@ function renderFilteredData() {
       // 日期分隔列
       const sep = document.createElement('tr');
       sep.className = 'date-separator';
-      sep.innerHTML = `<td colspan="9">${dateStr}</td>`;
+      sep.innerHTML = `<td colspan="8">${dateStr}</td>`;
       tbody.appendChild(sep);
 
       // 當日資料
@@ -214,7 +214,6 @@ function renderFilteredData() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${dateStr}</td>
           <td>${timeStr}</td>
           <td>${receiver}</td>
           <td class="${addrClass}">${addr}</td>
