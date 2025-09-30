@@ -8,8 +8,6 @@ import {
   orderBy,
   getDocs,
   updateDoc,
-  doc,
-  updateDoc,
   doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
@@ -27,7 +25,8 @@ window.addEventListener('load', async () => {
     toggleOther();
   }
 
-  let currentFilter = { start: startOfDay(new Date()), end: endOfDay(new Date()) };
+  const __today = new Date(); const __past3 = new Date(); __past3.setDate(__today.getDate()-2);
+  let currentFilter = { start: startOfDay(__past3), end: endOfDay(__today) };
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault();
@@ -58,17 +57,7 @@ window.addEventListener('load', async () => {
 
   searchInput?.addEventListener('input', renderFilteredData);
 
-  
-// v6plus-fixed: 保留郵遞區號，僅「縣市+區」標色（修正正則跳脫）
-(?:市|縣))[\u4e00-\u9fa5]{1,3}區)/);
-  if (areaMatch) {
-    const area = areaMatch[1];
-    s = s.replace(area, '<span class="area-highlight">' + area + '</span>');
-  }
-  return s;
-}
-
-function getCheckedSources() {
+  function getCheckedSources() {
     const nodes = form.querySelectorAll('input[name="source"]:checked');
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
@@ -166,131 +155,105 @@ function getCheckedSources() {
   }
 
   
+function renderFilteredData() {
+    const keyword = (searchInput?.value || '').toLowerCase();
+    const tbody = document.getElementById('recordsBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
 
-// v4plus: 郵遞區號保留，後面「中文前 6 個字」反色標示
-function formatAddress(addr) {
-  const s = String(addr ?? '');
-  const m = s.match(/^(\d{3}(?:\d{2})?)(.*)$/);
-  if (!m) {
-    // 沒有郵遞區號就不處理
-    return s;
-  }
-  const zipcode = m[1];
-  const rest = m[2] || '';
-  let count = 0;
-  let out = '';
-  for (const ch of Array.from(rest)) {
-    if (count < 6 && /\p{Script=Han}/u.test(ch)) {
-      out += '<span class="area-highlight">' + ch + '</span>';
-      count++;
-    } else {
-      out += ch;
-    }
-  }
-  return zipcode + out;
-}
+    // 1) 關鍵字過濾
+    const filtered = allData.filter(item =>
+      (item.receiverName || '').toLowerCase().includes(keyword) ||
+      (item.customerAccount || '').toLowerCase().includes(keyword) ||
+      (item.phone || '').toLowerCase().includes(keyword) ||
+      (item.address || '').toLowerCase().includes(keyword) ||
+      (item.product || '').toLowerCase().includes(keyword) ||
+      (item.product2 || '').toLowerCase().includes(keyword)
+    );
 
-function renderFilteredData() { // v4 upgrade
-  const keyword = (searchInput?.value || '').toLowerCase();
-  const tbody = document.getElementById('recordsBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  // Filter
-  const filtered = allData.filter(item =>
-    (item.receiverName || '').toLowerCase().includes(keyword) ||
-    (item.customerAccount || '').toLowerCase().includes(keyword) ||
-    (item.phone || '').toLowerCase().includes(keyword) ||
-    (item.address || '').toLowerCase().includes(keyword) ||
-    (item.product || '').toLowerCase().includes(keyword) ||
-    (item.product2 || '').toLowerCase().includes(keyword)
-  );
-
-  // Group by date
-  const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const groups = {};
-  filtered.forEach(data => {
-    const d = data.timestamp instanceof Date ? data.timestamp : new Date(data.timestamp);
-    const dstr = fmtDate(d);
-    (groups[dstr] ||= []).push({ ...data, _ts: d });
-  });
-
-  // Area highlights (simple whitelist)
-  const HIGHLIGHT_AREAS = ['台北市信義區','台中市北屯區'];
-  const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
-
-  // Sorted by date desc
-  Object.keys(groups).sort((a,b)=> new Date(b)-new Date(a)).forEach(dateStr => {
-    // date separator row
-    const sep = document.createElement('tr');
-    sep.className = 'date-separator';
-    sep.innerHTML = `<td colspan="9">${dateStr}</td>`;
-    tbody.appendChild(sep);
-
-    // rows for day
-    groups[dateStr].forEach(data => {
-      const timeStr = data._ts.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-      const dateStrRow = fmtDate(data._ts);
-      const receiverBase = (data.receiverName || '');
-      const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
-
-      const p1 = (data.product || '').trim();
-      const p2 = (data.product2 || '').trim();
-      let productStr = '';
-      if (p1 && p2) productStr = `${p1}（${p2}）`; else if (p1) productStr = p1; else if (p2) productStr = `（${p2}）`;
-
-      const addr = data.address || '';
-      const addrClass = isAreaHit(addr) ? 'area-highlight' : '';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${dateStrRow}</td>
-        <td>${timeStr}</td>
-        <td>${receiver}</td>
-        <td>${formatAddress(addr)}</td>
-        <td>${data.phone || ''}</td>
-        <td>${productStr}</td>
-        <td>${data.source || ''}</td>
-        <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
-        <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
-      `;
-      tbody.appendChild(tr);
+    // 2) 依「日期字串」分群
+    const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const groups = {};
+    filtered.forEach(data => {
+      const dstr = fmtDate(data.timestamp);
+      (groups[dstr] ||= []).push(data);
     });
-  });
 
-  // Bind tracking blur save
-  document.querySelectorAll('.tracking-input').forEach(input => {
-    input.addEventListener('blur', async (e) => {
-      const id = e.target.getAttribute('data-id');
-      const value = e.target.value.trim();
-      try {
-        const ref = doc(db, 'envelopes', id);
-        await updateDoc(ref, { trackingNumber: value });
-        console.log('[v4] trackingNumber updated', id, value);
-      } catch (err) {
-        console.error('update trackingNumber failed', err);
-      }
-    });
-  });
+    // 3) 區域高亮關鍵字（可自行增減）
+    const HIGHLIGHT_AREAS = [
+      '台北市信義區',
+      '台中市北屯區'
+    ];
 
-  // Reprint
-  document.querySelectorAll('.reprint-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const docId = e.currentTarget.getAttribute('data-id');
-      const type = e.currentTarget.getAttribute('data-type');
-      const record = allData.find(d => d.id === docId);
-      if (record) {
-        localStorage.setItem('envelopeData', JSON.stringify(record));
-        window.open('/print.html', '_blank');
-      }
-    });
-  });
-}
+    const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
 
+    // 4) 依日期由新到舊輸出
+    const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
+    sortedDates.forEach(dateStr => {
+      // 日期分隔列
+      const sep = document.createElement('tr');
+      sep.className = 'date-separator';
+      sep.innerHTML = `<td colspan="8">${dateStr}</td>`;
+      tbody.appendChild(sep);
+
+      // 當日資料
+      groups[dateStr].forEach(data => {
+        const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        const receiverBase = (data.receiverName || '');
+        const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
+
+        const p1 = (data.product || '').trim();
+        const p2 = (data.product2 || '').trim();
+        let productStr = '';
+        if (p1 && p2) productStr = `${p1}（${p2}）`;
+        else if (p1) productStr = p1;
+        else if (p2) productStr = `（${p2}）`;
+
+        const addr = data.address || '';
+        const addrClass = isAreaHit(addr) ? 'area-highlight' : '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${timeStr}</td>
+          <td>${receiver}</td>
+          <td class="${addrClass}">${addr}</td>
+          <td>${data.phone || ''}</td>
+          <td>${productStr}</td>
+          <td>${data.source || ''}</td>
+          <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
+          <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
+        `;
+        tbody.appendChild(tr);
       });
     });
-  }
+
+    // 5) 綁定事件（補印、追蹤單號回填）
+    document.querySelectorAll('.tracking-input').forEach(input => {
+      input.addEventListener('blur', async (e) => {
+        const id = e.target.getAttribute('data-id');
+        const value = e.target.value.trim();
+        try {
+          const ref = doc(db, 'envelopes', id);
+          await updateDoc(ref, { trackingNumber: value });
+          console.log('trackingNumber updated', id, value);
+        } catch(err) { console.error('update trackingNumber failed', err); }
+      });
+    });
+
+    document.querySelectorAll('.reprint-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const docId = e.currentTarget.getAttribute('data-id');
+        const type = e.currentTarget.getAttribute('data-type');
+        const record = allData.find(d => d.id === docId);
+        if (record) {
+          localStorage.setItem('envelopeData', JSON.stringify(record));
+          window.open('/print.html', '_blank');
+        }
+      });
+    });
+}
+
 
   await loadData();
   await loadFavQuickButtons();
