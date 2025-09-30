@@ -19,34 +19,34 @@ window.addEventListener('load', async () => {
 
   let currentFilter = { start: startOfDay(new Date()), end: endOfDay(new Date()) };
 
-  document.getElementById('printNormal')?.addEventListener('click', e => {
+  document.getElementById('printNormal') && addEventListener('click', e => {
     e.preventDefault();
     handleSubmit('normal');
   });
-  document.getElementById('printReply')?.addEventListener('click', e => {
+  document.getElementById('printReply') && addEventListener('click', e => {
     e.preventDefault();
     handleSubmit('reply');
   });
 
   // 日期快捷鍵
-  document.getElementById('btnPrevDay')?.addEventListener('click', () => {
+  document.getElementById('btnPrevDay') && addEventListener('click', () => {
     const d = new Date(); d.setDate(d.getDate() - 1);
     applyDateFilter(d, d);
   });
-  document.getElementById('btnLast3Days')?.addEventListener('click', () => {
+  document.getElementById('btnLast3Days') && addEventListener('click', () => {
     const today = new Date(); const past = new Date(); past.setDate(today.getDate() - 2);
     applyDateFilter(past, today);
   });
-  document.getElementById('btnLastWeek')?.addEventListener('click', () => {
+  document.getElementById('btnLastWeek') && addEventListener('click', () => {
     const today = new Date(); const past = new Date(); past.setDate(today.getDate() - 6);
     applyDateFilter(past, today);
   });
-  document.getElementById('datePicker')?.addEventListener('change', (e) => {
+  document.getElementById('datePicker') && addEventListener('change', (e) => {
     const selected = new Date(e.target.value);
     applyDateFilter(selected, selected);
   });
 
-  searchInput?.addEventListener('input', renderFilteredData);
+  searchInput && addEventListener('input', renderFilteredData);
 
   
 // v6plus-fixed: 保留郵遞區號，僅「縣市+區」標色（修正正則跳脫）
@@ -65,13 +65,13 @@ function getCheckedSources() {
 
   async function handleSubmit(type = 'normal') {
     const senderCompany = form.senderCompany.value;
-    const customSender = form.customSender?.value || '';
+    const customSender = form.customSender && value || '';
     const receiverName = form.receiverName.value;
     const phone = form.phone.value;
     const address = form.address.value;
-    const customerAccount = form.customerAccount?.value || '';
+    const customerAccount = form.customerAccount && value || '';
     const product = form.product.value;
-    const product2 = form.product2?.value || '';
+    const product2 = form.product2 && value || '';
     const checkedSources = getCheckedSources();
     const sourceStr = checkedSources.join('、');
     const nickname = localStorage.getItem('nickname') || '匿名';
@@ -134,7 +134,7 @@ function getCheckedSources() {
       let ts = data.timestamp;
       if (ts && typeof ts.toDate === 'function') {
         ts = ts.toDate();
-      } else if (typeof ts === 'object' && ts?.seconds) {
+      } else if (typeof ts === 'object' && ts && seconds) {
         ts = new Date(ts.seconds * 1000);
       } else {
         ts = new Date();
@@ -180,10 +180,7 @@ function getCheckedSources() {
 
 
 // v04plus: 郵遞區號保留，後續「中文前 6 個字」加底色
-function formatAddress(addr) {
-  const s = String(addr ?? '');
-  // 先抓 3 或 5 碼郵遞區號（若沒有就原樣回傳）
-  const m = s.match(/^(\d{3}(?:\d{2})?)(.*)$/);
+(?:\d{2})?)(.*)$/);
   if (!m) return s;
   const zipcode = m[1];
   const rest = m[2] || '';
@@ -202,8 +199,31 @@ function formatAddress(addr) {
   return zipcode + out;
 }
 
+
+// v04plus-compat：郵遞區號保留，後續「中文前 6 個字」加底色（相容舊環境：無 || / 無 \u 正則屬性）
+function formatAddress(addr) {
+  var s = String(addr || '');
+  var m = s.match(/^(\d{3}(?:\d{2})?)(.*)$/);
+  if (!m) return s;
+
+  var zipcode = m[1];
+  var rest = m[2] || '';
+
+  var count = 0, out = '';
+  for (var i = 0; i < rest.length; i++) {
+    var ch = rest[i];
+    if (count < 6 && /[\u4e00-\u9fa5]/.test(ch)) {
+      out += '<span class="area-highlight">' + ch + '</span>';
+      count++;
+    } else {
+      out += ch;
+    }
+  }
+  return zipcode + out;
+}
+
 function renderFilteredData() { // v4 upgrade
-  const keyword = (searchInput?.value || '').toLowerCase();
+  const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
   const tbody = document.getElementById('recordsBody');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -340,9 +360,9 @@ function renderFilteredData() { // v4 upgrade
           if (ad) ad.value = address;
 
           // 若開啟「點按即列印」，自動送出並寫入紀錄
-          const clickToPrint = document.getElementById('favClickToPrint')?.checked;
+          const clickToPrint = document.getElementById('favClickToPrint') && checked;
           if (clickToPrint) {
-            const type = (document.querySelector('input[name="favPrintType"]:checked')?.value === 'reply') ? 'reply' : 'normal';
+            const type = (document.querySelector('input[name="favPrintType"]:checked') && value === 'reply') ? 'reply' : 'normal';
             await handleSubmit(type);
           }
         });
