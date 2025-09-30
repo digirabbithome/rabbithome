@@ -31,11 +31,13 @@ window.addEventListener('load', async () => {
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault();
     handleSubmit('normal');
-    // v8b ensure default filter
-  try {
-    const __t = new Date(); const __p = new Date(); __p.setDate(__t.getDate()-2);
-    await applyDateFilter(__p, __t);
-  } catch(e){ console.warn('v8b default applyDateFilter failed', e); }
+    // v9a ensure default filter without top-level await
+  (async () => {
+    try {
+      const __t = new Date(); const __p = new Date(); __p.setDate(__t.getDate()-2);
+      await applyDateFilter(__p, __t);
+    } catch(e){ console.warn('v9a default applyDateFilter failed', e); }
+  })();
 });
   document.getElementById('printReply')?.addEventListener('click', e => {
     e.preventDefault();
