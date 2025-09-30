@@ -149,6 +149,27 @@ window.addEventListener('load', async () => {
     }
 
     renderFilteredData();
+
+  // ---- 地址顯示：去掉開頭郵遞區號，並將前6個字加底色 ----
+  function formatAddress(addr) {
+    let s = (addr || '').trim();
+    // 移除開頭 3 或 5 碼郵遞區號與後續空白/連字符
+    s = s.replace(/^\s*\d{3}(?:\d{2})?[-\s]?/, '');
+    // 將前6個非空白字上色
+    const chars = Array.from(s);
+    let count = 0;
+    let out = '';
+    for (const ch of chars) {
+      if (!/\s/.test(ch) && count < 6) {
+        out += '<span class="addr-lead">' + ch + '</span>';
+        count++;
+      } else {
+        out += ch;
+      }
+    }
+    return out;
+  }
+
   }
 
   function renderFilteredData() {

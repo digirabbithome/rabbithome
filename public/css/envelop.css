@@ -124,3 +124,10 @@ form button:hover {
   padding: 8px 10px;
   border-top: 2px solid #f8cfe0;
 }
+
+/* 地址前6字底色 */
+.addr-lead{
+  background: #fff7cc;
+  border-radius: 3px;
+  padding: 0 1px;
+}
