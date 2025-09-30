@@ -6,10 +6,8 @@ import {
   Timestamp,
   query,
   orderBy,
-  getDocs,
-  updateDoc,
-  doc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'; // v8
+  getDocs
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -25,20 +23,12 @@ window.addEventListener('load', async () => {
     toggleOther();
   }
 
-  const __v8_today = new Date(); const __v8_past = new Date(); __v8_past.setDate(__v8_today.getDate()-2);
-  let currentFilter = { start: startOfDay(__v8_past), end: endOfDay(__v8_today) }; // v8 default 3 days
+  let currentFilter = { start: startOfDay(new Date()), end: endOfDay(new Date()) };
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault();
     handleSubmit('normal');
-    // v9a ensure default filter without top-level await
-  (async () => {
-    try {
-      const __t = new Date(); const __p = new Date(); __p.setDate(__t.getDate()-2);
-      await applyDateFilter(__p, __t);
-    } catch(e){ console.warn('v9a default applyDateFilter failed', e); }
-  })();
-});
+  });
   document.getElementById('printReply')?.addEventListener('click', e => {
     e.preventDefault();
     handleSubmit('reply');
@@ -159,118 +149,46 @@ window.addEventListener('load', async () => {
     }
 
     renderFilteredData();
-
-  // ---- 地址顯示：去掉開頭郵遞區號，並將前6個字加底色 ----
-  function formatAddress(addr) {
-    let s = (addr || '').trim();
-    // 移除開頭 3 或 5 碼郵遞區號與後續空白/連字符
-    s = s.replace(/^\s*\d{3}(?:\d{2})?[-\s]?/, '');
-    // 將前6個非空白字上色
-    const chars = Array.from(s);
-    let count = 0;
-    let out = '';
-    for (const ch of chars) {
-      if (!/\s/.test(ch) && count < 6) {
-        out += '<span class="addr-lead">' + ch + '</span>';
-        count++;
-      } else {
-        out += ch;
-      }
-    }
-    return out;
   }
 
-  }
-
-  
-
-function renderFilteredData() { // v8b robust
-  try {
+  function renderFilteredData() {
     const keyword = (searchInput?.value || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    const arr = Array.isArray(allData) ? allData : [];
-    // 篩選
-    const filtered = arr.filter(item => {
-      const rn = (item.receiverName || '').toLowerCase();
-      const ca = (item.customerAccount || '').toLowerCase();
-      const ph = (item.phone || '').toLowerCase();
-      const ad = (item.address || '').toLowerCase();
-      const p1 = (item.product || '').toLowerCase();
-      const p2 = (item.product2 || '').toLowerCase();
-      return !keyword || rn.includes(keyword) || ca.includes(keyword) || ph.includes(keyword) || ad.includes(keyword) || p1.includes(keyword) || p2.includes(keyword);
-    });
+    const filtered = allData.filter(item =>
+      (item.receiverName || '').toLowerCase().includes(keyword) ||
+      (item.customerAccount || '').toLowerCase().includes(keyword) ||
+      (item.phone || '').toLowerCase().includes(keyword) ||
+      (item.address || '').toLowerCase().includes(keyword) ||
+      (item.product || '').toLowerCase().includes(keyword) ||
+      (item.product2 || '').toLowerCase().includes(keyword)
+    );
 
-    if (!filtered.length) {
-      const empty = document.createElement('tr');
-      empty.innerHTML = `<td colspan="8" style="color:#888;">（這段日期沒有資料）</td>`;
-      tbody.appendChild(empty);
-      return;
-    }
-
-    // 依日期分組
-    const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit' });
-    const groups = {};
     filtered.forEach(data => {
-      const ts = data.timestamp instanceof Date ? data.timestamp : new Date(data.timestamp);
-      if (isNaN(ts)) return;
-      const key = fmtDate(ts);
-      (groups[key] ||= []).push({ ...data, _ts: ts });
-    });
+      const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      const receiverBase = (data.receiverName || '');
+      const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
 
-    const sortedDates = Object.keys(groups).sort((a,b)=> new Date(b)-new Date(a));
-    sortedDates.forEach(dateStr => {
-      // 標題列
-      const sep = document.createElement('tr');
-      sep.className = 'date-heading';
-      sep.innerHTML = `<td colspan="8">${dateStr} 列印信封紀錄（共 ${groups[dateStr].length} 筆）</td>`;
-      tbody.appendChild(sep);
+      const p1 = (data.product || '').trim();
+      const p2 = (data.product2 || '').trim();
+      let productStr = '';
+      if (p1 && p2) productStr = `${p1}（${p2}）`;
+      else if (p1) productStr = p1;
+      else if (p2) productStr = `（${p2}）`;
 
-      groups[dateStr].forEach(data => {
-        const timeStr = data._ts.toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
-        const baseName = data.receiverName || '';
-        const receiver = data.customerAccount ? `${baseName} (${data.customerAccount})` : baseName;
-
-        const p1 = (data.product || '').trim();
-        const p2 = (data.product2 || '').trim();
-        let productStr = '';
-        if (p1 && p2) productStr = `${p1}（${p2}）`;
-        else if (p1) productStr = p1;
-        else if (p2) productStr = `（${p2}）`;
-
-        const addr = data.address || '';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${timeStr}</td>
-          <td>${receiver}</td>
-          <td>${formatAddress(addr)}</td>
-          <td>${data.phone || ''}</td>
-          <td>${productStr}</td>
-          <td>${data.source || ''}</td>
-          <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
-          <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    });
-
-    // 綁事件
-    document.querySelectorAll('.tracking-input').forEach(input => {
-      input.addEventListener('blur', async (e) => {
-        const id = e.target.getAttribute('data-id');
-        const value = e.target.value.trim();
-        try {
-          const ref = doc(db, 'envelopes', id);
-          await updateDoc(ref, { trackingNumber: value });
-          console.log('[v8b] trackingNumber updated', id, value);
-        } catch (err) {
-          console.error('[v8b] update trackingNumber failed', err);
-          alert('更新貨件單號失敗：' + err.message);
-        }
-      });
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${timeStr}</td>
+        <td>${receiver}</td>
+        <td>${data.address || ''}</td>
+        <td>${data.phone || ''}</td>
+        <td>${productStr}</td>
+        <td>${data.source || ''}</td>
+        <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
+      `;
+      tbody.appendChild(tr);
     });
 
     document.querySelectorAll('.reprint-link').forEach(link => {
@@ -278,42 +196,11 @@ function renderFilteredData() { // v8b robust
         e.preventDefault();
         const docId = e.currentTarget.getAttribute('data-id');
         const type = e.currentTarget.getAttribute('data-type');
-        const record = (Array.isArray(allData) ? allData : []).find(d => d.id === docId);
+        const record = allData.find(d => d.id === docId);
         if (record) {
           localStorage.setItem('envelopeData', JSON.stringify(record));
           window.open('/print.html', '_blank');
         }
-      });
-    });
-  } catch (err) {
-    console.error('renderFilteredData error (v8b):', err);
-    const tbody = document.getElementById('recordsBody');
-    if (tbody) {
-      const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="8" style="color:#c00;">渲染失敗：${(err && err.message) || err}</td>`;
-      tbody.appendChild(row);
-    }
-  }
-}
-
-    });
-  });
-
-  // 補印
-  document.querySelectorAll('.reprint-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const docId = e.currentTarget.getAttribute('data-id');
-      const type = e.currentTarget.getAttribute('data-type');
-      const record = allData.find(d => d.id === docId);
-      if (record) {
-        localStorage.setItem('envelopeData', JSON.stringify(record));
-        window.open('/print.html', '_blank');
-      }
-    });
-  });
-}
-
       });
     });
   }
@@ -370,123 +257,3 @@ function renderFilteredData() { // v8b robust
   }
 
 });
-
-
-// envelop.js v9 fixed braces
-function formatAddress(addr) {
-  let s = (addr || '').trim();
-  s = s.replace(/^\s*\d{3}(?:\d{2})?[-\s]?/, '');
-  const chars = Array.from(s);
-  let count = 0, out = '';
-  for (const ch of chars) {
-    if (!/\s/.test(ch) && count < 6) {
-      out += '<span class="addr-lead">' + ch + '</span>';
-      count++;
-    } else {
-      out += ch;
-    }
-  }
-  return out;
-}
-
-function renderFilteredData() {
-  try {
-    const keyword = (searchInput?.value || '').toLowerCase();
-    const tbody = document.getElementById('recordsBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const arr = Array.isArray(allData) ? allData : [];
-    const filtered = arr.filter(item => {
-      const rn = (item.receiverName || '').toLowerCase();
-      const ca = (item.customerAccount || '').toLowerCase();
-      const ph = (item.phone || '').toLowerCase();
-      const ad = (item.address || '').toLowerCase();
-      const p1 = (item.product || '').toLowerCase();
-      const p2 = (item.product2 || '').toLowerCase();
-      return !keyword || rn.includes(keyword) || ca.includes(keyword) ||
-             ph.includes(keyword) || ad.includes(keyword) ||
-             p1.includes(keyword) || p2.includes(keyword);
-    });
-
-    if (!filtered.length) {
-      const empty = document.createElement('tr');
-      empty.innerHTML = `<td colspan="8" style="color:#888;">（這段日期沒有資料）</td>`;
-      tbody.appendChild(empty);
-      return;
-    }
-
-    const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit' });
-    const groups = {};
-    filtered.forEach(data => {
-      const ts = data.timestamp instanceof Date ? data.timestamp : new Date(data.timestamp);
-      if (isNaN(ts)) return;
-      const key = fmtDate(ts);
-      (groups[key] ||= []).push({ ...data, _ts: ts });
-    });
-
-    const sortedDates = Object.keys(groups).sort((a,b)=> new Date(b)-new Date(a));
-    sortedDates.forEach(dateStr => {
-      const sep = document.createElement('tr');
-      sep.className = 'date-heading';
-      sep.innerHTML = `<td colspan="8">${dateStr} 列印信封紀錄（共 ${groups[dateStr].length} 筆）</td>`;
-      tbody.appendChild(sep);
-
-      groups[dateStr].forEach(data => {
-        const timeStr = data._ts.toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
-        const baseName = data.receiverName || '';
-        const receiver = data.customerAccount ? `${baseName} (${data.customerAccount})` : baseName;
-
-        const p1 = (data.product || '').trim();
-        const p2 = (data.product2 || '').trim();
-        let productStr = '';
-        if (p1 && p2) productStr = `${p1}（${p2}）`;
-        else if (p1) productStr = p1;
-        else if (p2) productStr = `（${p2}）`;
-
-        const addr = data.address || '';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${timeStr}</td>
-          <td>${receiver}</td>
-          <td>${formatAddress(addr)}</td>
-          <td>${data.phone || ''}</td>
-          <td>${productStr}</td>
-          <td>${data.source || ''}</td>
-          <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
-          <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    });
-
-    document.querySelectorAll('.tracking-input').forEach(input => {
-      input.addEventListener('blur', async (e) => {
-        const id = e.target.getAttribute('data-id');
-        const value = e.target.value.trim();
-        try {
-          const ref = doc(db, 'envelopes', id);
-          await updateDoc(ref, { trackingNumber: value });
-          console.log('[v9] trackingNumber updated', id, value);
-        } catch (err) {
-          console.error('[v9] update trackingNumber failed', err);
-        }
-      });
-    });
-
-    document.querySelectorAll('.reprint-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const docId = e.currentTarget.getAttribute('data-id');
-        const record = (Array.isArray(allData) ? allData : []).find(d => d.id === docId);
-        if (record) {
-          localStorage.setItem('envelopeData', JSON.stringify(record));
-          window.open('/print.html', '_blank');
-        }
-      });
-    });
-  } catch (err) {
-    console.error('renderFilteredData error (v9):', err);
-  }
-}
