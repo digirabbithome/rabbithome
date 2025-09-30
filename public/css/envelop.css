@@ -121,3 +121,12 @@ form button:hover {
   border-radius: 3px;
   padding: 0 2px;
 }
+
+/* v4 date separator row */
+.date-separator td{
+  background: #ffeef4;
+  color: #d63384;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-top: 2px solid #f8cfe0;
+}
