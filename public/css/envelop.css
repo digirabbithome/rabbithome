@@ -131,3 +131,21 @@ form button:hover {
   border-radius: 3px;
   padding: 0 1px;
 }
+
+
+/* v9 每日粉色標題列 */
+.date-heading td{
+  background: #ffeef4;
+  color: #d63384;
+  font-weight: 700;
+  text-align: left;
+  padding: 8px 10px;
+  border-top: 2px solid #f8cfe0;
+}
+
+/* v9 地址前6字底色 */
+.addr-lead{
+  background:#fff7cc;
+  border-radius:3px;
+  padding:0 1px;
+}
