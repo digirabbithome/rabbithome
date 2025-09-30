@@ -6,7 +6,9 @@ import {
   Timestamp,
   query,
   orderBy,
-  getDocs,\n  updateDoc,\n  doc
+  getDocs,
+  updateDoc,
+  doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
@@ -55,7 +57,7 @@ window.addEventListener('load', async () => {
   searchInput?.addEventListener('input', renderFilteredData);
 
   
-// v6plus: 保留郵遞區號，僅「縣市+區」標色
+// v6plus-fixed: 保留郵遞區號，僅「縣市+區」標色（修正正則跳脫）
 function formatAddress(addr) {
   let s = (addr || '').trim();
   const areaMatch = s.match(/((?:台北市|新北市|台中市|台南市|高雄市|基隆市|新竹市|嘉義市|[\u4e00-\u9fa5]{2,3}(?:市|縣))[\u4e00-\u9fa5]{1,3}區)/);
@@ -65,7 +67,8 @@ function formatAddress(addr) {
   }
   return s;
 }
-\nfunction getCheckedSources() {
+
+function getCheckedSources() {
     const nodes = form.querySelectorAll('input[name="source"]:checked');
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
