@@ -6,7 +6,9 @@ import {
   Timestamp,
   query,
   orderBy,
-  getDocs
+  getDocs,
+  updateDoc,
+  doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
@@ -23,7 +25,8 @@ window.addEventListener('load', async () => {
     toggleOther();
   }
 
-  let currentFilter = { start: startOfDay(new Date()), end: endOfDay(new Date()) };
+  const __today = new Date(); const __past3 = new Date(); __past3.setDate(__today.getDate()-2);
+  let currentFilter = { start: startOfDay(__past3), end: endOfDay(__today) };
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault();
@@ -186,9 +189,23 @@ window.addEventListener('load', async () => {
         <td>${data.phone || ''}</td>
         <td>${productStr}</td>
         <td>${data.source || ''}</td>
+        <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
         <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
       `;
       tbody.appendChild(tr);
+    });
+
+    // 追蹤單號 blur 即存
+    document.querySelectorAll('.tracking-input').forEach(input => {
+      input.addEventListener('blur', async (e) => {
+        const id = e.target.getAttribute('data-id');
+        const value = e.target.value.trim();
+        try {
+          const ref = doc(db, 'envelopes', id);
+          await updateDoc(ref, { trackingNumber: value });
+          console.log('trackingNumber updated', id, value);
+        } catch(err) { console.error('update trackingNumber failed', err); }
+      });
     });
 
     document.querySelectorAll('.reprint-link').forEach(link => {
