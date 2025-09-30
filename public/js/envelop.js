@@ -6,7 +6,9 @@ import {
   Timestamp,
   query,
   orderBy,
-  getDocs
+  getDocs,
+  updateDoc,
+  doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
@@ -23,7 +25,8 @@ window.addEventListener('load', async () => {
     toggleOther();
   }
 
-  let currentFilter = { start: startOfDay(new Date()), end: endOfDay(new Date()) };
+  const __today = new Date(); const __past3 = new Date(); __past3.setDate(__today.getDate()-2);
+  let currentFilter = { start: startOfDay(__past3), end: endOfDay(__today) };
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault();
@@ -151,12 +154,14 @@ window.addEventListener('load', async () => {
     renderFilteredData();
   }
 
-  function renderFilteredData() {
+  
+function renderFilteredData() {
     const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
+    // 1) 關鍵字過濾
     const filtered = allData.filter(item =>
       (item.receiverName || '').toLowerCase().includes(keyword) ||
       (item.customerAccount || '').toLowerCase().includes(keyword) ||
@@ -166,29 +171,73 @@ window.addEventListener('load', async () => {
       (item.product2 || '').toLowerCase().includes(keyword)
     );
 
+    // 2) 依「日期字串」分群
+    const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const groups = {};
     filtered.forEach(data => {
-      const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-      const receiverBase = (data.receiverName || '');
-      const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
+      const dstr = fmtDate(data.timestamp);
+      (groups[dstr] ||= []).push(data);
+    });
 
-      const p1 = (data.product || '').trim();
-      const p2 = (data.product2 || '').trim();
-      let productStr = '';
-      if (p1 && p2) productStr = `${p1}（${p2}）`;
-      else if (p1) productStr = p1;
-      else if (p2) productStr = `（${p2}）`;
+    // 3) 區域高亮關鍵字（可自行增減）
+    const HIGHLIGHT_AREAS = [
+      '台北市信義區',
+      '台中市北屯區'
+    ];
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${timeStr}</td>
-        <td>${receiver}</td>
-        <td>${data.address || ''}</td>
-        <td>${data.phone || ''}</td>
-        <td>${productStr}</td>
-        <td>${data.source || ''}</td>
-        <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
-      `;
-      tbody.appendChild(tr);
+    const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
+
+    // 4) 依日期由新到舊輸出
+    const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
+    sortedDates.forEach(dateStr => {
+      // 日期分隔列
+      const sep = document.createElement('tr');
+      sep.className = 'date-separator';
+      sep.innerHTML = `<td colspan="8">${dateStr}</td>`;
+      tbody.appendChild(sep);
+
+      // 當日資料
+      groups[dateStr].forEach(data => {
+        const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        const receiverBase = (data.receiverName || '');
+        const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
+
+        const p1 = (data.product || '').trim();
+        const p2 = (data.product2 || '').trim();
+        let productStr = '';
+        if (p1 && p2) productStr = `${p1}（${p2}）`;
+        else if (p1) productStr = p1;
+        else if (p2) productStr = `（${p2}）`;
+
+        const addr = data.address || '';
+        const addrClass = isAreaHit(addr) ? 'area-highlight' : '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${timeStr}</td>
+          <td>${receiver}</td>
+          <td class="${addrClass}">${addr}</td>
+          <td>${data.phone || ''}</td>
+          <td>${productStr}</td>
+          <td>${data.source || ''}</td>
+          <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
+          <td><button type="button" class="note-btn" data-id="${data.id}" title="標記並複製貨件單號">✎</button> <a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+
+    // 5) 綁定事件（補印、追蹤單號回填）
+    document.querySelectorAll('.tracking-input').forEach(input => {
+      input.addEventListener('blur', async (e) => {
+        const id = e.target.getAttribute('data-id');
+        const value = e.target.value.trim();
+        try {
+          const ref = doc(db, 'envelopes', id);
+          await updateDoc(ref, { trackingNumber: value });
+          console.log('trackingNumber updated', id, value);
+        } catch(err) { console.error('update trackingNumber failed', err); }
+      });
     });
 
     document.querySelectorAll('.reprint-link').forEach(link => {
@@ -203,7 +252,8 @@ window.addEventListener('load', async () => {
         }
       });
     });
-  }
+}
+
 
   await loadData();
   await loadFavQuickButtons();
@@ -258,96 +308,39 @@ window.addEventListener('load', async () => {
 
 });
 
-// --- copy helper (vNote) ---
-function __copyText_vnote(text){
-  try{
-    if (window && window.navigator && window.navigator.clipboard && window.navigator.clipboard.writeText){
-      window.navigator.clipboard.writeText(String(text || '')).catch(function(){});
-      return;
-    }
-  }catch(e){}
-  try{
+
+// --- note feature: toggle row highlight and copy tracking number ---
+function copyToClipboard(text) {
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(function(){});
+  } else {
     var ta = document.createElement('textarea');
-    ta.style.position='fixed'; ta.style.opacity='0'; ta.value = String(text || '');
+    ta.value = text;
     document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  }catch(e){}
-}
-
-
-// --- delegated note handler (vNote) ---
-(function(){
-  var tbody = document.getElementById('recordsBody') || document.querySelector('tbody');
-  if (!tbody) return;
-  tbody.addEventListener('click', function(ev){
-    var target = ev.target;
-    // allow clicking the button or its inner text
-    while (target && target !== tbody && !(target.classList && target.classList.contains('note-btn'))){
-      target = target.parentNode;
-    }
-    if (!target || !target.classList || !target.classList.contains('note-btn')) return;
-    ev.preventDefault();
-
-    // find row
-    var tr = target;
-    while (tr && tr.nodeName !== 'TR'){ tr = tr.parentNode; }
-    if (tr){ 
-      if (tr.classList.contains('row-note')) tr.classList.remove('row-note');
-      else tr.classList.add('row-note');
-    }
-
-    // copy tracking number from this row
-    var input = tr ? tr.querySelector('.tracking-input') : null;
-    var val = input ? (input.value || '') : '';
-    __copyText_vnote(val);
-
-    // small tooltip feedback via title
-    try {
-      var oldTitle = target.getAttribute('title') || '';
-      target.setAttribute('title', val ? ('已複製：' + val) : '已標記（此列尚未填單號）');
-      setTimeout(function(){ target.setAttribute('title', oldTitle); }, 1200);
-    } catch(e){}
-  });
-})();    
-
-
-
-
-// --- delegated note handler (final) ---
-(function(){
-  function copyTextFinal(text){
-    try{
-      if (navigator && navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(String(text||'')); return;
-      }
-    }catch(e){}
-    var ta=document.createElement('textarea');
-    ta.style.position='fixed'; ta.style.opacity='0';
-    ta.value=String(text||'');
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try{ document.execCommand('copy'); }catch(e){}
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
     document.body.removeChild(ta);
   }
-  var tbody=document.getElementById('recordsBody')||document.querySelector('tbody');
-  if(!tbody) return;
-  tbody.addEventListener('click',function(ev){
-    var t=ev.target;
-    while(t && t!==tbody && !(t.classList&&t.classList.contains('note-btn'))) t=t.parentNode;
-    if(!t||!t.classList||!t.classList.contains('note-btn')) return;
-    ev.preventDefault();
-    var tr=t;
-    while(tr&&tr.nodeName!=='TR') tr=tr.parentNode;
-    if(tr) tr.classList.toggle('row-note');
-    var input=tr?tr.querySelector('.tracking-input'):null;
-    var val=input?(input.value||''):'';
-    copyTextFinal(val);
-    try{
-      var oldTitle=t.getAttribute('title')||'';
-      t.setAttribute('title',val?('已複製：'+val):'已標記（此列尚未填單號）');
-      setTimeout(function(){t.setAttribute('title',oldTitle);},1200);
-    }catch(e){}
-  });
-})();
+}
+
+function bindNoteButtons(){
+  var btns = document.querySelectorAll('.note-btn');
+  for (var i=0;i<btns.length;i++){
+    btns[i].addEventListener('click', function(e){
+      e.preventDefault();
+      var tr = e.target.closest('tr');
+      if (tr) tr.classList.toggle('row-note');
+      var trackingInput = tr ? tr.querySelector('.tracking-input') : null;
+      var tracking = trackingInput ? (trackingInput.value || '') : '';
+      copyToClipboard(tracking);
+      try {
+        var oldTitle = e.target.title;
+        e.target.title = tracking ? ('已複製：' + tracking) : '已標記（此列尚未填單號）';
+        setTimeout(function(){ e.target.title = oldTitle; }, 1200);
+      } catch(_){}
+    });
+  }
+}
+
+// call bindNoteButtons after render
+setTimeout(bindNoteButtons, 500);
