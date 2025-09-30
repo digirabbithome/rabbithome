@@ -114,11 +114,32 @@ form button:hover {
 .chip-row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:none;border-radius:999px;padding:6px 12px;background:#fcddec;cursor:pointer;font-weight:600}
 .chip:hover{background:#ff82a6;color:#fff}
+\n
+/* 日期分隔列樣式 */
+.date-separator td{
+  background: #ffeef4;
+  color: #d63384;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-top: 2px solid #f8cfe0;
+}
 
-/* ✎ 列高亮 */
+/* 地址命中區域高亮 */
+.area-highlight{
+  background: #fff7cc;
+}
+
+/* 地址前6字底色 */
+.addr-lead{
+  background: #fff7cc;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* row highlight after noting */
 .row-note { background: #fff3cd !important; }
-/* ✎ 按鈕 */
-.note-btn{
+/* note button style */
+.note-btn {
   border: 0;
   background: #f1f3f5;
   padding: 2px 6px;
@@ -128,4 +149,4 @@ form button:hover {
   line-height: 1;
   margin-right: 6px;
 }
-.note-btn:hover{ background:#e9ecef; }
+.note-btn:hover { background:#e9ecef; }
