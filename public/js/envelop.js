@@ -6,8 +6,10 @@ import {
   Timestamp,
   query,
   orderBy,
-  getDocs
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  getDocs,
+  updateDoc,
+  doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'; // v8
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -23,7 +25,8 @@ window.addEventListener('load', async () => {
     toggleOther();
   }
 
-  let currentFilter = { start: startOfDay(new Date()), end: endOfDay(new Date()) };
+  const __v8_today = new Date(); const __v8_past = new Date(); __v8_past.setDate(__v8_today.getDate()-2);
+  let currentFilter = { start: startOfDay(__v8_past), end: endOfDay(__v8_today) }; // v8 default 3 days
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault();
@@ -172,25 +175,44 @@ window.addEventListener('load', async () => {
 
   }
 
-  function renderFilteredData() {
-    const keyword = (searchInput?.value || '').toLowerCase();
-    const tbody = document.getElementById('recordsBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+  
+function renderFilteredData() { // v8
+  const keyword = (searchInput?.value || '').toLowerCase();
+  const tbody = document.getElementById('recordsBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
 
-    const filtered = allData.filter(item =>
-      (item.receiverName || '').toLowerCase().includes(keyword) ||
-      (item.customerAccount || '').toLowerCase().includes(keyword) ||
-      (item.phone || '').toLowerCase().includes(keyword) ||
-      (item.address || '').toLowerCase().includes(keyword) ||
-      (item.product || '').toLowerCase().includes(keyword) ||
-      (item.product2 || '').toLowerCase().includes(keyword)
-    );
+  // 過濾
+  const filtered = allData.filter(item =>
+    (item.receiverName || '').toLowerCase().includes(keyword) ||
+    (item.customerAccount || '').toLowerCase().includes(keyword) ||
+    (item.phone || '').toLowerCase().includes(keyword) ||
+    (item.address || '').toLowerCase().includes(keyword) ||
+    (item.product || '').toLowerCase().includes(keyword) ||
+    (item.product2 || '').toLowerCase().includes(keyword)
+  );
 
-    filtered.forEach(data => {
-      const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-      const receiverBase = (data.receiverName || '');
-      const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
+  // 依日期分組
+  const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit' });
+  const groups = {};
+  filtered.forEach(data => {
+    const key = fmtDate(data.timestamp);
+    (groups[key] ||= []).push(data);
+  });
+
+  // 由新到舊輸出
+  const sortedDates = Object.keys(groups).sort((a,b)=> new Date(b)-new Date(a));
+  sortedDates.forEach(dateStr => {
+    // 粉色標題列 + 小計
+    const sep = document.createElement('tr');
+    sep.className = 'date-heading';
+    sep.innerHTML = `<td colspan="8">${dateStr} 列印信封紀錄（共 ${groups[dateStr].length} 筆）</td>`;
+    tbody.appendChild(sep);
+
+    groups[dateStr].forEach(data => {
+      const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
+      const baseName = data.receiverName || '';
+      const receiver = data.customerAccount ? `${baseName} (${data.customerAccount})` : baseName;
 
       const p1 = (data.product || '').trim();
       const p2 = (data.product2 || '').trim();
@@ -199,29 +221,54 @@ window.addEventListener('load', async () => {
       else if (p1) productStr = p1;
       else if (p2) productStr = `（${p2}）`;
 
+      const addr = data.address || '';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${timeStr}</td>
         <td>${receiver}</td>
-        <td>${data.address || ''}</td>
+        <td>${formatAddress(addr)}</td>
         <td>${data.phone || ''}</td>
         <td>${productStr}</td>
         <td>${data.source || ''}</td>
+        <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
         <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
       `;
       tbody.appendChild(tr);
     });
+  });
 
-    document.querySelectorAll('.reprint-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const docId = e.currentTarget.getAttribute('data-id');
-        const type = e.currentTarget.getAttribute('data-type');
-        const record = allData.find(d => d.id === docId);
-        if (record) {
-          localStorage.setItem('envelopeData', JSON.stringify(record));
-          window.open('/print.html', '_blank');
-        }
+  // 追蹤單號 blur 即存
+  document.querySelectorAll('.tracking-input').forEach(input => {
+    input.addEventListener('blur', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const value = e.target.value.trim();
+      try {
+        const ref = doc(db, 'envelopes', id);
+        await updateDoc(ref, { trackingNumber: value });
+        console.log('[v8] trackingNumber updated', id, value);
+      } catch (err) {
+        console.error('[v8] update trackingNumber failed', err);
+        alert('更新貨件單號失敗：' + err.message);
+      }
+    });
+  });
+
+  // 補印
+  document.querySelectorAll('.reprint-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const docId = e.currentTarget.getAttribute('data-id');
+      const type = e.currentTarget.getAttribute('data-type');
+      const record = allData.find(d => d.id === docId);
+      if (record) {
+        localStorage.setItem('envelopeData', JSON.stringify(record));
+        window.open('/print.html', '_blank');
+      }
+    });
+  });
+}
+
       });
     });
   }
