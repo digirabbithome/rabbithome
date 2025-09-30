@@ -1,12 +1,8 @@
 
-import { db } from '/js/firebase.js';
 import {
-  collection,
-  addDoc,
-  Timestamp,
-  query,
-  orderBy,
-  getDocs
+  db } from '/js/firebase.js';
+import {
+  collection, addDoc, Timestamp, query, orderBy, getDocs, updateDoc, doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
@@ -152,7 +148,7 @@ window.addEventListener('load', async () => {
   }
 
   function renderFilteredData() {
-    const keyword = (searchInput?.value || '').toLowerCase();
+    const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -181,11 +177,12 @@ window.addEventListener('load', async () => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${timeStr}</td>
-        <td>${receiver}</td>
+        <td><button type="button" class="note-btn" data-id="${data.id}" title="標記並複製貨件單號">✎</button> ${receiver}</td>
         <td>${data.address || ''}</td>
         <td>${data.phone || ''}</td>
         <td>${productStr}</td>
         <td>${data.source || ''}</td>
+        <td><input type="text" class="tracking-input" data-id="${data.id}" placeholder="輸入貨件單號" /></td>
         <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
       `;
       tbody.appendChild(tr);
@@ -257,3 +254,66 @@ window.addEventListener('load', async () => {
   }
 
 });
+
+
+// --- Delegated handlers: note toggle + copy, and tracking blur save ---
+(function(){
+  function copyText(text){
+    try{
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(String(text||'')); return;
+      }
+    }catch(e){}
+    try{
+      var ta=document.createElement('textarea');
+      ta.style.position='fixed'; ta.style.opacity='0';
+      ta.value=String(text||'');
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){}
+  }
+  var tbody = document.getElementById('recordsBody') || document.querySelector('tbody');
+  if (!tbody) return;
+
+  tbody.addEventListener('click', function(ev){
+    var t = ev.target;
+    while (t && t!==tbody && !(t.classList && t.classList.contains('note-btn'))) t = t.parentNode;
+    if (!t || !t.classList || !t.classList.contains('note-btn')) return;
+    ev.preventDefault();
+    var tr = t;
+    while (tr && tr.nodeName !== 'TR') tr = tr.parentNode;
+    if (tr) tr.classList.toggle('row-note');
+    var input = tr ? tr.querySelector('.tracking-input') : null;
+    var val = input ? (input.value || '') : '';
+    copyText(val);
+  });
+
+  tbody.addEventListener('blur', function(ev){
+    var t = ev.target;
+    if (!t || !t.classList || !t.classList.contains('tracking-input')) return;
+    var id = t.getAttribute('data-id');
+    var value = (t.value || '').trim();
+    (async function(){
+      try{
+        var ref = doc(db, 'envelopes', id);
+        await updateDoc(ref, { trackingNumber: value });
+        console.log('[trackingNumber updated]', id, value);
+      }catch(err){
+        console.error('update trackingNumber failed', err);
+      }
+    })();
+  }, true);
+})();
+
+
+// INIT_LAST_3_DAYS
+(function(){
+  try{
+    if (typeof applyDateFilter === 'function'){
+      var today = new Date(); var past = new Date(); past.setDate(today.getDate()-2);
+      applyDateFilter(past, today);
+    }
+  }catch(e){ console.warn('init 3 days failed', e); }
+})();
