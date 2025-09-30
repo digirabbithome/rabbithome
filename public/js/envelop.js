@@ -201,6 +201,27 @@ function getCheckedSources() {
 
 
 // v04plus-compat：郵遞區號保留，後續「中文前 6 個字」加底色（相容舊環境：無 || / 無 \u 正則屬性）
+(?:\d{2})?)(.*)$/);
+  if (!m) return s;
+
+  var zipcode = m[1];
+  var rest = m[2] || '';
+
+  var count = 0, out = '';
+  for (var i = 0; i < rest.length; i++) {
+    var ch = rest[i];
+    if (count < 6 && /[\u4e00-\u9fa5]/.test(ch)) {
+      out += '<span class="area-highlight">' + ch + '</span>';
+      count++;
+    } else {
+      out += ch;
+    }
+  }
+  return zipcode + out;
+}
+
+
+// v04plus-compat: 郵遞區號保留，後面的「中文前 6 個字」加底色（無 ?.?/??）
 function formatAddress(addr) {
   var s = String(addr || '');
   var m = s.match(/^(\d{3}(?:\d{2})?)(.*)$/);
