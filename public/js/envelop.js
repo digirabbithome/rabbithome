@@ -156,7 +156,7 @@ window.addEventListener('load', async () => {
 
   
 function renderFilteredData() {
-    const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
+    const keyword = (searchInput?.value || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -221,7 +221,7 @@ function renderFilteredData() {
           <td>${productStr}</td>
           <td>${data.source || ''}</td>
           <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
-          <td><button type="button" class="note-btn" data-id="${data.id}" title="標記並複製貨件單號">✎</button> <a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
+          <td><a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印信封</a></td>
         `;
         tbody.appendChild(tr);
       });
@@ -309,38 +309,68 @@ function renderFilteredData() {
 });
 
 
-// --- note feature: toggle row highlight and copy tracking number ---
-function copyToClipboard(text) {
-  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(function(){});
-  } else {
+// --- helper: robust copy to clipboard (supports old browsers) ---
+function __copyText(text){
+  try {
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(String(text || ''));
+      return;
+    }
+  } catch(e){}
+  try {
     var ta = document.createElement('textarea');
-    ta.value = text;
+    ta.style.position='fixed'; ta.style.opacity='0';
+    ta.value = String(text || '');
     document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch(e) {}
+    ta.focus(); ta.select();
+    document.execCommand('copy');
     document.body.removeChild(ta);
-  }
+  } catch(e){}
 }
 
-function bindNoteButtons(){
-  var btns = document.querySelectorAll('.note-btn');
-  for (var i=0;i<btns.length;i++){
-    btns[i].addEventListener('click', function(e){
-      e.preventDefault();
-      var tr = e.target.closest('tr');
-      if (tr) tr.classList.toggle('row-note');
-      var trackingInput = tr ? tr.querySelector('.tracking-input') : null;
-      var tracking = trackingInput ? (trackingInput.value || '') : '';
-      copyToClipboard(tracking);
-      try {
-        var oldTitle = e.target.title;
-        e.target.title = tracking ? ('已複製：' + tracking) : '已標記（此列尚未填單號）';
-        setTimeout(function(){ e.target.title = oldTitle; }, 1200);
-      } catch(_){}
-    });
+// --- after render: move note button next to receiver name (2nd column) ---
+(function relocateNoteButtons(){
+  var tbody = document.getElementById('recordsBody') || document.querySelector('tbody');
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr');
+  for (var i=0; i<rows.length; i++){
+    var tr = rows[i];
+    var btn = tr.querySelector('.note-btn');
+    if (!btn) continue;
+    var tds = tr.children;
+    if (!tds || tds.length < 2) continue;
+    var receiverTd = tds[1]; // 0:時間, 1:收件人
+    if (receiverTd && btn.parentNode !== receiverTd){
+      receiverTd.insertBefore(btn, receiverTd.firstChild);
+      btn.style.marginRight = '6px';
+      btn.title = btn.title || '標記並複製貨件單號';
+    }
   }
-}
+})();
 
-// call bindNoteButtons after render
-setTimeout(bindNoteButtons, 500);
+// --- delegated click for note button: toggle row highlight + copy tracking input value ---
+(function bindNoteDelegated(){
+  var tbody = document.getElementById('recordsBody') || document.querySelector('tbody');
+  if (!tbody) return;
+  tbody.addEventListener('click', function(ev){
+    var t = ev.target;
+    while (t && t !== tbody && !(t.classList && t.classList.contains('note-btn'))) t = t.parentNode;
+    if (!t || !t.classList || !t.classList.contains('note-btn')) return;
+    ev.preventDefault();
+
+    var tr = t;
+    while (tr && tr.nodeName !== 'TR') tr = tr.parentNode;
+    if (tr) tr.classList.toggle('row-note');
+
+    var input = tr ? tr.querySelector('.tracking-input') : null;
+    var val = input ? (input.value || '') : '';
+    __copyText(val);
+
+    try {
+      var oldTitle = t.getAttribute('title') || '';
+      t.setAttribute('title', val ? ('已複製：' + val) : '已標記（此列尚未填單號）');
+      setTimeout(function(){ t.setAttribute('title', oldTitle); }, 1200);
+    } catch(e){}
+  });
+})();
+
