@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>📢 發佈公告</title>
-  <!-- 專用 CSS 美化 -->
-  <link rel="stylesheet" href="/css/bulletin-post.css" />
-  <script type="module" src="/js/bulletin-post.js" defer></script>
+  <link rel="stylesheet" href="css/bulletin-post.css" />
+  <script type="module" src="js/bulletin-post.js" defer></script>
 </head>
 <body>
   <h2>📢 發佈公告</h2>
-
   <form id="post-form">
     <label for="content">公告內容：</label><br />
     <textarea id="content" rows="8" cols="50" required></textarea><br /><br />
@@ -23,7 +21,6 @@
     <label><input type="checkbox" value="採購" /> 採購</label>
     <label><input type="checkbox" value="環境整潔" /> 環境整潔</label><br /><br />
 
-    <!-- 按鈕區塊 -->
     <button type="submit">發佈公告</button>
     <button type="reset">清空</button>
   </form>

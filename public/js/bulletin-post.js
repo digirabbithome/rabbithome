@@ -32,5 +32,7 @@ window.onload = () => {
 
     alert('📢 公告已成功發佈！')
     document.getElementById('post-form').reset()
+    // 跳回公告列表頁
+    window.location.href = 'bulletin.html'
   })
 }

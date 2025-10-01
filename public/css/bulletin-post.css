@@ -1,50 +1,35 @@
-/* bulletin-post.css — 數位小兔粉色卡片風格 */
-:root{
-  --pink:   #f48fb1;
-  --pink-2: #ffd9e6;
-  --pink-3: #fff6fa;
-  --ink:    #333;
-  --muted:  #777;
-  --shadow: 0 6px 16px rgba(0,0,0,.08);
-  --radius: 16px;
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background: #fffafc;
+  margin: 2rem;
 }
 
-*{ box-sizing: border-box; }
-
-html,body{
-  margin:0;
-  padding:0;
-  background: var(--pink-3);
-  color: var(--ink);
-  font: 16px/1.6 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #ff88aa;
 }
 
-h2{
-  text-align:center;
-  margin:20px 0;
-  color: var(--pink);
-}
-
-#post-form{
+#post-form {
   max-width: 600px;
   margin: 0 auto;
   background: #fff;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
   padding: 20px 24px;
-  border: 2px solid var(--pink-2);
+  border: 2px solid #ffd9e6;
 }
 
-#post-form label{
+#post-form label {
   font-weight: 600;
   margin-bottom: 6px;
   display: inline-block;
-  color: var(--ink);
 }
 
-#post-form textarea{
+#post-form textarea {
   width: 100%;
-  border: 2px solid var(--pink-2);
+  border: 2px solid #ffd9e6;
   border-radius: 12px;
   padding: 10px;
   font-size: 15px;
@@ -53,17 +38,17 @@ h2{
   outline: none;
 }
 
-#post-form textarea:focus{
-  border-color: var(--pink);
+#post-form textarea:focus {
+  border-color: #f48fb1;
   box-shadow: 0 0 0 4px rgba(244,143,177,0.15);
 }
 
-#post-form input[type=checkbox]{
-  accent-color: var(--pink);
+#post-form input[type=checkbox] {
+  accent-color: #f48fb1;
   margin-right: 4px;
 }
 
-#post-form button{
+#post-form button {
   margin-top: 16px;
   padding: 10px 18px;
   border: none;
@@ -71,25 +56,25 @@ h2{
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   transition: all .2s ease;
 }
 
-#post-form button[type=submit]{
-  background: var(--pink);
+#post-form button[type=submit] {
+  background: #f48fb1;
   color: #fff;
 }
 
-#post-form button[type=submit]:hover{
+#post-form button[type=submit]:hover {
   filter: brightness(.95);
 }
 
-#post-form button[type=reset]{
+#post-form button[type=reset] {
   background: #fff;
-  border: 2px solid var(--pink);
-  color: var(--pink);
+  border: 2px solid #f48fb1;
+  color: #f48fb1;
 }
 
-#post-form button:hover{
+#post-form button:hover {
   transform: translateY(-1px);
 }
