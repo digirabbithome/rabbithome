@@ -1,19 +1,8 @@
-
-// 🔐 Firebase 外部 API 專用版本（安全副本）
-// 請填入一組專用的 Firebase 設定（建議使用單獨的服務帳號）
-
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+export const firebaseConfig = {
+  apiKey: "AIzaSyANuDJyJuqQbxnXq-FTyaTAI9mSc6zpmuWs",
+  authDomain: "rabbithome-auth.firebaseapp.com",
+  projectId: "rabbithome-auth",
+  storageBucket: "rabbithome-auth.appspot.com",
+  messagingSenderId: "50928677930",
+  appId: "1:50928677930:web:e8eff13c8028b888537f53"
 };
-
-const app = initializeApp(firebaseConfig, 'external'); // 👈 命名為 external 防止與主 app 衝突
-const db = getFirestore(app);
-export { db };
