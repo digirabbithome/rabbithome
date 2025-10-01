@@ -150,3 +150,8 @@ form button:hover {
   margin-right: 6px;
 }
 .note-btn:hover { background:#e9ecef; }
+
+.addr-highlight {
+  font-weight: bold;
+  background: #fff3cd;
+}

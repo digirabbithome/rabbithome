@@ -1,4 +1,12 @@
 
+function formatAddress(addr) {
+  if (!addr) return '';
+  var first = addr.slice(0, 9);
+  var rest  = addr.slice(9);
+  return '<span class="addr-highlight">' + first + '</span>' + rest;
+}
+
+
 import { db } from '/js/firebase.js';
 import {
   collection,
