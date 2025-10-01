@@ -47,8 +47,12 @@
         body: JSON.stringify(json)
       });
 
-      const result = await res.json();
-      document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+      try {
+        const result = await res.json();
+        document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+      } catch (e) {
+        document.getElementById('result').textContent = '❌ API 回傳格式錯誤或非 JSON';
+      }
     }
   </script>
 </body>
