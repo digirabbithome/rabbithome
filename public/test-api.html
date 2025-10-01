@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>🐰 Rabbithome 測試 API</title>
+  <style>
+    body { font-family: "Noto Sans TC", sans-serif; padding: 2em; background: #fff0f5; }
+    h2 { color: #d63384; }
+    textarea { width: 100%; height: 250px; margin-bottom: 1em; }
+    button { background: #ff69b4; color: white; padding: 0.6em 1.2em; border: none; border-radius: 8px; font-size: 1em; }
+    #result { margin-top: 1em; white-space: pre-wrap; background: #f8f9fa; padding: 1em; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h2>📦 測試 POST 資料至 receive-product API</h2>
+  <p>請輸入 JSON 資料：</p>
+  <textarea id="jsonInput">
+{
+  "name": "Sony A7 IV",
+  "sku": "SONY-A7IV",
+  "barcode": "4901234567890",
+  "price": 62800,
+  "cost": 45000,
+  "stock": 10,
+  "category": "單眼相機",
+  "tags": ["全片幅", "新上市"]
+}
+  </textarea>
+  <button onclick="sendData()">🚀 送出測試資料</button>
+  <div id="result"></div>
+
+  <script>
+    async function sendData() {
+      const input = document.getElementById('jsonInput').value;
+      let json;
+      try {
+        json = JSON.parse(input);
+      } catch (e) {
+        document.getElementById('result').textContent = '❌ JSON 格式錯誤，請確認。';
+        return;
+      }
+
+      const res = await fetch('/api/receive-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(json)
+      });
+
+      const result = await res.json();
+      document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+    }
+  </script>
+</body>
+</html>
