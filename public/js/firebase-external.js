@@ -1,8 +1,15 @@
-export const firebaseConfig = {
-  apiKey: "AIzaSyANuDJyJuqQbxnXq-FTyaTAI9mSc6zpmuWs",
-  authDomain: "rabbithome-auth.firebaseapp.com",
-  projectId: "rabbithome-auth",
-  storageBucket: "rabbithome-auth.appspot.com",
-  messagingSenderId: "50928677930",
-  appId: "1:50928677930:web:e8eff13c8028b888537f53"
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
