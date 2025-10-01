@@ -1,9 +1,15 @@
 
-function formatAddress(addr) {
-  if (!addr) return '';
-  var first = addr.slice(0, 9);
-  var rest  = addr.slice(9);
-  return '<span class="addr-highlight">' + first + '</span>' + rest;
+// 將地址前 9 個字套上粗體 + 黃底
+function formatAddressFirst9(addr) {
+  var s = String(addr || '');
+  s = s.replace(/&/g, '&amp;')
+       .replace(/</g, '&lt;')
+       .replace(/>/g, '&gt;')
+       .replace(/"/g, '&quot;')
+       .replace(/'/g, '&#39;');
+  var first = s.slice(0, 9);
+  var rest  = s.slice(9);
+  return '<span class="addr-first9">' + first + '</span>' + rest;
 }
 
 
@@ -224,7 +230,7 @@ function renderFilteredData() {
         tr.innerHTML = `
           <td>${timeStr}</td>
           <td>${receiver}</td>
-          <td class="${addrClass}">${addr}</td>
+          <td class="${addrClass}">${formatAddressFirst9(addr)}</td>
           <td>${data.phone || ''}</td>
           <td>${productStr}</td>
           <td>${data.source || ''}</td>

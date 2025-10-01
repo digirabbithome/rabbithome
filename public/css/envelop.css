@@ -151,7 +151,7 @@ form button:hover {
 }
 .note-btn:hover { background:#e9ecef; }
 
-.addr-highlight {
+.addr-first9 {
   font-weight: bold;
   background: #fff3cd;
 }
