@@ -4,13 +4,12 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.10.0/firebas
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  authDomain: "YOUR_AUTH_DOMAIN",
   projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
+  storageBucket: "YOUR_STORAGE_BUCKET",
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig, 'external');
-const db = getFirestore(app);
-export { db };
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
