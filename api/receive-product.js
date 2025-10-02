@@ -1,6 +1,5 @@
-
 import { db } from '../../js/firebase-external.js'
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,9 +13,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Missing required fields: name or price' })
     }
 
-    const docRef = await addDoc(collection(db, 'pos-temp-products'), {
+    const docRef = await db.collection('pos-temp-products').add({
       ...product,
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
     })
 
     return res.status(200).json({ success: true, id: docRef.id })
