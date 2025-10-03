@@ -1,12 +1,15 @@
 // api/receive-product.js
 
-import { initializeApp, cert } from 'firebase-admin/app'
+import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { serviceAccount } from '../js/firebase-admin-config.js'
 
-const app = initializeApp({
-  credential: cert(serviceAccount)
-})
+// ✅ 避免重複初始化 Firebase App（Vercel 常見錯誤）
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(serviceAccount)
+  })
+}
 
 const db = getFirestore()
 
