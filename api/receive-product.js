@@ -1,5 +1,14 @@
-import { db } from '../../js/firebase-external.js'
-import { Timestamp } from 'firebase-admin/firestore'
+// api/receive-product.js
+
+import { initializeApp, cert } from 'firebase-admin/app'
+import { getFirestore } from 'firebase-admin/firestore'
+import { serviceAccount } from '../js/firebase-admin-config.js'
+
+const app = initializeApp({
+  credential: cert(serviceAccount)
+})
+
+const db = getFirestore()
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -15,7 +24,7 @@ export default async function handler(req, res) {
 
     const docRef = await db.collection('pos-temp-products').add({
       ...product,
-      createdAt: Timestamp.now(),
+      createdAt: new Date()
     })
 
     return res.status(200).json({ success: true, id: docRef.id })
