@@ -32,7 +32,23 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true, id: docRef.id })
   } catch (error) {
-    console.error('🔥 Error:', error)
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message })
+
+  console.error('🔥 Error:', error);
+  console.error('🔥 Full Error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+  return res.status(500).json({
+    success: false,
+    message: 'Server error',
+    error: error.message
+  });
+
+
+
+
+
+
+
+
+
+    
   }
 }
