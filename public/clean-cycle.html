@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧹 環境整理（週期管理＋貢獻度｜雲端）</title>
+  <title>🧹 環境整理（甜甜圈貢獻度｜雲端）</title>
   <link rel="icon" href="/img/rabbit-ico.png" />
   <link rel="stylesheet" href="/css/clean-cycle.css" />
   <link rel="stylesheet" href="css/clean-cycle.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script type="module" src="js/clean-cycle.js?v=2025.10.04-0644"></script>
+  <script type="module" src="js/clean-cycle.js"></script>
 </head>
 <body>
   <div class="page">
     <header class="topbar">
       <div class="left">
-        <h1>🧹 環境整理（週期管理）<span class="ver">v2025.10.04-0644</span></h1>
+        <h1>🧹 環境整理（週期管理）</h1>
         <span class="tag">暱稱＆資料皆走 Firebase</span>
       </div>
       <div class="right">
@@ -49,44 +49,39 @@
     <section id="list" class="list"></section>
 
     <section id="chart" class="chart card">
-      <h3>🌟 同事貢獻度統計（完成次數占比 %）<span id="chartMonthLabel" class="meta" style="margin-left:8px"></span></h3>
-      <canvas id="contribChart" height="28"></canvas>
-      <div class="chart-tools">
-        <button id="resetContrib" class="btn ghost small" title="雲端版不提供清空，以免誤刪">清空貢獻度（停用）</button>
+      <h3>🌟 同事貢獻度統計（甜甜圈圖）<span id="chartMonthLabel" class="meta" style="margin-left:8px"></span></h3>
+      <div class="donut-wrapper">
+        <canvas id="contribChart" width="300" height="300"></canvas>
+        <div id="donutCenterText">本月完成 0 次</div>
       </div>
     </section>
 
-    <footer class="footer">
-      <p>說明：每個項目可設定「週期（天）」與「上次完成時間」。系統會自動計算下次到期日。</p>
-      <p class="muted">集合：<code>cleanCycleTasks</code>、<code>cleanCycleHistory</code>；暱稱從 <code>/users/{uid}.nickname</code> 撈取。</p>
-    </footer>
+    <dialog id="taskDlg">
+      <form method="dialog" class="dlg">
+        <h3 id="dlgTitle">新增項目</h3>
+        <div class="grid">
+          <label>區域
+            <input id="fArea" />
+          </label>
+          <label>項目名稱
+            <input id="fName" />
+          </label>
+          <label>週期（天）
+            <input id="fDays" type="number" min="1" value="7" />
+          </label>
+          <label>上次完成（可留空=今天）
+            <input id="fLast" type="datetime-local" />
+          </label>
+          <label>備註
+            <input id="fNote" />
+          </label>
+        </div>
+        <menu>
+          <button value="cancel" class="btn ghost">取消</button>
+          <button id="saveTask" value="default" class="btn primary">儲存</button>
+        </menu>
+      </form>
+    </dialog>
   </div>
-
-  <dialog id="taskDlg">
-    <form method="dialog" class="dlg">
-      <h3 id="dlgTitle">新增項目</h3>
-      <div class="grid">
-        <label>區域
-          <input id="fArea" placeholder="如：前場 / 倉庫 / 廁所" />
-        </label>
-        <label>項目名稱
-          <input id="fName" placeholder="如：掃地、拖地、垃圾桶…" />
-        </label>
-        <label>週期（天）
-          <input id="fDays" type="number" min="1" value="7" />
-        </label>
-        <label>上次完成（可留空=今天）
-          <input id="fLast" type="datetime-local" />
-        </label>
-        <label>備註
-          <input id="fNote" placeholder="清潔劑 / 注意事項" />
-        </label>
-      </div>
-      <menu>
-        <button value="cancel" class="btn ghost">取消</button>
-        <button id="saveTask" value="default" class="btn primary">儲存</button>
-      </menu>
-    </form>
-  </dialog>
 </body>
 </html>

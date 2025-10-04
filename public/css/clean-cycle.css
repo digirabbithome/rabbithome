@@ -1,11 +1,9 @@
-/* clean-cycle.css — 粉系 */
 :root{--pink:#fbcfe8;--pink-strong:#f472b6;--bg:#fff7fb;--text:#2a2a2a;--muted:#6b7280;--card:#ffffff;--shadow:0 8px 24px rgba(244,114,182,.18);--radius:18px}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,Segoe UI,Arial}
 .page{max-width:1120px;margin:24px auto;padding:0 16px}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}
 .topbar h1{margin:0 12px 0 0;font-size:26px}
-.ver{font-size:12px;color:#9d174d;margin-left:6px}
 .tag{background:var(--pink);padding:6px 10px;border-radius:999px;color:#7a294f;font-size:12px}
 .right{display:flex;align-items:flex-end;gap:8px}
 .nick{display:flex;flex-direction:column;font-size:12px;color:#9d174d}
@@ -33,12 +31,10 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .actions{display:flex;gap:6px;flex-wrap:wrap}
 .actions .btn{padding:8px 10px;border-radius:10px}
 .actions .btn.small{font-size:12px;padding:6px 8px}
-.footer{margin:22px 0;color:#6b7280}
-.chart{margin-top:18px}
+.chart{margin-top:18px;text-align:center}
 .chart h3{margin:8px 0 12px 0;color:#b91c5c}
-.chart-tools{display:flex;justify-content:flex-end;margin-top:10px}
-/* 固定貢獻度圖表為「細長條」 */
-.chart canvas{height:28px !important; max-height:28px !important;}
+.donut-wrapper{position:relative;display:inline-block}
+#donutCenterText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;font-size:18px;color:#ec4899}
 dialog{border:0;border-radius:16px;box-shadow:var(--shadow);padding:0}
 .dlg{padding:16px 16px 10px 16px;min-width:560px}
 .dlg h3{margin:6px 0 10px 0}

@@ -1,4 +1,3 @@
-// clean-cycle.js — v1.4.3 Firestore + polished single-thin stacked contribution bar + monthly + admin delete only
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -30,7 +29,7 @@ function watchTasks(){
 }
 function watchHistory(){
   const qy=query(collection(db,COL_HISTORY), orderBy('doneAtTS','desc'))
-  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribChart() })
+  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribDonut() })
 }
 
 async function addTask(data){ await addDoc(collection(db,COL_TASKS), { ...data, createdAt: serverTimestamp(), createdBy: me?.uid||null }) }
@@ -57,7 +56,6 @@ function bindUI(){
   document.getElementById('openAdd')?.addEventListener('click', openAddDialog)
   document.getElementById('checkAllDue')?.addEventListener('click', completeAllDue)
   document.getElementById('exportCSV')?.addEventListener('click', exportCSV)
-  document.getElementById('resetContrib')?.addEventListener('click', ()=> alert('雲端版不提供清空貢獻度（避免誤刪歷史）'))
   document.getElementById('saveTask')?.addEventListener('click', async ev=>{ ev.preventDefault(); await submitTaskDialog() })
 }
 
@@ -190,8 +188,8 @@ function exportCSV(){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
-// ---- 單一細長堆疊條：每月 1 號起算，隱藏座標軸與格線，固定厚度 ----
-function renderContribChart(){
+// ---- Doughnut 貢獻圖（每月 1 號 ～ 次月 1 號），柔和漸層 ----
+function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
 
   const now=new Date()
@@ -208,36 +206,47 @@ function renderContribChart(){
     const key=(r.doneBy||'未填暱稱').trim()||'未填暱稱'
     counts[key]=(counts[key]||0)+1
   }
+
   const names=Object.keys(counts)
   const values=names.map(k=>counts[k])
   const sum=values.reduce((a,b)=>a+b,0)
-  const safeNames = names.length ? names : ['—']
-  const safeCounts = names.length ? values : [0]
-  const percents = names.length && sum>0 ? values.map(v=>Math.round(v/sum*1000)/10) : [0]
+  const center=document.getElementById('donutCenterText')
+  center.textContent = `本月完成 ${sum} 次`
 
   if(chart){ chart.destroy(); chart=null }
 
-  chart = new Chart(cv, {
-    type:'bar',
-    data:{ labels:[''], datasets: safeNames.map((n,i)=>({
-      label:n,
-      data:[percents[i]],
-      borderWidth:0,            // 去邊框
-      barThickness:20           // 固定粗細
-    })) },
+  if(names.length===0){
+    chart=new Chart(cv,{
+      type:'doughnut',
+      data:{ labels:['尚無紀錄'], datasets:[{ data:[1], backgroundColor:['#e5e7eb'], borderWidth:0 }] },
+      options:{ cutout:'65%', plugins:{ legend:{ display:false } } }
+    })
+    center.textContent = '本月完成 0 次'
+    return
+  }
+
+  const ctx = cv.getContext('2d')
+  const palette = [
+    ['#fbd5e6','#f472b6'],
+    ['#c7d2fe','#93c5fd'],
+    ['#e9d5ff','#c4b5fd'],
+    ['#bbf7d0','#86efac'],
+  ]
+  const backgrounds = names.map((_,i)=>{
+    const [from,to]=palette[i % palette.length]
+    const g = ctx.createLinearGradient(0,0,300,300)
+    g.addColorStop(0, from); g.addColorStop(1, to)
+    return g
+  })
+
+  chart=new Chart(cv,{
+    type:'doughnut',
+    data:{ labels:names, datasets:[{ data:values, backgroundColor:backgrounds, borderWidth:1, hoverOffset:4 }] },
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      animation:false,
-      layout:{ padding:{ left:8, right:8, top:8, bottom:4 } },
-      indexAxis:'y',
+      cutout:'65%',
       plugins:{
-        legend:{ position:'top' },
-        tooltip:{ callbacks:{ label:(c)=>`${c.dataset.label}: ${c.raw}%（${safeCounts[c.dataIndex] || safeCounts[0]} 次）` } }
-      },
-      scales:{
-        x:{ stacked:true, min:0, max:100, ticks:{ display:false }, grid:{ display:false } },
-        y:{ stacked:true, ticks:{ display:false }, grid:{ display:false } }
+        legend:{ position:'bottom' },
+        tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${c.parsed} 次 (${Math.round(c.parsed / sum * 1000)/10}%)` } }
       }
     }
   })
