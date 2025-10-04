@@ -71,23 +71,25 @@ iframe#content-frame {
 
 /* === Badge for 環境整理 (clean-cycle) === */
 /* 🔴 環境整理紅點徽章（貼近文字版本） */
-.btn-badge {
-  background-color: #ff3b30;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  border-radius: 50%;
-  padding: 2px 7px;
-  position: absolute;
-  right: -12px;  /* 原本是 -20px，現在更靠近 */
-  top: 2px;
-  line-height: 1;
-  display: none;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
-}
-
+/* 只影響有徽章的那顆按鈕，不動其他按鈕 */
 .has-badge {
   position: relative;
+  display: inline-flex;       /* 讓文字與徽章在同一行 */
+  align-items: center;        /* 垂直置中 */
+}
+
+/* 覆寫原本 .btn-badge 的定位方式：改成貼在文字右邊 */
+.has-badge .btn-badge {
+  position: static;           /* 不用絕對定位在最右邊 */
+  right: auto;
+  top: auto;
+  transform: none;
+  margin-left: 8px;           /* 與文字的距離，可調 6~10px */
+  display: inline-flex;       /* 顯示時由 JS 控制，但這裡保險補上 */
+  width: 22px;                /* 依你原本視覺大小維持 */
+  height: 22px;
+  align-items: center;
+  justify-content: center;
 }
 
 
