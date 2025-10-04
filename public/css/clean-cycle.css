@@ -29,7 +29,7 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .pill.due{background:#fff1f1;color:#b60000;border:1px solid #ff9a9a}
 .pill.over{background:#ffe6f2;color:#9b1747;border:1px solid #f09ac1}
 .area{font-weight:700}
-.meta{font-size:12px;color:var(--muted)}
+.meta{font-size:12px;color:#6b7280}
 .actions{display:flex;gap:6px;flex-wrap:wrap}
 .actions .btn{padding:8px 10px;border-radius:10px}
 .actions .btn.small{font-size:12px;padding:6px 8px}
@@ -37,7 +37,8 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .chart{margin-top:18px}
 .chart h3{margin:8px 0 12px 0;color:#b91c5c}
 .chart-tools{display:flex;justify-content:flex-end;margin-top:10px}
-.chart canvas{height:120px}
+/* 固定貢獻度圖表為「細長條」 */
+.chart canvas{height:28px !important; max-height:28px !important;}
 dialog{border:0;border-radius:16px;box-shadow:var(--shadow);padding:0}
 .dlg{padding:16px 16px 10px 16px;min-width:560px}
 .dlg h3{margin:6px 0 10px 0}

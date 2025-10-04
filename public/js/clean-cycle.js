@@ -1,4 +1,4 @@
-// clean-cycle.js — v1.4 Firestore + stacked contribution bar + admin delete only
+// clean-cycle.js — v1.4.2 Firestore + stacked contribution single-thin bar + monthly + admin delete only
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -190,21 +190,50 @@ function exportCSV(){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
-// ---- 單一堆疊條：100% 內分配各人占比 ----
+// ---- 單一細長堆疊條：每月 1 號起算 ----
 function renderContribChart(){
-  const ctx=document.getElementById('contribChart'); if(!ctx) return
-  const counts={}; historyCache.forEach(r=>{ const key=(r.doneBy||'未填暱稱').trim()||'未填暱稱'; counts[key]=(counts[key]||0)+1 })
-  const names=Object.keys(counts); const values=names.map(k=>counts[k]); const sum=values.reduce((a,b)=>a+b,0)||1
-  const percents=values.map(v=>Math.round(v/sum*1000)/10)
-  const datasets=names.map((n,i)=>({ label:n, data:[percents[i]], borderWidth:1 }))
-  if(chart) chart.destroy()
-  chart=new Chart(ctx,{
+  const cv=document.getElementById('contribChart'); if(!cv) return
+
+  // 每月 1 號 00:00 ～ 次月 1 號 00:00
+  const now=new Date()
+  const monthStart=new Date(now.getFullYear(), now.getMonth(), 1)
+  const nextMonthStart=new Date(now.getFullYear(), now.getMonth()+1, 1)
+
+  const lab=document.getElementById('chartMonthLabel')
+  if(lab){ lab.textContent = `本月 (${monthStart.getFullYear()}-${String(monthStart.getMonth()+1).padStart(2,'0')})` }
+
+  const counts={}
+  for(const r of historyCache){
+    const t = r.doneAt ? new Date(r.doneAt) : null
+    if(!t || t < monthStart || t >= nextMonthStart) continue
+    const key=(r.doneBy||'未填暱稱').trim()||'未填暱稱'
+    counts[key]=(counts[key]||0)+1
+  }
+  const names=Object.keys(counts)
+  const values=names.map(k=>counts[k])
+  const sum=values.reduce((a,b)=>a+b,0)
+  const safeNames = names.length ? names : ['—']
+  const safeCounts = names.length ? values : [0]
+  const percents = names.length && sum>0 ? values.map(v=>Math.round(v/sum*1000)/10) : [0]
+
+  if(chart){ chart.destroy(); chart=null }
+
+  chart = new Chart(cv, {
     type:'bar',
-    data:{ labels:[''], datasets },
+    data:{ labels:[''], datasets: safeNames.map((n,i)=>({ label:n, data:[percents[i]], borderWidth:1 })) },
     options:{
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top' }, tooltip:{ callbacks:{ label:(c)=>`${c.dataset.label}: ${c.raw}%（${values[c.dataIndex]||values[0]} 次）` } } },
-      scales:{ x:{ stacked:true, min:0, max:100, ticks:{ callback:v=>v+'%' } }, y:{ stacked:true, ticks:{ display:false }, grid:{ display:false } } }
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:false,
+      indexAxis:'y',
+      plugins:{
+        legend:{ position:'top' },
+        tooltip:{ callbacks:{ label:(c)=>`${c.dataset.label}: ${c.raw}%（${safeCounts[c.dataIndex] || safeCounts[0]} 次）` } }
+      },
+      scales:{
+        x:{ stacked:true, min:0, max:100, ticks:{ callback:v=>v+'%' } },
+        y:{ stacked:true, ticks:{ display:false }, grid:{ display:false } }
+      }
     }
   })
 }
