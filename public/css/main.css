@@ -1,46 +1,91 @@
 
-body {
-  background: #fff7fa;
-  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", "Noto Sans TC", sans-serif;
 }
+
 .container {
   display: flex;
+  height: 100vh;
 }
+
 .sidebar {
-  width: 250px;
-  background: #ffeef4;
+  width: 240px;
+  background-color: #ffffff;
+  padding: 20px;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #ff6699;
+}
+
+.menu-header {
   padding: 10px;
-  border-radius: 20px;
-}
-.menu-btn {
-  position: relative;
-  display: block;
-  margin: 8px 0;
-  padding: 10px 16px;
-  background: white;
-  border: none;
+  margin-bottom: 6px;
+  background-color: #ffe0ec;
   border-radius: 12px;
-  text-align: left;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.menu-items {
+  margin-bottom: 10px;
+  margin-left: 10px;
+}
+
+.menu-items button {
+  display: block;
   width: 100%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  transition: background 0.2s;
+  text-align: left;
+  background-color: #fff0f5;
+  border: none;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
 }
-.menu-btn:hover {
-  background: #ffd6e3;
+
+.menu-items button:hover {
+  background-color: #ffe6ec;
+  color: #d6336c;
 }
+
+.main-content {
+  flex-grow: 1;
+  height: 100vh;
+  overflow: hidden;
+}
+
+iframe#content-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* === Badge for 環境整理 (clean-cycle) === */
+.menu-btn.has-badge { position: relative; padding-right: 28px; }
 .btn-badge {
   position: absolute;
-  top: 4px;
-  right: 18px;
-  background: #ff3b3b;
-  color: white;
-  font-weight: bold;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: 50%;
+  background-color: #ff3b30;
+  color: #fff;
   font-size: 12px;
-  width: 22px;
-  height: 22px;
-  display: flex;
+  font-weight: 800;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
