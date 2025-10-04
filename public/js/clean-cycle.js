@@ -1,15 +1,14 @@
-// v1.7.0 - robust daily work append (arrayUnion + fallback 'workItems')
+// v1.7.2 - integrate workReports
 import { db, auth } from '/js/firebase.js'
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc, arrayUnion,
+  collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc,
   query, orderBy, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 const COL_TASKS = 'cleanCycleTasks'
 const COL_HISTORY = 'cleanCycleHistory'
-const COL_DAILY = 'dailyWork'    // 聚合：每天每人 1 份，tasks 為陣列
-const COL_WORKITEMS = 'workItems' // 後援：逐行新增一筆
+const COL_WORKREPORTS = 'workReports'
 const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.tw'])
 
 function nowIso(){ return new Date().toISOString(); }
@@ -21,7 +20,25 @@ function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Ma
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])) }
 
 let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, historyCache=[], isAdmin=false
-let chart=null
+
+async function appendWorkReport(uid, email, nickname, area, name){
+  try{
+    const now=new Date(); const dateStr=now.toISOString().slice(0,10); const timeStr=now.toTimeString().slice(0,5); const monthKey=dateStr.slice(0,7);
+    const id=`${uid}_${dateStr}`; const ref=doc(db,COL_WORKREPORTS,id);
+    const line=`${timeStr} 完成 ${area}${name}`; const lineHtml=`<div>${line}</div>`;
+    const snap=await getDoc(ref);
+    if(snap.exists()){
+      const d=snap.data()||{};
+      const newPlain = (d.plainText? d.plainText + '\\n' : '') + line;
+      const newHtml = (d.contentHtml? d.contentHtml + lineHtml : lineHtml);
+      await updateDoc(ref,{ plainText:newPlain, contentHtml:newHtml, updatedAt:serverTimestamp() });
+      console.log('[workReports] appended', id, line);
+    }else{
+      await setDoc(ref, { author:{email, nickname}, date:dateStr, monthKey, plainText:line, contentHtml:lineHtml, createdAt:serverTimestamp() });
+      console.log('[workReports] created', id, line);
+    }
+  }catch(e){ console.warn('[workReports] write failed', e); }
+}
 
 // ---------- UI handlers ----------
 function openAddDialog(){
@@ -68,46 +85,37 @@ async function completeOne(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
   await updateTask(id,{ last: nowIso() })
   await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null })
-  await appendDailyWork(myNickname, t.area, t.name)
+  await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
+}
+async function removeTaskConfirm(id){
+  const t=tasks.find(x=>x.id===id); if(!t) return
+  if(!confirm(`確定刪除「${t.area}-${t.name}」？`)) return
+  await deleteDoc(doc(db,COL_TASKS,id))
+}
+async function completeAllDue(){
+  let changed=0
+  for(const t of tasks){
+    const st=getStatus(t)
+    if(st.status==='due'||st.status==='over'){
+      await updateTask(t.id,{ last: nowIso() })
+      await pushHistory({ taskId:t.id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null, action:'bulk-complete' })
+      await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
+      changed++
+    }
+  }
+  if(!changed) alert('目前沒有需要清潔的項目。')
 }
 
 // ---------- core helpers ----------
 async function resolveNickname(uid){
-  // 先到 users/{uid} 取 nickname；無則用 email 前段
-  try{
-    const ref=doc(db,'users',uid);
-    const snap=await getDoc(ref);
-    if(snap.exists() && snap.data().nickname) return snap.data().nickname;
-  }catch(e){ console.warn('resolveNickname users error', e); }
+  try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
   const email=auth.currentUser?.email||''; return email.includes('@')?email.split('@')[0]:'未填暱稱'
 }
 async function addTask(data){ await addDoc(collection(db,COL_TASKS), { ...data, createdAt: serverTimestamp(), createdBy: me?.uid||null }) }
 async function updateTask(id,patch){ await updateDoc(doc(db,COL_TASKS,id), patch) }
 async function pushHistory(rec){ await addDoc(collection(db,COL_HISTORY), { ...rec, doneAt: nowIso(), doneAtTS: serverTimestamp() }) }
 
-// 這裡同時寫入：
-// 1) dailyWork（每天每人一份，以 tasks 陣列 arrayUnion 追加）
-// 2) workItems（每次一筆獨立文件，避免與既有系統 schema 不同步）
-async function appendDailyWork(nick, area, name){
-  const now=new Date(); const dateStr=now.toISOString().slice(0,10); const timeStr=now.toTimeString().slice(0,5)
-  const line=`${timeStr} 完成 ${area}${name}`
-  // 1) 聚合：dailyWork
-  try{
-    const id=`${dateStr.replace(/-/g,'')}_${nick}`
-    const ref=doc(db,COL_DAILY,id)
-    await setDoc(ref,{date:dateStr,nickname:nick,updatedAt:serverTimestamp()}, {merge:true})
-    await updateDoc(ref,{tasks: arrayUnion(line)})
-    console.log('[dailyWork] appended', id, line)
-  }catch(e){ console.warn('[dailyWork] append failed', e) }
-  // 2) 後援：workItems
-  try{
-    await addDoc(collection(db,COL_WORKITEMS), {date:dateStr,nickname:nick,content:line,createdAt:serverTimestamp(),source:'clean-cycle'})
-    console.log('[workItems] added', line)
-  }catch(e){ console.warn('[workItems] add failed', e) }
-}
-
 // ---------- view renderers ----------
-function toDateLabel(iso){ return toDateSlash(iso) }
 function getStatus(task){
   const cycle=clampInt(task.days,1,3650);
   if(!task.last){
@@ -155,11 +163,13 @@ function renderList(){
   withStatus.forEach(({t,st,bucket})=>{
     if(bucket==='need') need++; else if(bucket==='wait') wait++;
     if(new Date(t.last||0).toDateString()===today) doneToday++;
-    if(currentFilter==='all'
-      || (['overdue','due'].includes(currentFilter) && bucket==='need')
-      || (currentFilter==='soon' && bucket==='wait')
-      || (currentFilter==='ok' && bucket==='done')
-      || (currentFilter==='done-today' && new Date(t.last||0).toDateString()===today)){
+    if(
+      currentFilter==='all' ||
+      (['overdue','due'].includes(currentFilter) && bucket==='need') ||
+      (currentFilter==='soon' && bucket==='wait') ||
+      (currentFilter==='ok' && bucket==='done') ||
+      (currentFilter==='done-today' && new Date(t.last||0).toDateString()===today)
+    ){
       container.appendChild(rowEl({task:t, st, bucket}))
     }
   })
@@ -167,8 +177,7 @@ function renderList(){
   el('totalCount', tasks.length); el('dueCount', wait); el('overCount', need); el('doneToday', doneToday)
 }
 
-// Doughnut chart
-let chart=null
+// chart single instance
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
   const now=new Date(), m0=new Date(now.getFullYear(), now.getMonth(), 1), m1=new Date(now.getFullYear(), now.getMonth()+1, 1)
@@ -176,11 +185,11 @@ function renderContribDonut(){
   const counts={}; for(const r of historyCache){ const t=r.doneAt?new Date(r.doneAt):null; if(!t||t<m0||t>=m1) continue; const k=(r.doneBy||'未填暱稱').trim()||'未填暱稱'; counts[k]=(counts[k]||0)+1 }
   const names=Object.keys(counts), values=names.map(k=>counts[k]), sum=values.reduce((a,b)=>a+b,0)
   const center=document.getElementById('donutCenterText'); if(center) center.textContent=`本月完成 ${sum} 次`
-  if(chart){ chart.destroy(); chart=null }
-  if(names.length===0){ chart=new Chart(cv,{type:'doughnut',data:{labels:['尚無紀錄'],datasets:[{data:[1],backgroundColor:['#e5e7eb'],borderWidth:0}]},options:{cutout:'65%',plugins:{legend:{display:false}}}}); if(center) center.textContent='本月完成 0 次'; return }
+  if(window._ccChart){ window._ccChart.destroy(); window._ccChart=null }
+  if(names.length===0){ window._ccChart=new Chart(cv,{type:'doughnut',data:{labels:['尚無紀錄'],datasets:[{data:[1],backgroundColor:['#e5e7eb'],borderWidth:0}]},options:{cutout:'65%',plugins:{legend:{display:false}}}}); if(center) center.textContent='本月完成 0 次'; return }
   const ctx=cv.getContext('2d'), palette=[['#fbd5e6','#f472b6'],['#c7d2fe','#93c5fd'],['#e9d5ff','#c4b5fd'],['#bbf7d0','#86efac']]
   const backgrounds=names.map((_,i)=>{ const [a,b]=palette[i%palette.length]; const g=ctx.createLinearGradient(0,0,300,300); g.addColorStop(0,a); g.addColorStop(1,b); return g })
-  chart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})
+  window._ccChart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})
 }
 
 // ---------- subscriptions & init ----------
