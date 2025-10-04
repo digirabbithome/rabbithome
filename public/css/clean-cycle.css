@@ -47,6 +47,8 @@ dialog{border:0;border-radius:16px;box-shadow:var(--shadow);padding:0}
 menu{display:flex;justify-content:flex-end;gap:8px;margin:12px 0 0 0;padding:0}
 @media (max-width:1120px){.row{grid-template-columns:120px 1fr 90px 1fr 180px}}
 
-/* toast */
-.toast{position:fixed;right:18px;top:18px;z-index:1000;opacity:0;transform:translateY(-12px);transition:all .25s ease;background:#111827;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);pointer-events:none}
+/* Toast (小兔風格) */
+.toast{position:fixed;right:18px;top:18px;z-index:1000;opacity:0;transform:translateY(-12px);transition:all .35s ease;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
+.toast-inner{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#ffe1ec,#ffd6f5);color:#8a205b;border:1px solid #ffc2e2;padding:10px 14px;border-radius:16px;box-shadow:0 14px 30px rgba(244,114,182,.28)}
+.toast-icon{width:18px;height:18px;opacity:.9}

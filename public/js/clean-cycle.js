@@ -1,4 +1,4 @@
-// v1.7.3 - toast after syncing to workReports
+// v1.7.5 - branded toast + stable sync to workReports
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc,
@@ -13,7 +13,7 @@ const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.
 
 function nowIso(){ return new Date().toISOString(); }
 function toDateOnly(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
-function toDateSlash(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate())..padStart(2,'0')}` }
+function toDateSlash(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` }
 function addDays(iso,d){ const dt=new Date(iso||nowIso()); dt.setDate(dt.getDate()+d); return dt.toISOString() }
 function daysBetween(aIso,bIso){ const A=new Date(aIso),B=new Date(bIso); return Math.floor((B-A)/86400000) }
 function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Math.max(min,Math.min(max,v)) }
@@ -24,10 +24,21 @@ let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, histo
 // toast
 function showToast(msg){
   const el=document.getElementById('toast'); if(!el) return;
-  el.textContent=msg; el.classList.add('show');
+  const text=document.getElementById('toastText'); if(text) text.textContent=msg;
+  el.classList.add('show');
   setTimeout(()=>{ el.classList.remove('show') }, 2000);
 }
 
+// ---------- Firestore helpers ----------
+async function resolveNickname(uid){
+  try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
+  const email=auth.currentUser?.email||''; return email.includes('@')?email.split('@')[0]:'未填暱稱'
+}
+async function addTask(data){ await addDoc(collection(db,COL_TASKS), { ...data, createdAt: serverTimestamp(), createdBy: me?.uid||null }) }
+async function updateTask(id,patch){ await updateDoc(doc(db,COL_TASKS,id), patch) }
+async function pushHistory(rec){ await addDoc(collection(db,COL_HISTORY), { ...rec, doneAt: nowIso(), doneAtTS: serverTimestamp() }) }
+
+// 寫入 workReports（以 `${uid}_${YYYY-MM-DD}` 為文件 ID；append plainText 與 contentHtml）
 async function appendWorkReport(uid, email, nickname, area, name){
   try{
     const now=new Date(); const dateStr=now.toISOString().slice(0,10); const timeStr=now.toTimeString().slice(0,5); const monthKey=dateStr.slice(0,7);
@@ -116,15 +127,7 @@ async function completeAllDue(){
   else alert('目前沒有需要清潔的項目。')
 }
 
-// ---------- core helpers ----------
-async function resolveNickname(uid){
-  try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
-  const email=auth.currentUser?.email||''; return email.includes('@')?email.split('@')[0]:'未填暱稱'
-}
-async function addTask(data){ await addDoc(collection(db,COL_TASKS), { ...data, createdAt: serverTimestamp(), createdBy: me?.uid||null }) }
-async function updateTask(id,patch){ await updateDoc(doc(db,COL_TASKS,id), patch) }
-async function pushHistory(rec){ await addDoc(collection(db,COL_HISTORY), { ...rec, doneAt: nowIso(), doneAtTS: serverTimestamp() }) }
-
+// ---------- view renderers ----------
 function getStatus(task){
   const cycle=clampInt(task.days,1,3650);
   if(!task.last){
@@ -186,7 +189,7 @@ function renderList(){
   el('totalCount', tasks.length); el('dueCount', wait); el('overCount', need); el('doneToday', doneToday)
 }
 
-// chart single instance kept by Chart's own scope (page loads once)
+// Doughnut chart (single instance)
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
   const now=new Date(), m0=new Date(now.getFullYear(), now.getMonth(), 1), m1=new Date(now.getFullYear(), now.getMonth()+1, 1)
@@ -201,6 +204,7 @@ function renderContribDonut(){
   window._ccChart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})
 }
 
+// ---------- subscriptions & init ----------
 function watchTasks(){
   const qy=query(collection(db,COL_TASKS), orderBy('area'), orderBy('name'))
   return onSnapshot(qy, snap=>{ tasks = snap.docs.map(d=>({ ...d.data(), id:d.id })); renderList() })
