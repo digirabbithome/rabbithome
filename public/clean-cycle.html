@@ -8,13 +8,13 @@
   <link rel="stylesheet" href="/css/clean-cycle.css" />
   <link rel="stylesheet" href="css/clean-cycle.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script type="module" src="js/clean-cycle.js?v=1.6.5-20251004-0939"></script>
+  <script type="module" src="js/clean-cycle.js?v=1.6.6-20251004-0951"></script>
 </head>
 <body>
   <div class="page">
     <header class="topbar">
       <div class="left">
-        <h1>🧹 環境整理（週期管理）<span class="ver">v1.6.5-20251004-0939</span></h1>
+        <h1>🧹 環境整理（週期管理）<span class="ver">v1.6.6-20251004-0951</span></h1>
         <span class="tag">暱稱＆資料皆走 Firebase</span>
       </div>
       <div class="right">
@@ -59,7 +59,7 @@
   <dialog id="taskDlg">
     <form method="dialog" class="dlg">
       <h3 id="dlgTitle">新增項目</h3>
-      <div class="grid">
+      <div class="grid" id="dlgGrid">
         <label>區域
           <input id="fArea" placeholder="如：前場 / 倉庫 / 廁所" />
         </label>
@@ -69,9 +69,8 @@
         <label>週期（天）
           <input id="fDays" type="number" min="1" value="7" />
         </label>
-        <label id="lastWrap">上次完成（可留空=今天）
-          <input id="fLast" type="datetime-local" />
-        </label>
+        <!-- 編輯時才會插入「上次完成」欄位 -->
+        <div id="editOnlySlot"></div>
         <label>備註
           <input id="fNote" placeholder="清潔劑 / 注意事項" />
         </label>

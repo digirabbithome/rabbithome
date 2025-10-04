@@ -1,4 +1,4 @@
-// v1.6.5 - fix chart var & state backgrounds
+// v1.6.6 - "上次完成" removed from ADD; only injected for EDIT
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -19,7 +19,7 @@ function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Ma
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])) }
 
 let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, historyCache=[], isAdmin=false
-let chart=null  // single global chart variable
+let chart=null
 
 async function resolveNickname(uid){
   try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
@@ -162,9 +162,9 @@ function openAddDialog(){
   document.getElementById('fArea').value=''
   document.getElementById('fName').value=''
   document.getElementById('fDays').value=7
-  document.getElementById('fLast').value=''
   document.getElementById('fNote').value=''
-  const wrap=document.getElementById('lastWrap'); wrap.style.display='none'
+  // 確保「上次完成」欄位不存在
+  document.getElementById('editOnlySlot').innerHTML=''
   document.getElementById('taskDlg').showModal()
 }
 function openEditDialog(id){
@@ -174,9 +174,13 @@ function openEditDialog(id){
   document.getElementById('fArea').value=t.area||''
   document.getElementById('fName').value=t.name||''
   document.getElementById('fDays').value=clampInt(t.days,1,3650)
-  const dt=new Date(t.last||nowIso()); document.getElementById('fLast').value=dt.toISOString().slice(0,16)
   document.getElementById('fNote').value=t.note||''
-  const wrap=document.getElementById('lastWrap'); wrap.style.display='block'
+  // 注入「上次完成」欄位（僅編輯）
+  const slot=document.getElementById('editOnlySlot')
+  slot.innerHTML=`<label>上次完成
+    <input id="fLast" type="datetime-local" />
+  </label>`
+  const dt=new Date(t.last||nowIso()); document.getElementById('fLast').value=dt.toISOString().slice(0,16)
   document.getElementById('taskDlg').showModal()
 }
 async function submitTaskDialog(){
@@ -186,8 +190,8 @@ async function submitTaskDialog(){
   const note=document.getElementById('fNote').value.trim()
   if(!area||!name){ alert('請輸入「區域」與「項目名稱」'); return }
   if(editingId){
-    const lastInput=document.getElementById('fLast').value
-    const last=lastInput?new Date(lastInput).toISOString():nowIso()
+    const lastEl=document.getElementById('fLast')
+    const last=lastEl?new Date(lastEl.value).toISOString():nowIso()
     await updateTask(editingId,{ area,name,days,last,note })
   }else{
     await addTask({ area,name,days,note })
