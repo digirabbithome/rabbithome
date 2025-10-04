@@ -280,7 +280,6 @@ function completeAllDue(){
 }
 
 // ===== CRUD 對話框 =====
-let editingId = null;
 function openAddDialog(){
   editingId = null;
   document.getElementById('dlgTitle').textContent = '新增項目';
@@ -345,7 +344,6 @@ function exportCSV(){
 }
 
 // ===== 圖表 =====
-let chart = null;
 function renderContribChart(){
   const ctx = document.getElementById('contribChart');
   if (!ctx) return;
