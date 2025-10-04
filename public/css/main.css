@@ -79,7 +79,7 @@ iframe#content-frame {
 .btn-badge {
   position: absolute;
   top: -6px;
-  right: 4px; /* 原本可能是 0~4，改成更靠近文字 */
+  right: 0px; /* 原本可能是 0~4，改成更靠近文字 */
   background-color: #ff4b4b;
   color: white;
   border-radius: 50%;
