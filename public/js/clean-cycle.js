@@ -1,4 +1,4 @@
-// clean-cycle.js — v1.4.2 Firestore + stacked contribution single-thin bar + monthly + admin delete only
+// clean-cycle.js — v1.4.3 Firestore + polished single-thin stacked contribution bar + monthly + admin delete only
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -190,11 +190,10 @@ function exportCSV(){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
-// ---- 單一細長堆疊條：每月 1 號起算 ----
+// ---- 單一細長堆疊條：每月 1 號起算，隱藏座標軸與格線，固定厚度 ----
 function renderContribChart(){
   const cv=document.getElementById('contribChart'); if(!cv) return
 
-  // 每月 1 號 00:00 ～ 次月 1 號 00:00
   const now=new Date()
   const monthStart=new Date(now.getFullYear(), now.getMonth(), 1)
   const nextMonthStart=new Date(now.getFullYear(), now.getMonth()+1, 1)
@@ -220,18 +219,24 @@ function renderContribChart(){
 
   chart = new Chart(cv, {
     type:'bar',
-    data:{ labels:[''], datasets: safeNames.map((n,i)=>({ label:n, data:[percents[i]], borderWidth:1 })) },
+    data:{ labels:[''], datasets: safeNames.map((n,i)=>({
+      label:n,
+      data:[percents[i]],
+      borderWidth:0,            // 去邊框
+      barThickness:20           // 固定粗細
+    })) },
     options:{
       responsive:true,
       maintainAspectRatio:false,
       animation:false,
+      layout:{ padding:{ left:8, right:8, top:8, bottom:4 } },
       indexAxis:'y',
       plugins:{
         legend:{ position:'top' },
         tooltip:{ callbacks:{ label:(c)=>`${c.dataset.label}: ${c.raw}%（${safeCounts[c.dataIndex] || safeCounts[0]} 次）` } }
       },
       scales:{
-        x:{ stacked:true, min:0, max:100, ticks:{ callback:v=>v+'%' } },
+        x:{ stacked:true, min:0, max:100, ticks:{ display:false }, grid:{ display:false } },
         y:{ stacked:true, ticks:{ display:false }, grid:{ display:false } }
       }
     }
