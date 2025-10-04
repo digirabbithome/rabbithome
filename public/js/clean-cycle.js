@@ -111,12 +111,14 @@ function renderList(){
   withStatus.forEach(({t,st,bucket})=>{
     if(bucket==='need') need++; else if(bucket==='wait') wait++;
     if(new Date(t.last).toDateString()===today) doneToday++;
-    // 過濾
-    if(currentFilter==='all' or
-       (currentFilter in ['overdue','due'] and bucket==='need') or
-       (currentFilter==='soon' and bucket==='wait') or
-       (currentFilter==='ok' and bucket==='done') or
-       (currentFilter==='done-today' and new Date(t.last).toDateString()===today)){
+    // 過濾（改用 JS 的 || / && 與 includes）
+    if(
+      currentFilter==='all' ||
+      (['overdue','due'].includes(currentFilter) && bucket==='need') ||
+      (currentFilter==='soon' && bucket==='wait') ||
+      (currentFilter==='ok' && bucket==='done') ||
+      (currentFilter==='done-today' && new Date(t.last).toDateString()===today)
+    ){
       container.appendChild(rowEl({task:t, st, bucket}))
     }
   })
