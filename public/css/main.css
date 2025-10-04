@@ -71,7 +71,7 @@ iframe#content-frame {
 
 /* === Badge for 環境整理 (clean-cycle) === */
 .menu-btn.has-badge { position: relative; padding-right: 28px; }
-.btn-badge{
+.btn-badge {
   position: absolute;
   top: -6px;
   right: -6px;
@@ -87,5 +87,5 @@ iframe#content-frame {
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }

@@ -18,7 +18,8 @@ window.onload = function () {
   document.getElementById("nickname-display").textContent = `🙋‍♂️ 使用者：${nickname}`;
 };
 
-// === 環境整理（clean-cycle）紅圈提示（包含「過期 + 0~2天內到期」） ===
+
+// === 環境整理（clean-cycle）紅圈提示（含過期 + 0~2天內） ===
 import { db } from '/js/firebase.js'
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
@@ -35,7 +36,7 @@ async function __badge_countEnvWaiting(){
       const last=new Date(lastIso)
       const dueAt=new Date(last.getTime()+days*86400000)
       const daysLeft=__badge_floorDays(dueAt-now)
-      if(daysLeft <= 2) waiting++   // ✅ 過期(負數) 也算進去
+      if(daysLeft <= 2) waiting++
     })
     return waiting
   }catch(e){console.warn('[badge] countEnvWaiting failed',e);return 0}
