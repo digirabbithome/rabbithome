@@ -1,4 +1,4 @@
-// v1.6.6 - "上次完成" removed from ADD; only injected for EDIT
+// v1.6.7 - new-task '尚未清潔', 5-column layout with actions separated
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -64,13 +64,18 @@ function bindUI(){
 
 function getStatus(task){
   const cycle=clampInt(task.days,1,3650);
-  const base = task.last || nowIso();
-  const dueAt=addDays(base,cycle); 
+  if(!task.last){
+    const dueAt = addDays(nowIso(), cycle)
+    const d = daysBetween(nowIso(), dueAt)
+    return { status:'new', daysLeft:d, dueAt }
+  }
+  const dueAt=addDays(task.last,cycle); 
   const d=daysBetween(nowIso(), dueAt);
   let status='ok'; if(d<=2&&d>0) status='soon'; if(d<=0) status=(d===0)?'due':'over'; 
   return { status, daysLeft:d, dueAt }
 }
 function statusBucket(status){
+  if(status==='new') return 'wait'
   if(status==='due'||status==='over') return 'need'
   if(status==='soon') return 'wait'
   return 'done'
@@ -84,23 +89,24 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
       <div>區域</div>
       <div>項目</div>
       <div>狀態</div>
-      <div>上次完成 / 下次清潔（剩餘） / 備註 / 操作</div>`; div.appendChild(row); return div }
-  const pill = `<span class="pill ${bucket}">${bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔'}</span>`
+      <div>上次完成 / 下次清潔（剩餘） / 備註</div>
+      <div>操作</div>`; div.appendChild(row); return div }
+  const pillText = st.status==='new' ? '尚未清潔' : (bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔')
+  const pillClass = st.status==='new' ? 'new' : bucket
+  const pill = `<span class="pill ${pillClass}">${pillText}</span>`
   const nextStr = `${toDateSlash(st.dueAt)}（剩 ${st.daysLeft} 天）`
   row.innerHTML=`
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
     <div>
-      <div class="meta with-actions">
-        <span>上次 ${toDateOnly(task.last)} ／ 下次清潔 ${nextStr}</span>
-        <span class="actions-inline">
-          <button class="btn small" data-act="done">🧽 清潔完成</button>
-          <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
-          ${isAdmin ? '<button class="btn ghost small" data-act="del">🗑️ 刪除</button>' : ''}
-        </span>
-      </div>
+      <div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div>
       <div class="meta note-line">${escapeHtml(task.note||'')}</div>
+    </div>
+    <div class="actions-col">
+      <button class="btn small" data-act="done">🧽 清潔完成</button>
+      <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
+      ${isAdmin ? '<button class="btn ghost small" data-act="del">🗑️ 刪除</button>' : ''}
     </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
   row.querySelector('[data-act="edit"]').addEventListener('click', ()=> openEditDialog(task.id))
@@ -163,7 +169,6 @@ function openAddDialog(){
   document.getElementById('fName').value=''
   document.getElementById('fDays').value=7
   document.getElementById('fNote').value=''
-  // 確保「上次完成」欄位不存在
   document.getElementById('editOnlySlot').innerHTML=''
   document.getElementById('taskDlg').showModal()
 }
@@ -175,7 +180,6 @@ function openEditDialog(id){
   document.getElementById('fName').value=t.name||''
   document.getElementById('fDays').value=clampInt(t.days,1,3650)
   document.getElementById('fNote').value=t.note||''
-  // 注入「上次完成」欄位（僅編輯）
   const slot=document.getElementById('editOnlySlot')
   slot.innerHTML=`<label>上次完成
     <input id="fLast" type="datetime-local" />
