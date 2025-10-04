@@ -20,72 +20,100 @@ window.logout = function () {
   localStorage.removeItem('rabbitUser')
   location.href = '/login.html'
 }
+// ===== 🧽 環境整理紅圈數字（以本地“整天差”計算） =====
+import { db } from '/js/firebase.js'
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-// ===== 🧽 環境整理紅圈數字系統 =====
 const DAY = 86400000
 
-function toDateSafe(v) {
+// 將任何格式轉成 Date（支援 Timestamp / seconds / ISO）
+function toDateSafe(v){
   if (!v) return null
-  try {
-    if (typeof v.toDate === 'function') return v.toDate()
-    if (v.seconds && Number.isFinite(v.seconds)) return new Date(v.seconds * 1000)
+  try{
+    if (typeof v?.toDate === 'function') return v.toDate()
+    if (v?.seconds && Number.isFinite(v.seconds)) return new Date(v.seconds * 1000)
     return new Date(v)
-  } catch (e) {
-    console.warn('[badge] 無法轉換日期', v)
+  }catch(e){
+    console.warn('[badge] toDateSafe failed:', v, e)
     return null
   }
 }
 
-function floorDays(ms) {
-  return Math.floor(ms / DAY)
+// 以「本地日曆日」計算：忽略時分秒，只看日期差
+function daysDiffByLocalDay(from, to){
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate())      // 今日 00:00
+  const b = new Date(to.getFullYear(),   to.getMonth(),   to.getDate())        // 到期日 00:00
+  return Math.floor((b - a) / DAY)   // 可為負數（過期）
 }
 
-async function countEnvWaiting() {
-  try {
+async function countEnvWaiting(){
+  try{
     const snap = await getDocs(collection(db, 'cleanCycleTasks'))
-    const now = new Date()
+    const now  = new Date()
     let waiting = 0
 
     snap.forEach(doc => {
       const d = doc.data() || {}
-      const lastRaw = d.last || d.lastCompleted || d.lastCompletedAt || d.lastCleanedAt
-      const cycleRaw = d.days || d.cycleDays || d.cycle || d.interval
+
+      // 欄位兼容
+      const lastRaw  = d.last ?? d.lastCompleted ?? d.lastCompletedAt ?? d.lastCleanedAt
+      const cycleRaw = d.days ?? d.cycleDays ?? d.cycle ?? d.interval
       const days = parseInt(cycleRaw ?? 0, 10)
       const last = toDateSafe(lastRaw)
-      if (!last || !days) return
 
+      // 規則 A：從未清潔 + 有設定週期 => 等待清潔
+      if (!last && days > 0){
+        waiting++
+        console.log('[badge] never cleaned => counted', {id: doc.id, days})
+        return
+      }
+      // 缺欄位 => 跳過
+      if (!last || !days){
+        console.log('[badge] skip missing', {id: doc.id, last: lastRaw, days: cycleRaw})
+        return
+      }
+
+      // 計算下次到期日（忽略時分秒）
       const dueAt = new Date(last.getTime() + days * DAY)
-      const daysLeft = floorDays(dueAt - now)
-      const counted = daysLeft <= 2 // 兩天內 or 已過期都算待清潔
+      const restDays = daysDiffByLocalDay(now, dueAt)  // 以“整天”計算
+      const counted  = (restDays <= 2)                 // 過期(負) + 0~2 天內
       if (counted) waiting++
-      console.log('[badge] 檢查:', doc.id, { last: last.toISOString().slice(0, 10), days, dueAt: dueAt.toISOString().slice(0, 10), daysLeft, counted })
+
+      console.log('[badge] item', {
+        id: doc.id,
+        last: last.toISOString().slice(0,10),
+        days,
+        due: dueAt.toISOString().slice(0,10),
+        restDays,
+        counted
+      })
     })
 
-    console.log('[badge] 總待清潔:', waiting)
+    console.log('[badge] 總待清潔(過期+≤2天+未清):', waiting)
     return waiting
-  } catch (err) {
-    console.error('[badge] 讀取錯誤:', err)
+  }catch(err){
+    console.error('[badge] fetch error:', err)
     return 0
   }
 }
 
-function setBadge(num) {
+function setBadge(n){
   const el = document.getElementById('cycle-badge')
   if (!el) return
-  if (Number(num) > 0) {
-    el.textContent = String(num)
+  if (Number(n) > 0){
+    el.textContent = String(n)
     el.style.display = 'inline-flex'
-  } else {
+  }else{
     el.style.display = 'none'
   }
 }
 
-async function updateBadge() {
+async function updateBadge(){
   const n = await countEnvWaiting()
   setBadge(n)
 }
 
-// 初始與定期更新
+// 進頁面即更新 & 每 3 小時更新
 window.addEventListener('DOMContentLoaded', updateBadge)
 window.addEventListener('load', updateBadge)
-setInterval(updateBadge, 3 * 60 * 60 * 1000) // 每3小時更新一次
+setInterval(updateBadge, 3 * 60 * 60 * 1000)
