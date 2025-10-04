@@ -12,6 +12,7 @@ const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.
 function nowIso(){ return new Date().toISOString(); }
 function toDateLabel(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 function toDateOnly(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+function toDateSlash(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` }
 function addDays(iso,d){ const dt=new Date(iso||nowIso()); dt.setDate(dt.getDate()+d); return dt.toISOString() }
 function daysBetween(aIso,bIso){ const A=new Date(aIso),B=new Date(bIso); return Math.floor((B-A)/86400000) }
 function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Math.max(min,Math.min(max,v)) }
@@ -65,9 +66,9 @@ function getStatus(task){
   let status='ok'; if(d<=2&&d>0) status='soon'; if(d<=0) status=(d===0)?'due':'over'; return { status, daysLeft:d, dueAt }
 }
 function statusBucket(status){
-  if(status==='due'||status==='over') return 'need'   // 需要清潔
-  if(status==='soon') return 'wait'                   // 等待清潔
-  return 'done'                                       // 完成清潔
+  if(status==='due'||status==='over') return 'need'
+  if(status==='soon') return 'wait'
+  return 'done'
 }
 
 function rowEl({head=false, task=null, st=null, bucket=null}){
@@ -76,19 +77,17 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
   if(head){ row.innerHTML=`
       <div>區域</div>
       <div>項目</div>
-      <div>清潔時間</div>
       <div>狀態</div>
-      <div>上次完成 / 備註 / 操作</div>`; div.appendChild(row); return div }
-  const dueDateOnly=toDateOnly(st.dueAt)
-  const tip = bucket==='wait' ? `剩 ${st.daysLeft} 天` : bucket==='need' ? (st.daysLeft===0?'今天':'逾期 '+Math.abs(st.daysLeft)+' 天') : `剩 ${st.daysLeft} 天`
-  const pill = `<span class="pill ${bucket}">${bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔'}</span><div class="meta">${tip}</div>`
+      <div>上次完成 / 下次清潔（剩餘） / 備註 / 操作</div>`; div.appendChild(row); return div }
+  const pillTip = bucket==='wait' ? `剩 ${st.daysLeft} 天` : bucket==='need' ? (st.daysLeft===0?'今天':'逾期 '+Math.abs(st.daysLeft)+' 天') : `剩 ${st.daysLeft} 天`
+  const pill = `<span class="pill ${bucket}">${bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔'}</span><div class="meta">${pillTip}</div>`
+  const nextStr = `${toDateSlash(st.dueAt)}（剩 ${st.daysLeft} 天）`
   row.innerHTML=`
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
-    <div>${dueDateOnly}</div>
     <div>${pill}</div>
     <div>
-      <div class="meta">上次 ${toDateLabel(task.last)}</div>
+      <div class="meta">上次 ${toDateOnly(task.last)} ／ 下次清潔 ${nextStr}</div>
       <div class="meta">${escapeHtml(task.note||'')}</div>
       <div class="actions">
         <button class="btn small" data-act="done">🧽 清潔完成</button>
@@ -106,12 +105,10 @@ function renderList(){
   const container=document.getElementById('list'); container.innerHTML=''; container.appendChild(rowEl({head:true}))
   let need=0,wait=0,doneToday=0; const today=(new Date()).toDateString()
   const withStatus = tasks.map(t=>{ const st=getStatus(t); return { t, st, bucket: statusBucket(st.status) } })
-  // 排序：需要清潔 > 等待清潔 > 完成清潔
   withStatus.sort((a,b)=>({need:0,wait:1,done:2}[a.bucket]-({need:0,wait:1,done:2}[b.bucket])))
   withStatus.forEach(({t,st,bucket})=>{
     if(bucket==='need') need++; else if(bucket==='wait') wait++;
     if(new Date(t.last).toDateString()===today) doneToday++;
-    // 過濾（改用 JS 的 || / && 與 includes）
     if(
       currentFilter==='all' ||
       (['overdue','due'].includes(currentFilter) && bucket==='need') ||
