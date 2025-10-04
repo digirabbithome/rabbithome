@@ -1,14 +1,15 @@
-// v1.6.9 - function-order fix + dailyWork append
+// v1.7.0 - robust daily work append (arrayUnion + fallback 'workItems')
 import { db, auth } from '/js/firebase.js'
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc,
+  collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc, arrayUnion,
   query, orderBy, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 const COL_TASKS = 'cleanCycleTasks'
 const COL_HISTORY = 'cleanCycleHistory'
-const COL_DAILY = 'dailyWork'
+const COL_DAILY = 'dailyWork'    // 聚合：每天每人 1 份，tasks 為陣列
+const COL_WORKITEMS = 'workItems' // 後援：逐行新增一筆
 const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.tw'])
 
 function nowIso(){ return new Date().toISOString(); }
@@ -22,7 +23,7 @@ function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;'
 let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, historyCache=[], isAdmin=false
 let chart=null
 
-// ---------- UI handlers (declare early) ----------
+// ---------- UI handlers ----------
 function openAddDialog(){
   editingId=null
   document.getElementById('dlgTitle').textContent='新增項目'
@@ -69,51 +70,44 @@ async function completeOne(id){
   await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null })
   await appendDailyWork(myNickname, t.area, t.name)
 }
-async function removeTaskConfirm(id){
-  const t=tasks.find(x=>x.id===id); if(!t) return
-  if(!confirm(`確定刪除「${t.area}-${t.name}」？`)) return
-  await deleteDoc(doc(db,COL_TASKS,id))
-}
-async function completeAllDue(){
-  let changed=0
-  for(const t of tasks){
-    const st=getStatus(t)
-    if(st.status==='due'||st.status==='over'){
-      await updateTask(t.id,{ last: nowIso() })
-      await pushHistory({ taskId:t.id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null, action:'bulk-complete' })
-      changed++
-    }
-  }
-  if(!changed) alert('目前沒有需要清潔的項目。')
-}
 
 // ---------- core helpers ----------
 async function resolveNickname(uid){
-  try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
+  // 先到 users/{uid} 取 nickname；無則用 email 前段
+  try{
+    const ref=doc(db,'users',uid);
+    const snap=await getDoc(ref);
+    if(snap.exists() && snap.data().nickname) return snap.data().nickname;
+  }catch(e){ console.warn('resolveNickname users error', e); }
   const email=auth.currentUser?.email||''; return email.includes('@')?email.split('@')[0]:'未填暱稱'
 }
 async function addTask(data){ await addDoc(collection(db,COL_TASKS), { ...data, createdAt: serverTimestamp(), createdBy: me?.uid||null }) }
 async function updateTask(id,patch){ await updateDoc(doc(db,COL_TASKS,id), patch) }
 async function pushHistory(rec){ await addDoc(collection(db,COL_HISTORY), { ...rec, doneAt: nowIso(), doneAtTS: serverTimestamp() }) }
+
+// 這裡同時寫入：
+// 1) dailyWork（每天每人一份，以 tasks 陣列 arrayUnion 追加）
+// 2) workItems（每次一筆獨立文件，避免與既有系統 schema 不同步）
 async function appendDailyWork(nick, area, name){
+  const now=new Date(); const dateStr=now.toISOString().slice(0,10); const timeStr=now.toTimeString().slice(0,5)
+  const line=`${timeStr} 完成 ${area}${name}`
+  // 1) 聚合：dailyWork
   try{
-    const now=new Date(); const dateStr=now.toISOString().slice(0,10); const timeStr=now.toTimeString().slice(0,5)
     const id=`${dateStr.replace(/-/g,'')}_${nick}`
     const ref=doc(db,COL_DAILY,id)
-    const snap=await getDoc(ref)
-    const line=`${timeStr} 完成 ${area}${name}`
-    if(snap.exists()){
-      const data=snap.data()
-      const arr=Array.isArray(data.tasks)?data.tasks:[]
-      arr.push(line)
-      await updateDoc(ref,{tasks:arr})
-    }else{
-      await setDoc(ref,{date:dateStr,nickname:nick,tasks:[line],createdAt:serverTimestamp()})
-    }
-  }catch(e){ console.error('appendDailyWork error',e) }
+    await setDoc(ref,{date:dateStr,nickname:nick,updatedAt:serverTimestamp()}, {merge:true})
+    await updateDoc(ref,{tasks: arrayUnion(line)})
+    console.log('[dailyWork] appended', id, line)
+  }catch(e){ console.warn('[dailyWork] append failed', e) }
+  // 2) 後援：workItems
+  try{
+    await addDoc(collection(db,COL_WORKITEMS), {date:dateStr,nickname:nick,content:line,createdAt:serverTimestamp(),source:'clean-cycle'})
+    console.log('[workItems] added', line)
+  }catch(e){ console.warn('[workItems] add failed', e) }
 }
 
 // ---------- view renderers ----------
+function toDateLabel(iso){ return toDateSlash(iso) }
 function getStatus(task){
   const cycle=clampInt(task.days,1,3650);
   if(!task.last){
@@ -161,13 +155,11 @@ function renderList(){
   withStatus.forEach(({t,st,bucket})=>{
     if(bucket==='need') need++; else if(bucket==='wait') wait++;
     if(new Date(t.last||0).toDateString()===today) doneToday++;
-    if(
-      currentFilter==='all' ||
-      (['overdue','due'].includes(currentFilter) && bucket==='need') ||
-      (currentFilter==='soon' && bucket==='wait') ||
-      (currentFilter==='ok' && bucket==='done') ||
-      (currentFilter==='done-today' && new Date(t.last||0).toDateString()===today)
-    ){
+    if(currentFilter==='all'
+      || (['overdue','due'].includes(currentFilter) && bucket==='need')
+      || (currentFilter==='soon' && bucket==='wait')
+      || (currentFilter==='ok' && bucket==='done')
+      || (currentFilter==='done-today' && new Date(t.last||0).toDateString()===today)){
       container.appendChild(rowEl({task:t, st, bucket}))
     }
   })
@@ -176,6 +168,7 @@ function renderList(){
 }
 
 // Doughnut chart
+let chart=null
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
   const now=new Date(), m0=new Date(now.getFullYear(), now.getMonth(), 1), m1=new Date(now.getFullYear(), now.getMonth()+1, 1)
@@ -223,7 +216,6 @@ window.onload = ()=>{
     if(!user){ alert('請先登入 Rabbithome'); return }
     me=user; myNickname=await resolveNickname(user.uid); isAdmin = ADMIN_EMAILS.has(user.email||'')
     const nickEl=document.getElementById('nickname'); if(nickEl){ nickEl.value=myNickname; nickEl.disabled=true }
-    bindUI(); // ensure handlers exist
-    watchTasks(); watchHistory();
+    bindUI(); watchTasks(); watchHistory();
   })
 }
