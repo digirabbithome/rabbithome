@@ -3,28 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧹 環境整理（週期管理＋貢獻度） | Rabbithome</title>
+  <title>🧹 環境整理（週期管理＋貢獻度｜雲端版） | Rabbithome</title>
   <link rel="icon" href="/img/rabbit-ico.png" />
   <link rel="stylesheet" href="/css/clean-cycle.css" />
   <link rel="stylesheet" href="css/clean-cycle.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script type="module" src="js/clean-cycle.js?v=2025.10.04-0430"></script>
+  <script type="module" src="js/clean-cycle-fb.js?v=2025.10.04-0524"></script>
 </head>
 <body>
   <div class="page">
     <header class="topbar">
       <div class="left">
-        <h1>🧹 環境整理（週期管理）<span class="ver">v2025.10.04-0430</span></h1>
-        <span class="tag">類電池管理邏輯 · 週期/到期/逾期 · 含同事貢獻度</span>
+        <h1>🧹 環境整理（週期管理）<span class="ver">雲端 v2025.10.04-0524</span></h1>
+        <span class="tag">暱稱＆資料都走 Firestore（沿用 Rabbithome 帳號）</span>
       </div>
       <div class="right">
         <label class="nick">
           執行人暱稱
-          <input id="nickname" placeholder="自動記住於本機" />
+          <input id="nickname" placeholder="由帳號帶出" disabled />
         </label>
         <button id="openAdd" class="btn">＋新增項目</button>
         <button id="checkAllDue" class="btn ghost">一鍵完成「到期」</button>
-        <button id="exportCSV" class="btn ghost">匯出紀錄</button>
+        <button id="exportCSV" class="btn ghost">匯出 CSV</button>
       </div>
     </header>
 
@@ -41,8 +41,8 @@
         <span>總數：<b id="totalCount">0</b></span>
         <span>到期：<b id="dueCount">0</b></span>
         <span>逾期：<b id="overCount">0</b></span>
-        <span>今日完成：<b id="doneToday">0</b></span>
-        <span class="muted" id="lastSaved">未儲存</span>
+        <span>今日已完成：<b id="doneToday">0</b></span>
+        <span class="muted" id="lastSaved">已連線 Firebase</span>
       </div>
     </section>
 
@@ -52,27 +52,26 @@
       <h3>🌟 同事貢獻度統計（完成次數占比 %）</h3>
       <canvas id="contribChart"></canvas>
       <div class="chart-tools">
-        <button id="resetContrib" class="btn ghost small">清空貢獻度紀錄（僅本機）</button>
+        <button id="resetContrib" class="btn ghost small" title="雲端版不提供清空，以免誤刪">清空貢獻度（停用）</button>
       </div>
     </section>
 
     <footer class="footer">
-      <p>說明：每個項目可設定「週期（天）」與「上次完成時間」。系統會自動計算下次到期日，並以顏色提示：
+      <p>說明：每個項目可設定「週期（天）」與「上次完成時間」。系統會自動計算下次到期日，顯示
         <span class="legend pill ok"></span>安全、<span class="legend pill soon"></span>即將到期（≤2天）、<span class="legend pill due"></span>到期、<span class="legend pill over"></span>逾期。</p>
-      <p class="muted">資料預設儲存在本機（localStorage）。若偵測到 /js/firebase.js，未來可切換為 Firestore（程式已預留 hooks ）。</p>
+      <p class="muted">此版資料儲存在 Firestore：集合 <code>cleanCycleTasks</code> 與 <code>cleanCycleHistory</code>。暱稱從 <code>/users/{uid}.nickname</code> 撈取。</p>
     </footer>
   </div>
 
-  <!-- 新增/編輯對話框 -->
   <dialog id="taskDlg">
     <form method="dialog" class="dlg">
       <h3 id="dlgTitle">新增項目</h3>
       <div class="grid">
         <label>區域
-          <input id="fArea" placeholder="如：門市前場 / 倉庫 / 廁所" />
+          <input id="fArea" placeholder="如：前場 / 倉庫 / 廁所" />
         </label>
         <label>項目名稱
-          <input id="fName" placeholder="如：掃地、拖地、垃圾桶、鏡面、展示櫃除塵" />
+          <input id="fName" placeholder="如：掃地、拖地、垃圾桶…" />
         </label>
         <label>週期（天）
           <input id="fDays" type="number" min="1" value="7" />
@@ -81,7 +80,7 @@
           <input id="fLast" type="datetime-local" />
         </label>
         <label>備註
-          <input id="fNote" placeholder="可填工具、清潔劑或注意事項" />
+          <input id="fNote" placeholder="清潔劑 / 注意事項" />
         </label>
       </div>
       <menu>

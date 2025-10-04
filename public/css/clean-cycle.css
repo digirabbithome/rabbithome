@@ -1,14 +1,5 @@
-/* clean-cycle.css — 可愛清新粉系 */
-:root{
-  --pink:#fbcfe8;
-  --pink-strong:#f472b6;
-  --bg:#fff7fb;
-  --text:#2a2a2a;
-  --muted:#6b7280;
-  --card:#ffffff;
-  --shadow:0 8px 24px rgba(244,114,182,.18);
-  --radius:18px;
-}
+/* clean-cycle.css — 與本機版一致 */ 
+:root{--pink:#fbcfe8;--pink-strong:#f472b6;--bg:#fff7fb;--text:#2a2a2a;--muted:#6b7280;--card:#ffffff;--shadow:0 8px 24px rgba(244,114,182,.18);--radius:18px}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,Segoe UI,Arial}
 .page{max-width:1120px;margin:24px auto;padding:0 16px}
@@ -46,15 +37,10 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .chart{margin-top:18px}
 .chart h3{margin:8px 0 12px 0;color:#b91c5c}
 .chart-tools{display:flex;justify-content:flex-end;margin-top:10px}
-/* dialog */
 dialog{border:0;border-radius:16px;box-shadow:var(--shadow);padding:0}
 .dlg{padding:16px 16px 10px 16px;min-width:560px}
 .dlg h3{margin:6px 0 10px 0}
 .dlg .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .dlg input{width:100%;padding:10px;border-radius:10px;border:1px solid #f7bddd;background:#fff}
 menu{display:flex;justify-content:flex-end;gap:8px;margin:12px 0 0 0;padding:0}
-/* responsive */
-@media (max-width:980px){
-  .row{grid-template-columns:120px 1fr 90px 140px 110px 1fr}
-  .dlg{min-width:auto}
-}
+@media (max-width:980px){.row{grid-template-columns:120px 1fr 90px 140px 110px 1fr}.dlg{min-width:auto}}
