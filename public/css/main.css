@@ -70,22 +70,29 @@ iframe#content-frame {
 }
 
 /* === Badge for 環境整理 (clean-cycle) === */
-.menu-btn.has-badge { position: relative; padding-right: 28px; }
+.has-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .btn-badge {
   position: absolute;
   top: -6px;
-  right: -6px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
+  right: 8px; /* 原本可能是 0~4，改成更靠近文字 */
+  background-color: #ff4b4b;
+  color: white;
   border-radius: 50%;
-  background-color: #ff3b30;
-  color: #fff;
   font-size: 12px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  font-weight: bold;
+  padding: 1px 6px;
+  line-height: 1.2;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
 }
+
+
+
+
+
