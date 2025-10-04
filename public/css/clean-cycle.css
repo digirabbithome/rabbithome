@@ -27,11 +27,14 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .pill.done{background:#e8fff0;color:#0f7a3d;border:1px solid #8ee5b3}
 .pill.wait{background:#fffbe6;color:#8a6d00;border:1px solid #f5da66}
 .pill.need{background:#fff1f1;color:#b60000;border:1px solid #ff9a9a}
+/* 新：移除 pill 下的小字間距（因為不再顯示天數） */
+.pill + .meta{display:none}
 .area{font-weight:700}
 .meta{font-size:12px;color:#6b7280}
-.actions{display:flex;gap:6px;flex-wrap:wrap}
-.actions .btn{padding:8px 10px;border-radius:10px}
-.actions .btn.small{font-size:12px;padding:6px 8px}
+.meta.with-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.actions-inline{display:inline-flex;gap:6px;margin-left:8px}
+.actions-inline .btn{padding:6px 8px;border-radius:9px}
+.note-line{margin-top:4px}
 .chart{margin-top:18px;text-align:center}
 .chart h3{margin:8px 0 12px 0;color:#b91c5c}
 .donut-wrapper{position:relative;display:inline-block}

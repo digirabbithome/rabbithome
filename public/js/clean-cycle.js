@@ -1,3 +1,4 @@
+// v1.6.3 - UI flattening & add-dialog tweak
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -10,7 +11,6 @@ const COL_HISTORY = 'cleanCycleHistory'
 const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.tw'])
 
 function nowIso(){ return new Date().toISOString(); }
-function toDateLabel(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 function toDateOnly(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
 function toDateSlash(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` }
 function addDays(iso,d){ const dt=new Date(iso||nowIso()); dt.setDate(dt.getDate()+d); return dt.toISOString() }
@@ -21,7 +21,7 @@ function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;'
 let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, chart=null, historyCache=[], isAdmin=false
 
 async function resolveNickname(uid){
-  try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){ console.warn('暱稱讀取失敗',e) }
+  try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
   const email=auth.currentUser?.email||''; return email.includes('@')?email.split('@')[0]:'未填暱稱'
 }
 
@@ -62,13 +62,14 @@ function bindUI(){
 }
 
 function getStatus(task){
-  const cycle=clampInt(task.days,1,3650); const dueAt=addDays(task.last||nowIso(),cycle); const d=daysBetween(nowIso(), dueAt);
+  const cycle=clampInt(task.days,1,3650); const lastBase = task.last || nowIso();
+  const dueAt=addDays(lastBase,cycle); const d=daysBetween(nowIso(), dueAt);
   let status='ok'; if(d<=2&&d>0) status='soon'; if(d<=0) status=(d===0)?'due':'over'; return { status, daysLeft:d, dueAt }
 }
 function statusBucket(status){
-  if(status==='due'||status==='over') return 'need'
-  if(status==='soon') return 'wait'
-  return 'done'
+  if(status==='due'||status==='over') return 'need'   // 需要清潔
+  if(status==='soon') return 'wait'                   // 等待清潔
+  return 'done'                                       // 完成清潔
 }
 
 function rowEl({head=false, task=null, st=null, bucket=null}){
@@ -79,21 +80,22 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
       <div>項目</div>
       <div>狀態</div>
       <div>上次完成 / 下次清潔（剩餘） / 備註 / 操作</div>`; div.appendChild(row); return div }
-  const pillTip = bucket==='wait' ? `剩 ${st.daysLeft} 天` : bucket==='need' ? (st.daysLeft===0?'今天':'逾期 '+Math.abs(st.daysLeft)+' 天') : `剩 ${st.daysLeft} 天`
-  const pill = `<span class="pill ${bucket}">${bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔'}</span><div class="meta">${pillTip}</div>`
+  const pill = `<span class="pill ${bucket}">${bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔'}</span>`
   const nextStr = `${toDateSlash(st.dueAt)}（剩 ${st.daysLeft} 天）`
   row.innerHTML=`
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
     <div>
-      <div class="meta">上次 ${toDateOnly(task.last)} ／ 下次清潔 ${nextStr}</div>
-      <div class="meta">${escapeHtml(task.note||'')}</div>
-      <div class="actions">
-        <button class="btn small" data-act="done">🧽 清潔完成</button>
-        <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
-        ${isAdmin ? '<button class="btn ghost small" data-act="del">🗑️ 刪除</button>' : ''}
+      <div class="meta with-actions">
+        <span>上次 ${toDateOnly(task.last)} ／ 下次清潔 ${nextStr}</span>
+        <span class="actions-inline">
+          <button class="btn small" data-act="done">🧽 清潔完成</button>
+          <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
+          ${isAdmin ? '<button class="btn ghost small" data-act="del">🗑️ 刪除</button>' : ''}
+        </span>
       </div>
+      <div class="meta note-line">${escapeHtml(task.note||'')}</div>
     </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
   row.querySelector('[data-act="edit"]').addEventListener('click', ()=> openEditDialog(task.id))
@@ -108,13 +110,13 @@ function renderList(){
   withStatus.sort((a,b)=>({need:0,wait:1,done:2}[a.bucket]-({need:0,wait:1,done:2}[b.bucket])))
   withStatus.forEach(({t,st,bucket})=>{
     if(bucket==='need') need++; else if(bucket==='wait') wait++;
-    if(new Date(t.last).toDateString()===today) doneToday++;
+    if(new Date(t.last||0).toDateString()===today) doneToday++;
     if(
       currentFilter==='all' ||
       (['overdue','due'].includes(currentFilter) && bucket==='need') ||
       (currentFilter==='soon' && bucket==='wait') ||
       (currentFilter==='ok' && bucket==='done') ||
-      (currentFilter==='done-today' && new Date(t.last).toDateString()===today)
+      (currentFilter==='done-today' && new Date(t.last||0).toDateString()===today)
     ){
       container.appendChild(rowEl({task:t, st, bucket}))
     }
@@ -157,6 +159,8 @@ function openAddDialog(){
   document.getElementById('fDays').value=7
   document.getElementById('fLast').value=''
   document.getElementById('fNote').value=''
+  // 新增時隱藏「上次完成」欄位
+  const wrap=document.getElementById('lastWrap'); wrap.style.display='none'
   document.getElementById('taskDlg').showModal()
 }
 function openEditDialog(id){
@@ -168,87 +172,46 @@ function openEditDialog(id){
   document.getElementById('fDays').value=clampInt(t.days,1,3650)
   const dt=new Date(t.last||nowIso()); document.getElementById('fLast').value=dt.toISOString().slice(0,16)
   document.getElementById('fNote').value=t.note||''
+  // 編輯時顯示「上次完成」欄位
+  const wrap=document.getElementById('lastWrap'); wrap.style.display='block'
   document.getElementById('taskDlg').showModal()
 }
 async function submitTaskDialog(){
   const area=document.getElementById('fArea').value.trim()
   const name=document.getElementById('fName').value.trim()
   const days=clampInt(document.getElementById('fDays').value,1,3650)
-  const lastInput=document.getElementById('fLast').value
-  const last=lastInput?new Date(lastInput).toISOString():nowIso()
   const note=document.getElementById('fNote').value.trim()
   if(!area||!name){ alert('請輸入「區域」與「項目名稱」'); return }
-  if(editingId){ await updateTask(editingId,{ area,name,days,last,note }) } else { await addTask({ area,name,days,last,note }) }
+  if(editingId){
+    const lastInput=document.getElementById('fLast').value
+    const last=lastInput?new Date(lastInput).toISOString():nowIso()
+    await updateTask(editingId,{ area,name,days,last,note })
+  }else{
+    // 新增：不寫 last，讓系統以 now + days 作為第一次下次清潔
+    await addTask({ area,name,days,note })
+  }
   document.getElementById('taskDlg').close()
 }
 
 function exportCSV(){
   const rows=[['區域','項目','週期(天)','上次完成ISO','備註','清潔時間ISO','狀態']]
-  tasks.forEach(t=>{ const st=getStatus(t); const bucket=statusBucket(st.status); rows.push([t.area,t.name,t.days,t.last,t.note||'',st.dueAt,bucket]) })
+  tasks.forEach(t=>{ const st=getStatus(t); const bucket=statusBucket(st.status); rows.push([t.area,t.name,t.days,t.last||'',t.note||'',st.dueAt,bucket]) })
   const csv=rows.map(r=>r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\\n')
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
 // ---- Doughnut 貢獻圖（每月） ----
+let chart=null
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
-
-  const now=new Date()
-  const monthStart=new Date(now.getFullYear(), now.getMonth(), 1)
-  const nextMonthStart=new Date(now.getFullYear(), now.getMonth()+1, 1)
-
-  const lab=document.getElementById('chartMonthLabel')
-  if(lab){ lab.textContent = `本月 (${monthStart.getFullYear()}-${String(monthStart.getMonth()+1).padStart(2,'0')})` }
-
-  const counts={}
-  for(const r of historyCache){
-    const t = r.doneAt ? new Date(r.doneAt) : null
-    if(!t || t < monthStart || t >= nextMonthStart) continue
-    const key=(r.doneBy||'未填暱稱').trim()||'未填暱稱'
-    counts[key]=(counts[key]||0)+1
-  }
-
-  const names=Object.keys(counts)
-  const values=names.map(k=>counts[k])
-  const sum=values.reduce((a,b)=>a+b,0)
-  const center=document.getElementById('donutCenterText')
-  center.textContent = `本月完成 ${sum} 次`
-
+  const now=new Date(), m0=new Date(now.getFullYear(), now.getMonth(), 1), m1=new Date(now.getFullYear(), now.getMonth()+1, 1)
+  const lab=document.getElementById('chartMonthLabel'); if(lab){ lab.textContent=`本月 (${m0.getFullYear()}-${String(m0.getMonth()+1).padStart(2,'0')})` }
+  const counts={}; for(const r of historyCache){ const t=r.doneAt?new Date(r.doneAt):null; if(!t||t<m0||t>=m1) continue; const k=(r.doneBy||'未填暱稱').trim()||'未填暱稱'; counts[k]=(counts[k]||0)+1 }
+  const names=Object.keys(counts), values=names.map(k=>counts[k]), sum=values.reduce((a,b)=>a+b,0)
+  const center=document.getElementById('donutCenterText'); center.textContent=`本月完成 ${sum} 次`
   if(chart){ chart.destroy(); chart=null }
-
-  if(names.length===0){
-    chart=new Chart(cv,{
-      type:'doughnut',
-      data:{ labels:['尚無紀錄'], datasets:[{ data:[1], backgroundColor:['#e5e7eb'], borderWidth:0 }] },
-      options:{ cutout:'65%', plugins:{ legend:{ display:false } } }
-    })
-    center.textContent = '本月完成 0 次'
-    return
-  }
-
-  const ctx = cv.getContext('2d')
-  const palette = [
-    ['#fbd5e6','#f472b6'],
-    ['#c7d2fe','#93c5fd'],
-    ['#e9d5ff','#c4b5fd'],
-    ['#bbf7d0','#86efac'],
-  ]
-  const backgrounds = names.map((_,i)=>{
-    const [from,to]=palette[i % palette.length]
-    const g = ctx.createLinearGradient(0,0,300,300)
-    g.addColorStop(0, from); g.addColorStop(1, to)
-    return g
-  })
-
-  chart=new Chart(cv,{
-    type:'doughnut',
-    data:{ labels:names, datasets:[{ data:values, backgroundColor:backgrounds, borderWidth:1, hoverOffset:4 }] },
-    options:{
-      cutout:'65%',
-      plugins:{
-        legend:{ position:'bottom' },
-        tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${c.parsed} 次 (${Math.round(c.parsed / sum * 1000)/10}%)` } }
-      }
-    }
-  })
+  if(names.length===0){ chart=new Chart(cv,{type:'doughnut',data:{labels:['尚無紀錄'],datasets:[{data:[1],backgroundColor:['#e5e7eb'],borderWidth:0}]} ,options:{cutout:'65%',plugins:{legend:{display:false}}}}); center.textContent='本月完成 0 次'; return }
+  const ctx=cv.getContext('2d'), palette=[['#fbd5e6','#f472b6'],['#c7d2fe','#93c5fd'],['#e9d5ff','#c4b5fd'],['#bbf7d0','#86efac']]
+  const backgrounds=names.map((_,i)=>{ const [a,b]=palette[i%palette.length]; const g=ctx.createLinearGradient(0,0,300,300); g.addColorStop(0,a); g.addColorStop(1,b); return g })
+  chart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})
 }
