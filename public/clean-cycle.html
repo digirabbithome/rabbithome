@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧹 環境整理（週期管理＋貢獻度｜雲端版） | Rabbithome</title>
+  <title>🧹 環境整理（週期管理＋貢獻度｜雲端）</title>
   <link rel="icon" href="/img/rabbit-ico.png" />
   <link rel="stylesheet" href="/css/clean-cycle.css" />
   <link rel="stylesheet" href="css/clean-cycle.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script type="module" src="js/clean-cycle.js?v=2025.10.04-0524"></script>
+  <script type="module" src="js/clean-cycle.js?v=2025.10.04-0629"></script>
 </head>
 <body>
   <div class="page">
     <header class="topbar">
       <div class="left">
-        <h1>🧹 環境整理（週期管理）<span class="ver">雲端 v2025.10.04-0524</span></h1>
-        <span class="tag">暱稱＆資料都走 Firestore（沿用 Rabbithome 帳號）</span>
+        <h1>🧹 環境整理（週期管理）<span class="ver">v2025.10.04-0629</span></h1>
+        <span class="tag">暱稱＆資料皆走 Firebase</span>
       </div>
       <div class="right">
         <label class="nick">
@@ -57,9 +57,8 @@
     </section>
 
     <footer class="footer">
-      <p>說明：每個項目可設定「週期（天）」與「上次完成時間」。系統會自動計算下次到期日，顯示
-        <span class="legend pill ok"></span>安全、<span class="legend pill soon"></span>即將到期（≤2天）、<span class="legend pill due"></span>到期、<span class="legend pill over"></span>逾期。</p>
-      <p class="muted">此版資料儲存在 Firestore：集合 <code>cleanCycleTasks</code> 與 <code>cleanCycleHistory</code>。暱稱從 <code>/users/{uid}.nickname</code> 撈取。</p>
+      <p>說明：每個項目可設定「週期（天）」與「上次完成時間」。系統會自動計算下次到期日。</p>
+      <p class="muted">集合：<code>cleanCycleTasks</code>、<code>cleanCycleHistory</code>；暱稱從 <code>/users/{uid}.nickname</code> 撈取。</p>
     </footer>
   </div>
 
