@@ -1,4 +1,4 @@
-// v1.7.2 - integrate workReports
+// v1.7.3 - toast after syncing to workReports
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc,
@@ -13,13 +13,20 @@ const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.
 
 function nowIso(){ return new Date().toISOString(); }
 function toDateOnly(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
-function toDateSlash(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` }
+function toDateSlash(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate())..padStart(2,'0')}` }
 function addDays(iso,d){ const dt=new Date(iso||nowIso()); dt.setDate(dt.getDate()+d); return dt.toISOString() }
 function daysBetween(aIso,bIso){ const A=new Date(aIso),B=new Date(bIso); return Math.floor((B-A)/86400000) }
 function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Math.max(min,Math.min(max,v)) }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])) }
 
 let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, historyCache=[], isAdmin=false
+
+// toast
+function showToast(msg){
+  const el=document.getElementById('toast'); if(!el) return;
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>{ el.classList.remove('show') }, 2000);
+}
 
 async function appendWorkReport(uid, email, nickname, area, name){
   try{
@@ -37,7 +44,8 @@ async function appendWorkReport(uid, email, nickname, area, name){
       await setDoc(ref, { author:{email, nickname}, date:dateStr, monthKey, plainText:line, contentHtml:lineHtml, createdAt:serverTimestamp() });
       console.log('[workReports] created', id, line);
     }
-  }catch(e){ console.warn('[workReports] write failed', e); }
+    return true;
+  }catch(e){ console.warn('[workReports] write failed', e); return false; }
 }
 
 // ---------- UI handlers ----------
@@ -85,7 +93,8 @@ async function completeOne(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
   await updateTask(id,{ last: nowIso() })
   await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null })
-  await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
+  const ok = await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
+  if(ok) showToast('✅ 清潔完成，已同步至工作紀錄')
 }
 async function removeTaskConfirm(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
@@ -103,7 +112,8 @@ async function completeAllDue(){
       changed++
     }
   }
-  if(!changed) alert('目前沒有需要清潔的項目。')
+  if(changed>0) showToast(`✅ 已完成並同步 ${changed} 筆`)
+  else alert('目前沒有需要清潔的項目。')
 }
 
 // ---------- core helpers ----------
@@ -115,7 +125,6 @@ async function addTask(data){ await addDoc(collection(db,COL_TASKS), { ...data, 
 async function updateTask(id,patch){ await updateDoc(doc(db,COL_TASKS,id), patch) }
 async function pushHistory(rec){ await addDoc(collection(db,COL_HISTORY), { ...rec, doneAt: nowIso(), doneAtTS: serverTimestamp() }) }
 
-// ---------- view renderers ----------
 function getStatus(task){
   const cycle=clampInt(task.days,1,3650);
   if(!task.last){
@@ -177,7 +186,7 @@ function renderList(){
   el('totalCount', tasks.length); el('dueCount', wait); el('overCount', need); el('doneToday', doneToday)
 }
 
-// chart single instance
+// chart single instance kept by Chart's own scope (page loads once)
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
   const now=new Date(), m0=new Date(now.getFullYear(), now.getMonth(), 1), m1=new Date(now.getFullYear(), now.getMonth()+1, 1)
@@ -192,7 +201,6 @@ function renderContribDonut(){
   window._ccChart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})
 }
 
-// ---------- subscriptions & init ----------
 function watchTasks(){
   const qy=query(collection(db,COL_TASKS), orderBy('area'), orderBy('name'))
   return onSnapshot(qy, snap=>{ tasks = snap.docs.map(d=>({ ...d.data(), id:d.id })); renderList() })
