@@ -11,6 +11,7 @@ const ADMIN_EMAILS = new Set(['swimming8250@yahoo.com.tw','duckskin71@yahoo.com.
 
 function nowIso(){ return new Date().toISOString(); }
 function toDateLabel(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
+function toDateOnly(iso){ if(!iso) return '—'; const d=new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
 function addDays(iso,d){ const dt=new Date(iso||nowIso()); dt.setDate(dt.getDate()+d); return dt.toISOString() }
 function daysBetween(aIso,bIso){ const A=new Date(aIso),B=new Date(bIso); return Math.floor((B-A)/86400000) }
 function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Math.max(min,Math.min(max,v)) }
@@ -63,43 +64,34 @@ function getStatus(task){
   const cycle=clampInt(task.days,1,3650); const dueAt=addDays(task.last||nowIso(),cycle); const d=daysBetween(nowIso(), dueAt);
   let status='ok'; if(d<=2&&d>0) status='soon'; if(d<=0) status=(d===0)?'due':'over'; return { status, daysLeft:d, dueAt }
 }
-function matchFilter(status, task){
-  if(currentFilter==='all')return true
-  if(currentFilter==='ok')return status==='ok'
-  if(currentFilter==='soon')return status==='soon'
-  if(currentFilter==='due')return status==='due'
-  if(currentFilter==='overdue')return status==='over'
-  if(currentFilter==='done-today'){ const today=(new Date()).toDateString(); return new Date(task.last).toDateString()===today }
-  return true
-}
-function pillHtml(status, daysLeft){
-  const label=(status==='ok'?'安全':status==='soon'?'即將到期':status==='due'?'到期':'逾期')
-  let tip=''; if(status==='ok'||status==='soon') tip=`剩 ${daysLeft} 天`; else if(status==='due') tip='今天'; else tip=`逾期 ${Math.abs(daysLeft)} 天`
-  return `<span class="pill ${status}">${label}</span><div class="meta">${tip}</div>`
+function statusBucket(status){
+  if(status==='due'||status==='over') return 'need'   // 需要清潔
+  if(status==='soon') return 'wait'                   // 等待清潔
+  return 'done'                                       // 完成清潔
 }
 
-function rowEl({head=false, task=null, st=null}){
+function rowEl({head=false, task=null, st=null, bucket=null}){
   const div=document.createElement('div'); div.className='card'
   const row=document.createElement('div'); row.className='row '+(head?'head':'')
   if(head){ row.innerHTML=`
       <div>區域</div>
       <div>項目</div>
-      <div>週期(天)</div>
-      <div>下次到期</div>
+      <div>清潔時間</div>
       <div>狀態</div>
       <div>上次完成 / 備註 / 操作</div>`; div.appendChild(row); return div }
-  const statusPill=pillHtml(st.status, st.daysLeft)
+  const dueDateOnly=toDateOnly(st.dueAt)
+  const tip = bucket==='wait' ? `剩 ${st.daysLeft} 天` : bucket==='need' ? (st.daysLeft===0?'今天':'逾期 '+Math.abs(st.daysLeft)+' 天') : `剩 ${st.daysLeft} 天`
+  const pill = `<span class="pill ${bucket}">${bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔'}</span><div class="meta">${tip}</div>`
   row.innerHTML=`
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
-    <div>${clampInt(task.days,1,3650)}</div>
-    <div><div>${toDateLabel(st.dueAt)}</div><div class="meta">每 ${clampInt(task.days,1,3650)} 天</div></div>
-    <div>${statusPill}</div>
+    <div>${dueDateOnly}</div>
+    <div>${pill}</div>
     <div>
       <div class="meta">上次 ${toDateLabel(task.last)}</div>
       <div class="meta">${escapeHtml(task.note||'')}</div>
       <div class="actions">
-        <button class="btn small" data-act="done">✅ 完成一次</button>
+        <button class="btn small" data-act="done">🧽 清潔完成</button>
         <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
         ${isAdmin ? '<button class="btn ghost small" data-act="del">🗑️ 刪除</button>' : ''}
       </div>
@@ -112,15 +104,25 @@ function rowEl({head=false, task=null, st=null}){
 
 function renderList(){
   const container=document.getElementById('list'); container.innerHTML=''; container.appendChild(rowEl({head:true}))
-  let due=0,over=0,doneToday=0; const today=(new Date()).toDateString()
-  tasks.forEach(task=>{
-    const st=getStatus(task); if(!matchFilter(st.status,task)) return
-    if(st.status==='due') due++; if(st.status==='over') over++; if(new Date(task.last).toDateString()===today) doneToday++
-    container.appendChild(rowEl({task,st}))
+  let need=0,wait=0,doneToday=0; const today=(new Date()).toDateString()
+  const withStatus = tasks.map(t=>{ const st=getStatus(t); return { t, st, bucket: statusBucket(st.status) } })
+  // 排序：需要清潔 > 等待清潔 > 完成清潔
+  withStatus.sort((a,b)=>({need:0,wait:1,done:2}[a.bucket]-({need:0,wait:1,done:2}[b.bucket])))
+  withStatus.forEach(({t,st,bucket})=>{
+    if(bucket==='need') need++; else if(bucket==='wait') wait++;
+    if(new Date(t.last).toDateString()===today) doneToday++;
+    // 過濾
+    if(currentFilter==='all' or
+       (currentFilter in ['overdue','due'] and bucket==='need') or
+       (currentFilter==='soon' and bucket==='wait') or
+       (currentFilter==='ok' and bucket==='done') or
+       (currentFilter==='done-today' and new Date(t.last).toDateString()===today)){
+      container.appendChild(rowEl({task:t, st, bucket}))
+    }
   })
   document.getElementById('totalCount').textContent=tasks.length
-  document.getElementById('dueCount').textContent=due
-  document.getElementById('overCount').textContent=over
+  document.getElementById('dueCount').textContent=wait
+  document.getElementById('overCount').textContent=need
   document.getElementById('doneToday').textContent=doneToday
 }
 
@@ -145,7 +147,7 @@ async function completeAllDue(){
       changed++
     }
   }
-  if(!changed) alert('目前沒有到期/逾期項目。')
+  if(!changed) alert('目前沒有需要清潔的項目。')
 }
 
 function openAddDialog(){
@@ -182,13 +184,13 @@ async function submitTaskDialog(){
 }
 
 function exportCSV(){
-  const rows=[['區域','項目','週期(天)','上次完成ISO','備註','下次到期ISO','狀態']]
-  tasks.forEach(t=>{ const st=getStatus(t); rows.push([t.area,t.name,t.days,t.last,t.note||'',st.dueAt,st.status]) })
+  const rows=[['區域','項目','週期(天)','上次完成ISO','備註','清潔時間ISO','狀態']]
+  tasks.forEach(t=>{ const st=getStatus(t); const bucket=statusBucket(st.status); rows.push([t.area,t.name,t.days,t.last,t.note||'',st.dueAt,bucket]) })
   const csv=rows.map(r=>r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\\n')
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
-// ---- Doughnut 貢獻圖（每月 1 號 ～ 次月 1 號），柔和漸層 ----
+// ---- Doughnut 貢獻圖（每月） ----
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
 
