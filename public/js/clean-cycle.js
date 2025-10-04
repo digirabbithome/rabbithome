@@ -29,7 +29,7 @@ async function resolveNickname(uid){
 
 function watchTasks(){
   const qy = query(collection(db, COL_TASKS), orderBy('area'), orderBy('name'))
-  return onSnapshot(qy, snap => { tasks = snap.docs.map(d=>({id:d.id, ...d.data()})); renderList(); })
+  return onSnapshot(qy, snap => { tasks = snap.docs.map(d => ({ ...d.data(), id: d.id })); renderList(); })
 }
 function watchHistory(){
   const qy = query(collection(db, COL_HISTORY), orderBy('doneAtTS','desc'))
@@ -143,7 +143,7 @@ async function submitTaskDialog(){
   const area=document.getElementById('fArea').value.trim(); const name=document.getElementById('fName').value.trim(); const days=clampInt(document.getElementById('fDays').value,1,3650);
   const lastInput=document.getElementById('fLast').value; const last=lastInput?new Date(lastInput).toISOString():nowIso(); const note=document.getElementById('fNote').value.trim();
   if(!area||!name){ alert('請輸入「區域」與「項目名稱」'); return; }
-  if(editingId){ await updateTask(editingId, { area, name, days, last, note }); } else { await addTask({ id: cid(), area, name, days, last, note }); }
+  if(editingId){ await updateTask(editingId, { area, name, days, last, note }); } else { await addTask({ area, name, days, last, note }); }
   document.getElementById('taskDlg').close();
 }
 
