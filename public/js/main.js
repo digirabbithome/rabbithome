@@ -17,3 +17,38 @@ window.onload = function () {
   const nickname = localStorage.getItem("nickname") || "使用者";
   document.getElementById("nickname-display").textContent = `🙋‍♂️ 使用者：${nickname}`;
 };
+
+// === 環境整理（clean-cycle）紅圈提示（不影響其他功能） ===
+import { db } from '/js/firebase.js'
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+
+function __floorDays(ms){ return Math.floor(ms / 86400000) }
+async function __countEnvWaiting(){
+  try{
+    const snap = await getDocs(collection(db,'cleanCycleTasks'))
+    const now = new Date()
+    let waiting=0
+    snap.forEach(doc=>{
+      const d=doc.data()||{}
+      const lastIso=d.last, days=parseInt(d.days||0,10)
+      if(!lastIso||!days) return
+      const last=new Date(lastIso)
+      const dueAt=new Date(last.getTime()+days*86400000)
+      const daysLeft=__floorDays(dueAt-now)
+      if(daysLeft <= 2) waiting++
+    })
+    return waiting
+  }catch(e){console.warn('[badge] countEnvWaiting failed',e);return 0}
+}
+function __setCycleBadge(n){
+  const el=document.getElementById('cycle-badge')
+  if(!el) return
+  if(n>0){ el.textContent=n; el.style.display='inline-flex' }
+  else{ el.style.display='none' }
+}
+async function __updateCycleBadge(){
+  const n=await __countEnvWaiting()
+  __setCycleBadge(n)
+}
+window.addEventListener('load', __updateCycleBadge)
+setInterval(__updateCycleBadge, 3*60*60*1000)
