@@ -18,12 +18,12 @@ window.onload = function () {
   document.getElementById("nickname-display").textContent = `🙋‍♂️ 使用者：${nickname}`;
 };
 
-// === 環境整理（clean-cycle）紅圈提示（不影響其他功能） ===
+// === 環境整理（clean-cycle）紅圈提示（包含「過期 + 0~2天內到期」） ===
 import { db } from '/js/firebase.js'
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-function __floorDays(ms){ return Math.floor(ms / 86400000) }
-async function __countEnvWaiting(){
+function __badge_floorDays(ms){ return Math.floor(ms / 86400000) }
+async function __badge_countEnvWaiting(){
   try{
     const snap = await getDocs(collection(db,'cleanCycleTasks'))
     const now = new Date()
@@ -34,21 +34,21 @@ async function __countEnvWaiting(){
       if(!lastIso||!days) return
       const last=new Date(lastIso)
       const dueAt=new Date(last.getTime()+days*86400000)
-      const daysLeft=__floorDays(dueAt-now)
-      if(daysLeft <= 2) waiting++
+      const daysLeft=__badge_floorDays(dueAt-now)
+      if(daysLeft <= 2) waiting++   // ✅ 過期(負數) 也算進去
     })
     return waiting
   }catch(e){console.warn('[badge] countEnvWaiting failed',e);return 0}
 }
-function __setCycleBadge(n){
+function __badge_set(n){
   const el=document.getElementById('cycle-badge')
   if(!el) return
-  if(n>0){ el.textContent=n; el.style.display='inline-flex' }
+  if(n>0){ el.textContent=String(n); el.style.display='inline-flex' }
   else{ el.style.display='none' }
 }
-async function __updateCycleBadge(){
-  const n=await __countEnvWaiting()
-  __setCycleBadge(n)
+async function __badge_update(){
+  const n=await __badge_countEnvWaiting()
+  __badge_set(n)
 }
-window.addEventListener('load', __updateCycleBadge)
-setInterval(__updateCycleBadge, 3*60*60*1000)
+window.addEventListener('load', __badge_update)
+setInterval(__badge_update, 3*60*60*1000)
