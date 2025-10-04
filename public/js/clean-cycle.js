@@ -1,4 +1,4 @@
-// v1.6.3 - UI flattening & add-dialog tweak
+// v1.6.5 - fix chart var & state backgrounds
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -18,7 +18,8 @@ function daysBetween(aIso,bIso){ const A=new Date(aIso),B=new Date(bIso); return
 function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Math.max(min,Math.min(max,v)) }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])) }
 
-let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, chart=null, historyCache=[], isAdmin=false
+let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, historyCache=[], isAdmin=false
+let chart=null  // single global chart variable
 
 async function resolveNickname(uid){
   try{ const ref=doc(db,'users',uid); const snap=await getDoc(ref); if(snap.exists() && snap.data().nickname) return snap.data().nickname }catch(e){}
@@ -62,18 +63,22 @@ function bindUI(){
 }
 
 function getStatus(task){
-  const cycle=clampInt(task.days,1,3650); const lastBase = task.last || nowIso();
-  const dueAt=addDays(lastBase,cycle); const d=daysBetween(nowIso(), dueAt);
-  let status='ok'; if(d<=2&&d>0) status='soon'; if(d<=0) status=(d===0)?'due':'over'; return { status, daysLeft:d, dueAt }
+  const cycle=clampInt(task.days,1,3650);
+  const base = task.last || nowIso();
+  const dueAt=addDays(base,cycle); 
+  const d=daysBetween(nowIso(), dueAt);
+  let status='ok'; if(d<=2&&d>0) status='soon'; if(d<=0) status=(d===0)?'due':'over'; 
+  return { status, daysLeft:d, dueAt }
 }
 function statusBucket(status){
-  if(status==='due'||status==='over') return 'need'   // 需要清潔
-  if(status==='soon') return 'wait'                   // 等待清潔
-  return 'done'                                       // 完成清潔
+  if(status==='due'||status==='over') return 'need'
+  if(status==='soon') return 'wait'
+  return 'done'
 }
 
 function rowEl({head=false, task=null, st=null, bucket=null}){
-  const div=document.createElement('div'); div.className='card'
+  const div=document.createElement('div'); 
+  div.className='card ' + (bucket==='need'?'need-bg':bucket==='wait'?'wait-bg':'done-bg')
   const row=document.createElement('div'); row.className='row '+(head?'head':'')
   if(head){ row.innerHTML=`
       <div>區域</div>
@@ -159,7 +164,6 @@ function openAddDialog(){
   document.getElementById('fDays').value=7
   document.getElementById('fLast').value=''
   document.getElementById('fNote').value=''
-  // 新增時隱藏「上次完成」欄位
   const wrap=document.getElementById('lastWrap'); wrap.style.display='none'
   document.getElementById('taskDlg').showModal()
 }
@@ -172,7 +176,6 @@ function openEditDialog(id){
   document.getElementById('fDays').value=clampInt(t.days,1,3650)
   const dt=new Date(t.last||nowIso()); document.getElementById('fLast').value=dt.toISOString().slice(0,16)
   document.getElementById('fNote').value=t.note||''
-  // 編輯時顯示「上次完成」欄位
   const wrap=document.getElementById('lastWrap'); wrap.style.display='block'
   document.getElementById('taskDlg').showModal()
 }
@@ -187,7 +190,6 @@ async function submitTaskDialog(){
     const last=lastInput?new Date(lastInput).toISOString():nowIso()
     await updateTask(editingId,{ area,name,days,last,note })
   }else{
-    // 新增：不寫 last，讓系統以 now + days 作為第一次下次清潔
     await addTask({ area,name,days,note })
   }
   document.getElementById('taskDlg').close()
@@ -201,7 +203,6 @@ function exportCSV(){
 }
 
 // ---- Doughnut 貢獻圖（每月） ----
-let chart=null
 function renderContribDonut(){
   const cv=document.getElementById('contribChart'); if(!cv) return
   const now=new Date(), m0=new Date(now.getFullYear(), now.getMonth(), 1), m1=new Date(now.getFullYear(), now.getMonth()+1, 1)
@@ -210,7 +211,7 @@ function renderContribDonut(){
   const names=Object.keys(counts), values=names.map(k=>counts[k]), sum=values.reduce((a,b)=>a+b,0)
   const center=document.getElementById('donutCenterText'); center.textContent=`本月完成 ${sum} 次`
   if(chart){ chart.destroy(); chart=null }
-  if(names.length===0){ chart=new Chart(cv,{type:'doughnut',data:{labels:['尚無紀錄'],datasets:[{data:[1],backgroundColor:['#e5e7eb'],borderWidth:0}]} ,options:{cutout:'65%',plugins:{legend:{display:false}}}}); center.textContent='本月完成 0 次'; return }
+  if(names.length===0){ chart=new Chart(cv,{type:'doughnut',data:{labels:['尚無紀錄'],datasets:[{data:[1],backgroundColor:['#e5e7eb'],borderWidth:0}]},options:{cutout:'65%',plugins:{legend:{display:false}}}}); center.textContent='本月完成 0 次'; return }
   const ctx=cv.getContext('2d'), palette=[['#fbd5e6','#f472b6'],['#c7d2fe','#93c5fd'],['#e9d5ff','#c4b5fd'],['#bbf7d0','#86efac']]
   const backgrounds=names.map((_,i)=>{ const [a,b]=palette[i%palette.length]; const g=ctx.createLinearGradient(0,0,300,300); g.addColorStop(0,a); g.addColorStop(1,b); return g })
   chart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})

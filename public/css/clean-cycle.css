@@ -19,7 +19,11 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .stats{display:flex;gap:14px;align-items:center}
 .muted{color:var(--muted)}
 .list{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;border:1px solid #ffe0ef}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;border:1px solid #ffe0ef;transition:background 0.2s ease}
+/* 依狀態的背景提示 */
+.card.need-bg{background:linear-gradient(180deg,#fff5f5,#fff);border-color:#ffd3d3}
+.card.wait-bg{background:linear-gradient(180deg,#fffbea,#fff);border-color:#ffe6a8}
+.card.done-bg{background:linear-gradient(180deg,#f1fdf6,#fff);border-color:#b9f4cd}
 /* 4欄：區域 | 項目 | 狀態 | 右側(上次/下次/備註/操作) */
 .row{display:grid;grid-template-columns:140px 1fr 160px 1fr;gap:8px;align-items:center}
 .head{font-weight:700;color:#7a294f}
@@ -27,7 +31,6 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .pill.done{background:#e8fff0;color:#0f7a3d;border:1px solid #8ee5b3}
 .pill.wait{background:#fffbe6;color:#8a6d00;border:1px solid #f5da66}
 .pill.need{background:#fff1f1;color:#b60000;border:1px solid #ff9a9a}
-/* 新：移除 pill 下的小字間距（因為不再顯示天數） */
 .pill + .meta{display:none}
 .area{font-weight:700}
 .meta{font-size:12px;color:#6b7280}
