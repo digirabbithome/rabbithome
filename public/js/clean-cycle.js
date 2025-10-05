@@ -1,4 +1,4 @@
-// v1.7.5 - branded toast + stable sync to workReports
+// v1.7.6 - edit hides date; only admins see edit/delete; no auto-overwrite last on edit
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc,
@@ -47,7 +47,7 @@ async function appendWorkReport(uid, email, nickname, area, name){
     const snap=await getDoc(ref);
     if(snap.exists()){
       const d=snap.data()||{};
-      const newPlain = (d.plainText? d.plainText + '\\n' : '') + line;
+      const newPlain = (d.plainText? d.plainText + '\n' : '') + line;
       const newHtml = (d.contentHtml? d.contentHtml + lineHtml : lineHtml);
       await updateDoc(ref,{ plainText:newPlain, contentHtml:newHtml, updatedAt:serverTimestamp() });
       console.log('[workReports] appended', id, line);
@@ -79,10 +79,8 @@ function openEditDialog(id){
   document.getElementById('fDays').value=clampInt(t.days,1,3650)
   document.getElementById('fNote').value=t.note||''
   const slot=document.getElementById('editOnlySlot')
-  slot.innerHTML=`<label>上次完成
-    <input id="fLast" type="datetime-local" />
-  </label>`
-  const dt=new Date(t.last||nowIso()); document.getElementById('fLast').value=dt.toISOString().slice(0,16)
+  const lastText = t.last ? toDateSlash(t.last) : '—'
+  slot.innerHTML = `<div class="meta">上次完成：${escapeHtml(lastText)}</div>`
   document.getElementById('taskDlg').showModal()
 }
 async function submitTaskDialog(){
@@ -92,9 +90,14 @@ async function submitTaskDialog(){
   const note=document.getElementById('fNote').value.trim()
   if(!area||!name){ alert('請輸入「區域」與「項目名稱」'); return }
   if(editingId){
+    const patch = { area,name,days,note }
     const lastEl=document.getElementById('fLast')
-    const last=lastEl?new Date(lastEl.value).toISOString():nowIso()
-    await updateTask(editingId,{ area,name,days,last,note })
+    if(lastEl && lastEl.value){
+      const original = tasks.find(x=>x.id===editingId)?.last || null
+      const newVal = new Date(lastEl.value).toISOString()
+      if(original !== newVal) patch.last = newVal
+    }
+    await updateTask(editingId, patch)
   }else{
     await addTask({ area,name,days,note })
   }
@@ -160,9 +163,15 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
     <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
-    <div class="actions-col"><button class="btn small" data-act="done">🧽 清潔完成</button><button class="btn ghost small" data-act="edit">✏️ 編輯</button>${isAdmin ? '<button class="btn ghost small" data-act="del">🗑️ 刪除</button>' : ''}</div>`
+    <div class="actions-col">
+      <button class="btn small" data-act="done">🧽 清潔完成</button>
+      ${isAdmin ? `
+        <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
+        <button class="btn ghost small" data-act="del">🗑️ 刪除</button>
+      ` : ''}
+    </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
-  row.querySelector('[data-act="edit"]').addEventListener('click', ()=> openEditDialog(task.id))
+  const editBtn=row.querySelector('[data-act="edit"]'); if(editBtn) editBtn.addEventListener('click', ()=> openEditDialog(task.id))
   const delBtn=row.querySelector('[data-act="del"]'); if(delBtn) delBtn.addEventListener('click', ()=> removeTaskConfirm(task.id))
   div.appendChild(row); return div
 }
@@ -199,7 +208,7 @@ function renderContribDonut(){
   const center=document.getElementById('donutCenterText'); if(center) center.textContent=`本月完成 ${sum} 次`
   if(window._ccChart){ window._ccChart.destroy(); window._ccChart=null }
   if(names.length===0){ window._ccChart=new Chart(cv,{type:'doughnut',data:{labels:['尚無紀錄'],datasets:[{data:[1],backgroundColor:['#e5e7eb'],borderWidth:0}]},options:{cutout:'65%',plugins:{legend:{display:false}}}}); if(center) center.textContent='本月完成 0 次'; return }
-  const ctx=cv.getContext('2d'), palette=[['#fbd5e6','#f472b6'],['#c7d2fe','#93c5fd'],['#e9d5ff','#c4b5fd'],['#bbf7d0','#86efac']]
+  const ctx=cv.getContext('2d'), palette=[["#fbd5e6","#f472b6"],["#c7d2fe","#93c5fd"],["#e9d5ff","#c4b5fd"],["#bbf7d0","#86efac"]]
   const backgrounds=names.map((_,i)=>{ const [a,b]=palette[i%palette.length]; const g=ctx.createLinearGradient(0,0,300,300); g.addColorStop(0,a); g.addColorStop(1,b); return g })
   window._ccChart=new Chart(cv,{type:'doughnut',data:{labels:names,datasets:[{data:values,backgroundColor:backgrounds,borderWidth:1,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} 次 (${Math.round(c.parsed/sum*1000)/10}%)`}}}}})
 }
@@ -226,7 +235,7 @@ function bindUI(){
   document.getElementById('saveTask')?.addEventListener('click', async ev=>{ ev.preventDefault(); await submitTaskDialog() })
 }
 function exportCSV(){
-  const rows=[['區域','項目','週期(天)','上次完成ISO','備註','清潔時間ISO','狀態']]
+  const rows=[["區域","項目","週期(天)","上次完成ISO","備註","清潔時間ISO","狀態"]]
   tasks.forEach(t=>{ const st=getStatus(t); const bucket=statusBucket(st.status); rows.push([t.area,t.name,t.days,t.last||'',t.note||'',st.dueAt,bucket]) })
   const csv=rows.map(r=>r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n')
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
