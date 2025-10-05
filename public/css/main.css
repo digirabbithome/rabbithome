@@ -92,6 +92,7 @@ iframe#content-frame {
   display: inline-flex;       /* 顯示時由 JS 控制，但這裡保險補上 */
   width: 15px;                /* 依你原本視覺大小維持 */
   height: 15px;
+  font-size: 8px;
   align-items: center;
   justify-content: center;
 }
