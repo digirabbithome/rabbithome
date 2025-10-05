@@ -1,5 +1,51 @@
-.editable-note[contenteditable="true"]{
-  border-bottom: 1px dashed #bbb;
+/* === Rabbithome 粉系可編輯樣式 v1.1.1 === */
+.editable-note[contenteditable="true"] {
+  border-bottom: 1px dashed #999;
+  background-color: #fffafc;
   cursor: text;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   outline: none;
+  min-width: 120px;
+}
+
+/* 一般唯讀狀態 */
+.editable-note[contenteditable="false"] {
+  color: #777;
+  border-bottom: none;
+  cursor: not-allowed;
+}
+
+/* 滑鼠移上 */
+.editable-note:hover {
+  border-color: #ff9ec8;
+  background-color: #fff1f7;
+}
+
+/* 聚焦編輯中 */
+.editable-note:focus {
+  background-color: #ffe5ef;
+  border-color: #ff7fb0;
+  box-shadow: 0 0 4px rgba(255, 126, 174, 0.6);
+}
+
+/* 儲存中 */
+.editable-note.saving {
+  background-color: #fff6b3 !important;
+}
+
+/* 儲存成功 */
+.editable-note.saved {
+  background-color: #d8ffd8 !important;
+}
+
+/* 儲存失敗 */
+.editable-note.error {
+  background-color: #ffd6d6 !important;
+}
+
+/* 讓表格整體更整齊 */
+table td, table th {
+  padding: 6px 10px;
+  line-height: 1.5;
+  vertical-align: middle;
 }
