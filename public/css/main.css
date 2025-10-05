@@ -72,7 +72,22 @@ iframe#content-frame {
 /* === Badge for 環境整理 (clean-cycle) === */
 /* 🔴 環境整理紅點徽章（貼近文字版本） */
 /* 只影響有徽章的那顆按鈕，不動其他按鈕 */
-.btn-badge { background-color: #ff3b30; color: white; font-size: 12px; font-weight: bold; border-radius: 50%; padding: 2px 7px; position: absolute; right: -12px; /* 原本是 -20px，現在更靠近 */ top: 2px; line-height: 1; display: none; box-shadow: 0 0 4px rgba(0, 0, 0, 0.15); } .has-badge { position: relative; }
+.btn-badge { 
+  background-color: #ff3b30; 
+  color: white; 
+  font-size: 12px; 
+  font-weight: bold; 
+  border-radius: 50%; 
+  padding: 2px 7px; 
+  position: absolute; 
+  right: -12px; /* 原本是 -20px，現在更靠近 */ 
+  top: 2px; 
+  line-height: 1; 
+  display: none; 
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15); 
+} 
+
+.has-badge { position: relative; }
 
 
 
