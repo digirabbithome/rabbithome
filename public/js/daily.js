@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebas
 import {
   getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+import { appendWorkReportLine } from "/js/workreport-util.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -54,7 +55,11 @@ async function renderTasks() {
   snapshot.forEach(doc => taskDocs.push(doc.data()));
 
   const taskDisplay = document.getElementById("task-display");
-  taskDisplay.innerHTML = ""; const table = document.createElement("table"); table.style.width = "100%"; table.style.borderSpacing = "0 10px"; taskDisplay.appendChild(table);
+  taskDisplay.innerHTML = "";
+  const table = document.createElement("table");
+  table.style.width = "100%";
+  table.style.borderSpacing = "0 10px";
+  taskDisplay.appendChild(table);
 
   const ref = doc(db, "dailyCheck", selectedDate);
   const snap = await getDoc(ref);
@@ -62,8 +67,12 @@ async function renderTasks() {
 
   for (const task of taskDocs) {
     const taskName = task.text;
-    const row = document.createElement("tr"); row.style.verticalAlign = "top";
-    row.className = "task-row"; row.style.background = "#fff"; row.style.borderRadius = "10px"; row.style.boxShadow = "0 0 4px rgba(0,0,0,0.1)";
+    const row = document.createElement("tr");
+    row.style.verticalAlign = "top";
+    row.className = "task-row";
+    row.style.background = "#fff";
+    row.style.borderRadius = "10px";
+    row.style.boxShadow = "0 0 4px rgba(0,0,0,0.1)";
 
     const name = document.createElement("div");
     name.className = "task-name";
@@ -76,13 +85,41 @@ async function renderTasks() {
     const entries = Object.entries(logs).map(([user, time]) => `${user} ${time}`);
     record.textContent = entries.join("　");
 
-    const td1 = document.createElement("td"); td1.style.padding = "10px"; td1.appendChild(name); row.appendChild(td1);
-    const td2 = document.createElement("td"); td2.style.padding = "10px"; record.style.textAlign = "left"; td2.appendChild(record); row.appendChild(td2);
+    const td1 = document.createElement("td");
+    td1.style.padding = "10px";
+    td1.appendChild(name);
+    row.appendChild(td1);
+
+    const td2 = document.createElement("td");
+    td2.style.padding = "10px";
+    record.style.textAlign = "left";
+    td2.appendChild(record);
+    row.appendChild(td2);
+
     table.appendChild(row);
   }
 }
 
-\1
+async function markComplete(task) {
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+  const ref = doc(db, "dailyCheck", selectedDate);
+  const snap = await getDoc(ref);
+  const oldData = snap.exists() ? snap.data() : {};
+  if (!oldData[task]) oldData[task] = {};
+  oldData[task][nickname] = timeStr;
+  await setDoc(ref, oldData);
+
+  // 寫入工作回報
+  try {
+    await appendWorkReportLine(`完成 ${task}`);
+  } catch (e) {
+    console.warn("[workReports] skipped", e?.message || e);
+  }
+
+  // 重新渲染左側清單
+  await renderTasks();
+
   // ✅ 通知右邊 daily-report.html 重新刷新
   (function notifyWorkReportsUpdated() {
     const msg = { source: "rabbithome", type: "workReports:updated", at: Date.now() };
@@ -94,4 +131,4 @@ async function renderTasks() {
       console.warn("[daily] 通知右邊刷新失敗：", e);
     }
   })();
-\2
+}
