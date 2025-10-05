@@ -99,19 +99,21 @@ iframe#content-frame {
 
 /* 覆寫原本 .btn-badge 的定位方式：改成貼在文字右邊 */
 .has-badge .btn-badge {
-  position: static;           /* 不用絕對定位在最右邊 */
+  position: static;           
   right: auto;
   top: auto;
   transform: none;
-  margin-left: 8px;           /* 與文字的距離，可調 6~10px */
-  display: inline-flex;       /* 顯示時由 JS 控制，但這裡保險補上 */
-  width: 15px;                /* 依你原本視覺大小維持 */
-  height: 15px;
-  font-size: 12px;
+  margin-left: 6px;            /* 距離文字更貼近一點 */
+  display: inline-flex;
+  width: 16px;                 /* ✅ 固定寬度 */
+  height: 16px;                /* ✅ 固定高度確保是圓 */
+  font-size: 11px;             /* 字再微小一點點 */
+  line-height: 16px;
   align-items: center;
   justify-content: center;
+  padding: 0;                  /* ✅ 最關鍵，移除多餘 padding 才會變正圓 */
+  border-radius: 50%;          /* 保持圓形 */
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
 }
-
-
 
 
