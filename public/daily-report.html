@@ -72,27 +72,18 @@
   <div id="toast" class="toast" hidden></div>
 
 <script type="module">
-// === 監聽左邊 daily.html 傳來的訊息 ===
 window.addEventListener('message', (e) => {
   if (!e?.data || e.data.type !== 'workReports:updated') return
   refreshRightPanels()
 })
+window.addEventListener('workReports:updated', () => refreshRightPanels())
 
-// 同窗事件（若 daily-report 與 daily 在同窗時也能觸發）
-window.addEventListener('workReports:updated', () => {
-  refreshRightPanels()
-})
-
-// === 右側刷新函式 ===
-// 依你的 daily-report.js 實際函式名稱替換以下內容
 async function refreshRightPanels(){
-  try {
-    if (typeof renderToday === 'function') await renderToday()
-    if (typeof renderHistory === 'function') await renderHistory()
-    console.log('[daily-report] 已重新整理右側內容')
-  } catch(e){
-    console.warn('[daily-report] 無法重新整理右側內容：', e)
-  }
+  let ran = false
+  try { if (typeof window.renderToday === 'function') { await window.renderToday(); ran = true } } catch(e){ console.warn('[daily-report] renderToday() 失敗：', e) }
+  try { if (typeof window.renderHistory === 'function') { await window.renderHistory(); ran = true } } catch(e){ console.warn('[daily-report] renderHistory() 失敗：', e) }
+  if (!ran) { console.log('[daily-report] 找不到 render 函式，改用硬刷新'); window.location.reload() }
+  else { console.log('[daily-report] 已重新整理右側內容') }
 }
 </script>
 
