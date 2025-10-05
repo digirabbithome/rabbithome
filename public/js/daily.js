@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebas
 import {
   getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-import { appendWorkReportLine } from "/js/workreport-util.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -83,15 +82,16 @@ async function renderTasks() {
   }
 }
 
-async function markComplete(task) {
-  const now = new Date();
-  const timeStr = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
-  const ref = doc(db, "dailyCheck", selectedDate);
-  const snap = await getDoc(ref);
-  const oldData = snap.exists() ? snap.data() : {};
-  if (!oldData[task]) oldData[task] = {};
-  oldData[task][nickname] = timeStr;
-  await setDoc(ref, oldData);
-  try { await appendWorkReportLine(`完成 ${task}`) } catch (e) { console.warn('[workReports] skipped', e?.message||e) }
-  await renderTasks();
-}
+\1
+  // ✅ 通知右邊 daily-report.html 重新刷新
+  (function notifyWorkReportsUpdated() {
+    const msg = { source: "rabbithome", type: "workReports:updated", at: Date.now() };
+    try {
+      if (window.parent && window.parent !== window) window.parent.postMessage(msg, "*");
+      if (window.top && window.top !== window) window.top.postMessage(msg, "*");
+      window.dispatchEvent(new CustomEvent("workReports:updated", { detail: msg }));
+    } catch (e) {
+      console.warn("[daily] 通知右邊刷新失敗：", e);
+    }
+  })();
+\2
