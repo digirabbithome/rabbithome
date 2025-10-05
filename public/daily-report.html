@@ -70,5 +70,31 @@
   </div>
 
   <div id="toast" class="toast" hidden></div>
+
+<script type="module">
+// === 監聽左邊 daily.html 傳來的訊息 ===
+window.addEventListener('message', (e) => {
+  if (!e?.data || e.data.type !== 'workReports:updated') return
+  refreshRightPanels()
+})
+
+// 同窗事件（若 daily-report 與 daily 在同窗時也能觸發）
+window.addEventListener('workReports:updated', () => {
+  refreshRightPanels()
+})
+
+// === 右側刷新函式 ===
+// 依你的 daily-report.js 實際函式名稱替換以下內容
+async function refreshRightPanels(){
+  try {
+    if (typeof renderToday === 'function') await renderToday()
+    if (typeof renderHistory === 'function') await renderHistory()
+    console.log('[daily-report] 已重新整理右側內容')
+  } catch(e){
+    console.warn('[daily-report] 無法重新整理右側內容：', e)
+  }
+}
+</script>
+
 </body>
 </html>
