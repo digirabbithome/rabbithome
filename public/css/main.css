@@ -90,8 +90,8 @@ iframe#content-frame {
   transform: none;
   margin-left: 8px;           /* 與文字的距離，可調 6~10px */
   display: inline-flex;       /* 顯示時由 JS 控制，但這裡保險補上 */
-  width: 22px;                /* 依你原本視覺大小維持 */
-  height: 22px;
+  width: 15px;                /* 依你原本視覺大小維持 */
+  height: 15px;
   align-items: center;
   justify-content: center;
 }
