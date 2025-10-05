@@ -1,7 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, getDocs, collection, query, orderBy
+  getFirestore, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyANuDJyJuQbxnXq-FTyaTAI9mSc6zpmuWs",
@@ -11,6 +13,70 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+const auth = getAuth(app);
+
+function todayYMD_TPE(){
+  const now = new Date();
+  const tpe = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  const y = tpe.getFullYear();
+  const m = String(tpe.getMonth()+1).padStart(2,'0');
+  const d = String(tpe.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function nowHM_TPE(){
+  const now = new Date();
+  const tpe = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  const h = String(tpe.getHours()).padStart(2,'0');
+  const n = String(tpe.getMinutes()).padStart(2,'0');
+  return `${h}:${n}`;
+}
+
+async function appendWorkReportLine(lineText){
+  return new Promise((resolve, reject)=>{
+    onAuthStateChanged(auth, async (user)=>{
+      if (!user) return reject(new Error('未登入，無法寫入工作回報'));
+      try{
+        const uid = user.uid || 'unknown';
+        const email = user.email || '';
+        const nickname = (localStorage.getItem('nickname') || (email.split('@')[0] || '未填暱稱')).trim();
+
+        const dateStr = todayYMD_TPE();
+        const monthKey = dateStr.slice(0,7);
+        const timeStr = nowHM_TPE();
+        const id = `${uid}_${dateStr}`;
+
+        const ref = doc(db, 'workReports', id);
+        const snap = await getDoc(ref);
+        const line = `${timeStr} ${lineText}`;
+        const lineHtml = `<div>${line}</div>`;
+
+        if (snap.exists()){
+          const d = snap.data() || {};
+          await updateDoc(ref, {
+            plainText: (d.plainText ? d.plainText + '\\n' : '') + line,
+            contentHtml: (d.contentHtml ? d.contentHtml + lineHtml : lineHtml),
+            updatedAt: serverTimestamp()
+          });
+        }else{
+          await setDoc(ref, {
+            author: { email, nickname },
+            date: dateStr,
+            monthKey,
+            plainText: line,
+            contentHtml: lineHtml,
+            createdAt: serverTimestamp()
+          });
+        }
+        resolve(true);
+      }catch(err){
+        console.error('[workReports] append failed', err);
+        reject(err);
+      }
+    });
+  });
+}
+
 let selectedDate = getTodayString();
 let nickname = localStorage.getItem("nickname") || "使用者";
 
