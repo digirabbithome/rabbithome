@@ -12,29 +12,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// === cross-page notify: tell daily-report.html to refresh (soft)
-let __wr_notifyTimer;
-function notifyWorkReportsUpdated(){
-  // debounce within same tick
-  clearTimeout(__wr_notifyTimer);
-  __wr_notifyTimer = setTimeout(() => {
-    const msg = { source: 'rabbithome', type: 'workReports:updated', at: Date.now() };
-    try {
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(msg, '*');
-      }
-      if (window.top && window.top !== window) {
-        window.top.postMessage(msg, '*');
-      }
-      // also dispatch a local event in case daily-report shares same window
-      window.dispatchEvent(new CustomEvent('workReports:updated', { detail: msg }));
-    } catch (e) {
-      console.warn('[daily] notifyWorkReportsUpdated failed:', e);
-    }
-  }, 0);
-}
-
 let selectedDate = getTodayString();
 let nickname = localStorage.getItem("nickname") || "使用者";
 
@@ -115,5 +92,6 @@ async function markComplete(task) {
   if (!oldData[task]) oldData[task] = {};
   oldData[task][nickname] = timeStr;
   await setDoc(ref, oldData);
+  try { await appendWorkReportLine(`完成 ${task}`) } catch (e) { console.warn('[workReports] skipped', e?.message||e) }
   await renderTasks();
 }
