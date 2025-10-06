@@ -1,11 +1,11 @@
 // === Rabbithome 主頁正式整合版 main.js ===
-// 版本：2025-10-06
+// 版本：2025-10-06b
 // 功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️ 三項紅圈 Badge
 
 import { auth, db } from '/js/firebase.js'
 import {
   doc, getDoc, collection, getDocs, collectionGroup,
-  query, where, getCountFromServer
+  query, where
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
@@ -159,36 +159,25 @@ onAuthStateChanged(auth, async (user) => {
 })
 
 // ----------------------------------------------------
-// 🗓️ Leave Approve Badge
+// 🗓️ Leave Approve Badge（只算：尚未結束 & 狀態=待審核）
+// ※ 提醒：collectionGroup + where 仍需在 Firestore 建立
+//    「Collection group = leaves，欄位 status=ASC」索引。
 // ----------------------------------------------------
+function todayYMD_TPE() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date()) // e.g. "2025-10-06"
+}
 async function countLeavePending() {
   try {
+    const today = todayYMD_TPE()
+
+    // 抓所有待審核
     const q = query(collectionGroup(db, 'leaves'), where('status', '==', 'pending'))
-    const snap = await getCountFromServer(q)
-    return snap.data().count || 0
-  } catch (err) {
-    console.error('[badge:leave] fetch error:', err)
-    return 0
-  }
-}
-function setLeaveBadge(n) {
-  const el = document.getElementById('leave-badge')
-  if (!el) return
-  if (Number(n) > 0) {
-    el.textContent = String(n)
-    el.style.display = 'inline-flex'
-  } else {
-    el.style.display = 'none'
-  }
-}
-async function updateLeaveBadge() {
-  const n = await countLeavePending()
-  setLeaveBadge(n)
-}
-window.addEventListener('DOMContentLoaded', updateLeaveBadge)
-window.addEventListener('load', updateLeaveBadge)
-setInterval(updateLeaveBadge, 3 * 60 * 60 * 1000)
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return
-  await updateLeaveBadge()
-})
+    const snap = await getDocs(q)
+
+    let count = 0
+    snap.forEach(doc => {
+      const x = doc.data() || {}
+      const end = (x.
