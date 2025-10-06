@@ -1,11 +1,10 @@
 // === Rabbithome 主頁 main.js ===
-// 版本：2025-10-06e (final)
-// 功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️ 三項紅圈（請假只算年假pending且未結束）
-
+/* 版本：2025-10-06g
+   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰 四項徽章
+   - Leave: 只算 年假(type='annual') + 待審核(pending) + 未結束(end>=today, TPE)
+   - Cashbox: 今日有未歸零且金額≠0 的差額 → 綠色✖️ */
 import { auth, db } from '/js/firebase.js'
-import {
-  doc, getDoc, collection, getDocs, collectionGroup, query, where
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import { doc, getDoc, collection, getDocs, collectionGroup, query, where } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 // ---------------- 基本 UI ----------------
@@ -31,8 +30,7 @@ const toDateSafe = (v)=>{ try{
   if(v?.seconds) return new Date(v.seconds*1000)
   return new Date(v)
 }catch(_){return null} }
-const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDate())
-  ,B=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.floor((B-A)/DAY) }
+const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDate()), B=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.floor((B-A)/DAY) }
 
 async function countEnvWaiting(){
   try{
@@ -98,5 +96,52 @@ window.addEventListener('DOMContentLoaded',updateLeaveBadge)
 window.addEventListener('load',updateLeaveBadge)
 setInterval(updateLeaveBadge,3*60*60*1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
+
+// ---------------- 💰 Cashbox Diff Badge ----------------
+// 今日有「未歸零且金額≠0」的紀錄 → 顯示綠圈 ✖️
+const _todayYMD = (typeof todayYMD_TPE === 'function')
+  ? todayYMD_TPE
+  : () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+
+async function countCashMismatchToday(){
+  try{
+    const today = _todayYMD()
+    const q = query(collection(db, 'cashbox-diffs'), where('date', '==', today))
+    const snap = await getDocs(q)
+
+    let hasMismatch = false
+    snap.forEach(d => {
+      if (hasMismatch) return
+      const x = d.data() || {}
+      const amount = Number(x.amount ?? 0)
+      const zeroed = !!x.zeroed
+      if (!zeroed && Math.abs(amount) > 0.0001) hasMismatch = true
+    })
+    return hasMismatch ? 1 : 0
+  }catch(e){
+    console.error('[badge:cashdiff] error', e)
+    return 0
+  }
+}
+function setCashDiffBadge(flag){
+  const el = document.getElementById('cashdiff-badge')
+  if (!el) return
+  if (flag){
+    el.textContent = '✖️'
+    el.style.display = 'inline-flex'
+    el.style.backgroundColor = '#10b981' // 綠色
+    el.title = '今日外場錢櫃金額有出入'
+  }else{
+    el.style.display = 'none'
+  }
+}
+async function updateCashDiffBadge(){
+  const n = await countCashMismatchToday()
+  setCashDiffBadge(n)
+}
+window.addEventListener('DOMContentLoaded', updateCashDiffBadge)
+window.addEventListener('load', updateCashDiffBadge)
+setInterval(updateCashDiffBadge, 30 * 60 * 1000)
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateCashDiffBadge() })
 
 // === EOF ===
