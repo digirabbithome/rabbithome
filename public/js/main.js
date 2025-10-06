@@ -1,13 +1,13 @@
 // === Rabbithome 主頁 main.js ===
-/* 版本：2025-10-06k
-   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚚 頭部角標
+/* 版本：2025-10-06m
+   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚚 頭部角標（無數字即隱藏）
    排程頻率：
    - 🧽 環境整理：每 6 小時
-   - 🔋 電池：每 6 小時（全域 + 登入後）
+   - 🔋 電池：每 6 小時（僅全域排程；登入後只跑一次）
    - 🗓️ 年假待審：每 12 小時
    - 💰 外場錢櫃：每 4 小時
    - 📌 公布欄「環境整潔」：每 1 小時
-   - 🚚 貨車（外場、自己發佈、仍顯示、標示中）：每 30 分鐘
+   - 🚚 貨車（外場、自己發佈、仍顯示、標示中）：每 30 分鐘（無數字就隱藏）
 */
 import { auth, db } from '/js/firebase.js'
 import { doc, getDoc, collection, getDocs, collectionGroup, query, where } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
@@ -27,7 +27,7 @@ const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDat
 // 目前登入者顯示名稱（用來比對「自己發佈」）
 let CURRENT_PROFILE_NAME = ''
 
-// ---------------- Header 角標：🚚（大小沿用 .btn-badge） ----------------
+// ---------------- Header 角標：🚚（無數字→整顆不顯示；大小沿用 .btn-badge） ----------------
 function ensureHeaderTruck(){
   const el = document.getElementById('nickname-display')
   if (!el) return
@@ -35,7 +35,11 @@ function ensureHeaderTruck(){
 
   const wrap = document.createElement('span')
   wrap.id = 'hdr-truck-wrap'
-  Object.assign(wrap.style, { display:'inline-flex', alignItems:'center', marginLeft:'8px' })
+  Object.assign(wrap.style, {
+    display:'none',              // 先隱藏；有數字再顯示
+    alignItems:'center',
+    marginLeft:'8px'
+  })
 
   const chip = document.createElement('span')
   Object.assign(chip.style, {
@@ -55,15 +59,20 @@ function ensureHeaderTruck(){
   el.appendChild(wrap)
 }
 function setHeaderTruckCount(n, tooltip=''){
-  const el = document.getElementById('hdr-truck-count')
-  if (!el) return
+  const wrap  = document.getElementById('hdr-truck-wrap')
+  const count = document.getElementById('hdr-truck-count')
+  if (!wrap || !count) return
+
   if (Number(n) > 0){
-    el.textContent = String(n)
-    el.style.display = 'inline-flex'
+    count.textContent = String(n)
+    count.style.display = 'inline-flex'
+    wrap.style.display  = 'inline-flex'   // 顯示整顆車
+    if (tooltip) wrap.title = tooltip
   } else {
-    el.style.display = 'none'
+    count.style.display = 'none'
+    wrap.style.display  = 'none'          // 整顆車隱藏
+    wrap.removeAttribute('title')
   }
-  if (tooltip) el.parentElement.title = tooltip
 }
 
 // ---------------- 基本 UI ----------------
@@ -75,10 +84,11 @@ window.addEventListener('load', () => {
     const s = await getDoc(doc(db, 'users', user.uid))
     const u = s.data() || {}
     const display = u.nickname || user.displayName || user.email || '未知'
+    // 記住「自己發佈」用的名稱（優先 nickname；再 displayName；最後 email 前綴）
     CURRENT_PROFILE_NAME = (u.nickname || user.displayName || (user.email ? user.email.split('@')[0] : '') || '').trim()
     el.textContent = `🙋‍♂️ 使用者：${display}`
-    ensureHeaderTruck()
-    await updateHeaderTruckBadge() // 首次登入就更新 🚚
+    // 首次登入就更新 🚚（update 內會決定是否建立與顯示）
+    await updateHeaderTruckBadge()
   })
 })
 window.navigate = (page)=>{ const f=document.getElementById('content-frame'); if(f) f.src=page }
@@ -125,9 +135,10 @@ async function updateBatteryBadge(){ setBatteryBadge(await countBatteriesOverdue
 window.addEventListener('DOMContentLoaded',updateBatteryBadge)
 window.addEventListener('load',updateBatteryBadge)
 setInterval(updateBatteryBadge, 6*60*60*1000) // 每 6 小時
-onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge(); setInterval(updateBatteryBadge, 6*60*60*1000) })
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge() }) // ← 只跑一次，已移除第二組排程
 
 // ---------------- 🗓️ Leave Approve Badge ----------------
+// 只統計：type='annual' & status='pending'，且 end(yyyy-mm-dd) >= 今天(台北)
 async function countLeavePending(){
   try{
     const q=query(
@@ -150,6 +161,7 @@ setInterval(updateLeaveBadge, 12*60*60*1000) // 每 12 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
 
 // ---------------- 💰 Cashbox Diff Badge ----------------
+// 今日有「未歸零且金額≠0」的紀錄 → 顯示綠圈 ✖️
 const _todayYMD = (typeof todayYMD_TPE === 'function')
   ? todayYMD_TPE
   : () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
@@ -269,9 +281,14 @@ async function countMyBulletinFlaggedVisible_group(groupName='外場'){
 }
 async function updateHeaderTruckBadge(){
   try{
-    ensureHeaderTruck()
     const n = await countMyBulletinFlaggedVisible_group('外場')
-    setHeaderTruckCount(n, `你的外場標示中項目：${n} 筆`)
+    if (n > 0){
+      if (!document.getElementById('hdr-truck-wrap')) ensureHeaderTruck()
+      setHeaderTruckCount(n, `你的外場標示中項目：${n} 筆`)
+    } else {
+      const wrap = document.getElementById('hdr-truck-wrap')
+      if (wrap){ wrap.style.display = 'none'; wrap.removeAttribute('title') }
+    }
   }catch(e){
     console.error('[hdr truck update]', e)
   }
