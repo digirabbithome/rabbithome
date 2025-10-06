@@ -1,8 +1,9 @@
 // === Rabbithome 主頁 main.js ===
-/* 版本：2025-10-06g
-   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰 四項徽章
+/* 版本：2025-10-06h
+   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章
    - Leave: 只算 年假(type='annual') + 待審核(pending) + 未結束(end>=today, TPE)
-   - Cashbox: 今日有未歸零且金額≠0 的差額 → 綠色✖️ */
+   - Cashbox: 今日有未歸零且金額≠0 的差額 → 綠色✖️
+   - Bulletin(環境整潔): 今天 markState 不為 highlight/pink/hidden 視為未處理，顯示筆數 */
 import { auth, db } from '/js/firebase.js'
 import { doc, getDoc, collection, getDocs, collectionGroup, query, where } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
@@ -143,5 +144,61 @@ window.addEventListener('DOMContentLoaded', updateCashDiffBadge)
 window.addEventListener('load', updateCashDiffBadge)
 setInterval(updateCashDiffBadge, 30 * 60 * 1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateCashDiffBadge() })
+
+// ---------------- 📌 Bulletin「環境整潔」Badge ----------------
+// 今天(台北) visibleTo 包含「環境整潔」，且 markState 非 highlight/pink/hidden 視為「未處理」
+function dayRangeTPE(){
+  const ymd = todayYMD_TPE()
+  const start = new Date(`${ymd}T00:00:00+08:00`)
+  const end = new Date(start.getTime() + DAY) // +1 天
+  return { start, end }
+}
+async function countBulletinEnvUnprocessedToday(){
+  const { start, end } = dayRangeTPE()
+  try{
+    let snap
+    // 推薦路徑（需索引：visibleTo array-contains + createdAt ASC）
+    try{
+      const q1 = query(
+        collection(db,'bulletins'),
+        where('visibleTo','array-contains','環境整潔'),
+        where('createdAt','>=', start),
+        where('createdAt','<',  end)
+      )
+      snap = await getDocs(q1)
+    }catch(_){
+      // 退回：僅用 array-contains，日期前端過濾
+      const q2 = query(collection(db,'bulletins'), where('visibleTo','array-contains','環境整潔'))
+      snap = await getDocs(q2)
+    }
+    let n = 0
+    snap.forEach(d=>{
+      const x = d.data() || {}
+      const ts = x.createdAt?.toDate?.()
+      if (!ts || ts < start || ts >= end) return
+      const state = x.markState || 'none'
+      // 未處理：不是 highlight/pink/hidden
+      if (state !== 'highlight' && state !== 'pink' && state !== 'hidden') n++
+    })
+    return n
+  }catch(e){
+    console.error('[badge:bulletin-env] error', e)
+    return 0
+  }
+}
+function setBulletinCleanBadge(n){
+  const el = document.getElementById('bulletin-clean-badge')
+  if (!el) return
+  if (Number(n) > 0){ el.textContent = String(n); el.style.display = 'inline-flex'; el.title = '今天環境整潔未處理筆數' }
+  else { el.style.display = 'none' }
+}
+async function updateBulletinCleanBadge(){
+  const n = await countBulletinEnvUnprocessedToday()
+  setBulletinCleanBadge(n)
+}
+window.addEventListener('DOMContentLoaded', updateBulletinCleanBadge)
+window.addEventListener('load', updateBulletinCleanBadge)
+setInterval(updateBulletinCleanBadge, 60 * 60 * 1000)
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBulletinCleanBadge() })
 
 // === EOF ===
