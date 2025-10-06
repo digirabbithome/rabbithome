@@ -1,6 +1,6 @@
 // === Rabbithome 主頁正式整合版 main.js ===
-// 版本：2025-10-06b
-// 功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️ 三項紅圈 Badge
+// 版本：2025-10-06c
+// 功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️ 三項紅圈 Badge（請假只算：尚未結束且待審）
 
 import { auth, db } from '/js/firebase.js'
 import {
@@ -10,7 +10,7 @@ import {
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 // === 暱稱顯示 ===
-window.addEventListener('load', async () => {
+window.addEventListener('load', () => {
   const el = document.getElementById('nickname-display')
   if (!el) return
   try {
@@ -51,6 +51,7 @@ window.logout = function () {
 // 🧽 環境整理 Badge
 // ----------------------------------------------------
 const DAY = 86400000
+
 function toDateSafe(v) {
   if (!v) return null
   try {
@@ -62,34 +63,41 @@ function toDateSafe(v) {
     return null
   }
 }
+
 function daysDiffByLocalDay(from, to) {
   const a = new Date(from.getFullYear(), from.getMonth(), from.getDate())
   const b = new Date(to.getFullYear(), to.getMonth(), to.getDate())
   return Math.floor((b - a) / DAY)
 }
+
 async function countEnvWaiting() {
   try {
     const snap = await getDocs(collection(db, 'cleanCycleTasks'))
     const now = new Date()
     let waiting = 0
-    snap.forEach(doc => {
-      const d = doc.data() || {}
-      const lastRaw = d.last ?? d.lastCompleted ?? d.lastCompletedAt ?? d.lastCleanedAt
+
+    snap.forEach(docu => {
+      const d = docu.data() || {}
+      const lastRaw  = d.last ?? d.lastCompleted ?? d.lastCompletedAt ?? d.lastCleanedAt
       const cycleRaw = d.days ?? d.cycleDays ?? d.cycle ?? d.interval
       const days = parseInt(cycleRaw ?? 0, 10)
       const last = toDateSafe(lastRaw)
+
       if (!last && days > 0) { waiting++; return }
       if (!last || !days) return
+
       const dueAt = new Date(last.getTime() + days * DAY)
       const restDays = daysDiffByLocalDay(now, dueAt)
       if (restDays <= 2) waiting++
     })
+
     return waiting
   } catch (err) {
     console.error('[badge] fetch error:', err)
     return 0
   }
 }
+
 function setBadge(n) {
   const el = document.getElementById('cycle-badge')
   if (!el) return
@@ -100,10 +108,12 @@ function setBadge(n) {
     el.style.display = 'none'
   }
 }
+
 async function updateBadge() {
   const n = await countEnvWaiting()
   setBadge(n)
 }
+
 window.addEventListener('DOMContentLoaded', updateBadge)
 window.addEventListener('load', updateBadge)
 setInterval(updateBadge, 3 * 60 * 60 * 1000)
@@ -115,69 +125,10 @@ async function countBatteriesOverdue() {
   try {
     const snap = await getDocs(collection(db, 'batteries'))
     let overdue = 0
+
     function daysSince(dstr) {
       if (!dstr) return Infinity
       try {
-        const t = new Date(dstr + (dstr.length==10?'T00:00:00':'')).getTime()
+        const t = new Date(dstr + (dstr.length === 10 ? 'T00:00:00' : '')).getTime()
         if (isNaN(t)) return Infinity
-        return Math.floor((Date.now() - t) / 86400000)
-      } catch(e) { return Infinity }
-    }
-    snap.forEach(d => {
-      const x = d.data() || {}
-      const cd = Math.max(1, Number(x.cycleDays) || 30)
-      const elapsed = daysSince(x.lastCharge || null)
-      if (elapsed >= cd) overdue++
-    })
-    return overdue
-  } catch (err) {
-    console.error('[badge:battery] fetch error:', err)
-    return 0
-  }
-}
-function setBatteryBadge(n) {
-  const el = document.getElementById('battery-badge')
-  if (!el) return
-  if (Number(n) > 0) {
-    el.textContent = String(n)
-    el.style.display = 'inline-flex'
-  } else {
-    el.style.display = 'none'
-  }
-}
-async function updateBatteryBadge() {
-  const n = await countBatteriesOverdue()
-  setBatteryBadge(n)
-}
-window.addEventListener('DOMContentLoaded', updateBatteryBadge)
-window.addEventListener('load', updateBatteryBadge)
-setInterval(updateBatteryBadge, 60 * 60 * 1000)
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return
-  await updateBatteryBadge()
-  setInterval(updateBatteryBadge, 3 * 60 * 60 * 1000)
-})
-
-// ----------------------------------------------------
-// 🗓️ Leave Approve Badge（只算：尚未結束 & 狀態=待審核）
-// ※ 提醒：collectionGroup + where 仍需在 Firestore 建立
-//    「Collection group = leaves，欄位 status=ASC」索引。
-// ----------------------------------------------------
-function todayYMD_TPE() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Taipei',
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  }).format(new Date()) // e.g. "2025-10-06"
-}
-async function countLeavePending() {
-  try {
-    const today = todayYMD_TPE()
-
-    // 抓所有待審核
-    const q = query(collectionGroup(db, 'leaves'), where('status', '==', 'pending'))
-    const snap = await getDocs(q)
-
-    let count = 0
-    snap.forEach(doc => {
-      const x = doc.data() || {}
-      const end = (x.
+        return M
