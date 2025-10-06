@@ -1,12 +1,71 @@
 // === Rabbithome 主頁 main.js ===
-/* 版本：2025-10-06h
-   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章
-   - Leave: 只算 年假(type='annual') + 待審核(pending) + 未結束(end>=today, TPE)
-   - Cashbox: 今日有未歸零且金額≠0 的差額 → 綠色✖️
-   - Bulletin(環境整潔): 今天 markState 不為 highlight/pink/hidden 視為未處理，顯示筆數 */
+/* 版本：2025-10-06j
+   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚗 頭部角標
+   排程頻率：
+   - 🧽 環境整理：每 6 小時
+   - 🔋 電池：每 6 小時（全域 + 登入後）
+   - 🗓️ 年假待審：每 12 小時
+   - 💰 外場錢櫃：每 4 小時
+   - 📌 公布欄「環境整潔」：每 1 小時
+   - 🚗 車車（外場、自己發佈、仍顯示、標示中）：每 30 分鐘
+*/
 import { auth, db } from '/js/firebase.js'
 import { doc, getDoc, collection, getDocs, collectionGroup, query, where } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
+
+// ---------------- 工具：台北日期 ----------------
+const DAY = 86400000
+const todayYMD_TPE = () => new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date())
+const toDateSafe = (v)=>{ try{
+  if(!v) return null
+  if(typeof v?.toDate==='function') return v.toDate()
+  if(v?.seconds) return new Date(v.seconds*1000)
+  return new Date(v)
+}catch(_){return null} }
+const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDate()), B=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.floor((B-A)/DAY) }
+
+// 目前登入者顯示名稱（用來比對「自己發佈」）
+let CURRENT_PROFILE_NAME = ''
+
+// ---------------- Header 角標：🚗 ----------------
+function makeIconBadge(id, icon, color){
+  const box = document.createElement('span')
+  Object.assign(box.style, {
+    position:'relative', display:'inline-flex', alignItems:'center', justifyContent:'center',
+    width:'28px', height:'28px', borderRadius:'50%', background:'#f3f4f6', fontSize:'16px', marginLeft:'6px'
+  })
+  box.textContent = icon
+  const num = document.createElement('span')
+  num.id = id
+  Object.assign(num.style, {
+    position:'absolute', top:'-6px', right:'-6px', minWidth:'18px', height:'18px', padding:'0 5px',
+    borderRadius:'14px', background: color, color:'#fff', fontSize:'12px',
+    lineHeight:'18px', textAlign:'center', display:'none'
+  })
+  num.textContent = '0'
+  box.appendChild(num)
+  return box
+}
+function ensureHeaderBadges(){
+  const el = document.getElementById('nickname-display')
+  if (!el) return
+  if (!document.getElementById('hdr-car')){
+    const chip = makeIconBadge('hdr-car', '🚗', '#3b82f6')
+    chip.title = '你在外場的標示中項目'
+    el.appendChild(chip)
+  }
+}
+function setHeaderBadge(id, n, tooltip=''){
+  const num = document.getElementById(id)
+  if (!num) return
+  if (Number(n) > 0){
+    num.textContent = String(n)
+    num.style.display = 'inline-block'
+  } else {
+    num.style.display = 'none'
+  }
+  if (tooltip) num.parentElement.title = tooltip
+}
 
 // ---------------- 基本 UI ----------------
 window.addEventListener('load', () => {
@@ -16,7 +75,12 @@ window.addEventListener('load', () => {
     if (!user) { el.textContent = '🙋‍♂️ 使用者：未登入'; return }
     const s = await getDoc(doc(db, 'users', user.uid))
     const u = s.data() || {}
-    el.textContent = `🙋‍♂️ 使用者：${u.nickname || user.displayName || user.email || '未知'}`
+    const display = u.nickname || user.displayName || user.email || '未知'
+    // 記住「自己發佈」用的名稱（用 nickname；若無則用 displayName；再退回 email 前綴）
+    CURRENT_PROFILE_NAME = (u.nickname || user.displayName || (user.email ? user.email.split('@')[0] : '') || '').trim()
+    el.textContent = `🙋‍♂️ 使用者：${display}`
+    ensureHeaderBadges()
+    await updateHeaderCarBadge() // 首次登入就更新一次 🚗
   })
 })
 window.navigate = (page)=>{ const f=document.getElementById('content-frame'); if(f) f.src=page }
@@ -24,15 +88,6 @@ window.toggleMenu = (id)=>{ const el=document.getElementById(id); if(el) el.styl
 window.logout = ()=>{ try{localStorage.removeItem('rabbitUser')}catch(_){} location.href='/login.html' }
 
 // ---------------- 🧽 環境整理 Badge ----------------
-const DAY = 86400000
-const toDateSafe = (v)=>{ try{
-  if(!v) return null
-  if(typeof v?.toDate==='function') return v.toDate()
-  if(v?.seconds) return new Date(v.seconds*1000)
-  return new Date(v)
-}catch(_){return null} }
-const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDate()), B=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.floor((B-A)/DAY) }
-
 async function countEnvWaiting(){
   try{
     const snap=await getDocs(collection(db,'cleanCycleTasks'))
@@ -54,7 +109,8 @@ const setCycleBadge=(n)=>{ const el=document.getElementById('cycle-badge'); if(!
 async function updateCycleBadge(){ setCycleBadge(await countEnvWaiting()) }
 window.addEventListener('DOMContentLoaded',updateCycleBadge)
 window.addEventListener('load',updateCycleBadge)
-setInterval(updateCycleBadge,3*60*60*1000)
+// ▶ 每 6 小時
+setInterval(updateCycleBadge, 6*60*60*1000)
 
 // ---------------- 🔋 Battery Badge ----------------
 async function countBatteriesOverdue(){
@@ -71,12 +127,12 @@ const setBatteryBadge=(n)=>{ const el=document.getElementById('battery-badge'); 
 async function updateBatteryBadge(){ setBatteryBadge(await countBatteriesOverdue()) }
 window.addEventListener('DOMContentLoaded',updateBatteryBadge)
 window.addEventListener('load',updateBatteryBadge)
-setInterval(updateBatteryBadge,60*60*1000)
-onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge(); setInterval(updateBatteryBadge,3*60*60*1000) })
+// ▶ 每 6 小時
+setInterval(updateBatteryBadge, 6*60*60*1000)
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge(); /* ▶ 每 6 小時 */ setInterval(updateBatteryBadge, 6*60*60*1000) })
 
 // ---------------- 🗓️ Leave Approve Badge ----------------
 // 只統計：type='annual' & status='pending'，且 end(yyyy-mm-dd) >= 今天(台北)
-const todayYMD_TPE=()=> new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
 async function countLeavePending(){
   try{
     const q=query(
@@ -95,7 +151,8 @@ const setLeaveBadge=(n)=>{ const el=document.getElementById('leave-badge'); if(!
 async function updateLeaveBadge(){ setLeaveBadge(await countLeavePending()) }
 window.addEventListener('DOMContentLoaded',updateLeaveBadge)
 window.addEventListener('load',updateLeaveBadge)
-setInterval(updateLeaveBadge,3*60*60*1000)
+// ▶ 每 12 小時
+setInterval(updateLeaveBadge, 12*60*60*1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
 
 // ---------------- 💰 Cashbox Diff Badge ----------------
@@ -103,13 +160,11 @@ onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
 const _todayYMD = (typeof todayYMD_TPE === 'function')
   ? todayYMD_TPE
   : () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
-
 async function countCashMismatchToday(){
   try{
     const today = _todayYMD()
     const q = query(collection(db, 'cashbox-diffs'), where('date', '==', today))
     const snap = await getDocs(q)
-
     let hasMismatch = false
     snap.forEach(d => {
       if (hasMismatch) return
@@ -142,7 +197,8 @@ async function updateCashDiffBadge(){
 }
 window.addEventListener('DOMContentLoaded', updateCashDiffBadge)
 window.addEventListener('load', updateCashDiffBadge)
-setInterval(updateCashDiffBadge, 30 * 60 * 1000)
+// ▶ 每 4 小時
+setInterval(updateCashDiffBadge, 4 * 60 * 60 * 1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateCashDiffBadge() })
 
 // ---------------- 📌 Bulletin「環境整潔」Badge ----------------
@@ -198,7 +254,45 @@ async function updateBulletinCleanBadge(){
 }
 window.addEventListener('DOMContentLoaded', updateBulletinCleanBadge)
 window.addEventListener('load', updateBulletinCleanBadge)
+// ▶ 每 1 小時
 setInterval(updateBulletinCleanBadge, 60 * 60 * 1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBulletinCleanBadge() })
+
+// ---------------- 🚗 Header：外場（自己發佈 & 標示中 & 仍顯示） ----------------
+async function countMyBulletinFlaggedVisible_group(groupName='外場'){
+  try{
+    const q = query(collection(db,'bulletins'), where('visibleTo','array-contains', groupName))
+    const snap = await getDocs(q)
+    const me = (CURRENT_PROFILE_NAME || '').trim()
+    if (!me) return 0
+    let n = 0
+    snap.forEach(d=>{
+      const x = d.data() || {}
+      const author = (x.createdBy || x.nickname || '').trim()
+      const state  = x.markState || 'none'
+      const visible = state !== 'hidden'
+      const flagged = (state === 'highlight') || (state === 'pink') || (x.isStarred === true)
+      if (author === me && visible && flagged) n++
+    })
+    return n
+  }catch(e){
+    console.error('[hdr car: my bulletin flagged]', e)
+    return 0
+  }
+}
+async function updateHeaderCarBadge(){
+  try{
+    ensureHeaderBadges()
+    const n = await countMyBulletinFlaggedVisible_group('外場')
+    setHeaderBadge('hdr-car', n, `你的外場標示中項目：${n} 筆`)
+  }catch(e){
+    console.error('[hdr car update]', e)
+  }
+}
+window.addEventListener('DOMContentLoaded', updateHeaderCarBadge)
+window.addEventListener('load', updateHeaderCarBadge)
+// ▶ 每 30 分鐘（已調整）
+setInterval(updateHeaderCarBadge, 30 * 60 * 1000)
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateHeaderCarBadge() })
 
 // === EOF ===
