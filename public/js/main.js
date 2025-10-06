@@ -1,13 +1,13 @@
 // === Rabbithome 主頁 main.js ===
-/* 版本：2025-10-06j
-   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚗 頭部角標
+/* 版本：2025-10-06k
+   功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚚 頭部角標
    排程頻率：
    - 🧽 環境整理：每 6 小時
    - 🔋 電池：每 6 小時（全域 + 登入後）
    - 🗓️ 年假待審：每 12 小時
    - 💰 外場錢櫃：每 4 小時
    - 📌 公布欄「環境整潔」：每 1 小時
-   - 🚗 車車（外場、自己發佈、仍顯示、標示中）：每 30 分鐘
+   - 🚚 貨車（外場、自己發佈、仍顯示、標示中）：每 30 分鐘
 */
 import { auth, db } from '/js/firebase.js'
 import { doc, getDoc, collection, getDocs, collectionGroup, query, where } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
@@ -27,44 +27,43 @@ const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDat
 // 目前登入者顯示名稱（用來比對「自己發佈」）
 let CURRENT_PROFILE_NAME = ''
 
-// ---------------- Header 角標：🚗 ----------------
-function makeIconBadge(id, icon, color){
-  const box = document.createElement('span')
-  Object.assign(box.style, {
-    position:'relative', display:'inline-flex', alignItems:'center', justifyContent:'center',
-    width:'28px', height:'28px', borderRadius:'50%', background:'#f3f4f6', fontSize:'16px', marginLeft:'6px'
-  })
-  box.textContent = icon
-  const num = document.createElement('span')
-  num.id = id
-  Object.assign(num.style, {
-    position:'absolute', top:'-6px', right:'-6px', minWidth:'18px', height:'18px', padding:'0 5px',
-    borderRadius:'14px', background: color, color:'#fff', fontSize:'12px',
-    lineHeight:'18px', textAlign:'center', display:'none'
-  })
-  num.textContent = '0'
-  box.appendChild(num)
-  return box
-}
-function ensureHeaderBadges(){
+// ---------------- Header 角標：🚚（大小沿用 .btn-badge） ----------------
+function ensureHeaderTruck(){
   const el = document.getElementById('nickname-display')
   if (!el) return
-  if (!document.getElementById('hdr-car')){
-    const chip = makeIconBadge('hdr-car', '🚗', '#3b82f6')
-    chip.title = '你在外場的標示中項目'
-    el.appendChild(chip)
-  }
+  if (document.getElementById('hdr-truck-wrap')) return
+
+  const wrap = document.createElement('span')
+  wrap.id = 'hdr-truck-wrap'
+  Object.assign(wrap.style, { display:'inline-flex', alignItems:'center', marginLeft:'8px' })
+
+  const chip = document.createElement('span')
+  Object.assign(chip.style, {
+    position:'relative', display:'inline-flex', alignItems:'center', justifyContent:'center',
+    width:'28px', height:'28px', borderRadius:'50%', background:'#f3f4f6', fontSize:'16px'
+  })
+  chip.textContent = '🚚'
+
+  const count = document.createElement('span')
+  count.id = 'hdr-truck-count'
+  count.className = 'btn-badge' // 跟紅色徽章同尺寸
+  Object.assign(count.style, { position:'absolute', top:'-6px', right:'-6px', background:'#3b82f6', display:'none' })
+  count.textContent = '0'
+
+  chip.appendChild(count)
+  wrap.appendChild(chip)
+  el.appendChild(wrap)
 }
-function setHeaderBadge(id, n, tooltip=''){
-  const num = document.getElementById(id)
-  if (!num) return
+function setHeaderTruckCount(n, tooltip=''){
+  const el = document.getElementById('hdr-truck-count')
+  if (!el) return
   if (Number(n) > 0){
-    num.textContent = String(n)
-    num.style.display = 'inline-block'
+    el.textContent = String(n)
+    el.style.display = 'inline-flex'
   } else {
-    num.style.display = 'none'
+    el.style.display = 'none'
   }
-  if (tooltip) num.parentElement.title = tooltip
+  if (tooltip) el.parentElement.title = tooltip
 }
 
 // ---------------- 基本 UI ----------------
@@ -76,11 +75,10 @@ window.addEventListener('load', () => {
     const s = await getDoc(doc(db, 'users', user.uid))
     const u = s.data() || {}
     const display = u.nickname || user.displayName || user.email || '未知'
-    // 記住「自己發佈」用的名稱（用 nickname；若無則用 displayName；再退回 email 前綴）
     CURRENT_PROFILE_NAME = (u.nickname || user.displayName || (user.email ? user.email.split('@')[0] : '') || '').trim()
     el.textContent = `🙋‍♂️ 使用者：${display}`
-    ensureHeaderBadges()
-    await updateHeaderCarBadge() // 首次登入就更新一次 🚗
+    ensureHeaderTruck()
+    await updateHeaderTruckBadge() // 首次登入就更新 🚚
   })
 })
 window.navigate = (page)=>{ const f=document.getElementById('content-frame'); if(f) f.src=page }
@@ -109,8 +107,7 @@ const setCycleBadge=(n)=>{ const el=document.getElementById('cycle-badge'); if(!
 async function updateCycleBadge(){ setCycleBadge(await countEnvWaiting()) }
 window.addEventListener('DOMContentLoaded',updateCycleBadge)
 window.addEventListener('load',updateCycleBadge)
-// ▶ 每 6 小時
-setInterval(updateCycleBadge, 6*60*60*1000)
+setInterval(updateCycleBadge, 6*60*60*1000) // 每 6 小時
 
 // ---------------- 🔋 Battery Badge ----------------
 async function countBatteriesOverdue(){
@@ -127,12 +124,10 @@ const setBatteryBadge=(n)=>{ const el=document.getElementById('battery-badge'); 
 async function updateBatteryBadge(){ setBatteryBadge(await countBatteriesOverdue()) }
 window.addEventListener('DOMContentLoaded',updateBatteryBadge)
 window.addEventListener('load',updateBatteryBadge)
-// ▶ 每 6 小時
-setInterval(updateBatteryBadge, 6*60*60*1000)
-onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge(); /* ▶ 每 6 小時 */ setInterval(updateBatteryBadge, 6*60*60*1000) })
+setInterval(updateBatteryBadge, 6*60*60*1000) // 每 6 小時
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge(); setInterval(updateBatteryBadge, 6*60*60*1000) })
 
 // ---------------- 🗓️ Leave Approve Badge ----------------
-// 只統計：type='annual' & status='pending'，且 end(yyyy-mm-dd) >= 今天(台北)
 async function countLeavePending(){
   try{
     const q=query(
@@ -151,12 +146,10 @@ const setLeaveBadge=(n)=>{ const el=document.getElementById('leave-badge'); if(!
 async function updateLeaveBadge(){ setLeaveBadge(await countLeavePending()) }
 window.addEventListener('DOMContentLoaded',updateLeaveBadge)
 window.addEventListener('load',updateLeaveBadge)
-// ▶ 每 12 小時
-setInterval(updateLeaveBadge, 12*60*60*1000)
+setInterval(updateLeaveBadge, 12*60*60*1000) // 每 12 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
 
 // ---------------- 💰 Cashbox Diff Badge ----------------
-// 今日有「未歸零且金額≠0」的紀錄 → 顯示綠圈 ✖️
 const _todayYMD = (typeof todayYMD_TPE === 'function')
   ? todayYMD_TPE
   : () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
@@ -197,23 +190,20 @@ async function updateCashDiffBadge(){
 }
 window.addEventListener('DOMContentLoaded', updateCashDiffBadge)
 window.addEventListener('load', updateCashDiffBadge)
-// ▶ 每 4 小時
-setInterval(updateCashDiffBadge, 4 * 60 * 60 * 1000)
+setInterval(updateCashDiffBadge, 4 * 60 * 60 * 1000) // 每 4 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateCashDiffBadge() })
 
 // ---------------- 📌 Bulletin「環境整潔」Badge ----------------
-// 今天(台北) visibleTo 包含「環境整潔」，且 markState 非 highlight/pink/hidden 視為「未處理」
 function dayRangeTPE(){
   const ymd = todayYMD_TPE()
   const start = new Date(`${ymd}T00:00:00+08:00`)
-  const end = new Date(start.getTime() + DAY) // +1 天
+  const end = new Date(start.getTime() + DAY)
   return { start, end }
 }
 async function countBulletinEnvUnprocessedToday(){
   const { start, end } = dayRangeTPE()
   try{
     let snap
-    // 推薦路徑（需索引：visibleTo array-contains + createdAt ASC）
     try{
       const q1 = query(
         collection(db,'bulletins'),
@@ -223,7 +213,6 @@ async function countBulletinEnvUnprocessedToday(){
       )
       snap = await getDocs(q1)
     }catch(_){
-      // 退回：僅用 array-contains，日期前端過濾
       const q2 = query(collection(db,'bulletins'), where('visibleTo','array-contains','環境整潔'))
       snap = await getDocs(q2)
     }
@@ -233,7 +222,6 @@ async function countBulletinEnvUnprocessedToday(){
       const ts = x.createdAt?.toDate?.()
       if (!ts || ts < start || ts >= end) return
       const state = x.markState || 'none'
-      // 未處理：不是 highlight/pink/hidden
       if (state !== 'highlight' && state !== 'pink' && state !== 'hidden') n++
     })
     return n
@@ -254,11 +242,10 @@ async function updateBulletinCleanBadge(){
 }
 window.addEventListener('DOMContentLoaded', updateBulletinCleanBadge)
 window.addEventListener('load', updateBulletinCleanBadge)
-// ▶ 每 1 小時
-setInterval(updateBulletinCleanBadge, 60 * 60 * 1000)
+setInterval(updateBulletinCleanBadge, 60 * 60 * 1000) // 每 1 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBulletinCleanBadge() })
 
-// ---------------- 🚗 Header：外場（自己發佈 & 標示中 & 仍顯示） ----------------
+// ---------------- 🚚 Header：外場（自己發佈 & 標示中 & 仍顯示） ----------------
 async function countMyBulletinFlaggedVisible_group(groupName='外場'){
   try{
     const q = query(collection(db,'bulletins'), where('visibleTo','array-contains', groupName))
@@ -276,23 +263,22 @@ async function countMyBulletinFlaggedVisible_group(groupName='外場'){
     })
     return n
   }catch(e){
-    console.error('[hdr car: my bulletin flagged]', e)
+    console.error('[hdr truck: my bulletin flagged]', e)
     return 0
   }
 }
-async function updateHeaderCarBadge(){
+async function updateHeaderTruckBadge(){
   try{
-    ensureHeaderBadges()
+    ensureHeaderTruck()
     const n = await countMyBulletinFlaggedVisible_group('外場')
-    setHeaderBadge('hdr-car', n, `你的外場標示中項目：${n} 筆`)
+    setHeaderTruckCount(n, `你的外場標示中項目：${n} 筆`)
   }catch(e){
-    console.error('[hdr car update]', e)
+    console.error('[hdr truck update]', e)
   }
 }
-window.addEventListener('DOMContentLoaded', updateHeaderCarBadge)
-window.addEventListener('load', updateHeaderCarBadge)
-// ▶ 每 30 分鐘（已調整）
-setInterval(updateHeaderCarBadge, 30 * 60 * 1000)
-onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateHeaderCarBadge() })
+window.addEventListener('DOMContentLoaded', updateHeaderTruckBadge)
+window.addEventListener('load', updateHeaderTruckBadge)
+setInterval(updateHeaderTruckBadge, 30 * 60 * 1000) // 每 30 分鐘
+onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateHeaderTruckBadge() })
 
 // === EOF ===
