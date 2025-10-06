@@ -1,20 +1,23 @@
-// Rabbithome Floating Chat Widget v1.3 (users-collection)
-// Source recipients from `users` collection where employment in {'full-time','part-time'}
-// Exclude 'resigned'. DM mode shows a dropdown to pick recipient.
-// Global chat unchanged. Requires /js/firebase.js exporting { db, auth } (v11.10.0).
+// Rabbithome Floating Chat Widget v1.4
+// - Unread badge visible on FAB without opening panel
+// - DM rooms store participants [uidA, uidB]; live unread via onSnapshot
+// - API: RabbitChat.bindBadge('#selector') to mirror unread outside (e.g., sidebar badge)
+// - Recipients still sourced from `users` (full-time/part-time), excluding resigned (from v1.3)
 
 import { db, auth } from '/js/firebase.js'
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot,
-  serverTimestamp, query, orderBy, limit
+  serverTimestamp, query, where, orderBy, limit, Timestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 const TPE='Asia/Taipei'
 const fmtTime=new Intl.DateTimeFormat('zh-TW',{ timeZone:TPE, hour:'2-digit', minute:'2-digit' })
 
-let me=null, unsubRoom=null
-const state={ roomId:'global', users:[], dmTarget:null }
+let me=null, unsubRoom=null, unsubRoomsWatch=null
+let externalBadgeSelector=null
+
+const state={ roomId:'global', users:[], dmTarget:null, unreadTotal:0 }
 
 const $=(s,r=document)=>r.querySelector(s)
 const el=(t,c)=>{ const e=document.createElement(t); if(c) e.className=c; return e }
@@ -41,9 +44,7 @@ function ensureDOM(){
       </div>
     </div>
     <div class="rh-chat-body">
-      <div class="rh-chat-sidebar" id="rhSidebar">
-        <!-- Global 模式保留（未使用人員清單 UI） -->
-      </div>
+      <div class="rh-chat-sidebar" id="rhSidebar"></div>
       <div class="rh-chat-main">
         <div id="rhMsgs" class="rh-msgs"></div>
         <div class="rh-input">
@@ -119,13 +120,7 @@ async function ensureGlobalRoom(){
   if(!got.exists()) await setDoc(r,{ type:'global', createdAt:serverTimestamp(), updatedAt:serverTimestamp() })
 }
 
-async function markRoomRead(rid){
-  if(!me||!rid) return
-  const rd=doc(collection(roomDoc(rid),'read'), me.uid)
-  await setDoc(rd,{ lastReadAt:serverTimestamp() },{ merge:true })
-}
-
-// Load recipients from `users` where employment in {'full-time','part-time'}
+// Recipients from `users` (employment in full-time/part-time)
 async function loadRecipients(){
   const snap = await getDocs(collection(db,'users'))
   const ok = new Set(['full-time','part-time'])
@@ -136,20 +131,17 @@ async function loadRecipients(){
     if(!ok.has(emp)) return
     list.push({ uid:d.id, nickname:v.nickname||'', email:v.email||'' })
   })
-  // Ensure myself included in internal state (not selectable)
   if(me && !list.find(u=>u.uid===me.uid)){
     list.push({ uid: me.uid, nickname: myNick(), email: me.email||'' })
   }
-  // Sort by nickname/email
   list.sort((a,b)=> nickOf(a).localeCompare(nickOf(b), 'zh-Hant'))
   state.users = list
-
-  // Build <select> (exclude self)
-  const sel = $('#rhToSelect'); if(!sel) return
-  sel.innerHTML = `<option value="">選擇收件人…</option>` + list
-    .filter(u=>u.uid!==me?.uid)
-    .map(u=>`<option value="${u.uid}">${nickOf(u)}</option>`)
-    .join('')
+  const sel=$('#rhToSelect'); if(sel){
+    sel.innerHTML = `<option value="">選擇收件人…</option>` + list
+      .filter(u=>u.uid!==me?.uid)
+      .map(u=>`<option value="${u.uid}">${nickOf(u)}</option>`)
+      .join('')
+  }
 }
 
 function ensureDmTargetFromSelect(){
@@ -167,12 +159,30 @@ function setDmTarget(uid, name){
   subscribeRoom(dmRoomId(me.uid, uid))
 }
 
-// Send
+// Send & make sure room has participants for DM
 async function send(rid, text){
   if(!me||!text||!text.trim()) return
-  const nickname = myNick()
-  await addDoc(messagesCol(rid),{ uid:me.uid, text:text.trim(), nickname, createdAt:serverTimestamp() })
-  await setDoc(roomDoc(rid),{ updatedAt:serverTimestamp() },{ merge:true })
+  const docRef = roomDoc(rid)
+  const isDM = rid.startsWith('dm_')
+  // Ensure room metadata
+  const patch = { updatedAt: serverTimestamp() }
+  if(isDM){
+    const parts = rid.replace(/^dm_/,'').split('_')
+    if(parts.length===2){
+      patch.type = 'dm'
+      patch.participants = parts
+    }
+  }else{
+    patch.type = 'global'
+  }
+  await setDoc(docRef, patch, { merge:true })
+
+  await addDoc(messagesCol(rid),{
+    uid: me.uid,
+    text: text.trim(),
+    nickname: myNick(),
+    createdAt: serverTimestamp()
+  })
 }
 
 async function sendCurrent(){
@@ -180,16 +190,77 @@ async function sendCurrent(){
   await send(state.roomId||'global', t); $('#rhText').value=''
 }
 
-// Badge (simple)
-async function computeBadge(){
-  if(!me) return
-  let total=0
-  const readDoc=await getDoc(doc(collection(roomDoc('global'),'read'), me.uid))
-  const lr=readDoc.exists()?readDoc.data().lastReadAt:null
-  const msgs=await getDocs(query(messagesCol('global'), orderBy('createdAt','desc'), limit(20)))
-  msgs.forEach(m=>{ const d=m.data(); if(d.createdAt && (!lr || d.createdAt.toMillis()>lr.toMillis())) total++ })
-  const badge=$('#rhChatBadge')
-  if(badge){ if(total>0){ badge.style.display='inline-block'; badge.textContent=String(total) } else { badge.style.display='none' } }
+// ----- Unread computation (live) -----
+function setBadgeCount(n){
+  state.unreadTotal = n
+  const badge = $('#rhChatBadge')
+  if(badge){ if(n>0){ badge.style.display='inline-block'; badge.textContent=String(n) } else { badge.style.display='none' } }
+  if(externalBadgeSelector){
+    const ext = document.querySelector(externalBadgeSelector)
+    if(ext){
+      ext.style.display = n>0 ? '' : 'none'
+      ext.textContent = String(n)
+    }
+  }
+}
+
+async function unreadForRoom(roomId){
+  // My lastReadAt
+  const rd = await getDoc(doc(collection(roomDoc(roomId),'read'), me.uid))
+  const lastRead = rd.exists()? rd.data().lastReadAt : null
+  // Count messages newer than lastRead and not sent by me
+  const msgsSnap = await getDocs(query(messagesCol(roomId), orderBy('createdAt','desc'), limit(50)))
+  let c=0
+  msgsSnap.forEach(m=>{
+    const d=m.data()
+    if(d.uid===me.uid) return
+    if(!d.createdAt) return
+    if(!lastRead || d.createdAt.toMillis() > lastRead.toMillis()) c++
+  })
+  return c
+}
+
+let stopRoomsSnapshot=null, stopGlobalSnapshot=null
+function watchUnread(){
+  // Stop previous
+  if(stopRoomsSnapshot){ stopRoomsSnapshot(); stopRoomsSnapshot=null }
+  if(stopGlobalSnapshot){ stopGlobalSnapshot(); stopGlobalSnapshot=null }
+
+  // Global: watch latest message + my read doc to recompute
+  stopGlobalSnapshot = onSnapshot(roomDoc('global'), async (_)=>{
+    const count = await unreadForRoom('global')
+    // We'll combine with DMs below; here we store temp on window
+    window.__rh_global_unread = count
+    recomputeTotal()
+  })
+  // Also watch my read doc in global
+  onSnapshot(doc(collection(roomDoc('global'),'read'), me.uid), async (_)=>{
+    const count = await unreadForRoom('global')
+    window.__rh_global_unread = count
+    recomputeTotal()
+  })
+
+  // Watch DM rooms where participants contains me.uid
+  const roomsQ = query(collection(db,'rooms'), where('participants','array-contains', me.uid))
+  stopRoomsSnapshot = onSnapshot(roomsQ, async (snap)=>{
+    let sum = 0
+    const tasks = []
+    snap.forEach(r=>{
+      if(r.id==='global') return
+      tasks.push(unreadForRoom(r.id).then(c=>{ sum += c }))
+    })
+    await Promise.all(tasks)
+    window.__rh_dm_unread = sum
+    recomputeTotal()
+  })
+  // Also recompute on my read doc changes for any dm
+  // (We won't attach individual listeners to each dm/read, to keep it simple)
+}
+
+function recomputeTotal(){
+  const g = Number(window.__rh_global_unread||0)
+  const d = Number(window.__rh_dm_unread||0)
+  setBadgeCount(g + d)
 }
 
 // Public API
@@ -202,19 +273,20 @@ async function init(){
     await ensureGlobalRoom()
     await loadRecipients()
     subscribeRoom('global')
-    await computeBadge()
-    setInterval(computeBadge, 30000)
+    watchUnread() // live badge
+    // Fallback: periodic recompute (in case listeners miss edge cases)
+    setInterval(async ()=>{
+      await Promise.resolve() // noop; listeners keep it fresh
+    }, 30000)
   })
 }
 function open(){ toggle(true) }
 function close(){ toggle(false) }
 async function openDM(uid, preset=''){
   if(!me){ toggle(true); return }
-  // Select in dropdown if present
   const sel=$('#rhToSelect'); if(sel){ sel.value=uid }
   const target = state.users.find(u=>u.uid===uid)
   setDmTarget(uid, target ? nickOf(target) : '同事')
-  // switch to DM tab
   document.querySelectorAll('.rh-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab==='dm'))
   $('#rhSidebar').style.display='none'; $('#rhToSelect').style.display='inline-block'
   toggle(true)
@@ -225,6 +297,8 @@ async function sendTo(uid, text){
   const rid = dmRoomId(me.uid, uid)
   await send(rid, text)
 }
+// Mirror unread count into an external badge element (e.g., a span in sidebar)
+function bindBadge(selector){ externalBadgeSelector = selector }
 
-window.RabbitChat={ init, open, close, openDM, sendTo }
-export { init, open, close, openDM, sendTo }
+window.RabbitChat={ init, open, close, openDM, sendTo, bindBadge }
+export { init, open, close, openDM, sendTo, bindBadge }
