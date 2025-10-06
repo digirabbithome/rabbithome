@@ -1,11 +1,14 @@
-// main.js v2025-10-06d (compact)
+// === Rabbithome 主頁 main.js ===
+// 版本：2025-10-06e (final)
+// 功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️ 三項紅圈（請假只算年假pending且未結束）
+
 import { auth, db } from '/js/firebase.js'
 import {
   doc, getDoc, collection, getDocs, collectionGroup, query, where
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
-// nickname
+// ---------------- 基本 UI ----------------
 window.addEventListener('load', () => {
   const el = document.getElementById('nickname-display')
   if (!el) return
@@ -16,13 +19,11 @@ window.addEventListener('load', () => {
     el.textContent = `🙋‍♂️ 使用者：${u.nickname || user.displayName || user.email || '未知'}`
   })
 })
-
-// navigation helpers
 window.navigate = (page)=>{ const f=document.getElementById('content-frame'); if(f) f.src=page }
 window.toggleMenu = (id)=>{ const el=document.getElementById(id); if(el) el.style.display = (el.style.display==='block'?'none':'block') }
 window.logout = ()=>{ try{localStorage.removeItem('rabbitUser')}catch(_){} location.href='/login.html' }
 
-// ---------- 🧽 clean-cycle badge ----------
+// ---------------- 🧽 環境整理 Badge ----------------
 const DAY = 86400000
 const toDateSafe = (v)=>{ try{
   if(!v) return null
@@ -56,7 +57,7 @@ window.addEventListener('DOMContentLoaded',updateCycleBadge)
 window.addEventListener('load',updateCycleBadge)
 setInterval(updateCycleBadge,3*60*60*1000)
 
-// ---------- 🔋 battery badge ----------
+// ---------------- 🔋 Battery Badge ----------------
 async function countBatteriesOverdue(){
   try{
     const snap=await getDocs(collection(db,'batteries'))
@@ -74,11 +75,16 @@ window.addEventListener('load',updateBatteryBadge)
 setInterval(updateBatteryBadge,60*60*1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge(); setInterval(updateBatteryBadge,3*60*60*1000) })
 
-// ---------- 🗓️ leave-approve badge (pending & not ended) ----------
+// ---------------- 🗓️ Leave Approve Badge ----------------
+// 只統計：type='annual' & status='pending'，且 end(yyyy-mm-dd) >= 今天(台北)
 const todayYMD_TPE=()=> new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
 async function countLeavePending(){
   try{
-    const q=query(collectionGroup(db,'leaves'), where('status','==','pending'))
+    const q=query(
+      collectionGroup(db,'leaves'),
+      where('status','==','pending'),
+      where('type','==','annual')
+    )
     const snap=await getDocs(q)
     const today=todayYMD_TPE(); let n=0
     snap.forEach(d=>{ const x=d.data()||{}; const end=(x.end||'').slice(0,10); if(end && end>=today) n++ })
@@ -92,3 +98,5 @@ window.addEventListener('DOMContentLoaded',updateLeaveBadge)
 window.addEventListener('load',updateLeaveBadge)
 setInterval(updateLeaveBadge,3*60*60*1000)
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
+
+// === EOF ===
