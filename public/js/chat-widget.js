@@ -1,11 +1,4 @@
-// Rabbithome Floating Chat Widget v1.5
-// - Auto-open latest unread room when opening panel
-// - Unread badge hides when all read
-// - 30-day message retention (client cleanup, once/day)
-// - Recipients from `users` (employment in {'full-time','part-time'}) excluding resigned
-// - participants[] on DM rooms; updatedAt maintained
-// - External unread mirror: RabbitChat.bindBadge('#selector')
-
+// Rabbithome Floating Chat Widget v1.6 — DM 左側名單、輸入框修正、最新未讀自動跳、30天保留
 import { db, auth } from '/js/firebase.js'
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot,
@@ -24,8 +17,8 @@ const state={ roomId:'global', users:[], dmTarget:null, unreadTotal:0, latestUnr
 const $=(s,r=document)=>r.querySelector(s)
 const el=(t,c)=>{ const e=document.createElement(t); if(c) e.className=c; return e }
 
-function nickOf(u){ return u?.nickname || (u?.email ? u.email.split('@')[0] : '同事') }
-function myNick(){ return me?.displayName || (me?.email ? me.email.split('@')[0] : '我') }
+const nickOf = u => u?.name || u?.nickname || (u?.email ? u.email.split('@')[0] : '同事')
+const myNick = () => me?.displayName || (me?.email ? me.email.split('@')[0] : '我')
 
 function ensureDOM(){
   if(document.querySelector('.rh-chat-fab')) return
@@ -38,9 +31,6 @@ function ensureDOM(){
         <div class="rh-tab" data-tab="dm">私訊</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <select id="rhToSelect" style="display:none; max-width:190px; padding:4px 6px; border:1px solid #e5e7eb; border-radius:8px; background:#fff;">
-          <option value="">選擇收件人…</option>
-        </select>
         <span id="rhMeName" style="font-size:12px;color:#6b7280"></span>
         <button id="rhClose" style="border:none;background:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">✕</button>
       </div>
@@ -61,6 +51,7 @@ function ensureDOM(){
   fab.addEventListener('click',()=>{ toggle(true); openLatestUnreadIfAny() })
   $('#rhClose',panel).addEventListener('click',()=>toggle(false))
 
+  // Tabs
   panel.querySelectorAll('.rh-tab').forEach(tab=>{
     tab.addEventListener('click',()=>{
       panel.querySelectorAll('.rh-tab').forEach(t=>t.classList.remove('active'))
@@ -68,23 +59,23 @@ function ensureDOM(){
       const mode=tab.dataset.tab
       if(mode==='global'){
         state.dmTarget=null
-        $('#rhToSelect').style.display='none'
         $('#rhSidebar').style.display='block'
         subscribeRoom('global')
       }else{
-        $('#rhSidebar').style.display='none'
-        $('#rhToSelect').style.display='inline-block'
-        ensureDmTargetFromSelect()
+        $('#rhSidebar').style.display='block'   // DM 也使用側欄
+        renderPeopleList()
+        if(!state.dmTarget){
+          const first = state.users.find(u=>u.uid!==me?.uid)
+          if(first) setDmTarget(first.uid, first.name)
+        }else{
+          subscribeRoom(dmRoomId(me.uid, state.dmTarget.uid))
+        }
       }
     })
   })
 
   $('#rhSend',panel).addEventListener('click',sendCurrent)
   $('#rhText',panel).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendCurrent() } })
-  $('#rhToSelect',panel).addEventListener('change',()=>{
-    const sel=$('#rhToSelect'); const uid=sel.value; const name=sel.selectedOptions[0]?.textContent || '同事'
-    if(uid) setDmTarget(uid, name)
-  })
 }
 
 function toggle(open){
@@ -103,6 +94,29 @@ function renderMessages(snap){
     row.appendChild(bubble); row.appendChild(meta); list.appendChild(row)
   })
   list.scrollTop=list.scrollHeight
+}
+
+// ----- Sidebar people list -----
+function renderPeopleList(){
+  const box=$('#rhSidebar'); if(!box) return
+  box.innerHTML=''
+  const list=el('div'); list.id='rhPeople'
+  state.users.filter(u=>u.uid!==me?.uid).forEach(u=>{
+    const item=el('div','rh-user'+(state.dmTarget?.uid===u.uid?' active':''))
+    item.dataset.uid=u.uid
+    item.innerHTML=`<span class="dot"></span><span class="name">${u.name||'同事'}</span>`
+    item.onclick=()=>setDmTarget(u.uid, u.name)
+    list.appendChild(item)
+  })
+  box.appendChild(list)
+}
+
+function setDmTarget(uid, name){
+  state.dmTarget={ uid, name }
+  subscribeRoom(dmRoomId(me.uid, uid))
+  document.querySelectorAll('.rh-user').forEach(el=>{
+    el.classList.toggle('active', el.dataset.uid===uid)
+  })
 }
 
 // Firestore helpers
@@ -131,34 +145,15 @@ async function loadRecipients(){
     const v=d.data()||{}
     const emp=(v.employment||'').toString().toLowerCase()
     if(!ok.has(emp)) return
-    list.push({ uid:d.id, nickname:v.nickname||'', email:v.email||'' })
+    const name = v.nickname || v.name || (v.email ? v.email.split('@')[0] : d.id)
+    list.push({ uid:d.id, name, email:v.email||'' })
   })
   if(me && !list.find(u=>u.uid===me.uid)){
-    list.push({ uid: me.uid, nickname: myNick(), email: me.email||'' })
+    list.push({ uid: me.uid, name: myNick(), email: me.email||'' })
   }
-  list.sort((a,b)=> nickOf(a).localeCompare(nickOf(b), 'zh-Hant'))
+  list.sort((a,b)=> (a.name||'').localeCompare(b.name||'', 'zh-Hant'))
   state.users = list
-  const sel=$('#rhToSelect'); if(sel){
-    sel.innerHTML = `<option value="">選擇收件人…</option>` + list
-      .filter(u=>u.uid!==me?.uid)
-      .map(u=>`<option value="${u.uid}">${nickOf(u)}</option>`)
-      .join('')
-  }
-}
-
-function ensureDmTargetFromSelect(){
-  const sel=$('#rhToSelect'); if(!sel) return
-  if(!sel.value){
-    const first = sel.querySelector('option[value]:not([value=""])')
-    if(first) sel.value = first.value
-  }
-  const uid=sel.value; const name=sel.selectedOptions[0]?.textContent || '同事'
-  if(uid) setDmTarget(uid, name)
-}
-
-function setDmTarget(uid, name){
-  state.dmTarget={ uid, name }
-  subscribeRoom(dmRoomId(me.uid, uid))
+  renderPeopleList()
 }
 
 // Send & ensure room metadata
@@ -191,7 +186,7 @@ async function markRoomRead(rid){
   await setDoc(doc(collection(roomDoc(rid),'read'), me.uid), { lastReadAt: serverTimestamp() }, { merge:true })
 }
 
-// ---- Live unread tracking ----
+// Badge
 function setBadgeCount(n){
   state.unreadTotal = n
   const badge = $('#rhChatBadge')
@@ -224,7 +219,6 @@ function watchUnread(){
   if(stopRoomsSnapshot){ stopRoomsSnapshot(); stopRoomsSnapshot=null }
   if(stopGlobalSnapshot){ stopGlobalSnapshot(); stopGlobalSnapshot=null }
 
-  // Watch global room + its read doc
   const recomputeGlobal = async ()=>{
     const u = await unreadForRoom('global')
     window.__rh_global_unread = u.count
@@ -234,7 +228,6 @@ function watchUnread(){
   stopGlobalSnapshot = onSnapshot(roomDoc('global'), recomputeGlobal)
   onSnapshot(doc(collection(roomDoc('global'),'read'), me.uid), recomputeGlobal)
 
-  // Watch DM rooms where participants contains me.uid
   const roomsQ = query(collection(db,'rooms'), where('participants','array-contains', me.uid))
   stopRoomsSnapshot = onSnapshot(roomsQ, async (snap)=>{
     let sum = 0, latest=0
@@ -254,59 +247,53 @@ function recomputeTotal(){
   const g = Number(window.__rh_global_unread||0)
   const d = Number(window.__rh_dm_unread||0)
   setBadgeCount(g + d)
-  // choose latest unread room id for quick jump
   const gl = Number(window.__rh_global_latest||0)
   const dl = Number(window.__rh_dm_latest||0)
   if(g + d === 0){ state.latestUnreadRoomId = null; return }
   state.latestUnreadRoomId = (dl>gl) ? 'dm_latest' : 'global'
 }
 
-// Auto-open the latest unread room when panel opens
+// Auto-open latest unread
 async function openLatestUnreadIfAny(){
   if(state.unreadTotal<=0) return
   if(state.latestUnreadRoomId==='global'){
     document.querySelectorAll('.rh-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab==='global'))
-    $('#rhToSelect').style.display='none'; $('#rhSidebar').style.display='block'
+    $('#rhSidebar').style.display='block'
     subscribeRoom('global')
     return
   }
-  // latest DM: pick the DM room with the most recent unread
-  // Strategy: find among recipients the DM that has newest message > lastRead
+  // find dm with latest unread
   let best = { rid:null, ts:0, uid:null, name:null }
   const tasks = state.users.filter(u=>u.uid!==me?.uid).map(async u=>{
     const rid = dmRoomId(me.uid, u.uid)
     const info = await unreadForRoom(rid)
-    if(info.count>0 && info.latest>best.ts){ best = { rid, ts:info.latest, uid:u.uid, name:nickOf(u) } }
+    if(info.count>0 && info.latest>best.ts){ best = { rid, ts:info.latest, uid:u.uid, name: u.name } }
   })
   await Promise.all(tasks)
   if(best.rid){
     document.querySelectorAll('.rh-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab==='dm'))
-    $('#rhSidebar').style.display='none'; $('#rhToSelect').style.display='inline-block'
-    const sel=$('#rhToSelect'); if(sel) sel.value = best.uid
+    $('#rhSidebar').style.display='block'
     setDmTarget(best.uid, best.name)
   }
 }
 
-// ---- 30-day retention cleanup (client-side, throttled once/day) ----
+// 30-day retention cleanup
 async function cleanupOldMessages(){
   try{
     const key='rh_cleanup_last'; const last=localStorage.getItem(key)
     const today=(new Date()).toISOString().slice(0,10)
-    if(last===today) return // once per day
+    if(last===today) return
     localStorage.setItem(key, today)
 
     const cutoffMs = Date.now() - 30*24*60*60*1000
-    const cutoffTs = Timestamp.fromMillis(cutoffMs)
 
-    // Rooms to clean: global + DMs with me
     const roomIds = new Set(['global'])
     const dmSnap = await getDocs(query(collection(db,'rooms'), where('participants','array-contains', me.uid)))
     dmSnap.forEach(r=> roomIds.add(r.id))
 
     for(const rid of roomIds){
-      // Delete in small batches to avoid quotas
-      let deleted=0, loop=0
-      while(loop<10){ // up to ~10*200 = 2000 deletions per day max
+      let loop=0
+      while(loop<10){
         const batchSnap = await getDocs(query(messagesCol(rid), orderBy('createdAt','asc'), limit(200)))
         const toDelete = []
         batchSnap.forEach(m=>{
@@ -314,16 +301,12 @@ async function cleanupOldMessages(){
           if(d.createdAt && d.createdAt.toMillis() < cutoffMs) toDelete.push(m.ref)
         })
         if(toDelete.length===0) break
-        // delete sequentially (or could do Promise.all with care)
-        for(const ref of toDelete){ await deleteDoc(ref); deleted++ }
+        for(const ref of toDelete){ await deleteDoc(ref) }
         loop++
       }
-      // touch room updatedAt to keep metadata fresh
       await setDoc(roomDoc(rid), { updatedAt: serverTimestamp() }, { merge:true })
     }
-  }catch(err){
-    console.warn('cleanupOldMessages error', err)
-  }
+  }catch(err){ console.warn('cleanupOldMessages error', err) }
 }
 
 // Public API
@@ -337,18 +320,17 @@ async function init(){
     await loadRecipients()
     subscribeRoom('global')
     watchUnread()
-    setTimeout(cleanupOldMessages, 3000) // delay a bit after init
+    setTimeout(cleanupOldMessages, 3000)
   })
 }
 function open(){ toggle(true); openLatestUnreadIfAny() }
 function close(){ toggle(false) }
 async function openDM(uid, preset=''){
   if(!me){ toggle(true); return }
-  const sel=$('#rhToSelect'); if(sel){ sel.value=uid }
   const target = state.users.find(u=>u.uid===uid)
-  setDmTarget(uid, target ? nickOf(target) : '同事')
+  setDmTarget(uid, target ? target.name : '同事')
   document.querySelectorAll('.rh-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab==='dm'))
-  $('#rhSidebar').style.display='none'; $('#rhToSelect').style.display='inline-block'
+  $('#rhSidebar').style.display='block'
   toggle(true)
   if(preset){ const input=$('#rhText'); input.value=preset; input.focus() }
 }
@@ -357,7 +339,6 @@ async function sendTo(uid, text){
   const rid = dmRoomId(me.uid, uid)
   await send(rid, text)
 }
-// Mirror unread count into an external badge element (e.g., a span in sidebar)
 function bindBadge(selector){ externalBadgeSelector = selector }
 
 window.RabbitChat={ init, open, close, openDM, sendTo, bindBadge }
