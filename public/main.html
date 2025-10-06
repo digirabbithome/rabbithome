@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
- <link rel="icon" type="image/png" href="/img/logo-pink.png">
+  <link rel="icon" type="image/png" href="/img/logo-pink.png">
   <title>Rabbithome 主頁</title>
   <link rel="stylesheet" href="css/main.css" />
   <script type="module" src="js/main.js" defer></script>
@@ -22,37 +21,32 @@
         <div class="menu-items" id="daily">
           <button onclick="navigate('attendance.html')">📋 上班打卡</button>
           <button onclick="navigate('leave-apply.html')">📝 年假申請</button>
-          
-
-
- 
         </div>
       </div>
 
-
       <div class="menu-section">
-        <div class="menu-header" onclick="toggleMenu('daily')">📁 小兔工作</div>
-        <div class="menu-items" id="daily">
+        <div class="menu-header" onclick="toggleMenu('work')">📁 小兔工作</div>
+        <div class="menu-items" id="work">
           <button onclick="navigate('daily-report.html')">📊 工作回報</button>
-          <!--   <button onclick="navigate('daily.html')">📋 每日任務</button>  -->
           <button onclick="navigate('bulletin.html')">📌 公布欄</button>
-          <!--  <button onclick="navigate('bulletin-post.html')">✍️ 發佈公告</button> -->
           <button onclick="navigate('pickupV2.html')">📦 櫃檯取貨</button>
-          <!--   <button onclick="navigate('pickup.html')">📦 櫃檯取貨</button> -->
           <button onclick="navigate('arrival.html')">📢 貨到通知</button>
           <button onclick="navigate('progress.html')">🗂️ 盤點進度</button>
           <button onclick="navigate('repair.html')">🔧 維修管理</button>
           <button onclick="navigate('cash-diff.html')">💰 外場錢櫃</button>
           <button onclick="navigate('cleaning.html')">🧹 值日清潔</button>
-<button class="menu-btn has-badge" onclick="navigate('clean-cycle.html')">
-  🧽 環境整理
-  <span id="cycle-badge" class="btn-badge" style="display:none;">0</span>
-</button>
 
+          <!-- 🧽 環境整理 -->
+          <button class="menu-btn has-badge" onclick="navigate('clean-cycle.html')">
+            🧽 環境整理
+            <span id="cycle-badge" class="btn-badge" style="display:none;">0</span>
+          </button>
+
+          <!-- 🔋 電池管理 -->
           <button class="menu-btn has-badge" onclick="navigate('battery.html')">
-  🔋 電池管理
-  <span id="battery-badge" class="btn-badge" style="display:none;">0</span>
-</button>
+            🔋 電池管理
+            <span id="battery-badge" class="btn-badge" style="display:none;">0</span>
+          </button>
         </div>
       </div>
 
@@ -77,11 +71,9 @@
         </div>
       </div>
 
-      
-
-        <div class="menu-section">
-        <div class="menu-header" onclick="toggleMenu('seeting')">📁 設定工具</div>
-        <div class="menu-items" id="seeting">
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('setting')">📁 設定工具</div>
+        <div class="menu-items" id="setting">
           <button onclick="navigate('workitems.html')">🛠️ 工作項目</button>
           <button onclick="navigate('fav-envelope.html')">📮 常用信封</button>
           <button onclick="navigate('add_supplier.html')">🏪 新增供應商</button>
@@ -89,23 +81,20 @@
           <button onclick="navigate('new_account.html')">👤 新增帳號</button>
           <button onclick="navigate('user-manage.html')">👥 會員管理</button>
           <button onclick="navigate('user-manage-v2.html')">👥 會員管理V2</button>
-          <button onclick="navigate('leave-approve.html')">✅ 年假審核</button>
 
-
- 
+          <!-- ✅ 年假審核（🗓️ 請假審核紅圈） -->
+          <button class="menu-btn has-badge" onclick="navigate('leave-approve.html')">
+            ✅ 年假審核
+            <span id="leave-badge" class="btn-badge" style="display:none;">0</span>
+          </button>
         </div>
       </div>
 
-
-
-
-
-      
       <div class="menu-section">
         <div class="menu-header" onclick="logout()">🚪 登出</div>
       </div>
-
     </div>
+
     <div class="main-content">
       <iframe id="content-frame" src="bulletin.html"></iframe>
     </div>
