@@ -28,7 +28,15 @@
         <div class="menu-header" onclick="toggleMenu('work')">📁 小兔工作</div>
         <div class="menu-items" id="work">
           <button onclick="navigate('daily-report.html')">📊 工作回報</button>
-          <button onclick="navigate('bulletin.html')">📌 公布欄</button>
+           <!-- <button onclick="navigate('bulletin.html')">📌 公布欄</button>-->
+
+
+          <!-- 公布欄 -->
+          <button class="menu-btn has-badge" onclick="navigate('bulletin.html')">
+          📌 公布欄
+          <span id="bulletin-clean-badge" class="btn-badge" style="display:none;">0</span>
+          </button>
+          
           <button onclick="navigate('pickupV2.html')">📦 櫃檯取貨</button>
           <button onclick="navigate('arrival.html')">📢 貨到通知</button>
           <button onclick="navigate('progress.html')">🗂️ 盤點進度</button>
