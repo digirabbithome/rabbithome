@@ -1,23 +1,25 @@
-// Rabbithome Floating Chat Widget v1.4
-// - Unread badge visible on FAB without opening panel
-// - DM rooms store participants [uidA, uidB]; live unread via onSnapshot
-// - API: RabbitChat.bindBadge('#selector') to mirror unread outside (e.g., sidebar badge)
-// - Recipients still sourced from `users` (full-time/part-time), excluding resigned (from v1.3)
+// Rabbithome Floating Chat Widget v1.5
+// - Auto-open latest unread room when opening panel
+// - Unread badge hides when all read
+// - 30-day message retention (client cleanup, once/day)
+// - Recipients from `users` (employment in {'full-time','part-time'}) excluding resigned
+// - participants[] on DM rooms; updatedAt maintained
+// - External unread mirror: RabbitChat.bindBadge('#selector')
 
 import { db, auth } from '/js/firebase.js'
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot,
-  serverTimestamp, query, where, orderBy, limit, Timestamp
+  serverTimestamp, query, where, orderBy, limit, Timestamp, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 const TPE='Asia/Taipei'
 const fmtTime=new Intl.DateTimeFormat('zh-TW',{ timeZone:TPE, hour:'2-digit', minute:'2-digit' })
 
-let me=null, unsubRoom=null, unsubRoomsWatch=null
+let me=null, unsubRoom=null, stopRoomsSnapshot=null, stopGlobalSnapshot=null
 let externalBadgeSelector=null
 
-const state={ roomId:'global', users:[], dmTarget:null, unreadTotal:0 }
+const state={ roomId:'global', users:[], dmTarget:null, unreadTotal:0, latestUnreadRoomId:null }
 
 const $=(s,r=document)=>r.querySelector(s)
 const el=(t,c)=>{ const e=document.createElement(t); if(c) e.className=c; return e }
@@ -56,7 +58,7 @@ function ensureDOM(){
   `
   document.body.appendChild(fab); document.body.appendChild(panel)
 
-  fab.addEventListener('click',()=>toggle(true))
+  fab.addEventListener('click',()=>{ toggle(true); openLatestUnreadIfAny() })
   $('#rhClose',panel).addEventListener('click',()=>toggle(false))
 
   panel.querySelectorAll('.rh-tab').forEach(tab=>{
@@ -159,12 +161,11 @@ function setDmTarget(uid, name){
   subscribeRoom(dmRoomId(me.uid, uid))
 }
 
-// Send & make sure room has participants for DM
+// Send & ensure room metadata
 async function send(rid, text){
   if(!me||!text||!text.trim()) return
   const docRef = roomDoc(rid)
   const isDM = rid.startsWith('dm_')
-  // Ensure room metadata
   const patch = { updatedAt: serverTimestamp() }
   if(isDM){
     const parts = rid.replace(/^dm_/,'').split('_')
@@ -176,13 +177,7 @@ async function send(rid, text){
     patch.type = 'global'
   }
   await setDoc(docRef, patch, { merge:true })
-
-  await addDoc(messagesCol(rid),{
-    uid: me.uid,
-    text: text.trim(),
-    nickname: myNick(),
-    createdAt: serverTimestamp()
-  })
+  await addDoc(messagesCol(rid),{ uid:me.uid, text:text.trim(), nickname: myNick(), createdAt: serverTimestamp() })
 }
 
 async function sendCurrent(){
@@ -190,7 +185,13 @@ async function sendCurrent(){
   await send(state.roomId||'global', t); $('#rhText').value=''
 }
 
-// ----- Unread computation (live) -----
+// Read / Unread
+async function markRoomRead(rid){
+  if(!me||!rid) return
+  await setDoc(doc(collection(roomDoc(rid),'read'), me.uid), { lastReadAt: serverTimestamp() }, { merge:true })
+}
+
+// ---- Live unread tracking ----
 function setBadgeCount(n){
   state.unreadTotal = n
   const badge = $('#rhChatBadge')
@@ -205,62 +206,124 @@ function setBadgeCount(n){
 }
 
 async function unreadForRoom(roomId){
-  // My lastReadAt
   const rd = await getDoc(doc(collection(roomDoc(roomId),'read'), me.uid))
   const lastRead = rd.exists()? rd.data().lastReadAt : null
-  // Count messages newer than lastRead and not sent by me
   const msgsSnap = await getDocs(query(messagesCol(roomId), orderBy('createdAt','desc'), limit(50)))
-  let c=0
+  let c=0, latestTs=0
   msgsSnap.forEach(m=>{
     const d=m.data()
     if(d.uid===me.uid) return
     if(!d.createdAt) return
-    if(!lastRead || d.createdAt.toMillis() > lastRead.toMillis()) c++
+    const ms = d.createdAt.toMillis()
+    if(!lastRead || ms > lastRead.toMillis()){ c++; if(ms > latestTs) latestTs = ms }
   })
-  return c
+  return { count:c, latest: latestTs }
 }
 
-let stopRoomsSnapshot=null, stopGlobalSnapshot=null
 function watchUnread(){
-  // Stop previous
   if(stopRoomsSnapshot){ stopRoomsSnapshot(); stopRoomsSnapshot=null }
   if(stopGlobalSnapshot){ stopGlobalSnapshot(); stopGlobalSnapshot=null }
 
-  // Global: watch latest message + my read doc to recompute
-  stopGlobalSnapshot = onSnapshot(roomDoc('global'), async (_)=>{
-    const count = await unreadForRoom('global')
-    // We'll combine with DMs below; here we store temp on window
-    window.__rh_global_unread = count
+  // Watch global room + its read doc
+  const recomputeGlobal = async ()=>{
+    const u = await unreadForRoom('global')
+    window.__rh_global_unread = u.count
+    window.__rh_global_latest = u.latest
     recomputeTotal()
-  })
-  // Also watch my read doc in global
-  onSnapshot(doc(collection(roomDoc('global'),'read'), me.uid), async (_)=>{
-    const count = await unreadForRoom('global')
-    window.__rh_global_unread = count
-    recomputeTotal()
-  })
+  }
+  stopGlobalSnapshot = onSnapshot(roomDoc('global'), recomputeGlobal)
+  onSnapshot(doc(collection(roomDoc('global'),'read'), me.uid), recomputeGlobal)
 
   // Watch DM rooms where participants contains me.uid
   const roomsQ = query(collection(db,'rooms'), where('participants','array-contains', me.uid))
   stopRoomsSnapshot = onSnapshot(roomsQ, async (snap)=>{
-    let sum = 0
+    let sum = 0, latest=0
     const tasks = []
     snap.forEach(r=>{
       if(r.id==='global') return
-      tasks.push(unreadForRoom(r.id).then(c=>{ sum += c }))
+      tasks.push(unreadForRoom(r.id).then(({count,latest:ts})=>{ sum += count; if(ts>latest) latest = ts }))
     })
     await Promise.all(tasks)
     window.__rh_dm_unread = sum
+    window.__rh_dm_latest = latest
     recomputeTotal()
   })
-  // Also recompute on my read doc changes for any dm
-  // (We won't attach individual listeners to each dm/read, to keep it simple)
 }
 
 function recomputeTotal(){
   const g = Number(window.__rh_global_unread||0)
   const d = Number(window.__rh_dm_unread||0)
   setBadgeCount(g + d)
+  // choose latest unread room id for quick jump
+  const gl = Number(window.__rh_global_latest||0)
+  const dl = Number(window.__rh_dm_latest||0)
+  if(g + d === 0){ state.latestUnreadRoomId = null; return }
+  state.latestUnreadRoomId = (dl>gl) ? 'dm_latest' : 'global'
+}
+
+// Auto-open the latest unread room when panel opens
+async function openLatestUnreadIfAny(){
+  if(state.unreadTotal<=0) return
+  if(state.latestUnreadRoomId==='global'){
+    document.querySelectorAll('.rh-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab==='global'))
+    $('#rhToSelect').style.display='none'; $('#rhSidebar').style.display='block'
+    subscribeRoom('global')
+    return
+  }
+  // latest DM: pick the DM room with the most recent unread
+  // Strategy: find among recipients the DM that has newest message > lastRead
+  let best = { rid:null, ts:0, uid:null, name:null }
+  const tasks = state.users.filter(u=>u.uid!==me?.uid).map(async u=>{
+    const rid = dmRoomId(me.uid, u.uid)
+    const info = await unreadForRoom(rid)
+    if(info.count>0 && info.latest>best.ts){ best = { rid, ts:info.latest, uid:u.uid, name:nickOf(u) } }
+  })
+  await Promise.all(tasks)
+  if(best.rid){
+    document.querySelectorAll('.rh-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab==='dm'))
+    $('#rhSidebar').style.display='none'; $('#rhToSelect').style.display='inline-block'
+    const sel=$('#rhToSelect'); if(sel) sel.value = best.uid
+    setDmTarget(best.uid, best.name)
+  }
+}
+
+// ---- 30-day retention cleanup (client-side, throttled once/day) ----
+async function cleanupOldMessages(){
+  try{
+    const key='rh_cleanup_last'; const last=localStorage.getItem(key)
+    const today=(new Date()).toISOString().slice(0,10)
+    if(last===today) return // once per day
+    localStorage.setItem(key, today)
+
+    const cutoffMs = Date.now() - 30*24*60*60*1000
+    const cutoffTs = Timestamp.fromMillis(cutoffMs)
+
+    // Rooms to clean: global + DMs with me
+    const roomIds = new Set(['global'])
+    const dmSnap = await getDocs(query(collection(db,'rooms'), where('participants','array-contains', me.uid)))
+    dmSnap.forEach(r=> roomIds.add(r.id))
+
+    for(const rid of roomIds){
+      // Delete in small batches to avoid quotas
+      let deleted=0, loop=0
+      while(loop<10){ // up to ~10*200 = 2000 deletions per day max
+        const batchSnap = await getDocs(query(messagesCol(rid), orderBy('createdAt','asc'), limit(200)))
+        const toDelete = []
+        batchSnap.forEach(m=>{
+          const d=m.data()
+          if(d.createdAt && d.createdAt.toMillis() < cutoffMs) toDelete.push(m.ref)
+        })
+        if(toDelete.length===0) break
+        // delete sequentially (or could do Promise.all with care)
+        for(const ref of toDelete){ await deleteDoc(ref); deleted++ }
+        loop++
+      }
+      // touch room updatedAt to keep metadata fresh
+      await setDoc(roomDoc(rid), { updatedAt: serverTimestamp() }, { merge:true })
+    }
+  }catch(err){
+    console.warn('cleanupOldMessages error', err)
+  }
 }
 
 // Public API
@@ -273,14 +336,11 @@ async function init(){
     await ensureGlobalRoom()
     await loadRecipients()
     subscribeRoom('global')
-    watchUnread() // live badge
-    // Fallback: periodic recompute (in case listeners miss edge cases)
-    setInterval(async ()=>{
-      await Promise.resolve() // noop; listeners keep it fresh
-    }, 30000)
+    watchUnread()
+    setTimeout(cleanupOldMessages, 3000) // delay a bit after init
   })
 }
-function open(){ toggle(true) }
+function open(){ toggle(true); openLatestUnreadIfAny() }
 function close(){ toggle(false) }
 async function openDM(uid, preset=''){
   if(!me){ toggle(true); return }
