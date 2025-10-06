@@ -1,9 +1,12 @@
 // === Rabbithome 主頁正式整合版 main.js ===
-// 版本：2025-10-04
-// 功能：導航 + 暱稱顯示 + 🧽 環境整理紅圈 badge
+// 版本：2025-10-06
+// 功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️ 三項紅圈 Badge
 
 import { auth, db } from '/js/firebase.js'
-import { doc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  doc, getDoc, collection, getDocs, collectionGroup,
+  query, where, getCountFromServer
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
 
 // === 暱稱顯示 ===
@@ -44,9 +47,10 @@ window.logout = function () {
   location.href = '/login.html'
 }
 
-// === 🧽 環境整理紅圈 Badge ===
+// ----------------------------------------------------
+// 🧽 環境整理 Badge
+// ----------------------------------------------------
 const DAY = 86400000
-
 function toDateSafe(v) {
   if (!v) return null
   try {
@@ -58,45 +62,34 @@ function toDateSafe(v) {
     return null
   }
 }
-
 function daysDiffByLocalDay(from, to) {
   const a = new Date(from.getFullYear(), from.getMonth(), from.getDate())
   const b = new Date(to.getFullYear(), to.getMonth(), to.getDate())
   return Math.floor((b - a) / DAY)
 }
-
 async function countEnvWaiting() {
   try {
     const snap = await getDocs(collection(db, 'cleanCycleTasks'))
     const now = new Date()
     let waiting = 0
-
     snap.forEach(doc => {
       const d = doc.data() || {}
       const lastRaw = d.last ?? d.lastCompleted ?? d.lastCompletedAt ?? d.lastCleanedAt
       const cycleRaw = d.days ?? d.cycleDays ?? d.cycle ?? d.interval
       const days = parseInt(cycleRaw ?? 0, 10)
       const last = toDateSafe(lastRaw)
-
-      // 從未清潔
-      if (!last && days > 0) {
-        waiting++
-        return
-      }
+      if (!last && days > 0) { waiting++; return }
       if (!last || !days) return
-
       const dueAt = new Date(last.getTime() + days * DAY)
       const restDays = daysDiffByLocalDay(now, dueAt)
-      if (restDays <= 2) waiting++ // 過期或兩天內
+      if (restDays <= 2) waiting++
     })
-
     return waiting
   } catch (err) {
     console.error('[badge] fetch error:', err)
     return 0
   }
 }
-
 function setBadge(n) {
   const el = document.getElementById('cycle-badge')
   if (!el) return
@@ -107,22 +100,20 @@ function setBadge(n) {
     el.style.display = 'none'
   }
 }
-
 async function updateBadge() {
   const n = await countEnvWaiting()
   setBadge(n)
 }
-
 window.addEventListener('DOMContentLoaded', updateBadge)
 window.addEventListener('load', updateBadge)
 setInterval(updateBadge, 3 * 60 * 60 * 1000)
 
-
-// === 🔋 Battery Manager Badge ===
+// ----------------------------------------------------
+// 🔋 Battery Manager Badge
+// ----------------------------------------------------
 async function countBatteriesOverdue() {
   try {
     const snap = await getDocs(collection(db, 'batteries'))
-    const today = new Date()
     let overdue = 0
     function daysSince(dstr) {
       if (!dstr) return Infinity
@@ -144,7 +135,6 @@ async function countBatteriesOverdue() {
     return 0
   }
 }
-
 function setBatteryBadge(n) {
   const el = document.getElementById('battery-badge')
   if (!el) return
@@ -155,21 +145,50 @@ function setBatteryBadge(n) {
     el.style.display = 'none'
   }
 }
-
 async function updateBatteryBadge() {
   const n = await countBatteriesOverdue()
   setBatteryBadge(n)
 }
-
-// initialize battery badge
 window.addEventListener('DOMContentLoaded', updateBatteryBadge)
 window.addEventListener('load', updateBatteryBadge)
-setInterval(updateBatteryBadge, 60 * 60 * 1000) // hourly
-
-
-// initialize battery badge on login, then every 3 hours
+setInterval(updateBatteryBadge, 60 * 60 * 1000)
 onAuthStateChanged(auth, async (user) => {
   if (!user) return
   await updateBatteryBadge()
-  setInterval(updateBatteryBadge, 3 * 60 * 60 * 1000) // every 3 hours
+  setInterval(updateBatteryBadge, 3 * 60 * 60 * 1000)
+})
+
+// ----------------------------------------------------
+// 🗓️ Leave Approve Badge
+// ----------------------------------------------------
+async function countLeavePending() {
+  try {
+    const q = query(collectionGroup(db, 'leaves'), where('status', '==', 'pending'))
+    const snap = await getCountFromServer(q)
+    return snap.data().count || 0
+  } catch (err) {
+    console.error('[badge:leave] fetch error:', err)
+    return 0
+  }
+}
+function setLeaveBadge(n) {
+  const el = document.getElementById('leave-badge')
+  if (!el) return
+  if (Number(n) > 0) {
+    el.textContent = String(n)
+    el.style.display = 'inline-flex'
+  } else {
+    el.style.display = 'none'
+  }
+}
+async function updateLeaveBadge() {
+  const n = await countLeavePending()
+  setLeaveBadge(n)
+}
+window.addEventListener('DOMContentLoaded', updateLeaveBadge)
+window.addEventListener('load', updateLeaveBadge)
+setInterval(updateLeaveBadge, 3 * 60 * 60 * 1000)
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return
+  await updateLeaveBadge()
 })
