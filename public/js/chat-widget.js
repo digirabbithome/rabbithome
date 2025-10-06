@@ -1,4 +1,4 @@
-// Rabbithome Floating Chat Widget v1.6 — DM 左側名單、輸入框修正、最新未讀自動跳、30天保留
+// Rabbithome Floating Chat Widget v1.7 — People sorted by recent DM activity
 import { db, auth } from '/js/firebase.js'
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot,
@@ -12,12 +12,12 @@ const fmtTime=new Intl.DateTimeFormat('zh-TW',{ timeZone:TPE, hour:'2-digit', mi
 let me=null, unsubRoom=null, stopRoomsSnapshot=null, stopGlobalSnapshot=null
 let externalBadgeSelector=null
 
+// state.users: [{uid, name, email, lastActiveTs:number|null}]
 const state={ roomId:'global', users:[], dmTarget:null, unreadTotal:0, latestUnreadRoomId:null }
 
 const $=(s,r=document)=>r.querySelector(s)
 const el=(t,c)=>{ const e=document.createElement(t); if(c) e.className=c; return e }
 
-const nickOf = u => u?.name || u?.nickname || (u?.email ? u.email.split('@')[0] : '同事')
 const myNick = () => me?.displayName || (me?.email ? me.email.split('@')[0] : '我')
 
 function ensureDOM(){
@@ -62,7 +62,7 @@ function ensureDOM(){
         $('#rhSidebar').style.display='block'
         subscribeRoom('global')
       }else{
-        $('#rhSidebar').style.display='block'   // DM 也使用側欄
+        $('#rhSidebar').style.display='block'
         renderPeopleList()
         if(!state.dmTarget){
           const first = state.users.find(u=>u.uid!==me?.uid)
@@ -97,7 +97,18 @@ function renderMessages(snap){
 }
 
 // ----- Sidebar people list -----
+function resortUsersInState(){
+  const withTs = state.users.filter(u=>typeof u.lastActiveTs==='number')
+  const noTs = state.users.filter(u=>u.lastActiveTs==null)
+
+  withTs.sort((a,b)=> b.lastActiveTs - a.lastActiveTs) // recent first
+  noTs.sort((a,b)=> (a.name||'').localeCompare(b.name||'', 'zh-Hant'))
+
+  state.users = withTs.concat(noTs)
+}
+
 function renderPeopleList(){
+  resortUsersInState()
   const box=$('#rhSidebar'); if(!box) return
   box.innerHTML=''
   const list=el('div'); list.id='rhPeople'
@@ -136,7 +147,7 @@ async function ensureGlobalRoom(){
   if(!got.exists()) await setDoc(r,{ type:'global', createdAt:serverTimestamp(), updatedAt:serverTimestamp() })
 }
 
-// Recipients from `users` (employment in full-time/part-time)
+// Recipients from `users` (employment in full-time/part-time) + lastActiveTs from room.updatedAt
 async function loadRecipients(){
   const snap = await getDocs(collection(db,'users'))
   const ok = new Set(['full-time','part-time'])
@@ -146,12 +157,21 @@ async function loadRecipients(){
     const emp=(v.employment||'').toString().toLowerCase()
     if(!ok.has(emp)) return
     const name = v.nickname || v.name || (v.email ? v.email.split('@')[0] : d.id)
-    list.push({ uid:d.id, name, email:v.email||'' })
+    list.push({ uid:d.id, name, email:v.email||'', lastActiveTs:null })
   })
   if(me && !list.find(u=>u.uid===me.uid)){
-    list.push({ uid: me.uid, name: myNick(), email: me.email||'' })
+    list.push({ uid: me.uid, name: myNick(), email: me.email||'', lastActiveTs: null })
   }
-  list.sort((a,b)=> (a.name||'').localeCompare(b.name||'', 'zh-Hant'))
+
+  // attach lastActiveTs from DM room's updatedAt
+  for(const u of list){
+    if(u.uid===me?.uid) continue
+    const rid = dmRoomId(me.uid, u.uid)
+    const r = await getDoc(roomDoc(rid))
+    const ts = r.exists() && r.data().updatedAt ? r.data().updatedAt.toMillis() : null
+    u.lastActiveTs = ts
+  }
+
   state.users = list
   renderPeopleList()
 }
@@ -231,12 +251,27 @@ function watchUnread(){
   const roomsQ = query(collection(db,'rooms'), where('participants','array-contains', me.uid))
   stopRoomsSnapshot = onSnapshot(roomsQ, async (snap)=>{
     let sum = 0, latest=0
+    const updatedMap = new Map()
     const tasks = []
     snap.forEach(r=>{
-      if(r.id==='global') return
-      tasks.push(unreadForRoom(r.id).then(({count,latest:ts})=>{ sum += count; if(ts>latest) latest = ts }))
+      const data=r.data()||{}
+      const ts = data.updatedAt ? data.updatedAt.toMillis() : 0
+      // collect for sorting
+      if(Array.isArray(data.participants)){
+        const other = data.participants.find(x=>x!==me?.uid)
+        if(other){ updatedMap.set(other, ts) }
+      }
+      if(r.id!=='global'){
+        tasks.push(unreadForRoom(r.id).then(({count,latest:tsm})=>{ sum += count; if(tsm>latest) latest = tsm }))
+      }
     })
     await Promise.all(tasks)
+    // update users lastActiveTs based on rooms snapshot
+    state.users.forEach(u=>{
+      if(u.uid===me?.uid) return
+      if(updatedMap.has(u.uid)) u.lastActiveTs = updatedMap.get(u.uid)
+    })
+    renderPeopleList() // live resort
     window.__rh_dm_unread = sum
     window.__rh_dm_latest = latest
     recomputeTotal()
