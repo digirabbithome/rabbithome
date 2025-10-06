@@ -30,7 +30,6 @@
           <button onclick="navigate('daily-report.html')">📊 工作回報</button>
            <!-- <button onclick="navigate('bulletin.html')">📌 公布欄</button>-->
 
-
           <!-- 公布欄 -->
           <button class="menu-btn has-badge" onclick="navigate('bulletin.html')">
           📌 公布欄
@@ -114,5 +113,20 @@
       <iframe id="content-frame" src="bulletin.html"></iframe>
     </div>
   </div>
+
+  <!-- ================= Rabbithome 浮動聊天室（新增） ================= -->
+  <link rel="stylesheet" href="/css/chat-widget.css?v=1.0" />
+  <script type="module" src="/js/chat-widget.js?v=1.0"></script>
+  <script>
+    // 初始化浮動聊天室（需已登入且 /js/firebase.js 已在 main.js 內使用）
+    window.addEventListener('load', () => {
+      window.RabbitChat?.init()
+    })
+
+    // 你也可以在其他模組（例如到貨通知）用以下方式開私訊或直接送：
+    // window.RabbitChat.openDM('<同事UID>', '【到貨通知】您的貨已到，請協助處理。')
+    // window.RabbitChat.sendTo('<同事UID>', '貨到了！請收貨～')
+  </script>
+  <!-- =============================================================== -->
 </body>
 </html>
