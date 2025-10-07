@@ -1,12 +1,13 @@
 // === Rabbithome 主頁 main.js ===
-/* 版本：2025-10-06n
+/* 版本：2025-10-06p
    功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚚 頭部角標（無數字即隱藏）
+   變更：點任一個工作（呼叫 navigate）就會立即刷新所有徽章
    排程頻率：
    - 🧽 環境整理：每 6 小時
    - 🔋 電池：每 6 小時（僅全域排程；登入後只跑一次）
    - 🗓️ 年假待審：每 12 小時
    - 💰 外場錢櫃：每 4 小時
-   - 📌 公布欄「環境整潔」：每 1 小時
+   - 📌 公布欄「環境整潔」（今天）：每 1 小時
    - 🚚 貨車（外場、自己發佈、仍顯示、標示中、近14天）：每 30 分鐘（無數字就隱藏）
 */
 import { auth, db } from '/js/firebase.js'
@@ -104,7 +105,13 @@ window.addEventListener('load', () => {
     await updateHeaderTruckBadge()
   })
 })
-window.navigate = (page)=>{ const f=document.getElementById('content-frame'); if(f) f.src=page }
+// 點任一個側邊工作 → 立即刷新徽章
+window.navigate = async (page)=>{
+  const f=document.getElementById('content-frame')
+  if(f) f.src=page
+  // 等待一小下再刷新，避免同瞬間切頁造成視覺卡頓
+  setTimeout(() => { refreshAllBadges() }, 120)
+}
 window.toggleMenu = (id)=>{ const el=document.getElementById(id); if(el) el.style.display = (el.style.display==='block'?'none':'block') }
 window.logout = ()=>{ try{localStorage.removeItem('rabbitUser')}catch(_){} location.href='/login.html' }
 
@@ -151,7 +158,6 @@ setInterval(updateBatteryBadge, 6*60*60*1000) // 每 6 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBatteryBadge() }) // ← 只跑一次，已移除第二組排程
 
 // ---------------- 🗓️ Leave Approve Badge ----------------
-// 只統計：type='annual' & status='pending'，且 end(yyyy-mm-dd) >= 今天(台北)
 async function countLeavePending(){
   try{
     const q=query(
@@ -174,7 +180,6 @@ setInterval(updateLeaveBadge, 12*60*60*1000) // 每 12 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateLeaveBadge() })
 
 // ---------------- 💰 Cashbox Diff Badge ----------------
-// 今日有「未歸零且金額≠0」的紀錄 → 顯示綠圈 ✖️
 const _todayYMD = (typeof todayYMD_TPE === 'function')
   ? todayYMD_TPE
   : () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
@@ -269,7 +274,7 @@ async function countMyBulletinFlaggedVisible_group14d(groupName='外場'){
   const { start, end } = dayRange14TPE()
   try{
     let snap
-    // 推薦路徑：array-contains + createdAt 範圍（需要索引）
+    // 推薦路徑：array-contains + createdAt 範圍（需要 Firestore 索引）
     try{
       const q1 = query(
         collection(db,'bulletins'),
@@ -322,5 +327,21 @@ window.addEventListener('DOMContentLoaded', updateHeaderTruckBadge)
 window.addEventListener('load', updateHeaderTruckBadge)
 setInterval(updateHeaderTruckBadge, 30 * 60 * 1000) // 每 30 分鐘
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateHeaderTruckBadge() })
+
+// ---------------- 一鍵刷新：給 navigate() 用 ----------------
+async function refreshAllBadges(){
+  try{
+    await Promise.allSettled([
+      updateCycleBadge(),
+      updateBatteryBadge(),
+      updateLeaveBadge(),
+      updateCashDiffBadge(),
+      updateBulletinCleanBadge(),
+      updateHeaderTruckBadge()
+    ])
+  }catch(e){
+    console.warn('[refreshAllBadges]', e)
+  }
+}
 
 // === EOF ===
