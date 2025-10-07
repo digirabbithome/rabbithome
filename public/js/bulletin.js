@@ -199,13 +199,13 @@ async function renderBulletins(endDate, rangeDays) {
           p.style.opacity = 1; p.style.display = ''
           newState = 'highlight'
 
+          // ✅ 新版：只用收件暱稱＋內容，不加作者，不重複暱稱
           const { toNick, item } = parseTargetAndItem(contentSpan.textContent, author)
           const trimmedNick = (toNick || '').trim()
           const toUid = usersByNick.get(trimmedNick)
           const chat = getChat()
-          console.log('[bulletin->dm]', { author, raw: contentSpan.textContent, toNick: trimmedNick, toUid, hasChat: !!chat })
           if (trimmedNick && toUid && chat && typeof chat.sendTo === 'function') {
-            const msg = `${author}：${trimmedNick}！${item} 已於 ${formatNow()} 到公司囉 💕`
+            const msg = `${trimmedNick ? trimmedNick + '！' : ''}${item} 已於 ${formatNow()} 到公司囉 💕`
             try { await chat.sendTo(toUid, msg) } catch (e) { console.warn('sendTo failed', e) }
           } else {
             console.warn('無法發送：暱稱/UID/聊天物件缺一', { trimmedNick, toUid, chatOk: !!chat })
