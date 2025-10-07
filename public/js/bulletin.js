@@ -29,15 +29,11 @@ async function preloadUsersByNickname() {
   })
 }
 
-// Chat bridge: support inside iframe (use parent if needed)
+// Chat bridge (iframe-safe)
 function getChat() {
   if (typeof window !== 'undefined') {
     if (window.RabbitChat) return window.RabbitChat
-    try {
-      if (window.parent && window.parent !== window && window.parent.RabbitChat) {
-        return window.parent.RabbitChat
-      }
-    } catch (_) {}
+    try { if (window.parent && window.parent !== window && window.parent.RabbitChat) return window.parent.RabbitChat } catch(_) {}
   }
   return null
 }
@@ -50,13 +46,18 @@ function formatNow(){
 }
 function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
+// Parse: try after removing author; if not matched, fall back to full string
 function parseTargetAndItem(displayText, authorName){
-  let s = String(displayText || '').trim()
+  const full = String(displayText || '').trim()
+  let s = full
   if(authorName){
     const re = new RegExp('^\\s*' + escapeReg(authorName) + '\\s*[：:]\\s*')
     s = s.replace(re, '')
   }
-  const m = s.match(/^\s*([^：:！!]+)\s*[：:]\s*(.+)\s*$/)
+  let m = s.match(/^\\s*([^：:！!]+)\\s*[：:]\\s*(.+)\\s*$/)
+  if(m) return { toNick: (m[1]||'').trim(), item: (m[2]||'').trim() }
+  // fallback on full (handles cases like "妹妹：BBB" where author==recipient or content had no nick)
+  m = full.match(/^\\s*([^：:！!]+)\\s*[：:]\\s*(.+)\\s*$/)
   if(m) return { toNick: (m[1]||'').trim(), item: (m[2]||'').trim() }
   return { toNick: null, item: s }
 }
@@ -131,7 +132,7 @@ async function renderBulletins(endDate, rangeDays) {
   const grouped = {}
   filtered.forEach(d => {
     const targets = d.visibleTo || ['未知']
-    const contentList = d.content?.join?.('\n') || ''
+    const contentList = d.content?.join?.('\\n') || ''
     const nickname = d.createdBy || d.nickname || '匿名者'
     const displayText = nickname + '：' + contentList
 
