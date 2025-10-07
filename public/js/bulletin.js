@@ -40,25 +40,31 @@ function getChat() {
 
 // helpers
 const pad = n => String(n).padStart(2, '0')
-function formatNow(){
-  const d = new Date()
-  return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+function formatNow(){ const d=new Date(); return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}` }
 function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
-// Parse: try after removing author; if not matched, fall back to full string
+// Detect first "colon-like" character
+const COLONS = new Set([':', '：', '﹕', '∶'])
+function splitByFirstColon(s){
+  for(let i=0;i<s.length;i++){ const ch=s[i]; if(COLONS.has(ch)) return [s.slice(0,i), s.slice(i+1)] }
+  return null
+}
+
+// Robust parse: try (1) after removing author prefix, (2) whole string, (3) fallback null
 function parseTargetAndItem(displayText, authorName){
   const full = String(displayText || '').trim()
+  // 1) remove author prefix like "花花：" once
   let s = full
   if(authorName){
     const re = new RegExp('^\\s*' + escapeReg(authorName) + '\\s*[：:]\\s*')
     s = s.replace(re, '')
   }
-  let m = s.match(/^\\s*([^：:！!]+)\\s*[：:]\\s*(.+)\\s*$/)
-  if(m) return { toNick: (m[1]||'').trim(), item: (m[2]||'').trim() }
-  // fallback on full (handles cases like "妹妹：BBB" where author==recipient or content had no nick)
-  m = full.match(/^\\s*([^：:！!]+)\\s*[：:]\\s*(.+)\\s*$/)
-  if(m) return { toNick: (m[1]||'').trim(), item: (m[2]||'').trim() }
+  let parts = splitByFirstColon(s)
+  if(parts && parts[0].trim()){ return { toNick: parts[0].trim(), item: parts[1].trim() } }
+  // 2) fallback: whole string
+  parts = splitByFirstColon(full)
+  if(parts && parts[0].trim()){ return { toNick: parts[0].trim(), item: parts[1].trim() } }
+  // 3) final fallback
   return { toNick: null, item: s }
 }
 
