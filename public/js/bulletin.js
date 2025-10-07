@@ -1,4 +1,3 @@
-
 import { db } from '/js/firebase.js'
 import {
   collection, getDocs, query, orderBy, updateDoc, doc
@@ -15,6 +14,46 @@ const groupMap = {
 const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
 let currentRangeDays = 14
 let allDocs = []
+
+// --- New: preload users for nickname -> uid mapping
+let usersByNick = new Map()
+async function preloadUsersByNickname() {
+  usersByNick.clear()
+  const snap = await getDocs(collection(db, 'users'))
+  snap.forEach(d => {
+    const v = d.data() || {}
+    const emp = (v.employment || '').toString().toLowerCase()
+    if (emp === 'full-time' || emp === 'part-time') {
+      const nick = v.nickname || v.name || (v.email ? v.email.split('@')[0] : d.id)
+      if (nick) usersByNick.set(nick, d.id)
+    }
+  })
+}
+
+// --- New: helpers for message
+function pad(n){ return String(n).padStart(2, '0') }
+function formatNow(){
+  const d = new Date()
+  return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
+/**
+ * Parse "displayText" like "花花：妹妹：ML-CD15-G×1"
+ * where displayText = `${author}：${contentList}`
+ * We want to extract target nickname from the CONTENT part, not the author.
+ * Return { toNick, item } ; if no target, toNick=null and item is remaining text.
+ */
+function parseTargetAndItem(displayText, authorName){
+  let s = String(displayText || '').trim()
+  if(authorName){
+    const re = new RegExp('^\\s*' + escapeReg(authorName) + '\\s*[：:]\\s*')
+    s = s.replace(re, '')
+  }
+  const m = s.match(/^\s*([^：:！!]+)\s*[：:]\s*(.+)\s*$/)
+  if(m) return { toNick: m[1].trim(), item: m[2].trim() }
+  return { toNick: null, item: s }
+}
 
 window.onload = async () => {
   const now = new Date()
@@ -35,6 +74,7 @@ window.onload = async () => {
     renderBulletins(new Date(), currentRangeDays)
   })
 
+  await preloadUsersByNickname()          // NEW: load users mapping first
   await preloadAllDocsWithinOneYear()
   renderBulletins(new Date(), currentRangeDays)
 }
@@ -96,7 +136,7 @@ async function renderBulletins(endDate, rangeDays) {
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, state: d.markState || 'none' })
+      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, state: d.markState || 'none', author: nickname })
     })
   })
 
@@ -111,7 +151,7 @@ async function renderBulletins(endDate, rangeDays) {
 
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(({ text, id, isStarred, state }) => {
+    grouped[group].forEach(({ text, id, isStarred, state, author }) => {
       const p = document.createElement('p')
       p.dataset.state = state
 
@@ -163,10 +203,23 @@ async function renderBulletins(endDate, rangeDays) {
       pencil.addEventListener('click', async () => {
         let newState = 'none'
         if (p.dataset.state === 'none') {
+          // 第一次點：標示為到貨（highlight）並送聊天訊息
           contentSpan.style.backgroundColor = '#fffbbd'
           p.style.opacity = 1
           p.style.display = ''
           newState = 'highlight'
+
+          // --- New: send DM to target nickname if found in line
+          const { toNick, item } = parseTargetAndItem(contentSpan.textContent, author)
+          if (toNick) {
+            const toUid = usersByNick.get(toNick)
+            if (toUid && window.RabbitChat?.sendTo) {
+              const msg = `${author}：${toNick}！${item} 已於 ${formatNow()} 到公司囉 💕`
+              try { await window.RabbitChat.sendTo(toUid, msg) } catch (e) { console.warn('sendTo failed', e) }
+            } else {
+              console.warn('找不到暱稱對應 UID 或 RabbitChat 尚未載入：', toNick)
+            }
+          }
         } else if (p.dataset.state === 'highlight') {
           contentSpan.style.backgroundColor = ''
           p.style.display = 'none'
