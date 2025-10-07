@@ -1,5 +1,5 @@
 // === Rabbithome 主頁 main.js ===
-/* 版本：2025-10-06m
+/* 版本：2025-10-06n
    功能：導航 + 暱稱顯示 + 🧽/🔋/🗓️/💰/📌 五項徽章 + 🚚 頭部角標（無數字即隱藏）
    排程頻率：
    - 🧽 環境整理：每 6 小時
@@ -7,7 +7,7 @@
    - 🗓️ 年假待審：每 12 小時
    - 💰 外場錢櫃：每 4 小時
    - 📌 公布欄「環境整潔」：每 1 小時
-   - 🚚 貨車（外場、自己發佈、仍顯示、標示中）：每 30 分鐘（無數字就隱藏）
+   - 🚚 貨車（外場、自己發佈、仍顯示、標示中、近14天）：每 30 分鐘（無數字就隱藏）
 */
 import { auth, db } from '/js/firebase.js'
 import { doc, getDoc, collection, getDocs, collectionGroup, query, where } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
@@ -23,6 +23,19 @@ const toDateSafe = (v)=>{ try{
   return new Date(v)
 }catch(_){return null} }
 const daysDiff = (a,b)=>{ const A=new Date(a.getFullYear(),a.getMonth(),a.getDate()), B=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.floor((B-A)/DAY) }
+function dayRangeTPE(){ // 今天 00:00 ~ 明天 00:00
+  const ymd = todayYMD_TPE()
+  const start = new Date(`${ymd}T00:00:00+08:00`)
+  const end = new Date(start.getTime() + DAY)
+  return { start, end }
+}
+// 近 14 天（含今天）：start = 今天00:00 - 13 天；end = 明天00:00
+function dayRange14TPE(){
+  const { start: todayStart } = dayRangeTPE()
+  const start = new Date(todayStart.getTime() - 13 * DAY)
+  const end = new Date(todayStart.getTime() + DAY)
+  return { start, end }
+}
 
 // 目前登入者顯示名稱（用來比對「自己發佈」）
 let CURRENT_PROFILE_NAME = ''
@@ -205,13 +218,7 @@ window.addEventListener('load', updateCashDiffBadge)
 setInterval(updateCashDiffBadge, 4 * 60 * 60 * 1000) // 每 4 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateCashDiffBadge() })
 
-// ---------------- 📌 Bulletin「環境整潔」Badge ----------------
-function dayRangeTPE(){
-  const ymd = todayYMD_TPE()
-  const start = new Date(`${ymd}T00:00:00+08:00`)
-  const end = new Date(start.getTime() + DAY)
-  return { start, end }
-}
+// ---------------- 📌 Bulletin「環境整潔」Badge（今天） ----------------
 async function countBulletinEnvUnprocessedToday(){
   const { start, end } = dayRangeTPE()
   try{
@@ -257,16 +264,34 @@ window.addEventListener('load', updateBulletinCleanBadge)
 setInterval(updateBulletinCleanBadge, 60 * 60 * 1000) // 每 1 小時
 onAuthStateChanged(auth, async (u)=>{ if(!u) return; await updateBulletinCleanBadge() })
 
-// ---------------- 🚚 Header：外場（自己發佈 & 標示中 & 仍顯示） ----------------
-async function countMyBulletinFlaggedVisible_group(groupName='外場'){
+// ---------------- 🚚 Header：外場（自己發佈 & 標示中 & 仍顯示 & 近14天） ----------------
+async function countMyBulletinFlaggedVisible_group14d(groupName='外場'){
+  const { start, end } = dayRange14TPE()
   try{
-    const q = query(collection(db,'bulletins'), where('visibleTo','array-contains', groupName))
-    const snap = await getDocs(q)
+    let snap
+    // 推薦路徑：array-contains + createdAt 範圍（需要索引）
+    try{
+      const q1 = query(
+        collection(db,'bulletins'),
+        where('visibleTo','array-contains', groupName),
+        where('createdAt','>=', start),
+        where('createdAt','<',  end)
+      )
+      snap = await getDocs(q1)
+    }catch(_){
+      // 退回路徑：先抓群組，再前端依日期過濾
+      const q2 = query(collection(db,'bulletins'), where('visibleTo','array-contains', groupName))
+      snap = await getDocs(q2)
+    }
+
     const me = (CURRENT_PROFILE_NAME || '').trim()
     if (!me) return 0
     let n = 0
+
     snap.forEach(d=>{
       const x = d.data() || {}
+      const ts = x.createdAt?.toDate?.()
+      if (!ts || ts < start || ts >= end) return
       const author = (x.createdBy || x.nickname || '').trim()
       const state  = x.markState || 'none'
       const visible = state !== 'hidden'
@@ -275,16 +300,16 @@ async function countMyBulletinFlaggedVisible_group(groupName='外場'){
     })
     return n
   }catch(e){
-    console.error('[hdr truck: my bulletin flagged]', e)
+    console.error('[hdr truck: my bulletin 14d]', e)
     return 0
   }
 }
 async function updateHeaderTruckBadge(){
   try{
-    const n = await countMyBulletinFlaggedVisible_group('外場')
+    const n = await countMyBulletinFlaggedVisible_group14d('外場')
     if (n > 0){
       if (!document.getElementById('hdr-truck-wrap')) ensureHeaderTruck()
-      setHeaderTruckCount(n, `你的外場標示中項目：${n} 筆`)
+      setHeaderTruckCount(n, `你的外場標示中項目（近14天）：${n} 筆`)
     } else {
       const wrap = document.getElementById('hdr-truck-wrap')
       if (wrap){ wrap.style.display = 'none'; wrap.removeAttribute('title') }
