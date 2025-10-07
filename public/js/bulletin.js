@@ -15,35 +15,41 @@ const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
 let currentRangeDays = 14
 let allDocs = []
 
-// --- New: preload users for nickname -> uid mapping
+// users nickname -> uid mapping (non-resigned only)
 let usersByNick = new Map()
 async function preloadUsersByNickname() {
   usersByNick.clear()
   const snap = await getDocs(collection(db, 'users'))
   snap.forEach(d => {
     const v = d.data() || {}
-    const emp = (v.employment || '').toString().toLowerCase()
-    if (emp === 'full-time' || emp === 'part-time') {
-      const nick = v.nickname || v.name || (v.email ? v.email.split('@')[0] : d.id)
-      if (nick) usersByNick.set(nick, d.id)
-    }
+    const emp = (v.employment || 'full-time').toString().toLowerCase()
+    if (emp === 'resigned') return
+    const nick = (v.nickname || v.name || (v.email ? v.email.split('@')[0] : d.id) || '').trim()
+    if (nick) usersByNick.set(nick, d.id)
   })
 }
 
-// --- New: helpers for message
-function pad(n){ return String(n).padStart(2, '0') }
+// Chat bridge: support inside iframe (use parent if needed)
+function getChat() {
+  if (typeof window !== 'undefined') {
+    if (window.RabbitChat) return window.RabbitChat
+    try {
+      if (window.parent && window.parent !== window && window.parent.RabbitChat) {
+        return window.parent.RabbitChat
+      }
+    } catch (_) {}
+  }
+  return null
+}
+
+// helpers
+const pad = n => String(n).padStart(2, '0')
 function formatNow(){
   const d = new Date()
   return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
-/**
- * Parse "displayText" like "花花：妹妹：ML-CD15-G×1"
- * where displayText = `${author}：${contentList}`
- * We want to extract target nickname from the CONTENT part, not the author.
- * Return { toNick, item } ; if no target, toNick=null and item is remaining text.
- */
 function parseTargetAndItem(displayText, authorName){
   let s = String(displayText || '').trim()
   if(authorName){
@@ -51,7 +57,7 @@ function parseTargetAndItem(displayText, authorName){
     s = s.replace(re, '')
   }
   const m = s.match(/^\s*([^：:！!]+)\s*[：:]\s*(.+)\s*$/)
-  if(m) return { toNick: m[1].trim(), item: m[2].trim() }
+  if(m) return { toNick: (m[1]||'').trim(), item: (m[2]||'').trim() }
   return { toNick: null, item: s }
 }
 
@@ -74,7 +80,7 @@ window.onload = async () => {
     renderBulletins(new Date(), currentRangeDays)
   })
 
-  await preloadUsersByNickname()          // NEW: load users mapping first
+  await preloadUsersByNickname()
   await preloadAllDocsWithinOneYear()
   renderBulletins(new Date(), currentRangeDays)
 }
@@ -106,15 +112,10 @@ async function renderBulletins(endDate, rangeDays) {
   container.innerHTML = ''
 
   const dateStr = endDate.toISOString().split('T')[0]
-  const titleEl = document.getElementById('date-title')
-  titleEl.textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
+  document.getElementById('date-title').textContent = `📌 公布欄：${dateStr}（往前${rangeDays}天）`
 
-  const endDateFull = new Date(endDate)
-  endDateFull.setHours(23, 59, 59, 999)
-
-  const startDate = new Date(endDateFull)
-  startDate.setDate(startDate.getDate() - (rangeDays - 1))
-  startDate.setHours(0, 0, 0, 0)
+  const endDateFull = new Date(endDate); endDateFull.setHours(23, 59, 59, 999)
+  const startDate = new Date(endDateFull); startDate.setDate(startDate.getDate() - (rangeDays - 1)); startDate.setHours(0, 0, 0, 0)
 
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
   const showAll = document.getElementById('showAll')?.checked
@@ -148,7 +149,6 @@ async function renderBulletins(endDate, rangeDays) {
     title.textContent = groupMap[group] || group
     title.style.backgroundColor = pastelColors[colorIndex % pastelColors.length]
     colorIndex++
-
     groupDiv.appendChild(title)
 
     grouped[group].forEach(({ text, id, isStarred, state, author }) => {
@@ -157,16 +157,13 @@ async function renderBulletins(endDate, rangeDays) {
 
       const contentSpan = document.createElement('span')
       contentSpan.textContent = text
-      if (state === 'highlight') {
-        contentSpan.style.backgroundColor = '#fffbbd'
-      } else if (state === 'pink') {
-        contentSpan.style.backgroundColor = '#ffddee'
-      }
+      if (state === 'highlight') contentSpan.style.backgroundColor = '#fffbbd'
+      else if (state === 'pink') contentSpan.style.backgroundColor = '#ffddee'
 
       if (state === 'hidden' && !showAll) {
         return
       } else if (state === 'hidden' && showAll) {
-        p.style.opacity = 0.4;
+        p.style.opacity = 0.4
         contentSpan.style.color = '#999'
       }
 
@@ -179,21 +176,9 @@ async function renderBulletins(endDate, rangeDays) {
         star.textContent = newStatus ? '⭐' : '☆'
         const newState = newStatus ? 'pink' : 'none'
         p.dataset.state = newState
-        if (newState === 'pink') {
-          contentSpan.style.backgroundColor = '#ffddee'
-          p.style.opacity = 1
-          p.style.display = ''
-        } else {
-          contentSpan.style.backgroundColor = ''
-          p.style.opacity = 1
-          p.style.display = ''
-        }
-
-        const ref = doc(db, 'bulletins', id)
-        await updateDoc(ref, {
-          isStarred: newStatus,
-          markState: newState
-        })
+        if (newState === 'pink') { contentSpan.style.backgroundColor = '#ffddee'; p.style.opacity = 1; p.style.display = '' }
+        else { contentSpan.style.backgroundColor = ''; p.style.opacity = 1; p.style.display = '' }
+        await updateDoc(doc(db, 'bulletins', id), { isStarred: newStatus, markState: newState })
       })
 
       const pencil = document.createElement('span')
@@ -203,22 +188,20 @@ async function renderBulletins(endDate, rangeDays) {
       pencil.addEventListener('click', async () => {
         let newState = 'none'
         if (p.dataset.state === 'none') {
-          // 第一次點：標示為到貨（highlight）並送聊天訊息
           contentSpan.style.backgroundColor = '#fffbbd'
-          p.style.opacity = 1
-          p.style.display = ''
+          p.style.opacity = 1; p.style.display = ''
           newState = 'highlight'
 
-          // --- New: send DM to target nickname if found in line
           const { toNick, item } = parseTargetAndItem(contentSpan.textContent, author)
-          if (toNick) {
-            const toUid = usersByNick.get(toNick)
-            if (toUid && window.RabbitChat?.sendTo) {
-              const msg = `${author}：${toNick}！${item} 已於 ${formatNow()} 到公司囉 💕`
-              try { await window.RabbitChat.sendTo(toUid, msg) } catch (e) { console.warn('sendTo failed', e) }
-            } else {
-              console.warn('找不到暱稱對應 UID 或 RabbitChat 尚未載入：', toNick)
-            }
+          const trimmedNick = (toNick || '').trim()
+          const toUid = usersByNick.get(trimmedNick)
+          const chat = getChat()
+          console.log('[bulletin->dm]', { author, raw: contentSpan.textContent, toNick: trimmedNick, toUid, hasChat: !!chat })
+          if (trimmedNick && toUid && chat && typeof chat.sendTo === 'function') {
+            const msg = `${author}：${trimmedNick}！${item} 已於 ${formatNow()} 到公司囉 💕`
+            try { await chat.sendTo(toUid, msg) } catch (e) { console.warn('sendTo failed', e) }
+          } else {
+            console.warn('無法發送：暱稱/UID/聊天物件缺一', { trimmedNick, toUid, chatOk: !!chat })
           }
         } else if (p.dataset.state === 'highlight') {
           contentSpan.style.backgroundColor = ''
@@ -231,8 +214,7 @@ async function renderBulletins(endDate, rangeDays) {
           newState = 'none'
         }
         p.dataset.state = newState
-        const ref = doc(db, 'bulletins', id)
-        await updateDoc(ref, { markState: newState })
+        await updateDoc(doc(db, 'bulletins', id), { markState: newState })
       })
 
       p.appendChild(pencil)
