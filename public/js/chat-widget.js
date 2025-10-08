@@ -1,4 +1,4 @@
-// Rabbithome Floating Chat Widget v1.8.1 — DM only + per-user & total unread badges + unread-first sorting
+// Rabbithome Floating Chat Widget v1.8.2 — IME-safe Enter handling + DM only + per-user & total unread badges + unread-first sorting
 import { db, auth } from '/js/firebase.js'
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot,
@@ -48,7 +48,12 @@ function ensureDOM(){
   fab.addEventListener('click',()=> toggle(true))
   $('#rhClose',panel).addEventListener('click',()=>toggle(false))
   $('#rhSend',panel).addEventListener('click',sendCurrent)
-  $('#rhText',panel).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendCurrent() } })
+  // IME-safe: only send when not composing, and avoid Shift+Enter
+  $('#rhText',panel).addEventListener('keydown',e=>{
+    if(e.key==='Enter' && !e.isComposing && !e.shiftKey){
+      e.preventDefault(); sendCurrent()
+    }
+  })
 }
 
 function toggle(open){
