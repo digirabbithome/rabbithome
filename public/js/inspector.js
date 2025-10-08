@@ -11,3 +11,6 @@ async function sendData() {
   const result = await res.json();
   console.log('回傳結果：', result);
 }
+
+
+document.getElementById('sendTest')?.addEventListener('click', sendData)
