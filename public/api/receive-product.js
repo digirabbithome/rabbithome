@@ -1,6 +1,14 @@
+import { initializeApp, cert, getApps } from 'firebase-admin/app'
+import { getFirestore } from 'firebase-admin/firestore'
+import { serviceAccount } from '../../js/firebase-admin-config.js' // 👈 用你自己的私鑰
 
-import { db } from '../../js/firebase-external.js'
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(serviceAccount)
+  })
+}
+
+const db = getFirestore()
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,9 +22,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'Missing required fields: name or price' })
     }
 
-    const docRef = await addDoc(collection(db, 'pos-temp-products'), {
+    const docRef = await db.collection('pos-temp-products').add({
       ...product,
-      createdAt: serverTimestamp(),
+      createdAt: new Date()
     })
 
     return res.status(200).json({ success: true, id: docRef.id })
