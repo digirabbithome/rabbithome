@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -9,6 +8,23 @@
   <h1>🚀 送出測試商品</h1>
   <button id="sendTest">送出</button>
   <pre id="result"></pre>
-  <script type="module" src="/js/inspector.js"></script>
+  <script type="module">
+    async function sendData() {
+      const data = { name: "測試商品", price: 1234 }
+      try {
+        const res = await fetch('/api/receive-product', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        document.getElementById('result').textContent = JSON.stringify(result, null, 2)
+      } catch (e) {
+        document.getElementById('result').textContent = '❌ 回傳格式錯誤或非 JSON\n' + e.message
+      }
+    }
+
+    document.getElementById('sendTest')?.addEventListener('click', sendData)
+  </script>
 </body>
 </html>

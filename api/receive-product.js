@@ -1,9 +1,10 @@
-
-import { initializeApp, cert } from 'firebase-admin/app'
+import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { serviceAccount } from '../js/firebase-admin-config.js'
 
-const app = initializeApp({ credential: cert(serviceAccount) })
+if (getApps().length === 0) {
+  initializeApp({ credential: cert(serviceAccount) })
+}
 const db = getFirestore()
 
 export default async function handler(req, res) {
@@ -14,7 +15,7 @@ export default async function handler(req, res) {
   try {
     const product = req.body
     if (!product.name || !product.price) {
-      return res.status(400).json({ success: false, message: 'Missing required fields: name or price' })
+      return res.status(400).json({ success: false, message: 'Missing required fields' })
     }
 
     const docRef = await db.collection('pos-temp-products').add({
@@ -22,9 +23,9 @@ export default async function handler(req, res) {
       createdAt: new Date()
     })
 
-    return res.status(200).json({ success: true, id: docRef.id })
-  } catch (error) {
-    console.error('🔥 Error:', error)
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message })
+    res.status(200).json({ success: true, id: docRef.id })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Server error', error: err.message })
   }
 }
