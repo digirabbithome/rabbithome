@@ -162,7 +162,7 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
-    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
+    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div>${task.recleanNote ? `<div class=\"meta note-line boss-note\">${escapeHtml(task.recleanNote)}</div>` : ``}</div>
     <div class="actions-col">
       <button class="btn small" data-act="done">🧽 清潔完成</button>
       ${isAdmin ? `
@@ -172,30 +172,8 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
   const editBtn=row.querySelector('[data-act="edit"]'); if(editBtn) editBtn.addEventListener('click', ()=> openEditDialog(task.id))
+  const reBtn=row.querySelector('[data-act="reclean"]'); if(reBtn) reBtn.addEventListener('click', ()=> markReclean(task.id))
   const delBtn=row.querySelector('[data-act="del"]'); if(delBtn) delBtn.addEventListener('click', ()=> removeTaskConfirm(task.id))
-
-// --- v1.7.8a DOM inject: reclean button & boss note ---
-const ops = row.querySelector('.actions-col');
-if(isAdmin && ops && task.last && !ops.querySelector('[data-act="reclean"]')){
-  const btnRe = document.createElement('button');
-  btnRe.className = 'btn ghost small';
-  btnRe.dataset.act = 'reclean';
-  btnRe.textContent = '🔁 重新清潔';
-  const editBtn = ops.querySelector('[data-act="edit"]');
-  ops.insertBefore(btnRe, editBtn || ops.firstChild);
-  btnRe.addEventListener('click', ()=> markReclean(task.id));
-}
-if(task.recleanNote){
-  const block = row.children[3]; // 內容欄（上次/下次/備註）
-  if(block && !block.querySelector('.boss-note')){
-    const div = document.createElement('div');
-    div.className = 'meta note-line boss-note';
-    div.textContent = task.recleanNote;
-    block.appendChild(div);
-  }
-}
-// --- end inject ---
-
   div.appendChild(row); return div
 }
 function renderList(){
@@ -281,8 +259,8 @@ async function markReclean(id){
   const note = window.prompt('要留給下一位清潔的注意事項？（可留空）', t.recleanNote || '')
   try{
     await updateTask(id, {
-      last: null,
-      recleanNote: (note||'').trim() || null,
+      last: null,                                // 回到需要清潔
+      recleanNote: (note||'').trim() || null,    // 老闆備註
       recleanBy: myNickname,
       recleanByUid: me?.uid || null,
       recleanAt: nowIso(),
