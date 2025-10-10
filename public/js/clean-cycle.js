@@ -1,4 +1,4 @@
-// v1.11.0 - hover shows last cleaner; admin "reclean" with note; keep original structure
+// v1.7.6 - edit hides date; only admins see edit/delete; no auto-overwrite last on edit
 import { db, auth } from '/js/firebase.js'
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc,
@@ -18,19 +18,6 @@ function addDays(iso,d){ const dt=new Date(iso||nowIso()); dt.setDate(dt.getDate
 function daysBetween(aIso,bIso){ const A=new Date(aIso),B=new Date(bIso); return Math.floor((B-A)/86400000) }
 function clampInt(v,min,max){ v=parseInt(v||0,10); if(isNaN(v)) v=min; return Math.max(min,Math.min(max,v)) }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])) }
-
-// TPE-friendly short time: 10/09 下午 03:10
-function fmtTpeShort(iso){
-  if(!iso) return ''
-  const d = new Date(iso)
-  const m = String(d.getMonth()+1).padStart(2,'0')
-  const da= String(d.getDate()).padStart(2,'0')
-  const hh = d.getHours()
-  const mm = String(d.getMinutes()).padStart(2,'0')
-  const ap = hh >= 12 ? '下午' : '上午'
-  const hh12 = String((hh%12)||12).padStart(2,'0')
-  return `${m}/${da} ${ap} ${hh12}:${mm}`
-}
 
 let me=null, myNickname='', tasks=[], currentFilter='all', editingId=null, historyCache=[], isAdmin=false
 
@@ -60,7 +47,7 @@ async function appendWorkReport(uid, email, nickname, area, name){
     const snap=await getDoc(ref);
     if(snap.exists()){
       const d=snap.data()||{};
-      const newPlain = (d.plainText? d.plainText + '\\n' : '') + line;
+      const newPlain = (d.plainText? d.plainText + '\n' : '') + line;
       const newHtml = (d.contentHtml? d.contentHtml + lineHtml : lineHtml);
       await updateDoc(ref,{ plainText:newPlain, contentHtml:newHtml, updatedAt:serverTimestamp() });
       console.log('[workReports] appended', id, line);
@@ -116,22 +103,13 @@ async function submitTaskDialog(){
   }
   document.getElementById('taskDlg').close()
 }
-
-// ✅ 清潔完成：同時清掉 reclean 提醒欄位（若有）
 async function completeOne(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
-  await updateTask(id,{
-    last: nowIso(),
-    recleanNote: null,
-    recleanBy: null,
-    recleanByUid: null,
-    recleanAt: null
-  })
+  await updateTask(id,{ last: nowIso() })
   await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null })
   const ok = await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
   if(ok) showToast('✅ 清潔完成，已同步至工作紀錄')
 }
-
 async function removeTaskConfirm(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
   if(!confirm(`確定刪除「${t.area}-${t.name}」？`)) return
@@ -142,7 +120,7 @@ async function completeAllDue(){
   for(const t of tasks){
     const st=getStatus(t)
     if(st.status==='due'||st.status==='over'){
-      await updateTask(t.id,{ last: nowIso(), recleanNote:null, recleanBy:null, recleanByUid:null, recleanAt:null })
+      await updateTask(t.id,{ last: nowIso() })
       await pushHistory({ taskId:t.id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null, action:'bulk-complete' })
       await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
       changed++
@@ -150,23 +128,6 @@ async function completeAllDue(){
   }
   if(changed>0) showToast(`✅ 已完成並同步 ${changed} 筆`)
   else alert('目前沒有需要清潔的項目。')
-}
-
-// 🆕 管理者：重新清潔（打回為未清潔 + 可留言給下一位）
-async function markReclean(id){
-  if(!isAdmin){ showToast('只有管理者可操作'); return }
-  const t=tasks.find(x=>x.id===id); if(!t) return
-  const note = window.prompt('要留給下一位清潔的注意事項？（可留空）', t.recleanNote || '')
-  await updateTask(id, {
-    last: null, // 讓它回到「需要清潔」
-    recleanNote: (note||'').trim() || null,
-    recleanBy: myNickname,
-    recleanByUid: me?.uid || null,
-    recleanAt: nowIso(),
-    recleanCount: (typeof t.recleanCount === 'number' ? t.recleanCount+1 : 1)
-  })
-  await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:(note||'').trim()||'', doneBy: myNickname, doneByUid: me?.uid||null, action:'reclean' })
-  showToast('🔁 已退回為「需要清潔」')
 }
 
 // ---------- view renderers ----------
@@ -188,59 +149,32 @@ function statusBucket(status){
   if(status==='soon') return 'wait'
   return 'done'
 }
-
-// 🆕 從歷史找「最後一次完成」的人與時間（排除 reclean）
-function lastCleanerFor(taskId){
-  for(const r of historyCache){ // historyCache 已是降冪
-    if(r.taskId===taskId && r.action!=='reclean'){
-      return { by: r.doneBy || '—', at: r.doneAt || null }
-    }
-  }
-  return null
-}
-
 function rowEl({head=false, task=null, st=null, bucket=null}){
   const div=document.createElement('div'); 
   div.className='card ' + (bucket==='need'?'need-bg':bucket==='wait'?'wait-bg':'done-bg')
   const row=document.createElement('div'); row.className='row '+(head?'head':'')
   if(head){ row.innerHTML=`<div>區域</div><div>項目</div><div>狀態</div><div>上次完成 / 下次清潔（剩餘） / 備註</div><div>操作</div>`; div.appendChild(row); return div }
-
   const pillText = st.status==='new' ? '尚未清潔' : (bucket==='need'?'需要清潔':bucket==='wait'?'等待清潔':'完成清潔')
   const pillClass = st.status==='new' ? 'new' : bucket
   const pill = `<span class="pill ${pillClass}">${pillText}</span>`
   const nextStr = `${toDateSlash(st.dueAt)}（剩 ${st.daysLeft} 天）`
-
-  // 🆕 名稱加 hover 提示：最後完成者
-  const last = lastCleanerFor(task.id)
-  const nameTitle = last ? `${fmtTpeShort(last.at)} ${last.by} 清潔完成` : (task.last ? `${fmtTpeShort(task.last)} 清潔完成` : '尚無完成紀錄')
-  const nameHtml = `<span class="task-name" title="${escapeHtml(nameTitle)}">${escapeHtml(task.name||'—')}</span>`
-
-  // 🆕 注意事項徽章（若有 recleanNote）
-  const noteBadge = task.recleanNote ? ` <span class="note-pill" title="${escapeHtml(task.recleanNote)}">注意事項</span>` : ''
-
   row.innerHTML=`
     <div class="area">${escapeHtml(task.area||'—')}</div>
-    <div>${nameHtml}</div>
+    <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
-    <div>
-      <div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div>
-      <div class="meta note-line">${escapeHtml(task.note||'')}${noteBadge}</div>
-    </div>
+    <div><div class="meta">${last ? `上次 ${toDateSlash(last.at)}（${escapeHtml(last.by)} ${fmtTpeTime(last.at)}）` : (task.last ? `上次 ${toDateSlash(task.last)}（無人名）` : "上次 —（無紀錄）")} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
     <div class="actions-col">
       <button class="btn small" data-act="done">🧽 清潔完成</button>
       ${isAdmin ? `
-        ${(bucket==='done' || task.last) ? `<button class="btn ghost small" data-act="reclean">🔁 重新清潔</button>` : ''}
         <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
         <button class="btn ghost small" data-act="del">🗑️ 刪除</button>
       ` : ''}
     </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
-  const reBtn=row.querySelector('[data-act="reclean"]'); if(reBtn) reBtn.addEventListener('click', ()=> markReclean(task.id))
   const editBtn=row.querySelector('[data-act="edit"]'); if(editBtn) editBtn.addEventListener('click', ()=> openEditDialog(task.id))
   const delBtn=row.querySelector('[data-act="del"]'); if(delBtn) delBtn.addEventListener('click', ()=> removeTaskConfirm(task.id))
   div.appendChild(row); return div
 }
-
 function renderList(){
   const container=document.getElementById('list'); if(!container) return;
   container.innerHTML=''; container.appendChild(rowEl({head:true}))
@@ -286,11 +220,7 @@ function watchTasks(){
 }
 function watchHistory(){
   const qy=query(collection(db,COL_HISTORY), orderBy('doneAtTS','desc'))
-  return onSnapshot(qy, snap=>{ 
-    historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() }))
-    renderContribDonut()
-    renderList() // 讓 hover 的「上次完成者」即時更新
-  })
+  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribDonut() })
 }
 function bindUI(){
   document.querySelectorAll('.filters .chip').forEach(btn=>{
@@ -305,9 +235,9 @@ function bindUI(){
   document.getElementById('saveTask')?.addEventListener('click', async ev=>{ ev.preventDefault(); await submitTaskDialog() })
 }
 function exportCSV(){
-  const rows=[["區域","項目","週期(天)","上次完成ISO","備註","清潔時間ISO","狀態","重新清潔注意事項","重新清潔次數"]]
-  tasks.forEach(t=>{ const st=getStatus(t); const bucket=statusBucket(st.status); rows.push([t.area,t.name,t.days,t.last||'',t.note||'',st.dueAt,bucket,t.recleanNote||'',t.recleanCount||0]) })
-  const csv=rows.map(r=>r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\\n')
+  const rows=[["區域","項目","週期(天)","上次完成ISO","備註","清潔時間ISO","狀態"]]
+  tasks.forEach(t=>{ const st=getStatus(t); const bucket=statusBucket(st.status); rows.push([t.area,t.name,t.days,t.last||'',t.note||'',st.dueAt,bucket]) })
+  const csv=rows.map(r=>r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n')
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='clean-cycle-tasks.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
