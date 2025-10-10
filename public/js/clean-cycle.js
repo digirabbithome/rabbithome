@@ -105,7 +105,7 @@ async function submitTaskDialog(){
 }
 async function completeOne(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
-  await updateTask(id,{ last: nowIso(), recleanNote:null, recleanBy:null, recleanByUid:null, recleanAt:null })
+  await updateTask(id,{ last: nowIso() })
   await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null })
   const ok = await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
   if(ok) showToast('✅ 清潔完成，已同步至工作紀錄')
@@ -120,7 +120,7 @@ async function completeAllDue(){
   for(const t of tasks){
     const st=getStatus(t)
     if(st.status==='due'||st.status==='over'){
-      await updateTask(t.id,{ last: nowIso(), recleanNote:null, recleanBy:null, recleanByUid:null, recleanAt:null })
+      await updateTask(t.id,{ last: nowIso() })
       await pushHistory({ taskId:t.id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null, action:'bulk-complete' })
       await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
       changed++
@@ -162,17 +162,15 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
-    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div>${task.recleanNote ? `<div class=\"meta note-line boss-note\">${escapeHtml(task.recleanNote)}</div>` : ``}</div>
-    <div class="actions-col">
-      <button class="btn small" data-act="done">🧽 清潔完成</button>
-      ${isAdmin ? `
-        <button class="btn ghost small" data-act="edit">✏️ 編輯</button>
-        <button class="btn ghost small" data-act="del">🗑️ 刪除</button>
-      ` : ''}
-    </div>`
+    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
+    <div class="actions-col actions-grid">
+    <button class="btn small" data-act="done">🧽 清潔完成</button>
+    ${isAdmin ? `<button class="btn ghost small" data-act="edit">✏️ 編輯</button>` : ''}
+    ${isAdmin && task.last ? `<button class="btn ghost small" data-act="reclean">🔁 重新清潔</button>` : ``}
+    ${isAdmin ? `<button class="btn ghost small" data-act="del">🗑️ 刪除</button>` : ''}
+  </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
   const editBtn=row.querySelector('[data-act="edit"]'); if(editBtn) editBtn.addEventListener('click', ()=> openEditDialog(task.id))
-  const reBtn=row.querySelector('[data-act="reclean"]'); if(reBtn) reBtn.addEventListener('click', ()=> markReclean(task.id))
   const delBtn=row.querySelector('[data-act="del"]'); if(delBtn) delBtn.addEventListener('click', ()=> removeTaskConfirm(task.id))
   div.appendChild(row); return div
 }
@@ -221,7 +219,7 @@ function watchTasks(){
 }
 function watchHistory(){
   const qy=query(collection(db,COL_HISTORY), orderBy('doneAtTS','desc'))
-  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribDonut(); renderList() })
+  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribDonut() })
 }
 function bindUI(){
   document.querySelectorAll('.filters .chip').forEach(btn=>{
@@ -249,28 +247,4 @@ window.onload = ()=>{
     const nickEl=document.getElementById('nickname'); if(nickEl){ nickEl.value=myNickname; nickEl.disabled=true }
     bindUI(); watchTasks(); watchHistory();
   })
-}
-
-
-// 🆕 管理者「重新清潔」：把任務打回未完成，並存老闆備註
-async function markReclean(id){
-  if(!isAdmin){ showToast('只有管理者可操作'); return }
-  const t = tasks.find(x=>x.id===id); if(!t) return
-  const note = window.prompt('要留給下一位清潔的注意事項？（可留空）', t.recleanNote || '')
-  try{
-    await updateTask(id, {
-      last: null,                                // 回到需要清潔
-      recleanNote: (note||'').trim() || null,    // 老闆備註
-      recleanBy: myNickname,
-      recleanByUid: me?.uid || null,
-      recleanAt: nowIso(),
-      recleanCount: (typeof t.recleanCount==='number' ? t.recleanCount+1 : 1)
-    })
-    await pushHistory({
-      taskId:id, area:t.area, name:t.name, days:t.days,
-      note:(note||'').trim()||'', doneBy: myNickname, doneByUid: me?.uid||null,
-      action:'reclean'
-    })
-    showToast('🔁 已退回為「需要清潔」')
-  }catch(e){ console.error(e); showToast('重新清潔失敗') }
 }
