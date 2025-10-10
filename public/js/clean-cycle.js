@@ -130,6 +130,17 @@ async function completeAllDue(){
   else alert('目前沒有需要清潔的項目。')
 }
 
+
+// 找出該任務最近一次清潔者（排除重新清潔退回）
+function lastDoneInfo(taskId){
+  for(const r of historyCache){
+    if(r.taskId===taskId && r.action!=='reclean'){
+      return { by: r.doneBy || '', at: r.doneAt || null }
+    }
+  }
+  return null
+}
+
 // ---------- view renderers ----------
 function getStatus(task){
   const cycle=clampInt(task.days,1,3650);
@@ -162,7 +173,7 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
-    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
+    <div>${(()=>{ const last = lastDoneInfo(task.id); const lastStr = last ? `上次 ${escapeHtml(last.by)}清潔 ${toDateOnly(last.at)}` : `上次 ${toDateOnly(task.last)}`; return `<div class="meta">${lastStr} ／ ${nextStr}</div>`; })()}<div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
     <div class="actions-col">
       <button class="btn small" data-act="done">🧽 清潔完成</button>
       ${isAdmin ? `
@@ -220,7 +231,7 @@ function watchTasks(){
 }
 function watchHistory(){
   const qy=query(collection(db,COL_HISTORY), orderBy('doneAtTS','desc'))
-  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribDonut() })
+  return onSnapshot(qy, snap=>{ historyCache = snap.docs.map(d=>({ id:d.id, ...d.data() })); renderContribDonut(); renderList() })
 }
 function bindUI(){
   document.querySelectorAll('.filters .chip').forEach(btn=>{
