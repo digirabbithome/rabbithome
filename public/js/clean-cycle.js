@@ -162,7 +162,7 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
-    <div><div class="meta">${last ? `上次 ${toDateSlash(last.at)}（${escapeHtml(last.by)} ${fmtTpeTime(last.at)}）` : (task.last ? `上次 ${toDateSlash(task.last)}（無人名）` : "上次 —（無紀錄）")} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
+    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
     <div class="actions-col">
       <button class="btn small" data-act="done">🧽 清潔完成</button>
       ${isAdmin ? `
