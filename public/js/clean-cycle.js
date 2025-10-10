@@ -105,7 +105,7 @@ async function submitTaskDialog(){
 }
 async function completeOne(id){
   const t=tasks.find(x=>x.id===id); if(!t) return
-  await updateTask(id,{ last: nowIso() })
+  await updateTask(id,{ last: nowIso(), recleanNote:null, recleanBy:null, recleanByUid:null, recleanAt:null })
   await pushHistory({ taskId:id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null })
   const ok = await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
   if(ok) showToast('✅ 清潔完成，已同步至工作紀錄')
@@ -120,7 +120,7 @@ async function completeAllDue(){
   for(const t of tasks){
     const st=getStatus(t)
     if(st.status==='due'||st.status==='over'){
-      await updateTask(t.id,{ last: nowIso() })
+      await updateTask(t.id,{ last: nowIso(), recleanNote:null, recleanBy:null, recleanByUid:null, recleanAt:null })
       await pushHistory({ taskId:t.id, area:t.area, name:t.name, days:t.days, note:t.note||'', doneBy: myNickname, doneByUid: me?.uid||null, action:'bulk-complete' })
       await appendWorkReport(me?.uid||'unknown', auth.currentUser?.email||'', myNickname, t.area, t.name)
       changed++
@@ -128,17 +128,6 @@ async function completeAllDue(){
   }
   if(changed>0) showToast(`✅ 已完成並同步 ${changed} 筆`)
   else alert('目前沒有需要清潔的項目。')
-}
-
-
-// 找出該任務最近一次清潔者（排除重新清潔退回）
-function lastDoneInfo(taskId){
-  for(const r of historyCache){
-    if(r.taskId===taskId && r.action!=='reclean'){
-      return { by: r.doneBy || '', at: r.doneAt || null }
-    }
-  }
-  return null
 }
 
 // ---------- view renderers ----------
@@ -173,7 +162,7 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     <div class="area">${escapeHtml(task.area||'—')}</div>
     <div>${escapeHtml(task.name||'—')}</div>
     <div>${pill}</div>
-    <div>${(()=>{ const last = lastDoneInfo(task.id); const lastStr = last ? `上次 ${escapeHtml(last.by)}清潔 ${toDateOnly(last.at)}` : `上次 ${toDateOnly(task.last)}`; return `<div class="meta">${lastStr} ／ ${nextStr}</div>`; })()}<div class="meta note-line">${escapeHtml(task.note||'')}</div></div>
+    <div><div class="meta">上次 ${toDateOnly(task.last)} ／ ${nextStr}</div><div class="meta note-line">${escapeHtml(task.note||'')}</div>${task.recleanNote ? `<div class=\"meta note-line boss-note\">${escapeHtml(task.recleanNote)}</div>` : ``}</div>
     <div class="actions-col">
       <button class="btn small" data-act="done">🧽 清潔完成</button>
       ${isAdmin ? `
@@ -183,6 +172,7 @@ function rowEl({head=false, task=null, st=null, bucket=null}){
     </div>`
   row.querySelector('[data-act="done"]').addEventListener('click', ()=> completeOne(task.id))
   const editBtn=row.querySelector('[data-act="edit"]'); if(editBtn) editBtn.addEventListener('click', ()=> openEditDialog(task.id))
+  const reBtn=row.querySelector('[data-act="reclean"]'); if(reBtn) reBtn.addEventListener('click', ()=> markReclean(task.id))
   const delBtn=row.querySelector('[data-act="del"]'); if(delBtn) delBtn.addEventListener('click', ()=> removeTaskConfirm(task.id))
   div.appendChild(row); return div
 }
@@ -259,4 +249,28 @@ window.onload = ()=>{
     const nickEl=document.getElementById('nickname'); if(nickEl){ nickEl.value=myNickname; nickEl.disabled=true }
     bindUI(); watchTasks(); watchHistory();
   })
+}
+
+
+// 🆕 管理者「重新清潔」：把任務打回未完成，並存老闆備註
+async function markReclean(id){
+  if(!isAdmin){ showToast('只有管理者可操作'); return }
+  const t = tasks.find(x=>x.id===id); if(!t) return
+  const note = window.prompt('要留給下一位清潔的注意事項？（可留空）', t.recleanNote || '')
+  try{
+    await updateTask(id, {
+      last: null,                                // 回到需要清潔
+      recleanNote: (note||'').trim() || null,    // 老闆備註
+      recleanBy: myNickname,
+      recleanByUid: me?.uid || null,
+      recleanAt: nowIso(),
+      recleanCount: (typeof t.recleanCount==='number' ? t.recleanCount+1 : 1)
+    })
+    await pushHistory({
+      taskId:id, area:t.area, name:t.name, days:t.days,
+      note:(note||'').trim()||'', doneBy: myNickname, doneByUid: me?.uid||null,
+      action:'reclean'
+    })
+    showToast('🔁 已退回為「需要清潔」')
+  }catch(e){ console.error(e); showToast('重新清潔失敗') }
 }

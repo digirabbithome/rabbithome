@@ -52,3 +52,6 @@ menu{display:flex;justify-content:flex-end;gap:8px;margin:12px 0 0 0;padding:0}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast-inner{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#ffe1ec,#ffd6f5);color:#8a205b;border:1px solid #ffc2e2;padding:10px 14px;border-radius:16px;box-shadow:0 14px 30px rgba(244,114,182,.28)}
 .toast-icon{width:18px;height:18px;opacity:.9}
+
+/* 老闆備註（重新清潔） */
+.boss-note{ color:#b91c5c; }
