@@ -137,3 +137,49 @@ tr.on-display{ background:var(--display) }
 .modal-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:8px }
 .btn.add{ background:#fff; border:1px solid var(--pink-strong) }
 .hidden{ display:none !important }
+
+
+
+/* === v1.4.2 overrides: remove per-row brand column & compress action bar === */
+
+/* 1) Hide the Brand column cells (header + body) because brand is shown as group-row */
+.stock-table th.col-brand,
+.stock-table td.col-brand{
+  display: none !important;
+}
+
+/* 2) Let other columns take the freed space */
+.stock-table .col-name{ width: 28%; }
+.stock-table .col-price{ width: 100px; }
+.stock-table .col-num{ width: 80px; }
+.stock-table .col-op{ width: auto; }
+
+/* 3) Make the operation buttons a single thin row */
+.col-op .ops{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;       /* do not wrap */
+  overflow-x: auto;        /* scroll horizontally if overflow */
+  padding: 2px 0;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+/* 4) Tighter controls */
+.col-op .qty-input{
+  width: 56px;
+  height: 28px;
+  padding: 4px 6px;
+  text-align: center;
+  border-radius: 10px;
+}
+.col-op .btn{
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px; /* pill */
+  line-height: 1.1;
+}
+
+/* Keep the sell hint chip inline if used */
+.col-op .btn-sell{ white-space: nowrap; }
