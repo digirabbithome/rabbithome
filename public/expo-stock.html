@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>展場庫存管理 | Rabbithome</title>
-  <!-- 注意：請確保 /css/expo-stock.css 與 /js/expo-stock.js 佈署在網站對應根目錄 -->
   <link rel="stylesheet" href="/css/expo-stock.css" />
-  <!-- 文字用 Noto Sans TC，比較接近小兔品牌 -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -20,6 +18,7 @@
       <div class="actions">
         <input type="text" id="searchInput" class="search" placeholder="🔍 搜尋 SKU / 品名…" />
         <span class="badge" id="countBadge">0 項</span>
+        <button id="btnAdd" class="btn add">➕ 新增商品</button>
       </div>
     </header>
 
@@ -27,6 +26,7 @@
       <span class="pill">➕ 搬去展場：店內 -1、展場 +1</span>
       <span class="pill">➖ 退回店內：展場 -1、店內 +1</span>
       <span class="pill">💰 展場售出：展場 -1、售出 +1</span>
+      <span class="pill">輸入數量可一次移動或銷售多件</span>
     </section>
 
     <section class="table-wrap">
@@ -38,7 +38,7 @@
             <th class="col-num">店內</th>
             <th class="col-num">展場</th>
             <th class="col-num">已售出</th>
-            <th class="col-op">操作</th>
+            <th class="col-op">操作（數量）</th>
             <th class="col-time">更新時間</th>
           </tr>
         </thead>
@@ -49,16 +49,47 @@
     </section>
   </div>
 
-  <!-- Firebase v11.10.0：與 Rabbithome 一致 -->
+  <!-- Add Dialog -->
+  <div id="addDialog" class="modal hide">
+    <div class="modal-card">
+      <h3>新增商品</h3>
+      <div class="form">
+        <label>SKU（文件ID）
+          <input type="text" id="f_sku" placeholder="例如 GODOX-LUXE1" />
+        </label>
+        <label>商品名稱
+          <input type="text" id="f_name" placeholder="商品中文名稱" />
+        </label>
+        <div class="row">
+          <label>店內庫存
+            <input type="number" id="f_store" min="0" value="0" />
+          </label>
+          <label>展場庫存
+            <input type="number" id="f_expo" min="0" value="0" />
+          </label>
+          <label>已售出
+            <input type="number" id="f_sold" min="0" value="0" />
+          </label>
+        </div>
+        <label>售價（選填）
+          <input type="number" id="f_price" min="0" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="btnCancelAdd" class="btn">取消</button>
+        <button id="btnConfirmAdd" class="btn btn-move">新增</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase modules -->
   <script type="module" src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"></script>
-  <!-- 你的專案共用設定（已在 Rabbithome 環境存在） -->
   <script type="module">
     import { db, auth } from '/js/firebase.js'
     window.__RABBIT_DB__ = db
     window.__RABBIT_AUTH__ = auth
   </script>
-  <!-- 本頁主要邏輯 -->
   <script type="module" src="/js/expo-stock.js"></script>
 </body>
 </html>

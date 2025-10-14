@@ -30,7 +30,7 @@ body{
 
 .actions{ display:flex; align-items:center; gap:10px }
 .search{
-  width:280px; max-width:50vw;
+  width:280px; max-width:48vw;
   padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff;
   outline:none;
 }
@@ -53,7 +53,7 @@ body{
 .stock-table th, .stock-table td{ padding:12px 10px; border-bottom:1px solid var(--border); text-align:left }
 .stock-table th{ font-size:13px; color:var(--muted); font-weight:600 }
 .stock-table .col-num{ width:90px; text-align:right }
-.stock-table .col-op{ width:250px }
+.stock-table .col-op{ width:320px }
 .stock-table .col-time{ width:150px; color:var(--muted); font-size:12px }
 .stock-table .col-sku{ width:160px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace }
 
@@ -64,7 +64,7 @@ body{
 .qty.expo{ color:var(--rose) }
 .qty.sold{ color:var(--green) }
 
-.ops{ display:flex; gap:8px; flex-wrap:wrap }
+.ops{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
 .btn{
   padding:8px 10px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer;
   font-size:13px; white-space:nowrap;
@@ -81,3 +81,25 @@ body{
 
 .tag{ display:inline-block; padding:2px 6px; border-radius:6px; background:#f3f4f6; color:#374151; font-size:12px }
 .time{ color:var(--muted); font-size:12px }
+
+/* --- qty input --- */
+.qty-input{
+  width:70px; padding:8px 8px; border:1px solid var(--border); border-radius:10px; text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+/* --- Add Dialog --- */
+.modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:50 }
+.modal.hide{ display:none }
+.modal-card{
+  width:min(560px, 92vw); background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px;
+  box-shadow:0 10px 24px rgba(0,0,0,.15)
+}
+.modal-card h3{ margin:0 0 8px }
+.form label{ display:block; font-size:13px; color:#374151; margin:10px 0 6px }
+.form input{
+  width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+}
+.row{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px }
+.modal-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:8px }
+.btn.add{ background:#fff; border:1px solid var(--pink-strong) }

@@ -1,14 +1,8 @@
-// expo-stock.js — 展場庫存管理
-// v1.0.0 — 2025-10-14 (Asia/Taipei)
-// 需求：
-// 1) 搜尋 SKU / 名稱
-// 2) 三種操作：搬去展場、退回店內、展場售出
-// 3) Firestore 即時同步（onSnapshot）
-// 4) 操作採 runTransaction，避免多人同時操作造成覆寫
-// 5) 採 Rabbithome 既有 firebase.js (v11.10.0)，且以 window.onload 啟動（支援 iframe 載入）
-
+// expo-stock.js — 展場庫存管理（含新增商品＋每列操作數量）
+// v1.1.0 — 2025-10-14 (Asia/Taipei)
 import { 
-  collection, doc, onSnapshot, query, orderBy, runTransaction, serverTimestamp 
+  collection, doc, onSnapshot, query, orderBy, runTransaction, serverTimestamp,
+  getDoc, setDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 const db = window.__RABBIT_DB__
@@ -24,6 +18,18 @@ const tbody = $('#tbody')
 const searchInput = $('#searchInput')
 const countBadge = $('#countBadge')
 
+// Add dialog handles
+const addDialog = document.getElementById('addDialog')
+const btnAdd = document.getElementById('btnAdd')
+const btnCancelAdd = document.getElementById('btnCancelAdd')
+const btnConfirmAdd = document.getElementById('btnConfirmAdd')
+const fSku = document.getElementById('f_sku')
+const fName = document.getElementById('f_name')
+const fStore = document.getElementById('f_store')
+const fExpo = document.getElementById('f_expo')
+const fSold = document.getElementById('f_sold')
+const fPrice = document.getElementById('f_price')
+
 window.onload = () => {
   bootstrap()
 }
@@ -32,6 +38,7 @@ function bootstrap() {
   bindSearch()
   listenStocks()
   bindOps()
+  bindAddProduct()
 }
 
 function bindSearch() {
@@ -89,6 +96,9 @@ function render() {
     const t = it.updatedAt && it.updatedAt.seconds ? new Date(it.updatedAt.seconds * 1000) : null
     const timeText = t ? dtFmt.format(t) : '-'
 
+    // 每列提供一個數量 input，預設 1
+    const qtyInput = `<input class="qty-input" type="number" min="1" value="1" data-qty />`
+
     rows.push(`<tr data-sku="${escapeHTML(it.sku || it.id)}">
       <td class="col-sku"><span class="tag">${escapeHTML(it.sku || it.id)}</span></td>
       <td class="col-name">${escapeHTML(it.name || '')}</td>
@@ -97,6 +107,7 @@ function render() {
       <td class="col-num"><span class="qty sold">${sold}</span></td>
       <td class="col-op">
         <div class="ops">
+          ${qtyInput}
           <button class="btn btn-move"   data-op="move"   ${store<=0?'disabled':''}>➕ 搬去展場</button>
           <button class="btn btn-return" data-op="return" ${expo<=0?'disabled':''}>➖ 退回店內</button>
           <button class="btn btn-sell"   data-op="sell"   ${expo<=0?'disabled':''}>💰 展場售出</button>
@@ -117,12 +128,14 @@ function bindOps() {
     if (!tr) return
     const sku = tr.getAttribute('data-sku')
     const op = btn.getAttribute('data-op')
+    const qtyEl = tr.querySelector('[data-qty]')
+    let qty = Math.max(1, parseInt(qtyEl?.value || '1', 10))
 
     btn.disabled = true
     try {
-      if (op === 'move') await moveToExpo(sku)
-      else if (op === 'return') await returnToStore(sku)
-      else if (op === 'sell') await sellFromExpo(sku)
+      if (op === 'move') await moveToExpo(sku, qty)
+      else if (op === 'return') await returnToStore(sku, qty)
+      else if (op === 'sell') await sellFromExpo(sku, qty)
     } catch (err) {
       alert(err.message || String(err))
       console.error(err)
@@ -132,8 +145,8 @@ function bindOps() {
   })
 }
 
-// --- Firestore 交易操作 ---
-async function moveToExpo(sku) {
+// --- Firestore 交易操作（支援批量數量） ---
+async function moveToExpo(sku, qty=1) {
   const ref = doc(db, 'stocks', sku)
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref)
@@ -141,16 +154,16 @@ async function moveToExpo(sku) {
     const d = safeData(snap.data())
     const store = n0(d.storeQty)
     const expo  = n0(d.expoQty)
-    if (store <= 0) throw new Error('店內庫存不足，無法搬貨')
+    if (store < qty) throw new Error(`店內庫存不足（可用 ${store}）`)
     tx.update(ref, {
-      storeQty: store - 1,
-      expoQty:  expo + 1,
+      storeQty: store - qty,
+      expoQty:  expo + qty,
       updatedAt: serverTimestamp()
     })
   })
 }
 
-async function returnToStore(sku) {
+async function returnToStore(sku, qty=1) {
   const ref = doc(db, 'stocks', sku)
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref)
@@ -158,16 +171,16 @@ async function returnToStore(sku) {
     const d = safeData(snap.data())
     const store = n0(d.storeQty)
     const expo  = n0(d.expoQty)
-    if (expo <= 0) throw new Error('展場沒有庫存可退回')
+    if (expo < qty) throw new Error(`展場可退回不足（可用 ${expo}）`)
     tx.update(ref, {
-      storeQty: store + 1,
-      expoQty:  expo - 1,
+      storeQty: store + qty,
+      expoQty:  expo - qty,
       updatedAt: serverTimestamp()
     })
   })
 }
 
-async function sellFromExpo(sku) {
+async function sellFromExpo(sku, qty=1) {
   const ref = doc(db, 'stocks', sku)
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref)
@@ -175,13 +188,63 @@ async function sellFromExpo(sku) {
     const d = safeData(snap.data())
     const expo = n0(d.expoQty)
     const sold = n0(d.soldQty)
-    if (expo <= 0) throw new Error('展場庫存不足，無法銷售')
+    if (expo < qty) throw new Error(`展場庫存不足（可售 ${expo}）`)
     tx.update(ref, {
-      expoQty: expo - 1,
-      soldQty: sold + 1,
+      expoQty: expo - qty,
+      soldQty: sold + qty,
       updatedAt: serverTimestamp()
     })
   })
+}
+
+// --- 新增商品 ---
+function bindAddProduct(){
+  if (btnAdd) btnAdd.addEventListener('click', () => { openAddDialog() })
+  if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeAddDialog)
+  if (btnConfirmAdd) btnConfirmAdd.addEventListener('click', confirmAddProduct)
+}
+
+function openAddDialog(){
+  fSku.value = ''
+  fName.value = ''
+  fStore.value = 0
+  fExpo.value = 0
+  fSold.value = 0
+  fPrice.value = ''
+  addDialog.classList.remove('hide')
+  fSku.focus()
+}
+
+function closeAddDialog(){
+  addDialog.classList.add('hide')
+}
+
+async function confirmAddProduct(){
+  const sku = (fSku.value || '').trim().toUpperCase()
+  const name = (fName.value || '').trim()
+  const storeQty = Math.max(0, parseInt(fStore.value || 0, 10))
+  const expoQty  = Math.max(0, parseInt(fExpo.value  || 0, 10))
+  const soldQty  = Math.max(0, parseInt(fSold.value  || 0, 10))
+  const priceNum = fPrice.value === '' ? null : Math.max(0, parseFloat(fPrice.value))
+
+  if (!sku) return alert('請輸入 SKU（文件 ID）')
+  if (!name) return alert('請輸入商品名稱')
+
+  const ref = doc(db, 'stocks', sku)
+  const existed = await getDoc(ref)
+  if (existed.exists()) {
+    const ok = confirm('此 SKU 已存在，要覆蓋更新嗎？')
+    if (!ok) return
+  }
+  const payload = {
+    sku, name,
+    storeQty, expoQty, soldQty,
+    updatedAt: serverTimestamp()
+  }
+  if (priceNum !== null && Number.isFinite(priceNum)) payload.price = priceNum
+
+  await setDoc(ref, payload, { merge:false })
+  closeAddDialog()
 }
 
 // --- Utilities ---
