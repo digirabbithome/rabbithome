@@ -12,27 +12,39 @@
     <header class="topbar">
       <div class="title-wrap">
         <h1>🎪 展場庫存管理</h1>
-        <div class="subtitle">店內 ↔ 展場 移轉 / 展場售出 / ✏️店內數量直接修改（即時同步 Firestore）</div>
+        <div class="subtitle">品牌（目錄）分組 / SKU 可留空 / 每日銷售匯出</div>
       </div>
 
       <div class="actions">
-        <input type="text" id="searchInput" class="search" placeholder="🔍 搜尋 SKU / 品名…" />
+        <input type="text" id="searchInput" class="search" placeholder="🔍 搜尋 品牌 / SKU / 品名…" />
         <span class="badge" id="countBadge">0 項</span>
         <button id="btnAdd" class="btn add">➕ 新增商品</button>
       </div>
     </header>
 
+    <section class="tools">
+      <div class="report-tools">
+        <label>日期
+          <input type="date" id="reportDate" />
+        </label>
+        <button id="btnExport" class="btn">⬇ 匯出當日銷售 CSV</button>
+        <span class="muted">（統計來源：展場售出紀錄）</span>
+      </div>
+      <div id="reportSummary" class="report-summary hide"></div>
+    </section>
+
     <section class="legend">
-      <span class="pill">➕ 搬去展場：店內 -1、展場 +1</span>
-      <span class="pill">➖ 退回店內：展場 -1、店內 +1</span>
-      <span class="pill">💰 展場售出：展場 -1、售出 +1</span>
-      <span class="pill">✏️ 點店內庫存右側筆，可直接改數量</span>
+      <span class="pill">➕ 搬去展場：店內 -x、展場 +x</span>
+      <span class="pill">➖ 退回店內：展場 -x、店內 +x</span>
+      <span class="pill">💰 展場售出：展場 -x、售出 +x（寫入銷售紀錄）</span>
+      <span class="pill">✏️ 店內數量可直接修改</span>
     </section>
 
     <section class="table-wrap">
       <table class="stock-table" id="stockTable">
         <thead>
           <tr>
+            <th class="col-brand">品牌</th>
             <th class="col-sku">SKU</th>
             <th class="col-name">商品</th>
             <th class="col-num">店內</th>
@@ -43,7 +55,7 @@
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="7" class="empty">讀取中…</td></tr>
+          <tr><td colspan="8" class="empty">讀取中…</td></tr>
         </tbody>
       </table>
     </section>
@@ -54,8 +66,12 @@
     <div class="modal-card">
       <h3>新增商品</h3>
       <div class="form">
-        <label>SKU（文件ID）
-          <input type="text" id="f_sku" placeholder="例如 GODOX-LUXE1" />
+        <label>品牌（目錄）
+          <input type="text" id="f_brand" list="brandList" placeholder="例如 Godox / Profoto" />
+          <datalist id="brandList"></datalist>
+        </label>
+        <label>SKU（可空白；留空會自動產生）
+          <input type="text" id="f_sku" placeholder="例如 GODOX-LUXE1（可留空）" />
         </label>
         <label>商品名稱
           <input type="text" id="f_name" placeholder="商品中文名稱" />
