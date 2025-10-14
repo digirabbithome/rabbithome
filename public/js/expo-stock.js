@@ -224,9 +224,9 @@ function render() {
         <td class="col-op">
           <div class="ops">
             ${qtyInput}
-            <button class="btn btn-move"   data-op="move">➕ 搬去展場</button>
-            <button class="btn btn-return" data-op="return">➖ 退回店內</button>
-            <button class="btn btn-sell"   data-op="sell">💰 展場售出</button>
+            <button class="btn btn-move"   data-op="move">➕ 去展場</button>
+            <button class="btn btn-return" data-op="return">➖ 回店內</button>
+            <button class="btn btn-sell"   data-op="sell">💰 售出</button>
           </div>
         </td>
       </tr>`)

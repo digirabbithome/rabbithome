@@ -145,3 +145,18 @@ tr.on-display{ background:var(--display) }
   border-color: var(--pink-strong); 
   box-shadow: 0 0 0 2px rgba(243,155,193,.15);
 }
+
+/* === v1.4.6: keep operations in a single row === */
+.col-op{ width:auto; max-width:none; }
+.col-op .ops{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap !important;
+  overflow-x:auto;
+  white-space:nowrap;
+}
+.col-op .ops > *{ flex:0 0 auto; } /* prevent shrinking onto next line */
+
+.inline-label{ display:inline-flex; align-items:center; gap:8px; margin-left:8px; }
+.inline-label input[type="date"]{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; }

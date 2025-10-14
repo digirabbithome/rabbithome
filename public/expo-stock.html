@@ -22,19 +22,12 @@
         <button id="btnFilterExpo" class="btn toggle">🎪 展場庫存</button>
         <button id="btnFilterDisplay" class="btn toggle">◯ 展示中</button>
         <button id="btnAdd" class="btn add">➕ 新增商品</button>
-      </div>
-    </header>
-
-    <section class="tools">
-      <div class="report-tools">
-        <label>日期
+        <label class="inline-label">日期
           <input type="date" id="reportDate" />
         </label>
         <button id="btnExport" class="btn">⬇ 匯出當日銷售 CSV</button>
-        <span class="muted">（統計來源：展場售出紀錄；展場可為負數代表欠貨）</span>
       </div>
-      <div id="reportSummary" class="report-summary hide"></div>
-    </section>
+    </header>
 <section class="table-wrap">
       <table class="stock-table" id="stockTable">
         <thead>
