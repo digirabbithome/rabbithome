@@ -26,14 +26,12 @@ const tbody = $('#tbody')
 const searchInput = $('#searchInput')
 const countBadge = $('#countBadge')
 const thead = document.querySelector('thead')
-const btnCollapseAll = document.getElementById('btnCollapseAll')const btnExpandAll = document.getElementById('btnExpandAll')// Report
-const thead = document.querySelector('thead')
-const btnCollapseAll = document.getElementById('btnCollapseAll');
-const btnExpandAll  = document.getElementById('btnExpandAll');
+const btnCollapseAll = document.getElementById('btnCollapseAll')
+const btnExpandAll  = document.getElementById('btnExpandAll')
 // Report
-const reportDate    = document.getElementById('reportDate');
-const btnExport     = document.getElementById('btnExport');
-const reportSummary = document.getElementById('reportSummary');
+const reportDate    = document.getElementById('reportDate')
+const btnExport     = document.getElementById('btnExport')
+const reportSummary = document.getElementById('reportSummary')
 // Add dialog
 const addDialog = document.getElementById('addDialog')
 const btnAdd = document.getElementById('btnAdd')
