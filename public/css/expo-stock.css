@@ -160,3 +160,19 @@ tr.on-display{ background:var(--display) }
 
 .inline-label{ display:inline-flex; align-items:center; gap:8px; margin-left:8px; }
 .inline-label input[type="date"]{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; }
+
+
+
+/* === v1.4.9: hide per-row brand column when grouped by brand === */
+.stock-table th.col-brand,
+.stock-table td.col-brand { display: none !important; }
+
+/* Re-distribute width to name & actions */
+.stock-table .col-name{ width: 32%; }
+.stock-table .col-price{ width: 100px; }
+.stock-table .col-num{ width: 80px; }
+.stock-table .col-op{ width: auto; }
+
+/* Keep action row on a single line (from earlier) */
+.col-op .ops{ flex-wrap: nowrap !important; white-space: nowrap; overflow-x: auto; }
+.col-op .ops > *{ flex: 0 0 auto; }
