@@ -27,10 +27,13 @@ const searchInput = $('#searchInput')
 const countBadge = $('#countBadge')
 const thead = document.querySelector('thead')
 const btnCollapseAll = document.getElementById('btnCollapseAll')const btnExpandAll = document.getElementById('btnExpandAll')// Report
-const reportDate = document.getElementById('reportDate')
-const btnExport = document.getElementById('btnExport')
-const reportSummary = document.getElementById('reportSummary')
-
+const thead = document.querySelector('thead')
+const btnCollapseAll = document.getElementById('btnCollapseAll');
+const btnExpandAll  = document.getElementById('btnExpandAll');
+// Report
+const reportDate    = document.getElementById('reportDate');
+const btnExport     = document.getElementById('btnExport');
+const reportSummary = document.getElementById('reportSummary');
 // Add dialog
 const addDialog = document.getElementById('addDialog')
 const btnAdd = document.getElementById('btnAdd')
@@ -546,8 +549,8 @@ async function exportDailyCSV(){
   for (const r of rows) html.push(`<tr><td>${escapeHTML(r.brand)}</td><td>${escapeHTML(r.name)}</td><td>${r.qty}</td><td>${moneyFmt.format(r.amount)}</td></tr>`)
   html.push(`<tr><td colspan="2"><b>合計</b></td><td><b>${totalQty}</b></td><td><b>${moneyFmt.format(totalAmt)}</b></td></tr>`)
   html.push(`</tbody></table>`)
-  reportSummary.innerHTML = html.join('')
-  reportSummary.classList.remove('hide')
+  if(reportSummary){ reportSummary.innerHTML = html.join('') }
+  reportSummary?.classList.remove('hide')
 
   let csv = '品牌,品名,數量,金額\n'
   for (const r of rows) {
