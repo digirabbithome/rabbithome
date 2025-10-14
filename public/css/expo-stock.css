@@ -10,6 +10,7 @@
   --green:#10b981;
   --red:#ef4444;
   --amber:#f59e0b;
+  --display:#fff7ed;
 }
 *{ box-sizing:border-box }
 html,body{ height:100% }
@@ -60,11 +61,14 @@ body{
 .stock-table{ width:100%; border-collapse:separate; border-spacing:0 }
 .stock-table thead{ background:linear-gradient(0deg, #fff 0, #fff 60%, #ffe9f3 100%) }
 .stock-table th, .stock-table td{ padding:12px 10px; border-bottom:1px solid var(--border); text-align:left }
-.stock-table th{ font-size:13px; color:var(--muted); font-weight:600 }
-.stock-table .col-brand{ width:130px }
-.stock-table .col-price{ width:120px; text-align:right }
-.stock-table .col-num{ width:90px; text-align:right }
+.stock-table th{ font-size:13px; color:var(--muted); font-weight:600; user-select:none; cursor:default }
+.stock-table .col-flag{ width:40px }
+.stock-table .col-brand{ width:130px; cursor:pointer }
+.stock-table .col-price{ width:120px; text-align:right; cursor:pointer }
+.stock-table .col-num{ width:90px; text-align:right; cursor:pointer }
+.stock-table .col-name{ cursor:pointer }
 .stock-table .col-op{ width:320px }
+.arrow{ font-size:12px; color:#9ca3af }
 
 .group-row th{
   background:#fff4fa; color:#8b5a6a; font-weight:700; border-bottom:1px solid var(--border);
@@ -77,6 +81,7 @@ body{
 .qty.store{ color:var(--amber) }
 .qty.expo{ color:var(--rose) }
 .qty.sold{ color:var(--green) }
+.qty.expo.negative{ color:var(--red) }
 
 .ops{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
 .btn{
@@ -98,6 +103,11 @@ body{
 .btn-ok{ border-color:#10b981 }
 .btn-cancel{ border-color:#e5e7eb }
 
+/* circle toggle */
+.circle{ width:18px; height:18px; border-radius:999px; border:2px solid #d1d5db; display:inline-block; }
+.circle.on{ background:var(--display); border-color:#f59e0b }
+tr.on-display{ background:var(--display) }
+
 /* --- qty input --- */
 .qty-input{
   width:70px; padding:8px 8px; border:1px solid var(--border); border-radius:10px; text-align:right;
@@ -108,7 +118,7 @@ body{
 .store-edit-wrap{ display:inline-flex; gap:6px; align-items:center; justify-content:flex-end }
 .store-input{ width:90px; padding:7px 8px; border:1px solid var(--border); border-radius:10px; text-align:right }
 
-/* --- Add Dialog --- */
+/* --- Modals --- */
 .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:50 }
 .modal.hide{ display:none }
 .modal-card{

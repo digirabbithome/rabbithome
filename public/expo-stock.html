@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="title-wrap">
         <h1>🎪 展場庫存管理</h1>
-        <div class="subtitle">品牌分組 / SKU 不顯示 / 價格顯示 / 每日銷售匯出</div>
+        <div class="subtitle">可超賣記負數 / 展示標記 / 可編輯商品 / 可排序 / 每日銷售匯出</div>
       </div>
 
       <div class="actions">
@@ -28,7 +28,7 @@
           <input type="date" id="reportDate" />
         </label>
         <button id="btnExport" class="btn">⬇ 匯出當日銷售 CSV</button>
-        <span class="muted">（統計來源：展場售出紀錄）</span>
+        <span class="muted">（統計來源：展場售出紀錄；展場可為負數代表欠貨）</span>
       </div>
       <div id="reportSummary" class="report-summary hide"></div>
     </section>
@@ -36,25 +36,27 @@
     <section class="legend">
       <span class="pill">➕ 搬去展場：店內 -x、展場 +x</span>
       <span class="pill">➖ 退回店內：展場 -x、店內 +x</span>
-      <span class="pill">💰 展場售出：展場 -x、售出 +x（寫入銷售紀錄）</span>
-      <span class="pill">✏️ 店內數量可直接修改</span>
+      <span class="pill">💰 展場售出：展場 -x（可負數=欠貨）、售出 +x</span>
+      <span class="pill">◯ 圈圈=展示中（點一下切換）</span>
+      <span class="pill">✏️ 點商品名稱可編輯（品牌/品名/價格/SKU）</span>
     </section>
 
     <section class="table-wrap">
       <table class="stock-table" id="stockTable">
         <thead>
           <tr>
-            <th class="col-brand">品牌</th>
-            <th class="col-name">商品</th>
-            <th class="col-price">價格</th>
-            <th class="col-num">店內</th>
-            <th class="col-num">展場</th>
-            <th class="col-num">已售出</th>
+            <th class="col-flag"></th>
+            <th class="col-brand" data-sort="brand">品牌 <span class="arrow" id="arr-brand">↕</span></th>
+            <th class="col-name" data-sort="name">商品 <span class="arrow" id="arr-name">↕</span></th>
+            <th class="col-price" data-sort="price">價格 <span class="arrow" id="arr-price">↕</span></th>
+            <th class="col-num" data-sort="store">店內 <span class="arrow" id="arr-store">↕</span></th>
+            <th class="col-num" data-sort="expo">展場 <span class="arrow" id="arr-expo">↕</span></th>
+            <th class="col-num" data-sort="sold">已售出 <span class="arrow" id="arr-sold">↕</span></th>
             <th class="col-op">操作（數量）</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="7" class="empty">讀取中…</td></tr>
+          <tr><td colspan="8" class="empty">讀取中…</td></tr>
         </tbody>
       </table>
     </section>
@@ -93,6 +95,32 @@
       <div class="modal-actions">
         <button id="btnCancelAdd" class="btn">取消</button>
         <button id="btnConfirmAdd" class="btn btn-move">新增</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Dialog -->
+  <div id="editDialog" class="modal hide">
+    <div class="modal-card">
+      <h3>編輯商品</h3>
+      <div class="form">
+        <input type="hidden" id="e_id" />
+        <label>品牌（目錄）
+          <input type="text" id="e_brand" list="brandList" />
+        </label>
+        <label>SKU（可留空）
+          <input type="text" id="e_sku" placeholder="文件 ID（留空不變）" />
+        </label>
+        <label>商品名稱
+          <input type="text" id="e_name" />
+        </label>
+        <label>售價
+          <input type="number" id="e_price" min="0" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="btnCancelEdit" class="btn">取消</button>
+        <button id="btnConfirmEdit" class="btn btn-move">儲存</button>
       </div>
     </div>
   </div>
