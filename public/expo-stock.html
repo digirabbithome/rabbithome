@@ -12,12 +12,14 @@
     <header class="topbar">
       <div class="title-wrap">
         <h1>🎪 展場庫存管理</h1>
-        <div class="subtitle">可超賣記負數 / 展示標記 / 可編輯商品 / 可排序 / 每日銷售匯出</div>
+        <div class="subtitle">可超賣 / 展示標記 / 可編輯商品 / 可排序 / 可收合品牌 / 每日匯出</div>
       </div>
 
       <div class="actions">
         <input type="text" id="searchInput" class="search" placeholder="🔍 搜尋 品牌 / 品名…" />
         <span class="badge" id="countBadge">0 項</span>
+        <button id="btnCollapseAll" class="btn">▾ 全部收合</button>
+        <button id="btnExpandAll" class="btn">▴ 全部展開</button>
         <button id="btnAdd" class="btn add">➕ 新增商品</button>
       </div>
     </header>
@@ -39,6 +41,7 @@
       <span class="pill">💰 展場售出：展場 -x（可負數=欠貨）、售出 +x</span>
       <span class="pill">◯ 圈圈=展示中（點一下切換）</span>
       <span class="pill">✏️ 點商品名稱可編輯（品牌/品名/價格/SKU）</span>
+      <span class="pill">📂 點品牌列可收合/展開</span>
     </section>
 
     <section class="table-wrap">

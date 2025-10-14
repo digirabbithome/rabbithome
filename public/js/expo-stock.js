@@ -1,10 +1,4 @@
-// expo-stock.js — v1.4.0
-// 新增：
-// 1) 展場售出可超賣：expoQty 允許變負數表示欠貨
-// 2) 每列最前面加 ◯ 圈圈，切換 onDisplay（展示中）並高亮底色
-// 3) 點商品名稱開啟編輯對話框，可修改 品牌/品名/價格/SKU
-// 4) 表頭可排序（品牌/商品/價格/店內/展場/已售出）
-// 5) 繼承：品牌分組、搜尋、每日匯出、數量操作、店內筆修改
+// expo-stock.js — v1.4.1 (collapsible groups)
 import { 
   collection, doc, addDoc, onSnapshot, query, orderBy, runTransaction, serverTimestamp,
   getDoc, setDoc, where, getDocs, updateDoc
@@ -22,11 +16,17 @@ let brandSet = new Set()
 let sortField = 'brand' // brand | name | price | store | expo | sold
 let sortDir = 'asc'     // asc | desc
 
+// 收合狀態以 localStorage 持久化
+const COLLAPSE_KEY = 'expo_stock_collapsed_brands'
+let collapsedBrands = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]'))
+
 const $ = (s, r=document) => r.querySelector(s)
 const tbody = $('#tbody')
 const searchInput = $('#searchInput')
 const countBadge = $('#countBadge')
 const thead = document.querySelector('thead')
+const btnCollapseAll = document.getElementById('btnCollapseAll')
+const btnExpandAll = document.getElementById('btnExpandAll')
 
 // Report
 const reportDate = document.getElementById('reportDate')
@@ -65,6 +65,7 @@ function bootstrap() {
   reportDate.valueAsDate = new Date()
   bindSearch()
   bindSort()
+  bindCollapseAll()
   listenStocks()
   bindOps()
   bindAddProduct()
@@ -91,6 +92,23 @@ function bindSort(){
     else { sortField = field; sortDir = 'asc' }
     filterAndRender()
   })
+}
+
+function bindCollapseAll(){
+  btnCollapseAll?.addEventListener('click', ()=>{
+    for (const it of filtered) collapsedBrands.add(it.brand || '(未指定品牌)')
+    persistCollapse()
+    render()
+  })
+  btnExpandAll?.addEventListener('click', ()=>{
+    collapsedBrands.clear()
+    persistCollapse()
+    render()
+  })
+}
+
+function persistCollapse(){
+  localStorage.setItem(COLLAPSE_KEY, JSON.stringify(Array.from(collapsedBrands)))
 }
 
 function listenStocks() {
@@ -143,30 +161,32 @@ function render() {
     return
   }
 
-  // 排序：品牌決定群組順序；其他欄位決定群內排序
   const items = [...filtered]
-  // 先按品牌排序（群組順序）
   items.sort((a,b)=> compare(a,b,'brand') * (sortField==='brand' && sortDir==='desc' ? -1 : 1))
-  // 建群組
   const groups = {}
   for (const it of items) {
     const brand = it.brand || '(未指定品牌)'
     if (!groups[brand]) groups[brand] = []
     groups[brand].push(it)
   }
-  // 依選擇的欄位做群內排序
   const groupOrder = Object.keys(groups)
-  if (sortField==='brand'){
-    if (sortDir==='desc') groupOrder.reverse()
-  }
+  if (sortField==='brand' && sortDir==='desc') groupOrder.reverse()
+
   const rows = []
   for (const brand of groupOrder) {
-    // 群內排序
+    const collapsed = collapsedBrands.has(brand)
     if (sortField!=='brand'){
       groups[brand].sort((a,b)=> compare(a,b,sortField))
       if (sortDir==='desc') groups[brand].reverse()
     }
-    rows.push(`<tr class="group-row"><th colspan="8">📦 ${escapeHTML(brand)}</th></tr>`)
+    const caret = collapsed ? '▸' : '▾'
+    rows.push(`<tr class="group-row" data-brand="${escapeHTML(brand)}">
+      <th colspan="8">
+        <button class="brand-toggle" data-toggle="brand" data-brand="${escapeHTML(brand)}">
+          <span class="caret">${caret}</span> 📦 ${escapeHTML(brand)}
+        </button>
+      </th>
+    </tr>`)
     for (const it of groups[brand]) {
       const id = String(it.id)
       const store = n0(it.storeQty)
@@ -174,11 +194,11 @@ function render() {
       const sold  = n0(it.soldQty)
       const price = Number.isFinite(+it.price) ? moneyFmt.format(+it.price) : '-'
       const onDisplay = !!it.onDisplay
+      const rowCls = `${onDisplay?'on-display':''} ${collapsed?'hidden':''}`.trim()
 
       const qtyInput = `<input class="qty-input" type="number" min="1" value="1" data-qty />`
       const circle = `<span class="circle ${onDisplay?'on':''}" data-toggle="display"></span>`
 
-      // store cell
       let storeCell = ''
       if (editStoreId === id) {
         storeCell = `<span class="store-edit-wrap">
@@ -191,7 +211,7 @@ function render() {
           <button class="btn-icon" title="修改店內數量" data-edit="store">✏️</button>`
       }
 
-      rows.push(`<tr data-id="${escapeHTML(id)}" class="${onDisplay?'on-display':''}">
+      rows.push(`<tr data-id="${escapeHTML(id)}" data-brand="${escapeHTML(brand)}" class="${rowCls}">
         <td class="col-flag">${circle}</td>
         <td class="col-brand">${escapeHTML(it.brand || '')}</td>
         <td class="col-name"><button class="btn-icon" data-edit="open">✏️</button> ${escapeHTML(it.name || '')}</td>
@@ -214,6 +234,18 @@ function render() {
   countBadge.textContent = `${filtered.length} 項`
   updateSortArrows()
 }
+
+tbody?.addEventListener('click', async (e) => {
+  const brandBtn = e.target.closest('[data-toggle="brand"]')
+  if (brandBtn){
+    const brand = brandBtn.getAttribute('data-brand')
+    if (collapsedBrands.has(brand)) collapsedBrands.delete(brand)
+    else collapsedBrands.add(brand)
+    persistCollapse()
+    render()
+    return
+  }
+})
 
 function updateSortArrows(){
   const ids = ['brand','name','price','store','expo','sold']
@@ -238,7 +270,6 @@ function bindOps() {
     if (!tr) return
     const id = tr.getAttribute('data-id')
 
-    // 展示圈圈 toggle
     if (circle){
       try {
         const ref = doc(db, 'stocks', id)
@@ -250,13 +281,11 @@ function bindOps() {
       return
     }
 
-    // 開啟編輯商品
     if (btnEdit && btnEdit.getAttribute('data-edit')==='open'){
       openEditDialogFromRow(tr)
       return
     }
 
-    // 操作：搬/退/售
     if (btnOp) {
       const op = btnOp.getAttribute('data-op')
       const qtyEl = tr.querySelector('[data-qty]')
@@ -275,7 +304,6 @@ function bindOps() {
       return
     }
 
-    // 進入編輯店內數量
     if (btnEdit && btnEdit.getAttribute('data-edit') === 'store') {
       editStoreId = id
       render()
@@ -285,7 +313,6 @@ function bindOps() {
       return
     }
 
-    // 編輯中的儲存 / 取消（店內數量）
     if (btnAct) {
       const act = btnAct.getAttribute('data-act')
       if (act === 'cancel-store') {
@@ -320,10 +347,7 @@ async function moveToExpo(id, qty=1) {
     const store = n0(d.storeQty)
     const expo  = n0(d.expoQty)
     if (store < qty) throw new Error(`店內庫存不足（可用 ${store}）`)
-    tx.update(ref, {
-      storeQty: store - qty,
-      expoQty:  expo + qty,
-    })
+    tx.update(ref, { storeQty: store - qty, expoQty: expo + qty })
   })
 }
 
@@ -335,11 +359,7 @@ async function returnToStore(id, qty=1) {
     const d = safeData(snap.data())
     const store = n0(d.storeQty)
     const expo  = n0(d.expoQty)
-    // 退回時不限制 expo >= qty，允許把負數往回補
-    tx.update(ref, {
-      storeQty: store + qty,
-      expoQty:  expo - qty,
-    })
+    tx.update(ref, { storeQty: store + qty, expoQty: expo - qty })
   })
 }
 
@@ -351,13 +371,8 @@ async function sellFromExpo_allowNegative(id, qty=1) {
     const d = safeData(snap.data())
     const expo = n0(d.expoQty)
     const sold = n0(d.soldQty)
-    // 不檢查庫存，下賣單即扣；可成為負數代表欠貨
-    tx.update(ref, {
-      expoQty: expo - qty,
-      soldQty: sold + qty,
-    })
+    tx.update(ref, { expoQty: expo - qty, soldQty: sold + qty }) // expo 可為負數＝欠貨
   })
-  // 記錄銷售
   const snap = await getDoc(ref)
   const data = safeData(snap.data())
   await addDoc(collection(db, 'expoSales'), {
@@ -372,7 +387,6 @@ async function sellFromExpo_allowNegative(id, qty=1) {
   })
 }
 
-// 直接設定店內數量
 async function setStoreQty(id, newQty) {
   const ref = doc(db, 'stocks', id)
   await runTransaction(db, async (tx) => {
@@ -448,8 +462,8 @@ function openEditDialogFromRow(tr){
   eId.value = id
   eBrand.value = brand
   eName.value = name
-  eSku.value = '' // 預設不變
-  ePrice.value = priceText === '-' ? '' : (priceText.replace(/[^\d]/g,'')) // 粗略帶入
+  eSku.value = '' // 預設不變（若填新SKU等於另存新檔）
+  ePrice.value = priceText === '-' ? '' : priceText.replace(/[^\d.]/g,'')
   editDialog.classList.remove('hide')
   eBrand.focus()
 }
@@ -470,26 +484,21 @@ async function confirmEditProduct(){
 
   const ref = doc(db, 'stocks', id)
   const updates = { brand, name }
-  if (priceNum !== null && Number.isFinite(priceNum)) updates.price = priceNum
-  else updates.price = null
-
+  updates.price = (priceNum !== null && Number.isFinite(priceNum)) ? priceNum : null
   await updateDoc(ref, updates)
 
-  // 若修改 SKU（即想更換 docId）：需新建文件再刪舊的；這裡做簡化：若填了新 SKU，就複製一份後刪舊的
   if (skuNew){
     const snap = await getDoc(ref)
     const data = safeData(snap.data())
     data.sku = skuNew
     await setDoc(doc(db, 'stocks', skuNew), data, { merge:false })
-    // 刪舊的
-    // Firestore Web v11 無直接 deleteDoc import 於此檔，若要完整搬移可在後續版本加入 deleteDoc。
-    alert('SKU 已另存成新文件，請手動刪除舊檔（或告訴我幫你在下一版自動刪除）')
+    alert('SKU 已另存為新文件；若需要，我可以在下一版幫你做成自動刪除舊文件。')
   }
 
   closeEditDialog()
 }
 
-// 報表
+// 報表（每日匯出）
 function bindReport(){
   btnExport?.addEventListener('click', exportDailyCSV)
 }
@@ -538,7 +547,6 @@ async function exportDailyCSV(){
   reportSummary.innerHTML = html.join('')
   reportSummary.classList.remove('hide')
 
-  // CSV 下載
   let csv = '品牌,品名,數量,金額\n'
   for (const r of rows) {
     csv += `${csvSafe(r.brand)},${csvSafe(r.name)},${r.qty},${r.amount}\n`
