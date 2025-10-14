@@ -18,10 +18,9 @@
       <div class="actions">
         <input type="text" id="searchInput" class="search" placeholder="🔍 搜尋 品牌 / 品名…" />
         <span class="badge" id="countBadge">0 項</span>
-        <button id="btnFilterStore" class="btn toggle">🏬 只看店內有貨</button>
-        <button id="btnFilterExpo" class="btn toggle">🎪 只看展場有貨</button>
-        <button id="btnCollapseAll" class="btn">▾ 全部收合</button>
-        <button id="btnExpandAll" class="btn">▴ 全部展開</button>
+        <button id="btnFilterStore" class="btn toggle">🏬 店內庫存</button>
+        <button id="btnFilterExpo" class="btn toggle">🎪 展場庫存</button>
+        <button id="btnFilterDisplay" class="btn toggle">◯ 展示中</button>
         <button id="btnAdd" class="btn add">➕ 新增商品</button>
       </div>
     </header>
@@ -36,17 +35,7 @@
       </div>
       <div id="reportSummary" class="report-summary hide"></div>
     </section>
-
-    <section class="legend">
-      <span class="pill">➕ 搬去展場：店內 -x、展場 +x</span>
-      <span class="pill">➖ 退回店內：展場 -x、店內 +x</span>
-      <span class="pill">💰 展場售出：展場 -x（可負數=欠貨）、售出 +x</span>
-      <span class="pill">◯ 圈圈=展示中（點一下切換）</span>
-      <span class="pill">✏️ 點商品名稱可編輯（品牌/品名/價格/SKU）</span>
-      <span class="pill">📂 點品牌列可收合/展開</span>
-    </section>
-
-    <section class="table-wrap">
+<section class="table-wrap">
       <table class="stock-table" id="stockTable">
         <thead>
           <tr>

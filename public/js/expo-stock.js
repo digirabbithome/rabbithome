@@ -10,7 +10,7 @@ const moneyFmt = new Intl.NumberFormat('zh-TW', { style:'currency', currency:'TW
 
 let allItems = []   // 全部商品（含 id）
 let filtered = []   // 搜尋後的結果
-let stockFilter = 'all' // all | store | expo
+let stockFilter = 'all' // all | store | expo | display
 let editStoreId = null // 目前哪個 docId 在編輯店內數量
 let brandSet = new Set()
 
@@ -26,10 +26,7 @@ const tbody = $('#tbody')
 const searchInput = $('#searchInput')
 const countBadge = $('#countBadge')
 const thead = document.querySelector('thead')
-const btnCollapseAll = document.getElementById('btnCollapseAll')
-const btnExpandAll = document.getElementById('btnExpandAll')
-
-// Report
+const btnCollapseAll = document.getElementById('btnCollapseAll')const btnExpandAll = document.getElementById('btnExpandAll')// Report
 const reportDate = document.getElementById('reportDate')
 const btnExport = document.getElementById('btnExport')
 const reportSummary = document.getElementById('reportSummary')
@@ -142,6 +139,7 @@ function filterAndRender(){
   // apply stock filter
   if (stockFilter==='store') filtered = filtered.filter(it=> n0(it.storeQty) > 0)
   else if (stockFilter==='expo') filtered = filtered.filter(it=> n0(it.expoQty) > 0)
+  else if (stockFilter==='display') filtered = filtered.filter(it=> !!it.onDisplay)
   render()
 }
 
@@ -584,11 +582,13 @@ function escapeHTML(s=''){
 
 btnFilterStore?.addEventListener('click', ()=>toggleStockFilter('store'))
 btnFilterExpo?.addEventListener('click', ()=>toggleStockFilter('expo'))
+btnFilterDisplay?.addEventListener('click', ()=>toggleStockFilter('display'))
 
 
 function toggleStockFilter(type){
   if (stockFilter === type) stockFilter = 'all'; else stockFilter = type;
   btnFilterStore?.classList.toggle('active', stockFilter==='store')
   btnFilterExpo?.classList.toggle('active', stockFilter==='expo')
+  btnFilterDisplay?.classList.toggle('active', stockFilter==='display')
   filterAndRender()
 }
