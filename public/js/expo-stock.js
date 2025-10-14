@@ -10,6 +10,7 @@ const moneyFmt = new Intl.NumberFormat('zh-TW', { style:'currency', currency:'TW
 
 let allItems = []   // 全部商品（含 id）
 let filtered = []   // 搜尋後的結果
+let stockFilter = 'all' // all | store | expo
 let editStoreId = null // 目前哪個 docId 在編輯店內數量
 let brandSet = new Set()
 
@@ -138,6 +139,9 @@ function filterAndRender(){
       return brand.includes(kw) || name.includes(kw)
     })
   }
+  // apply stock filter
+  if (stockFilter==='store') filtered = filtered.filter(it=> n0(it.storeQty) > 0)
+  else if (stockFilter==='expo') filtered = filtered.filter(it=> n0(it.expoQty) > 0)
   render()
 }
 
@@ -576,4 +580,15 @@ function escapeHTML(s=''){
     .replaceAll('>','&gt;')
     .replaceAll('"','&quot;')
     .replaceAll("'",'&#39;')
+}
+
+btnFilterStore?.addEventListener('click', ()=>toggleStockFilter('store'))
+btnFilterExpo?.addEventListener('click', ()=>toggleStockFilter('expo'))
+
+
+function toggleStockFilter(type){
+  if (stockFilter === type) stockFilter = 'all'; else stockFilter = type;
+  btnFilterStore?.classList.toggle('active', stockFilter==='store')
+  btnFilterExpo?.classList.toggle('active', stockFilter==='expo')
+  filterAndRender()
 }

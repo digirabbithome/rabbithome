@@ -18,6 +18,8 @@
       <div class="actions">
         <input type="text" id="searchInput" class="search" placeholder="🔍 搜尋 品牌 / 品名…" />
         <span class="badge" id="countBadge">0 項</span>
+        <button id="btnFilterStore" class="btn toggle">🏬 只看店內有貨</button>
+        <button id="btnFilterExpo" class="btn toggle">🎪 只看展場有貨</button>
         <button id="btnCollapseAll" class="btn">▾ 全部收合</button>
         <button id="btnExpandAll" class="btn">▴ 全部展開</button>
         <button id="btnAdd" class="btn add">➕ 新增商品</button>
@@ -137,6 +139,5 @@
     window.__RABBIT_AUTH__ = auth
   </script>
   <script type="module" src="/js/expo-stock.js"></script>
-<!-- expo-stock v1.4.2 UI overrides -->
 </body>
 </html>
