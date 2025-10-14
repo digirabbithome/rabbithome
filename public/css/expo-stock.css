@@ -52,7 +52,7 @@ body{
 .stock-table thead{ background:linear-gradient(0deg, #fff 0, #fff 60%, #ffe9f3 100%) }
 .stock-table th, .stock-table td{ padding:12px 10px; border-bottom:1px solid var(--border); text-align:left }
 .stock-table th{ font-size:13px; color:var(--muted); font-weight:600 }
-.stock-table .col-num{ width:90px; text-align:right }
+.stock-table .col-num{ width:120px; text-align:right }
 .stock-table .col-op{ width:320px }
 .stock-table .col-time{ width:150px; color:var(--muted); font-size:12px }
 .stock-table .col-sku{ width:160px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace }
@@ -79,6 +79,11 @@ body{
 .btn-return:hover{ background:#f3f4f6; }
 .btn-sell:hover{ background:#f3f4f6; }
 
+.btn-icon{ padding:4px 6px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:12px; }
+.btn-icon:hover{ background:#f9fafb }
+.btn-ok{ border-color:#10b981 }
+.btn-cancel{ border-color:#e5e7eb }
+
 .tag{ display:inline-block; padding:2px 6px; border-radius:6px; background:#f3f4f6; color:#374151; font-size:12px }
 .time{ color:var(--muted); font-size:12px }
 
@@ -87,6 +92,10 @@ body{
   width:70px; padding:8px 8px; border:1px solid var(--border); border-radius:10px; text-align:right;
   font-variant-numeric:tabular-nums;
 }
+
+/* --- inline store edit --- */
+.store-edit-wrap{ display:inline-flex; gap:6px; align-items:center; justify-content:flex-end }
+.store-input{ width:90px; padding:7px 8px; border:1px solid var(--border); border-radius:10px; text-align:right }
 
 /* --- Add Dialog --- */
 .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:50 }

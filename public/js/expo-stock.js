@@ -1,5 +1,4 @@
-// expo-stock.js — 展場庫存管理（含新增商品＋每列操作數量）
-// v1.1.0 — 2025-10-14 (Asia/Taipei)
+// expo-stock.js — v1.2.0 ✏️店內數量可用筆直接修改 + 新增商品 + 每列操作數量
 import { 
   collection, doc, onSnapshot, query, orderBy, runTransaction, serverTimestamp,
   getDoc, setDoc
@@ -12,6 +11,7 @@ const dtFmt = new Intl.DateTimeFormat('zh-TW', { timeZone: TPE, month:'2-digit',
 
 let allItems = []   // 快取：全部商品
 let filtered = []   // 搜尋結果
+let editStoreSKU = null // 目前哪個 SKU 在編輯店內數量
 
 const $ = (s, r=document) => r.querySelector(s)
 const tbody = $('#tbody')
@@ -90,6 +90,7 @@ function render() {
   }
   const rows = []
   for (const it of filtered) {
+    const skuId = String(it.sku || it.id)
     const store = n0(it.storeQty)
     const expo  = n0(it.expoQty)
     const sold  = n0(it.soldQty)
@@ -99,10 +100,23 @@ function render() {
     // 每列提供一個數量 input，預設 1
     const qtyInput = `<input class="qty-input" type="number" min="1" value="1" data-qty />`
 
-    rows.push(`<tr data-sku="${escapeHTML(it.sku || it.id)}">
-      <td class="col-sku"><span class="tag">${escapeHTML(it.sku || it.id)}</span></td>
+    // 店內數量欄位：一般顯示 或 編輯模式
+    let storeCell = ''
+    if (editStoreSKU === skuId) {
+      storeCell = `<span class="store-edit-wrap">
+        <input class="store-input" type="number" min="0" value="${store}" data-store-input />
+        <button class="btn-icon btn-ok" title="儲存" data-act="save-store">✔</button>
+        <button class="btn-icon btn-cancel" title="取消" data-act="cancel-store">✖</button>
+      </span>`
+    } else {
+      storeCell = `<span class="qty store">${store}</span>
+        <button class="btn-icon" title="修改店內數量" data-edit="store">✏️</button>`
+    }
+
+    rows.push(`<tr data-sku="${escapeHTML(skuId)}">
+      <td class="col-sku"><span class="tag">${escapeHTML(skuId)}</span></td>
       <td class="col-name">${escapeHTML(it.name || '')}</td>
-      <td class="col-num"><span class="qty store">${store}</span></td>
+      <td class="col-num">${storeCell}</td>
       <td class="col-num"><span class="qty expo">${expo}</span></td>
       <td class="col-num"><span class="qty sold">${sold}</span></td>
       <td class="col-op">
@@ -122,25 +136,63 @@ function render() {
 
 function bindOps() {
   tbody.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button[data-op]')
-    if (!btn) return
+    const btnOp = e.target.closest('button[data-op]')
+    const btnEdit = e.target.closest('button[data-edit]')
+    const btnAct = e.target.closest('button[data-act]')
     const tr = e.target.closest('tr')
     if (!tr) return
     const sku = tr.getAttribute('data-sku')
-    const op = btn.getAttribute('data-op')
-    const qtyEl = tr.querySelector('[data-qty]')
-    let qty = Math.max(1, parseInt(qtyEl?.value || '1', 10))
 
-    btn.disabled = true
-    try {
-      if (op === 'move') await moveToExpo(sku, qty)
-      else if (op === 'return') await returnToStore(sku, qty)
-      else if (op === 'sell') await sellFromExpo(sku, qty)
-    } catch (err) {
-      alert(err.message || String(err))
-      console.error(err)
-    } finally {
-      btn.disabled = false
+    // --- 操作：搬/退/售 ---
+    if (btnOp) {
+      const op = btnOp.getAttribute('data-op')
+      const qtyEl = tr.querySelector('[data-qty]')
+      let qty = Math.max(1, parseInt(qtyEl?.value || '1', 10))
+      btnOp.disabled = true
+      try {
+        if (op === 'move') await moveToExpo(sku, qty)
+        else if (op === 'return') await returnToStore(sku, qty)
+        else if (op === 'sell') await sellFromExpo(sku, qty)
+      } catch (err) {
+        alert(err.message || String(err))
+        console.error(err)
+      } finally {
+        btnOp.disabled = false
+      }
+      return
+    }
+
+    // --- 進入編輯店內數量 ---
+    if (btnEdit && btnEdit.getAttribute('data-edit') === 'store') {
+      editStoreSKU = sku
+      render()
+      const input = tr.querySelector('[data-store-input]')
+      input?.focus()
+      input?.select()
+      return
+    }
+
+    // --- 編輯中的儲存 / 取消 ---
+    if (btnAct) {
+      const act = btnAct.getAttribute('data-act')
+      if (act === 'cancel-store') {
+        editStoreSKU = null
+        render()
+        return
+      }
+      if (act === 'save-store') {
+        const input = tr.querySelector('[data-store-input]')
+        const v = Math.max(0, parseInt(input?.value || '0', 10))
+        try {
+          await setStoreQty(sku, v)
+          editStoreSKU = null
+          render()
+        } catch (err) {
+          alert(err.message || String(err))
+          console.error(err)
+        }
+        return
+      }
     }
   })
 }
@@ -192,6 +244,21 @@ async function sellFromExpo(sku, qty=1) {
     tx.update(ref, {
       expoQty: expo - qty,
       soldQty: sold + qty,
+      updatedAt: serverTimestamp()
+    })
+  })
+}
+
+// --- 直接設定店內數量（筆修改） ---
+async function setStoreQty(sku, newQty) {
+  const ref = doc(db, 'stocks', sku)
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists()) throw new Error('找不到商品資料')
+    if (!Number.isFinite(newQty) || newQty < 0) throw new Error('數量需為 0 或正整數')
+    // 直接覆蓋 storeQty；其餘欄位不動
+    tx.update(ref, {
+      storeQty: Math.floor(newQty),
       updatedAt: serverTimestamp()
     })
   })
