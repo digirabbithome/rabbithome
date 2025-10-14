@@ -61,18 +61,17 @@ body{
 .stock-table thead{ background:linear-gradient(0deg, #fff 0, #fff 60%, #ffe9f3 100%) }
 .stock-table th, .stock-table td{ padding:12px 10px; border-bottom:1px solid var(--border); text-align:left }
 .stock-table th{ font-size:13px; color:var(--muted); font-weight:600 }
-.stock-table .col-brand{ width:120px }
+.stock-table .col-brand{ width:130px }
+.stock-table .col-price{ width:120px; text-align:right }
 .stock-table .col-num{ width:90px; text-align:right }
 .stock-table .col-op{ width:320px }
-.stock-table .col-time{ width:150px; color:var(--muted); font-size:12px }
-.stock-table .col-sku{ width:160px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace }
 
 .group-row th{
   background:#fff4fa; color:#8b5a6a; font-weight:700; border-bottom:1px solid var(--border);
   padding:10px; font-size:13px; text-align:left;
 }
 
-.empty{ text-align:center; color:var(--muted) }
+.empty{ text-align:center; color:#6b7280 }
 
 .qty{ font-variant-numeric:tabular-nums; font-weight:700 }
 .qty.store{ color:var(--amber) }
@@ -98,9 +97,6 @@ body{
 .btn-icon:hover{ background:#f9fafb }
 .btn-ok{ border-color:#10b981 }
 .btn-cancel{ border-color:#e5e7eb }
-
-.tag{ display:inline-block; padding:2px 6px; border-radius:6px; background:#f3f4f6; color:#374151; font-size:12px }
-.time{ color:var(--muted); font-size:12px }
 
 /* --- qty input --- */
 .qty-input{

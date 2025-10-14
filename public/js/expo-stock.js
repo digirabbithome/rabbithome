@@ -1,6 +1,5 @@
-// expo-stock.js — v1.3.0
-// 品牌（目錄）欄位 + SKU 可空白 + 品牌分組顯示 + 搜尋含品牌
-// 展場售出會寫入 expoSales 集合（含 dateKey），供每日匯出報表使用
+// expo-stock.js — v1.3.2
+// 變動：隱藏 SKU / 更新時間欄，新增價格欄；搜尋只比對品牌/品名；品牌分組；每日銷售匯出
 import { 
   collection, doc, addDoc, onSnapshot, query, orderBy, runTransaction, serverTimestamp,
   getDoc, setDoc, where, getDocs
@@ -9,7 +8,7 @@ import {
 const db = window.__RABBIT_DB__
 
 const TPE = 'Asia/Taipei'
-const dtFmt = new Intl.DateTimeFormat('zh-TW', { timeZone: TPE, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })
+const moneyFmt = new Intl.NumberFormat('zh-TW', { style:'currency', currency:'TWD', maximumFractionDigits:0 })
 
 let allItems = []   // 快取：全部商品（含 id）
 let filtered = []   // 搜尋結果
@@ -65,7 +64,7 @@ function bindSearch() {
 }
 
 function listenStocks() {
-  const q = query(collection(db, 'stocks'), orderBy('brand'), orderBy('name'))
+  const q = query(collection(db, 'stocks'), orderBy('brand'))
   onSnapshot(q, (snap) => {
     brandSet = new Set()
     allItems = snap.docs.map(d => {
@@ -77,7 +76,7 @@ function listenStocks() {
     filterAndRender()
   }, (err) => {
     console.error('stocks onSnapshot error:', err)
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">讀取失敗：${escapeHTML(err.message || err)}</td></tr>`
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">讀取失敗：${escapeHTML(err.message || err)}</td></tr>`
   })
 }
 
@@ -87,9 +86,8 @@ function filterAndRender(){
   else {
     filtered = allItems.filter(it => {
       const brand = String(it.brand || '').toLowerCase()
-      const sku = String(it.sku || '').toLowerCase()
       const name = String(it.name || '').toLowerCase()
-      return brand.includes(kw) || sku.includes(kw) || name.includes(kw)
+      return brand.includes(kw) || name.includes(kw)
     })
   }
   render()
@@ -97,10 +95,17 @@ function filterAndRender(){
 
 function render() {
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">查無資料</td></tr>`
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">查無資料</td></tr>`
     countBadge.textContent = '0 項'
     return
   }
+
+  // 客端排序：品牌 > 名稱（避免 Firestore 複合索引需求）
+  filtered.sort((a,b)=>{
+    const ab=(a.brand||'').localeCompare(b.brand||'')
+    if (ab!==0) return ab
+    return (a.name||'').localeCompare(b.name||'')
+  })
 
   // group by brand
   const groups = {}
@@ -112,15 +117,13 @@ function render() {
 
   const rows = []
   for (const brand of Object.keys(groups)) {
-    rows.push(`<tr class="group-row"><th colspan="8">📦 ${escapeHTML(brand)}</th></tr>`)
+    rows.push(`<tr class="group-row"><th colspan="7">📦 ${escapeHTML(brand)}</th></tr>`)
     for (const it of groups[brand]) {
       const id = String(it.id)
       const store = n0(it.storeQty)
       const expo  = n0(it.expoQty)
       const sold  = n0(it.soldQty)
-      const skuText = it.sku || ''
-      const t = it.updatedAt && it.updatedAt.seconds ? new Date(it.updatedAt.seconds * 1000) : null
-      const timeText = t ? dtFmt.format(t) : '-'
+      const price = Number.isFinite(+it.price) ? moneyFmt.format(+it.price) : '-'
 
       const qtyInput = `<input class="qty-input" type="number" min="1" value="1" data-qty />`
 
@@ -139,8 +142,8 @@ function render() {
 
       rows.push(`<tr data-id="${escapeHTML(id)}">
         <td class="col-brand">${escapeHTML(it.brand || '')}</td>
-        <td class="col-sku"><span class="tag">${escapeHTML(skuText)}</span></td>
         <td class="col-name">${escapeHTML(it.name || '')}</td>
+        <td class="col-price">${price}</td>
         <td class="col-num">${storeCell}</td>
         <td class="col-num"><span class="qty expo">${expo}</span></td>
         <td class="col-num"><span class="qty sold">${sold}</span></td>
@@ -152,7 +155,6 @@ function render() {
             <button class="btn btn-sell"   data-op="sell"   ${expo<=0?'disabled':''}>💰 展場售出</button>
           </div>
         </td>
-        <td class="col-time"><span class="time">${timeText}</span></td>
       </tr>`)
     }
   }
@@ -281,7 +283,7 @@ async function sellFromExpo(id, qty=1) {
     qty: qty,
     price: data.price || null,
     ts: serverTimestamp(),
-    dateKey: dateKeyToday() // 以當地時區今天字串，供搜尋
+    dateKey: dateKeyToday()
   })
 }
 
@@ -347,10 +349,8 @@ async function confirmAddProduct(){
   if (priceNum !== null && Number.isFinite(priceNum)) payload.price = priceNum
 
   if (sku) {
-    // 指定 SKU 當 docId（若存在則覆蓋詢問可在 UI 再加，這裡直接 merge:false）
     await setDoc(doc(db, 'stocks', sku), payload, { merge:false })
   } else {
-    // 讓 Firestore 自動產生 docId
     await addDoc(collection(db, 'stocks'), payload)
   }
   closeAddDialog()
@@ -362,7 +362,6 @@ function bindReport(){
 }
 
 function dateKeyToday(){
-  // 產生 yyyy-mm-dd 的本地日期字串
   const now = new Date()
   const yyyy = now.getFullYear()
   const mm = String(now.getMonth()+1).padStart(2,'0')
@@ -371,7 +370,6 @@ function dateKeyToday(){
 }
 
 function dateKeyOf(input){
-  // input: <input type=date> value (yyyy-mm-dd)
   const v = (input?.value || '').trim()
   if (!v) return dateKeyToday()
   return v
@@ -379,7 +377,6 @@ function dateKeyOf(input){
 
 async function exportDailyCSV(){
   const dkey = dateKeyOf(reportDate)
-  // 查詢 expoSales where dateKey == dkey
   const q = query(collection(db, 'expoSales'), where('dateKey','==', dkey))
   const snap = await getDocs(q)
   if (snap.empty) {
@@ -388,7 +385,6 @@ async function exportDailyCSV(){
     reportSummary.innerHTML = ''
     return
   }
-  // 彙總：brand + name（同品項合併），統計 qty 與金額
   const map = new Map()
   for (const docu of snap.docs) {
     const d = safeData(docu.data())
@@ -400,17 +396,16 @@ async function exportDailyCSV(){
   }
   const rows = Array.from(map.values()).sort((a,b)=> a.brand.localeCompare(b.brand)||a.name.localeCompare(b.name))
 
-  // 畫面表格
   const totalQty = rows.reduce((s,r)=>s+r.qty,0)
   const totalAmt = rows.reduce((s,r)=>s+r.amount,0)
   const html = [`<table class="report-table"><thead><tr><th>品牌</th><th>品名</th><th>數量</th><th>金額</th></tr></thead><tbody>`]
-  for (const r of rows) html.push(`<tr><td>${escapeHTML(r.brand)}</td><td>${escapeHTML(r.name)}</td><td>${r.qty}</td><td>${r.amount}</td></tr>`)
-  html.push(`<tr><td colspan="2"><b>合計</b></td><td><b>${totalQty}</b></td><td><b>${totalAmt}</b></td></tr>`)
+  for (const r of rows) html.push(`<tr><td>${escapeHTML(r.brand)}</td><td>${escapeHTML(r.name)}</td><td>${r.qty}</td><td>${moneyFmt.format(r.amount)}</td></tr>`)
+  html.push(`<tr><td colspan="2"><b>合計</b></td><td><b>${totalQty}</b></td><td><b>${moneyFmt.format(totalAmt)}</b></td></tr>`)
   html.push(`</tbody></table>`)
   reportSummary.innerHTML = html.join('')
   reportSummary.classList.remove('hide')
 
-  // CSV 下載
+  // CSV 下載（金額以數字，不帶貨幣符號方便報表）
   let csv = '品牌,品名,數量,金額\n'
   for (const r of rows) {
     csv += `${csvSafe(r.brand)},${csvSafe(r.name)},${r.qty},${r.amount}\n`
