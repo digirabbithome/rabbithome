@@ -77,7 +77,7 @@ window.addEventListener('load', async () => {
   }
 
   async 
-// === Dual daily serials (normal/big) ===
+// === Dual daily serials (normal/big) — v3.3.2 ===
 async function nextSerial(isBig) {
   try {
     const now = new Date();
@@ -118,7 +118,7 @@ async function nextSerial(isBig) {
   }
 }
 
-function handleSubmit(type = 'normal') {
+async function handleSubmit(type = 'normal') {
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;

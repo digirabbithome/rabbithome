@@ -79,10 +79,11 @@ window.addEventListener('load', async () => {
 });
 
 
-  (function(){
-    try{
-      const data = JSON.parse(localStorage.getItem('envelopeData')||'{}');
-      const el = document.getElementById('serialNo');
-      if (el) el.textContent = data.serial || '';
-    }catch(e){}
+  // Serial number (right bottom) — v3.3.2
+  (function(){ 
+    try{ 
+      const data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); 
+      const el = document.getElementById('serialNo'); 
+      if (el) el.textContent = data.serial || ''; 
+    }catch(e){} 
   })();
