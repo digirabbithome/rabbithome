@@ -77,3 +77,8 @@ window.addEventListener('load', async () => {
   await new Promise(r => setTimeout(r, 120));
   window.print();
 });
+
+
+  // Serial number (right bottom)
+  const serialEl = document.getElementById('serialNo');
+  if (serialEl) serialEl.textContent = (data.serial || '');

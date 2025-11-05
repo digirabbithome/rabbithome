@@ -22,6 +22,8 @@ import {
   orderBy,
   getDocs,
   updateDoc,
+  getDoc,
+  setDoc,
   doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
@@ -76,7 +78,50 @@ window.addEventListener('load', async () => {
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
 
-  async function handleSubmit(type = 'normal') {
+  
+// === v3.3: Dual daily serials (normal / big) ===
+async function nextSerial(isBig) {
+  try {
+    const now = new Date();
+    const y = String(now.getFullYear());
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const mmdd = m + d;
+    const type = isBig ? 'big' : 'normal';
+    const refId = `${y}-${m}-${d}-${type}`;
+    const ref = doc(db, 'envelop-counters', refId);
+    let last = 0;
+    try {
+      const snap = await getDoc(ref);
+      if (snap.exists()) last = Number((snap.data()||{}).last || 0);
+    } catch(e){ console.warn('getDoc counter error', e) }
+    const next = last + 1;
+    try {
+      await setDoc(ref, { last: next, ymd:`${y}-${m}-${d}`, type }, { merge: true });
+    } catch(e){ console.warn('setDoc counter error', e) }
+    const core = mmdd + String(next).padStart(3,'0');
+    return isBig ? ('B'+core) : core;
+  } catch(e){
+    try {
+      const now = new Date();
+      const y = String(now.getFullYear());
+      const m = String(now.getMonth()+1).padStart(2,'0');
+      const d = String(now.getDate()).padStart(2,'0');
+      const mmdd = m + d;
+      const type = isBig ? 'big' : 'normal';
+      const key = `ctr-${y}${m}${d}-${type}`;
+      const next = Number(localStorage.getItem(key)||'0') + 1;
+      localStorage.setItem(key, String(next));
+      const core = mmdd + String(next).padStart(3,'0');
+      return isBig ? ('B'+core) : core;
+    } catch(ee){
+      console.error('serial fallback failed', ee);
+      return '';
+    }
+  }
+}
+
+async function handleSubmit(type = 'normal') {
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
@@ -89,12 +134,16 @@ window.addEventListener('load', async () => {
     const sourceStr = checkedSources.join('、');
     const nickname = localStorage.getItem('nickname') || '匿名';
 
+    const bigEl = document.getElementById('bigPkg');
+    const isBigPkg = !!(bigEl && bigEl.checked);
+    const serialVal = await nextSerial(isBigPkg);
+
     const displaySource = type === 'reply'
       ? (sourceStr ? `${nickname}(${sourceStr})(回郵)` : `${nickname}(回郵)`)
       : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
-    const record = {
+    const record = { serial: serialVal, serialCore: (serialVal||'').replace(/^B/, ''),
       senderCompany,
       customSender,
       receiverName,
@@ -228,7 +277,7 @@ function renderFilteredData() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${timeStr}</td>
+          <td><div class="timebox"><div class="serial">${data.serial || '—'}</div><div class="time">${timeStr}</div></div></td>
           <td>${receiver}</td>
           <td class="${addrClass}">${formatAddressFirst9(addr)}</td>
           <td>${data.phone || ''}</td>
