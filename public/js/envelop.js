@@ -14,16 +14,39 @@ function formatAddressFirst9(addr) {
 
 
 import { db } from '/js/firebase.js';
-import {
-  collection,
-  addDoc,
-  Timestamp,
-  query,
-  orderBy,
-  getDocs,
-  updateDoc,
-  doc
-, setDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+// === Dual daily serials (normal/big) — v3.3.7 ===
+async function nextSerial(isBig) {
+  const now = new Date();
+  const y = String(now.getFullYear());
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const mmdd = m + d;
+
+  const ref = doc(db, 'envelop-counters', `${y}-${m}-${d}`);
+  const field = isBig ? 'lastBig' : 'lastNormal';
+
+  let nextNo = 0;
+  try {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const cur = snap.exists() ? Number((snap.data() || {})[field] || 0) : 0;
+      nextNo = cur + 1;
+      tx.set(ref, { ymd: `${y}-${m}-${d}`, [field]: nextNo }, { merge: true });
+    });
+  } catch (e) {
+    console.warn('serial transaction failed, fallback local counter', e);
+    const key = `ctr-${mmdd}-${field}`;
+    const cur = Number(localStorage.getItem(key) || '0');
+    nextNo = cur + 1;
+    localStorage.setItem(key, String(nextNo));
+  }
+
+  const core = mmdd + String(nextNo).padStart(3, '0');
+  return isBig ? 'B' + core : core;
+}
+
+import {collection, addDoc, Timestamp, query, orderBy, getDocs, updateDoc, doc, getDoc, setDoc, runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -76,48 +99,7 @@ window.addEventListener('load', async () => {
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
 
-// === Dual daily serials (normal/big) — v3.3.2 ===
-async function nextSerial(isBig) {
-  try {
-    const now = new Date();
-    const y = String(now.getFullYear());
-    const m = String(now.getMonth()+1).padStart(2,'0');
-    const d = String(now.getDate()).padStart(2,'0');
-    const mmdd = m + d;
-    const type = isBig ? 'big' : 'normal';
-    const refId = `${y}-${m}-${d}-${type}`;
-    const ref = doc(db, 'envelop-counters', refId);
-    let last = 0;
-    try {
-      const snap = await getDoc(ref);
-      if (snap.exists()) last = Number((snap.data()||{}).last || 0);
-    } catch(e){ console.warn('getDoc counter error', e) }
-    const next = last + 1;
-    try {
-      await setDoc(ref, { last: next, ymd:`${y}-${m}-${d}`, type }, { merge: true });
-    } catch(e){ console.warn('setDoc counter error', e) }
-    const core = mmdd + String(next).padStart(3,'0');
-    return isBig ? ('B'+core) : core;
-  } catch(e){
-    try {
-      const now = new Date();
-      const m = String(now.getMonth()+1).padStart(2,'0');
-      const d = String(now.getDate()).padStart(2,'0');
-      const mmdd = m + d;
-      const type = isBig ? 'big' : 'normal';
-      const key = `ctr-${mmdd}-${type}`;
-      const next = Number(localStorage.getItem(key)||'0') + 1;
-      localStorage.setItem(key, String(next));
-      const core = mmdd + String(next).padStart(3,'0');
-      return isBig ? ('B'+core) : core;
-    } catch(ee){
-      console.error('serial fallback failed', ee);
-      return '';
-    }
-  }
-}
-
-async function handleSubmit(type = 'normal') {
+  async function handleSubmit(type = 'normal') {
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
@@ -130,16 +112,12 @@ async function handleSubmit(type = 'normal') {
     const sourceStr = checkedSources.join('、');
     const nickname = localStorage.getItem('nickname') || '匿名';
 
-    const bigEl = document.getElementById('bigPkg');
-    const isBigPkg = !!(bigEl && bigEl.checked);
-    const serialVal = await nextSerial(isBigPkg);
-
     const displaySource = type === 'reply'
       ? (sourceStr ? `${nickname}(${sourceStr})(回郵)` : `${nickname}(回郵)`)
       : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
-    const record = { serial: serialVal, serialCore: (serialVal||'').replace(/^B/, ''),
+    const record = {
       senderCompany,
       customSender,
       receiverName,
@@ -257,7 +235,7 @@ function renderFilteredData() {
 
       // 當日資料
       groups[dateStr].forEach(data => {
-        const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        const timeStr = data.timestamp.new Intl.DateTimeFormat('zh-TW', {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Taipei'}).format(data.timestamp);
         const receiverBase = (data.receiverName || '');
         const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
 
@@ -273,7 +251,7 @@ function renderFilteredData() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><div class="timebox"><div class="serial">${data.serial || '—'}</div><div class="time">${timeStr}</div></div></td>
+          <td>${timeStr}</td>
           <td>${receiver}</td>
           <td class="${addrClass}">${formatAddressFirst9(addr)}</td>
           <td>${data.phone || ''}</td>

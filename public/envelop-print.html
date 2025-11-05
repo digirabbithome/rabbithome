@@ -81,13 +81,6 @@
 
 </head>
 <body>
-<!-- App Version Badge -->
-<div id="versionBadge" style="position:sticky; top:0; z-index:9999; display:flex; justify-content:flex-end; pointer-events:none;">
-  <div style="margin:8px 12px; padding:4px 10px; border-radius:999px; background:#fde7f1; color:#c2185b; font-weight:600; font-size:12px; letter-spacing:.5px; pointer-events:auto;">
-    \1v3.3.6
-  </div>
-</div>
-
   <h1>✉️ 列印信封系統</h1>
 
   
@@ -124,9 +117,8 @@
       <button id="printReply" class="pink-btn-alt">列印回郵信封</button>
     </div>
     <fieldset class="source-fieldset">
-      <legend><span class="sr-only"></span></legend>
-      <label class="bigpkg-standalone" style="display:inline-flex;align-items:center;gap:6px;margin-right:10px;"><input type="checkbox" id="bigPkg"> 包裹</label>
-        <div class="source-group" id="sourceGroup">
+      <legend>來源：</legend>
+      <div class="source-group" id="sourceGroup">
         <label><input type="checkbox" name="source" value="Line" /> Line</label>
         <label><input type="checkbox" name="source" value="官網" /> 官網</label>
         <label><input type="checkbox" name="source" value="Yahoo" /> Yahoo</label>
@@ -167,7 +159,7 @@
         <th>地址</th>
         <th>電話</th>
         <th>商品</th>
-        <th></th>
+        <th>來源</th>
         <th>貨件單號</th>
         <th>操作</th>
       </tr>

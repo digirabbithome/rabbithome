@@ -77,22 +77,3 @@ window.addEventListener('load', async () => {
   await new Promise(r => setTimeout(r, 120));
   window.print();
 });
-
-
-  // Serial number (right bottom) — v3.3.2
-  (function(){ 
-    try{ 
-      const data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); 
-      const el = document.getElementById('serialNo'); 
-      if (el) el.textContent = data.serial || ''; 
-    }catch(e){} 
-  })();
-
-
-// ---- inject serial to bottom-right corner ----
-try{
-  var __data = {};
-  try { __data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); } catch(_){}
-  var sc = document.getElementById('serialCorner');
-  if (sc) sc.textContent = __data.serial ? String(__data.serial) : '';
-}catch(_){}
