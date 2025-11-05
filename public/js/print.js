@@ -1,8 +1,8 @@
-// print.js — v3.3.11 (single serial at bottom-right only)
+// print.js — v3.3.12 商品行右側顯示流水號
 window.addEventListener('load', async () => {
   const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
 
-  // Force wrapping on both class and ID selectors
+  // 強制自動換行設定
   const style = document.createElement('style');
   style.textContent = `
     #addrLine, #toLine, .addr-line, .to-line {
@@ -16,7 +16,7 @@ window.addEventListener('load', async () => {
   `;
   document.head.appendChild(style);
 
-  // Company map
+  // 公司資料
   const senderMap = {
     '數位小兔': {
       cname: '數位小兔攝影器材批發零售',
@@ -28,12 +28,11 @@ window.addEventListener('load', async () => {
     },
     '聚焦數位': { cname:'聚焦數位', ename:'Focus Digital', address:'110 台北市信義區範例路10號', tel:'02-2345-6789', line:'@focuscam', logo:'/img/logo-focus.png' },
     '免睡攝影': { cname:'免睡攝影', ename:'NoSleep Photo', address:'110 台北市信義區範例路20號', tel:'02-2222-3333', line:'@nosleep', logo:'/img/logo-nosleep.png' },
-    '其他': { cname: data.customSender || '其他', ename:'', address:'', tel:'', line:'', logo:'/img/logo.png' }
+    '其他': { cname: (data.customSender || '其他'), ename:'', address:'', tel:'', line:'', logo:'/img/logo.png' }
   };
-  const senderKey = data.senderCompany && senderMap[data.senderCompany] ? data.senderCompany : '數位小兔';
+  const senderKey = (data.senderCompany && senderMap[data.senderCompany]) ? data.senderCompany : '數位小兔';
   const sender = senderMap[senderKey];
 
-  // Header
   const senderInfo = document.getElementById('senderInfo');
   if (senderInfo) {
     senderInfo.innerHTML = [
@@ -46,15 +45,13 @@ window.addEventListener('load', async () => {
   const logoImg = document.getElementById('logoImg');
   if (logoImg && sender.logo) logoImg.src = sender.logo;
 
-  // Receiver lines
-  const esc = (s='') => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  // 收件人資料
+  const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const name = (data.receiverName || '').trim();
   const phone = (data.phone || '').trim();
   const address = (data.address || '').trim();
-
   const addrEl = document.getElementById('addrLine');
   const toEl = document.getElementById('toLine');
-
   if (addrEl && toEl) {
     addrEl.textContent = address ? `TO：${address}` : 'TO：';
     toEl.textContent = [name, phone].filter(Boolean).join(' ');
@@ -62,23 +59,19 @@ window.addEventListener('load', async () => {
     toEl.innerHTML = `TO：${esc(address)}<br>${esc([name, phone].filter(Boolean).join(' '))}`;
   }
 
-  // Optional product
+  // 商品與流水號
   const productInfo = document.getElementById('productInfo');
+  const serialNo = document.getElementById('serialNo');
   if (productInfo) {
-    const p = (data.product || '').trim();
-    productInfo.textContent = p;
-    productInfo.style.display = p ? 'block' : 'none';
+    productInfo.textContent = (data.product || '').trim();
+    productInfo.style.display = data.product ? 'block' : 'none';
+  }
+  if (serialNo) {
+    serialNo.textContent = data.serial ? String(data.serial) : '';
   }
 
   if (name) document.title = '列印信封 - ' + name;
 
-  // Inject serial to bottom-right corner ONLY
-  try {
-    const sc = document.getElementById('serialCorner');
-    sc.textContent = data.serial ? String(data.serial) : '';
-  } catch (e) {}
-
-  // Wait a bit so layout stabilizes
   await new Promise(r => setTimeout(r, 120));
   window.print();
 });
