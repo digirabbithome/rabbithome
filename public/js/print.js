@@ -72,6 +72,12 @@ window.addEventListener('load', async () => {
   }
 
   if (name) document.title = '列印信封 - ' + name;
+  // 🧩 新增流水號顯示（右下角小字）
+  try {
+    var ser = (data.serial || '').toString();
+    var sp = document.getElementById('serialPrint');
+    if (sp) { sp.textContent = ser; }
+  } catch(_e){}
 
   // Make sure the browser has laid out text before printing
   await new Promise(r => setTimeout(r, 120));

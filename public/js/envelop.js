@@ -22,10 +22,66 @@ import {
   orderBy,
   getDocs,
   updateDoc,
+  getDoc,
+  setDoc,
   doc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
+
+  // === 🧩 流水號：每日 MMDD + 3 碼；大型包裹使用 B 前綴，兩套序列分開 ===
+  function _mmdd(d){ const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return m+day; }
+  function _ymd(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+
+  async function nextSerial(isBig){
+    try{
+      const today = new Date();
+      const id = _ymd(today) + '-' + (isBig ? 'big' : 'normal');
+      const ref = doc(db, 'envelop-counters', id);
+      const snap = await getDoc(ref);
+      let last = 0;
+      if (snap.exists()){
+        last = Number(snap.data()?.last || 0);
+      }
+      const next = last + 1;
+      await setDoc(ref, { date:_ymd(today), type,
+      big: bigPkg,
+      serial: serial:(isBig?'big':'normal'), last: next }, { merge:true });
+      const core = _mmdd(today) + String(next).padStart(3,'0');
+      return isBig ? ('B' + core) : core;
+    }catch(err){
+      console.warn('serial fallback localStorage due to:', err?.message || err);
+      // fallback：localStorage（避免阻塞使用）
+      const today = new Date();
+      const key = 'env-ctr-' + _ymd(today) + '-' + (isBig?'big':'normal');
+      let last = Number(localStorage.getItem(key) || '0');
+      last += 1;
+      localStorage.setItem(key, String(last));
+      const core = _mmdd(today) + String(last).padStart(3,'0');
+      return isBig ? ('B' + core) : core;
+    }
+  }
 window.addEventListener('load', async () => {
+
+  // === 🧩 排序：時間 / 地址（點表頭切換） ===
+  let __sort = { key:'time', dir:'desc' }; // default time desc
+
+  function attachSortHandlers(){
+    const ths = document.querySelectorAll('#recordsTable thead th');
+    ths.forEach((th, idx) => {
+      const txt = (th.textContent || '').trim();
+      if (txt === '時間' || txt === '地址'){
+        th.classList.add('sortable');
+        const arrow = document.createElement('span'); arrow.className='arrow'; th.appendChild(arrow);
+        th.addEventListener('click', () => {
+          const key = (txt === '時間') ? 'time' : 'addr';
+          if (__sort.key === key){ __sort.dir = (__sort.dir === 'asc' ? 'desc' : 'asc'); }
+          else { __sort.key = key; __sort.dir = 'asc'; }
+          renderFilteredData();
+        });
+      }
+    });
+  }
+
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
@@ -76,8 +132,11 @@ window.addEventListener('load', async () => {
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
 
-  async function handleSubmit(type = 'normal') {
-    const senderCompany = form.senderCompany.value;
+  async function handleSubmit(type,
+      big: bigPkg,
+      serial: serial = 'normal') {
+    const bigPkg = document.getElementById('bigPkg')?.checked || false;
+const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
     const phone = form.phone.value;
@@ -89,11 +148,14 @@ window.addEventListener('load', async () => {
     const sourceStr = checkedSources.join('、');
     const nickname = localStorage.getItem('nickname') || '匿名';
 
-    const displaySource = type === 'reply'
+    const displaySource = type,
+      big: bigPkg,
+      serial: serial === 'reply'
       ? (sourceStr ? `${nickname}(${sourceStr})(回郵)` : `${nickname}(回郵)`)
       : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
+    const serial = await nextSerial(bigPkg);
     const record = {
       senderCompany,
       customSender,
@@ -106,7 +168,9 @@ window.addEventListener('load', async () => {
       source: displaySource,
       account: nickname,
       timestamp: Timestamp.fromDate(now),
-      type
+      type,
+      big: bigPkg,
+      serial: serial
     };
 
     // 開啟列印頁並把資料塞進 localStorage
@@ -120,6 +184,7 @@ window.addEventListener('load', async () => {
       if (companySelect) companySelect.value = '數位小兔';
       if (otherField) otherField.style.display = 'none';
       await loadData();
+  attachSortHandlers();
   await loadFavQuickButtons();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
@@ -132,6 +197,7 @@ window.addEventListener('load', async () => {
   async function applyDateFilter(start, end) {
     currentFilter = { start: startOfDay(start), end: endOfDay(end) };
     await loadData();
+  attachSortHandlers();
   await loadFavQuickButtons();
   }
 
@@ -145,9 +211,13 @@ window.addEventListener('load', async () => {
     snapshot.forEach(doc => {
       const data = doc.data();
       let ts = data.timestamp;
-      if (ts && typeof ts.toDate === 'function') {
+      if (ts && type,
+      big: bigPkg,
+      serial: serialof ts.toDate === 'function') {
         ts = ts.toDate();
-      } else if (typeof ts === 'object' && ts?.seconds) {
+      } else if (type,
+      big: bigPkg,
+      serial: serialof ts === 'object' && ts?.seconds) {
         ts = new Date(ts.seconds * 1000);
       } else {
         ts = new Date();
@@ -176,7 +246,7 @@ function renderFilteredData() {
     tbody.innerHTML = '';
 
     // 1) 關鍵字過濾
-    const filtered = allData.filter(item =>
+    let filtered = allData.filter(item =>
       (item.receiverName || '').toLowerCase().includes(keyword) ||
       (item.customerAccount || '').toLowerCase().includes(keyword) ||
       (item.phone || '').toLowerCase().includes(keyword) ||
@@ -186,6 +256,18 @@ function renderFilteredData() {
     );
 
     // 2) 依「日期字串」分群
+    
+    // 排序
+    filtered.sort((a,b)=>{
+      if (__sort.key === 'addr'){
+        const A = (a.address||'').trim(); const B = (b.address||'').trim();
+        if (A===B) return 0;
+        return __sort.dir==='asc' ? (A<B?-1:1) : (A<B?1:-1);
+      } else {
+        // time
+        return __sort.dir==='asc' ? (a.timestamp - b.timestamp) : (b.timestamp - a.timestamp);
+      }
+    });
     const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const groups = {};
     filtered.forEach(data => {
@@ -213,6 +295,7 @@ function renderFilteredData() {
       // 當日資料
       groups[dateStr].forEach(data => {
         const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        const serialStr = data.serial || '';
         const receiverBase = (data.receiverName || '');
         const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
 
@@ -228,14 +311,22 @@ function renderFilteredData() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${timeStr}</td>
+          <td><div class="time-serial"><div class="serial">${serialStr}</div><div class="time">${timeStr}</div></div></td>
           <td>${receiver}</td>
           <td class="${addrClass}">${formatAddressFirst9(addr)}</td>
           <td>${data.phone || ''}</td>
           <td>${productStr}</td>
           <td>${data.source || ''}</td>
-          <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
-          <td><button type="button" class="note-btn" data-id="${data.id}" title="標記並複製貨件單號">✎</button> <a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印</a></td>
+          <td><input type,
+      big: bigPkg,
+      serial: serial="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
+          <td><button type,
+      big: bigPkg,
+      serial: serial="button" class="note-btn" data-id="${data.id}" title="標記並複製貨件單號">✎</button> <a href="#" data-id="${data.id}" data-type,
+      big: bigPkg,
+      serial: serial="${data.type,
+      big: bigPkg,
+      serial: serial || 'normal'}" class="reprint-link">補印</a></td>
         `;
         tbody.appendChild(tr);
       });
@@ -258,7 +349,11 @@ function renderFilteredData() {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const docId = e.currentTarget.getAttribute('data-id');
-        const type = e.currentTarget.getAttribute('data-type');
+        const type,
+      big: bigPkg,
+      serial: serial = e.currentTarget.getAttribute('data-type,
+      big: bigPkg,
+      serial: serial');
         const record = allData.find(d => d.id === docId);
         if (record) {
           localStorage.setItem('envelopeData', JSON.stringify(record));
@@ -270,6 +365,7 @@ function renderFilteredData() {
 
 
   await loadData();
+  attachSortHandlers();
   await loadFavQuickButtons();
   // ===== 常用信封快捷鍵（chips + auto print） =====
   async function loadFavQuickButtons() {
@@ -290,7 +386,9 @@ function renderFilteredData() {
         if (!shortName) return;
         count++;
         const btn = document.createElement('button');
-        btn.type = 'button';
+        btn.type,
+      big: bigPkg,
+      serial: serial = 'button';
         btn.className = 'chip';
         btn.textContent = shortName;
         btn.title = `${name} ${phone} ${address}`.trim();
@@ -307,8 +405,12 @@ function renderFilteredData() {
           // 若開啟「點按即列印」，自動送出並寫入紀錄
           const clickToPrint = document.getElementById('favClickToPrint')?.checked;
           if (clickToPrint) {
-            const type = (document.querySelector('input[name="favPrintType"]:checked')?.value === 'reply') ? 'reply' : 'normal';
-            await handleSubmit(type);
+            const type,
+      big: bigPkg,
+      serial: serial = (document.querySelector('input[name="favPrintType"]:checked')?.value === 'reply') ? 'reply' : 'normal';
+            await handleSubmit(type,
+      big: bigPkg,
+      serial: serial);
           }
         });
         favContainer.appendChild(btn);
