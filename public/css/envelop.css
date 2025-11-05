@@ -164,3 +164,19 @@ form button:hover {
 #sourceGroup label{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ffe8f1;border:1px solid #f7cfe4}
 #sourceGroup input[type="checkbox"]{accent-color:#ef5fa7}
 .bigpkg-standalone{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #f7cfe4}
+
+/* === v3.1: 讓來源 chips 同列顯示，不換行 === */
+#sourceGroup {
+  display: inline-flex;
+  flex-wrap: nowrap !important; /* 禁止換行 */
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+#sourceGroup::-webkit-scrollbar {
+  height: 6px;
+}
