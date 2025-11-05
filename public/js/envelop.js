@@ -76,7 +76,6 @@ window.addEventListener('load', async () => {
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
 
-  async 
 // === Dual daily serials (normal/big) — v3.3.2 ===
 async function nextSerial(isBig) {
   try {
