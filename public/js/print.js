@@ -1,13 +1,13 @@
-
+// print.js — v3.3.11 (single serial at bottom-right only)
 window.addEventListener('load', async () => {
   const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
 
-  // ---- Force wrapping on both class and ID selectors (covers old/new templates) ----
+  // Force wrapping on both class and ID selectors
   const style = document.createElement('style');
   style.textContent = `
     #addrLine, #toLine, .addr-line, .to-line {
       white-space: normal !important;
-      word-break: break-all !important;     /* 最兇，任何地方都能斷 */
+      word-break: break-all !important;
       overflow-wrap: anywhere !important;
       display: block !important;
       max-width: 100% !important;
@@ -16,7 +16,7 @@ window.addEventListener('load', async () => {
   `;
   document.head.appendChild(style);
 
-  // ---- Company map ----
+  // Company map
   const senderMap = {
     '數位小兔': {
       cname: '數位小兔攝影器材批發零售',
@@ -33,7 +33,7 @@ window.addEventListener('load', async () => {
   const senderKey = data.senderCompany && senderMap[data.senderCompany] ? data.senderCompany : '數位小兔';
   const sender = senderMap[senderKey];
 
-  // ---- Header (sender info) ----
+  // Header
   const senderInfo = document.getElementById('senderInfo');
   if (senderInfo) {
     senderInfo.innerHTML = [
@@ -46,7 +46,7 @@ window.addEventListener('load', async () => {
   const logoImg = document.getElementById('logoImg');
   if (logoImg && sender.logo) logoImg.src = sender.logo;
 
-  // ---- Receiver (address on Line 1, name+phone on Line 2) ----
+  // Receiver lines
   const esc = (s='') => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const name = (data.receiverName || '').trim();
   const phone = (data.phone || '').trim();
@@ -59,7 +59,6 @@ window.addEventListener('load', async () => {
     addrEl.textContent = address ? `TO：${address}` : 'TO：';
     toEl.textContent = [name, phone].filter(Boolean).join(' ');
   } else if (toEl) {
-    // Back-compat: single container
     toEl.innerHTML = `TO：${esc(address)}<br>${esc([name, phone].filter(Boolean).join(' '))}`;
   }
 
@@ -73,26 +72,13 @@ window.addEventListener('load', async () => {
 
   if (name) document.title = '列印信封 - ' + name;
 
-  // Make sure the browser has laid out text before printing
+  // Inject serial to bottom-right corner ONLY
+  try {
+    const sc = document.getElementById('serialCorner');
+    sc.textContent = data.serial ? String(data.serial) : '';
+  } catch (e) {}
+
+  // Wait a bit so layout stabilizes
   await new Promise(r => setTimeout(r, 120));
   window.print();
 });
-
-
-  // Serial number (right bottom) — v3.3.2
-  (function(){ 
-    try{ 
-      const data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); 
-      const el = document.getElementById('serialNo'); 
-      if (el) el.textContent = data.serial || ''; 
-    }catch(e){} 
-  })();
-
-
-// ---- inject serial to bottom-right corner ----
-try{
-  var __data = {};
-  try { __data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); } catch(_){}
-  var sc = document.getElementById('serialCorner');
-  if (sc) sc.textContent = __data.serial ? String(__data.serial) : '';
-}catch(_){}
