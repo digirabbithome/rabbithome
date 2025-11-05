@@ -78,12 +78,21 @@ window.addEventListener('load', async () => {
   window.print();
 });
 
-;(()=>{
-  try{
-    const data = JSON.parse(localStorage.getItem('envelopeData')||'{}');
-    const elS = document.getElementById('serialStamp');
-    if (elS) elS.textContent = data.serial || '';
-    const elP = document.getElementById('productBlock');
-    if (elP && data.product) elP.textContent = data.product;
-  }catch(e){}
-})();
+
+  // Serial number (right bottom) — v3.3.2
+  (function(){ 
+    try{ 
+      const data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); 
+      const el = document.getElementById('serialNo'); 
+      if (el) el.textContent = data.serial || ''; 
+    }catch(e){} 
+  })();
+
+
+// ---- inject serial to bottom-right corner ----
+try{
+  var __data = {};
+  try { __data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); } catch(_){}
+  var sc = document.getElementById('serialCorner');
+  if (sc) sc.textContent = __data.serial ? String(__data.serial) : '';
+}catch(_){}
