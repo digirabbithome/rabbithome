@@ -133,10 +133,12 @@ window.addEventListener('load', async () => {
       product, product2, source: displaySource, account: nickname,
       timestamp: Timestamp.fromDate(now), type };
 
-    // 先寫入 DB，再用文件 ID 開啟列印頁（讓列印頁直接讀 Firestore）
+    // 開啟列印頁並把資料塞進 localStorage
+    localStorage.setItem('envelopeData', JSON.stringify(record));
+    window.open('/print.html', '_blank');
+
     try {
-      const ref = await addDoc(collection(db, 'envelopes'), record);
-      window.open(`/print.html?id=${ref.id}`, '_blank');
+      await addDoc(collection(db, 'envelopes'), record);
       alert('✅ 資料已儲存！');
       form.reset();
       if (companySelect) companySelect.value = '數位小兔';
@@ -276,7 +278,8 @@ window.addEventListener('load', async () => {
         const type = e.currentTarget.getAttribute('data-type');
         const record = allData.find(d => d.id === docId);
         if (record) {
-          window.open(`/print.html?id=${docId}`,'_blank');
+          localStorage.setItem('envelopeData', JSON.stringify(record));
+          window.open('/print.html', '_blank');
         }
       });
     });
