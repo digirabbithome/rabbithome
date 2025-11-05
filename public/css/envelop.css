@@ -156,13 +156,11 @@ form button:hover {
   background: #fff3cd;
 }
 
-.bigpkg-standalone input{accent-color:#ef5fa7}
-
-/* === 扁平來源 chips 與取消外框 (safe micro patch v2) === */
+/* === 扁平來源區 v3（視覺調整，邏輯不變） === */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.source-group{display:inline-flex;flex-wrap:wrap;gap:8px;background:transparent;border:0;padding:0;box-shadow:none}
-.source-group label{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ffe8f1;border:1px solid #f7cfe4}
-.source-group input[type="checkbox"]{accent-color:#ef5fa7}
+#sourceGroup{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
+.source-group,.source-wrap,.source-box{background:transparent!important;border:0!important;box-shadow:none!important}
+.card:has(#sourceGroup),.form-row:has(#sourceGroup),div:has(> #sourceGroup){background:transparent!important;border:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important}
+#sourceGroup label{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ffe8f1;border:1px solid #f7cfe4}
+#sourceGroup input[type="checkbox"]{accent-color:#ef5fa7}
 .bigpkg-standalone{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #f7cfe4}
-/* 若頁面有額外外框類別，統一扁平化 */
-.source-fieldset,.source-wrap,.source-box{background:transparent;border:0;box-shadow:none;padding:0;margin:0}
