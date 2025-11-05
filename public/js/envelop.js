@@ -14,18 +14,14 @@ function formatAddressFirst9(addr) {
 
 
 import { db } from '/js/firebase.js';
-import {
-  collection,
+import {collection,
   addDoc,
   Timestamp,
   query,
   orderBy,
   getDocs,
   updateDoc,
-  getDoc,
-  setDoc,
-  doc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  doc, setDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -79,7 +75,7 @@ window.addEventListener('load', async () => {
   }
 
   
-// === v3.3: Dual daily serials (normal / big) ===
+// === v3.3.1: Dual daily serials (normal/big) ===
 async function nextSerial(isBig) {
   try {
     const now = new Date();
@@ -104,12 +100,11 @@ async function nextSerial(isBig) {
   } catch(e){
     try {
       const now = new Date();
-      const y = String(now.getFullYear());
       const m = String(now.getMonth()+1).padStart(2,'0');
       const d = String(now.getDate()).padStart(2,'0');
       const mmdd = m + d;
       const type = isBig ? 'big' : 'normal';
-      const key = `ctr-${y}${m}${d}-${type}`;
+      const key = `ctr-${mmdd}-${type}`;
       const next = Number(localStorage.getItem(key)||'0') + 1;
       localStorage.setItem(key, String(next));
       const core = mmdd + String(next).padStart(3,'0');
@@ -121,7 +116,7 @@ async function nextSerial(isBig) {
   }
 }
 
-async function handleSubmit(type = 'normal') {
+$1type = 'normal') {
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
