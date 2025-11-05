@@ -14,14 +14,16 @@ function formatAddressFirst9(addr) {
 
 
 import { db } from '/js/firebase.js';
-import {collection,
+import {
+  collection,
   addDoc,
   Timestamp,
   query,
   orderBy,
   getDocs,
   updateDoc,
-  doc, setDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  doc
+, setDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -74,8 +76,8 @@ window.addEventListener('load', async () => {
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
 
-  
-// === v3.3.1: Dual daily serials (normal/big) ===
+  async 
+// === Dual daily serials (normal/big) ===
 async function nextSerial(isBig) {
   try {
     const now = new Date();
@@ -116,7 +118,7 @@ async function nextSerial(isBig) {
   }
 }
 
-$1type = 'normal') {
+function handleSubmit(type = 'normal') {
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;

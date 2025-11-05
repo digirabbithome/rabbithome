@@ -79,12 +79,10 @@ window.addEventListener('load', async () => {
 });
 
 
-  // Serial number (right bottom)
   (function(){
     try{
-      const raw = localStorage.getItem('envelopeData') || '{}';
-      const data = JSON.parse(raw);
-      const serialEl = document.getElementById('serialNo');
-      if (serialEl) serialEl.textContent = data.serial || '';
-    }catch(e){ console.warn('serial display error', e); }
+      const data = JSON.parse(localStorage.getItem('envelopeData')||'{}');
+      const el = document.getElementById('serialNo');
+      if (el) el.textContent = data.serial || '';
+    }catch(e){}
   })();
