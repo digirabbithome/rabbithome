@@ -1,99 +1,47 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>回郵信封（9×14cm 橫式）</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Print Reply Envelope</title>
   <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
-      background: #f6f6f6;
-    }
-    .envelope {
-      width: 14cm;
-      height: 9cm;
-      background: #fff;
-      margin: 10mm auto;
-      padding: 6mm 7mm;
-      border: none;            /* 移除黑色邊框 */
-      position: relative;
-      overflow: hidden;
-      letter-spacing: 0;
-    }
-    .header {
-      display: grid;
-      grid-template-columns: 1fr 3.2cm;
-      column-gap: 6mm;
-      align-items: end; /* LOGO 與公司資訊底部對齊 */
-    }
-    .sender-info {
-      font-size: 10pt;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-    .logo {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      display: block;
-    }
-    .receiver {
-      position: absolute;
-      left: 7mm;
-      right: 7mm;
-      top: 36mm;           /* 與寄件資訊之間空一行 */
-      letter-spacing: 0;
-    }
-    .addr-line {           /* 第一行：地址（含 TO：） */
-      font-size: 7mm;
-      font-weight: 700;
-      line-height: 1.2;
-      word-break: break-word;
-    }
-    .to-line {             /* 第二行：姓名 + 電話 */
-      margin-top: 1.2mm;
-      font-size: 7mm;
-      font-weight: 700;
-      white-space: nowrap;
-      line-height: 1.2;
-    }
-    .to-line .phone {
-      font-size: 7mm;
-      font-weight: 600;
-      margin-left: 4mm;
-    }
-    .product {
-      position: absolute;
-      left: 7mm;
-      bottom: 5mm;
-      font-size: 9pt;
-      color: #111;
-      letter-spacing: 0;
-      max-width: calc(100% - 14mm);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    @media print {
-      @page { size: 14cm 9cm; margin: 0; }
-      html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
-      .envelope { margin: 0; border: none; } /* 列印也不顯示邊框 */
-    }
+    body{margin:0;font-family:'Noto Sans TC','Microsoft JhengHei',system-ui}
+    .page{width:210mm;height:99mm;padding:14mm 18mm;box-sizing:border-box;position:relative}
+    .sender, .receiver, .product{margin-bottom:6mm}
+    .logo{position:absolute;top:14mm;left:50%;transform:translateX(-50%);font-weight:700}
+    #receiverInfo{white-space:pre-line}
+    .serial-print{position:absolute;right:10mm;bottom:8mm;font-size:9pt;color:#666}
+    @media print {.no-print{display:none}.page{page-break-after:always}}
   </style>
-  <script src="/js/print-reply.js" defer></script>
 </head>
 <body>
-  <div class="envelope">
-    <div class="header">
-      <div class="sender-info" id="senderInfo"></div>
-      <img class="logo" id="logoImg" src="/img/logo.png" alt="logo">
-    </div>
-    <div class="receiver">
-      <div class="addr-line" id="addrLine"></div>
-      <div class="to-line" id="toLine"></div>
-    </div>
-    <div class="product" id="productInfo"></div>
+  <div class="no-print" style="padding:8px;background:#fff3f8;border-bottom:1px solid #eee">
+    <button onclick="window.print()">🖨️ 直接列印</button>
   </div>
+  <div class="page">
+    <div class="logo">公司 LOGO</div>
+    <div class="sender"><strong>寄件公司（回郵：以客戶為寄件人）</strong><br><div id="senderInfo"></div></div>
+    <div class="receiver"><strong>收件人（回寄公司）</strong><br><div id="receiverInfo"></div></div>
+    <div class="product"><strong>商品</strong><br><div id="productInfo"></div></div>
+    <div class="serial-print" id="serialPrint"></div>
+  </div>
+  <script>
+    const qs = new URLSearchParams(location.search)
+    const senderInfo = [
+      qs.get('senderZh') || '',
+      qs.get('senderEn') || '',
+      qs.get('senderAddr') || '',
+      '電話：' + (qs.get('senderPhone') || ''),
+      'LINE：' + (qs.get('senderLine') || '')
+    ].filter(Boolean).join('\n')
+    const recv = [
+      (qs.get('recvName') || '') + (qs.get('recvPhone') ? '（' + qs.get('recvPhone') + '）' : ''),
+      qs.get('recvAddr') || ''
+    ].join('\n')
+    document.getElementById('senderInfo').textContent = senderInfo
+    document.getElementById('receiverInfo').textContent = recv
+    document.getElementById('productInfo').textContent = (qs.get('productInfo')||'').trim()
+    document.getElementById('serialPrint').textContent = qs.get('serial') || ''
+  </script>
 </body>
 </html>

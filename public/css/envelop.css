@@ -1,168 +1,66 @@
-
-body {
-  font-family: "Noto Sans TC", sans-serif;
-  background-color: #fff6fb;
-  margin: 0;
-  padding: 20px;
+/* r3 — 粉系、扁平 chips、時間欄顯示流水號 */
+:root{
+  --pink:#fbd1e6;
+  --pink-dark:#f9a7cd;
+  --ink:#35363a;
+  --muted:#6b7280;
+  --bg:#fff7fb;
+  --card:#ffffff;
+  --shadow:0 6px 20px rgba(0,0,0,.06);
+  --radius:16px;
+  --gap:14px;
+  font-family:'Noto Sans TC','Microsoft JhengHei',system-ui,ui-sans-serif;
 }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+.wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{margin:0;font-size:28px}
+h2{margin:0 0 12px 0;font-size:20px}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+.field{display:flex;flex-direction:column;gap:8px}
+.field input,.field select{padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;outline:none;}
+.field input:focus,.field select:focus{border-color:var(--pink-dark);box-shadow:0 0 0 3px rgba(249,167,205,.25)}
+.span-2{grid-column:1 / span 2}
+.row{display:flex;align-items:center}
+.wrap{flex-wrap:wrap}
+.gap{gap:10px}
+.grow{flex:1}
+.muted{color:var(--muted);font-size:12px}
+.w-24{min-width:140px}
+.sep{width:1px;height:24px;background:#eee}
 
-.page-wrapper {
-  max-width: 960px;
-  margin: auto;
-  background-color: #ffffff;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.06);
-}
+.btn{border:0;background:#f1f5f9;color:#111;border-radius:999px;padding:10px 16px;cursor:pointer;box-shadow:var(--shadow)}
+.btn:hover{background:var(--pink)}
+.btn-primary{background:var(--pink-dark);color:white}
+.btn-primary:hover{filter:brightness(0.98)}
+.btn-accent{background:#ffd4a8}
+.btn-ghost{background:transparent;border:1px dashed #e5e7eb}
+.btn.sm{padding:6px 10px;font-size:12px}
 
-h2 {
-  color: #e64a83;
-  margin-bottom: 16px;
-}
+.hidden{display:none}
 
-form {
-  background-color: #fff0f5;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
+.top-nav{display:flex;gap:10px}
+.actions{display:flex;gap:10px;margin-top:12px;align-items:center}
 
-form .form-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-  gap: 12px;
-}
+.chips label.chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #f5d0ea;padding:6px 10px;border-radius:999px;cursor:pointer}
+.chips label.chip input{accent-color:#ef5fa7}
+.chk{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:#fff}
+.chk input{accent-color:#ef5fa7}
 
-form label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
+.list-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.filters{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.date-range{display:flex;flex-direction:column;gap:8px}
 
-form input, form select, form textarea {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
-}
+.table-wrap{overflow:auto;border-radius:12px;border:1px solid #f1f5f9}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th,.table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.table th{background:#fff3f8;position:sticky;top:0}
+.table td .op{display:flex;gap:8px}
+.link{color:#ef4899;text-decoration:none}
+.link:hover{text-decoration:underline}
 
-form button {
-  padding: 8px 16px;
-  background-color: #ff6699;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-form button:hover {
-  background-color: #ff4477;
-}
-
-#recordTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-#recordTable th, #recordTable td {
-  border-bottom: 1px solid #eee;
-  padding: 10px;
-  text-align: left;
-}
-
-#recordTable th {
-  background-color: #ffe0ec;
-  color: #333;
-}
-
-#recordTable td button {
-  background-color: #eee;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-#recordTable td button:hover {
-  background-color: #ccc;
-}
-
-#searchBar {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 10px;
-}
-
-#searchBar input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-
-/* === 常用信封快捷鍵（favEnvelopes） with auto-print toggle === */
-.fav-card .fav-title{margin:0;color:#e64a83;font-weight:700}
-.fav-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:12px;flex-wrap:wrap}
-.fav-auto{display:flex;align-items:center;gap:12px}
-.fav-auto .fav-radio{display:flex;align-items:center;gap:4px}
-.chip-row{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:none;border-radius:999px;padding:6px 12px;background:#fcddec;cursor:pointer;font-weight:600}
-.chip:hover{background:#ff82a6;color:#fff}
-\n
-/* 日期分隔列樣式 */
-.date-separator td{
-  background: #ffeef4;
-  color: #d63384;
-  font-weight: 700;
-  padding: 8px 10px;
-  border-top: 2px solid #f8cfe0;
-}
-
-/* 地址命中區域高亮 */
-.area-highlight{
-  background: #fff7cc;
-}
-
-/* 地址前6字底色 */
-.addr-lead{
-  background: #fff7cc;
-  border-radius: 3px;
-  padding: 0 1px;
-}
-
-/* row highlight after noting */
-.row-note { background: #fff3cd !important; }
-/* note button inside action cell */
-.note-btn {
-  border: 0;
-  background: #f1f3f5;
-  padding: 4px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-  margin-right: 6px;
-}
-.note-btn:hover { background:#e9ecef; }
-
-.addr-first9 {
-  font-weight: bold;
-  background: #fff3cd;
-}
-
-/* === Compact source chips & fieldset (flat/less wide) === */
-.source-fieldset{ border-radius:10px; background:#fff; border:1px solid #e5c9d4; padding:6px 10px; }
-.source-group label{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background:#ffe8f1; }
-.source-group input[type="checkbox"]{ accent-color:#ef5fa7; }
-#bigPkg{ accent-color:#ef5fa7; }
-.time-serial{ display:flex; flex-direction:column; line-height:1.15; }
-.time-serial .serial{ font-size:12px; color:#9a4d75; }
-.time-serial .time{ font-size:13px; color:#111; }
-th.sortable{ cursor:pointer; }
-th.sortable .arrow{ margin-left:4px; font-size:12px; color:#666; }
+.timebox{display:flex;flex-direction:column;line-height:1.1}
+.timebox .serial{font-size:12px;color:#9a4d75}
+.timebox .time{font-size:13px;color:#111}
