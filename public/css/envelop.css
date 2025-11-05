@@ -156,18 +156,4 @@ form button:hover {
   background: #fff3cd;
 }
 
-/* === Compact source chips & fieldset (flat/less wide) === */
-.source-fieldset{ border-radius:10px; background:#fff; border:1px solid #e5c9d4; padding:6px 10px; }
-.source-group label{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background:#ffe8f1; }
-.source-group input[type="checkbox"]{ accent-color:#ef5fa7; }
-#bigPkg{ accent-color:#ef5fa7; }
-.time-serial{ display:flex; flex-direction:column; line-height:1.15; }
-.time-serial .serial{ font-size:12px; color:#9a4d75; }
-.time-serial .time{ font-size:13px; color:#111; }
-th.sortable{ cursor:pointer; }
-th.sortable .arrow{ margin-left:4px; font-size:12px; color:#666; }
-
-/* big package row separated from source chips */
-.bigpkg-row{ display:flex; align-items:center; gap:10px; margin:6px 0 10px 0; }
-.bigpkg-row .chk{ background:#fff; border:1px solid #e5c9d4; border-radius:10px; padding:6px 10px; }
-.bigpkg-row input[type="checkbox"]{ accent-color:#ef5fa7; }
+.bigpkg-standalone input{accent-color:#ef5fa7}
