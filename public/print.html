@@ -82,6 +82,14 @@
     }
   </style>
   <script src="/js/print.js" defer></script>
+
+  <style>
+    .serial-corner{
+      position:absolute; right:12mm; bottom:10mm;
+      font-size:10pt; color:#777; letter-spacing:1px; user-select:none;
+    }
+  </style>
+
 </head>
 <body>
   <div class="envelope">
@@ -97,6 +105,7 @@
   <div id="productInfo" style="overflow:hidden;text-overflow:ellipsis;padding-right:8mm;"></div>
   <div id="serialNo" style="font-size:9pt;color:#444;letter-spacing:0.5px;"></div>
 </div>
-  </div>
+    <div id="serialCorner" class="serial-corner"></div>
+</div>
 </body>
 </html>
