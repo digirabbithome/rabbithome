@@ -153,3 +153,65 @@ form button:hover { background-color: #ff4477; }
   /* If someone wraps text in span we still look fine */
 }
 
+
+
+
+/* === v3.3.10 Compact Source Chips (legend hidden, first white, others pink) === */
+
+/* Hide '來源：' legend but keep semantics for screen readers */
+.source-fieldset legend {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Make the fieldset and chips more compact */
+.source-fieldset {
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+}
+
+/* Row layout tighter */
+.source-group {
+  gap: 8px !important;
+}
+
+/* Chip size down */
+.source-group label {
+  padding: 4px 10px !important;
+  border-width: 1.5px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+/* First chip: white background; others: light pink */
+.source-group label { background: #fde5f0 !important; }
+.source-group label:first-child { background: #ffffff !important; }
+
+/* Checkbox knob smaller */
+.source-group input[type="checkbox"] {
+  width: 14px !important;
+  height: 14px !important;
+  border-width: 1.5px !important;
+}
+
+/* Checked state remains subtle */
+.source-group input[type="checkbox"]:checked {
+  box-shadow: inset 0 0 0 3px #fbd9e7 !important;
+}
+
+/* When space is tight, allow wrapping but keep compact height */
+@media (max-width: 1200px) {
+  .source-group { gap: 6px !important; }
+  .source-group label { padding: 3px 8px !important; font-size: 13px !important; }
+  .source-fieldset { padding: 6px 8px !important; }
+}
+
+/* Slightly reduce the outer block height footprint */
+.toolbar-top .source-fieldset { margin-top: 4px !important; margin-bottom: 4px !important; }
