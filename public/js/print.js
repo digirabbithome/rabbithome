@@ -1,6 +1,22 @@
-// print.js — v3.3.12 商品行右側顯示流水號
+// print.js — v3.3.12b 商品行右側顯示流水號（含多來源 fallback）
+(function(){
+  // Parse query ?serial=xxxxx support
+  const params = new URLSearchParams(location.search);
+  const qsSerial = params.get('serial');
+
+  function getData(){
+    let d = {};
+    try { d = JSON.parse(localStorage.getItem('envelopeData')||'{}') || {}; } catch(_){ d = {}; }
+    // Fallbacks for serial field name
+    const serial = d.serial || d.serialNo || d.serialNumber || qsSerial || '';
+    return { ...d, serial };
+  }
+
+  window.__ENVELOPE_DATA__ = getData();
+})();
+
 window.addEventListener('load', async () => {
-  const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
+  const data = window.__ENVELOPE_DATA__ || {};
 
   // 強制自動換行設定
   const style = document.createElement('style');
@@ -72,6 +88,7 @@ window.addEventListener('load', async () => {
 
   if (name) document.title = '列印信封 - ' + name;
 
+  // 小延遲讓 layout 穩定後再列印
   await new Promise(r => setTimeout(r, 120));
   window.print();
 });
