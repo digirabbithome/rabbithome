@@ -1,4 +1,3 @@
-
 body {
   font-family: "Noto Sans TC", sans-serif;
   background-color: #fff6fb;
@@ -15,10 +14,7 @@ body {
   box-shadow: 0 0 10px rgba(0,0,0,0.06);
 }
 
-h2 {
-  color: #e64a83;
-  margin-bottom: 16px;
-}
+h2 { color: #e64a83; margin-bottom: 16px; }
 
 form {
   background-color: #fff0f5;
@@ -27,86 +23,29 @@ form {
   margin-bottom: 24px;
 }
 
-form .form-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-  gap: 12px;
-}
-
-form label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
+form .form-row { display: flex; flex-wrap: wrap; margin-bottom: 12px; gap: 12px; }
+form label { display: block; font-weight: bold; margin-bottom: 4px; }
 form input, form select, form textarea {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 8px; border: 1px solid #ccc; border-radius: 8px;
+  font-size: 14px; width: 100%; box-sizing: border-box;
 }
 
 form button {
-  padding: 8px 16px;
-  background-color: #ff6699;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+  padding: 8px 16px; background-color: #ff6699; color: white;
+  border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
 }
+form button:hover { background-color: #ff4477; }
 
-form button:hover {
-  background-color: #ff4477;
-}
+#recordTable { width: 100%; border-collapse: collapse; margin-top: 20px; }
+#recordTable th, #recordTable td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+#recordTable th { background-color: #ffe0ec; color: #333; }
+#recordTable td button { background-color: #eee; padding: 4px 8px; border-radius: 6px; border: none; cursor: pointer; }
+#recordTable td button:hover { background-color: #ccc; }
 
-#recordTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
+#searchBar { margin-bottom: 16px; display: flex; gap: 10px; }
+#searchBar input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
 
-#recordTable th, #recordTable td {
-  border-bottom: 1px solid #eee;
-  padding: 10px;
-  text-align: left;
-}
-
-#recordTable th {
-  background-color: #ffe0ec;
-  color: #333;
-}
-
-#recordTable td button {
-  background-color: #eee;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-#recordTable td button:hover {
-  background-color: #ccc;
-}
-
-#searchBar {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 10px;
-}
-
-#searchBar input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-
-/* === 常用信封快捷鍵（favEnvelopes） with auto-print toggle === */
+/* === 常用信封快捷鍵（favEnvelopes） === */
 .fav-card .fav-title{margin:0;color:#e64a83;font-weight:700}
 .fav-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:12px;flex-wrap:wrap}
 .fav-auto{display:flex;align-items:center;gap:12px}
@@ -114,50 +53,37 @@ form button:hover {
 .chip-row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:none;border-radius:999px;padding:6px 12px;background:#fcddec;cursor:pointer;font-weight:600}
 .chip:hover{background:#ff82a6;color:#fff}
-\n
+
 /* 日期分隔列樣式 */
 .date-separator td{
-  background: #ffeef4;
-  color: #d63384;
-  font-weight: 700;
-  padding: 8px 10px;
-  border-top: 2px solid #f8cfe0;
+  background: #ffeef4; color: #d63384; font-weight: 700;
+  padding: 8px 10px; border-top: 2px solid #f8cfe0;
 }
 
-/* 地址命中區域高亮 */
-.area-highlight{
-  background: #fff7cc;
-}
+/* 地址高亮 */
+.area-highlight{ background: #fff7cc; }
 
-/* 地址前6字底色 */
-.addr-lead{
-  background: #fff7cc;
-  border-radius: 3px;
-  padding: 0 1px;
-}
+/* 地址前 9 字底色 */
+.addr-first9 { font-weight: bold; background: #fff3cd; }
 
-/* row highlight after noting */
+/* note 樣式 */
 .row-note { background: #fff3cd !important; }
-/* note button inside action cell */
 .note-btn {
-  border: 0;
-  background: #f1f3f5;
-  padding: 4px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-  margin-right: 6px;
+  border: 0; background: #f1f3f5; padding: 4px 6px; border-radius: 6px;
+  cursor: pointer; font-size: 12px; line-height: 1; margin-right: 6px;
 }
 .note-btn:hover { background:#e9ecef; }
 
-.addr-first9 {
-  font-weight: bold;
-  background: #fff3cd;
-}
-
+/* ✅ 來源一排不換行 */
+.toolbar-top .source-group { flex-wrap: nowrap; gap: 14px; }
+.toolbar-top .source-group label { white-space: nowrap; }
 .source-chip{ white-space:nowrap; }
 
-.serial-stamp{ position:absolute; right:48px; bottom:48px; font-size:16px; color:#222; }
+/* ✅ 記錄表：時間欄顯示「流水號」 + 「時間」 */
+.timebox { display: flex; flex-direction: column; gap: 2px; line-height: 1.15; }
+.timebox .serial { font-weight: 700; color: #d63384; font-size: 13px; }
+.timebox .time { font-size: 12px; color: #666; }
 
+/* （若 print.html 使用）列印頁右下角流水號 / 左下角商品 */
+.serial-stamp{ position:absolute; right:48px; bottom:48px; font-size:16px; color:#222; }
 .product{ position:absolute; left:48px; bottom:60px; font-size:20px; color:#333; }
