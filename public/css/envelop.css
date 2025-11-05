@@ -180,3 +180,18 @@ form button:hover {
 #sourceGroup::-webkit-scrollbar {
   height: 6px;
 }
+
+/* === v3.2.1: 強制「包裹」不換行 === */
+.bigpkg-standalone{
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  width: auto !important;
+  max-width: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  line-height: 1.2;
+}
+.bigpkg-standalone *{
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
