@@ -77,3 +77,13 @@ window.addEventListener('load', async () => {
   await new Promise(r => setTimeout(r, 120));
   window.print();
 });
+
+;(()=>{
+  try{
+    const data = JSON.parse(localStorage.getItem('envelopeData')||'{}');
+    const elS = document.getElementById('serialStamp');
+    if (elS) elS.textContent = data.serial || '';
+    const elP = document.getElementById('productBlock');
+    if (elP && data.product) elP.textContent = data.product;
+  }catch(e){}
+})();

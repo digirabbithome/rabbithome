@@ -1,3 +1,41 @@
+async function nextSerial(isBig) {
+  try {
+    const now = new Date();
+    const y = String(now.getFullYear());
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const mmdd = m + d;
+    const ref = doc(db, 'envelop-counters', `${y}-${m}-${d}`);
+    const n = await runTransaction(db, async (tx)=>{
+      const snap = await tx.get(ref);
+      let data = snap.exists()? snap.data():{};
+      const field = isBig ? 'lastBig':'lastNormal';
+      const last = Number(data[field]||0);
+      const next = last + 1;
+      data[field] = next;
+      data.ymd = `${y}-${m}-${d}`;
+      tx.set(ref, data, { merge:true });
+      return next;
+    });
+    const core = mmdd + String(n).padStart(3,'0');
+    return isBig ? ('B'+core) : core;
+  } catch(e) {
+    // fallback local only
+    try {
+      const now = new Date();
+      const m = String(now.getMonth()+1).padStart(2,'0');
+      const d = String(now.getDate()).padStart(2,'0');
+      const mmdd = m + d;
+      const key = `ctr-${mmdd}-${isBig?'big':'normal'}`;
+      const nxt = Number(localStorage.getItem(key)||'0') + 1;
+      localStorage.setItem(key, String(nxt));
+      const core = mmdd + String(nxt).padStart(3,'0');
+      return isBig ? ('B'+core) : core;
+    } catch(_) {
+      return '';
+    }
+  }
+}
 
 // 將地址前 9 個字套上粗體 + 黃底
 function formatAddressFirst9(addr) {
@@ -14,39 +52,7 @@ function formatAddressFirst9(addr) {
 
 
 import { db } from '/js/firebase.js';
-
-// === Dual daily serials (normal/big) — v3.3.7 ===
-async function nextSerial(isBig) {
-  const now = new Date();
-  const y = String(now.getFullYear());
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  const mmdd = m + d;
-
-  const ref = doc(db, 'envelop-counters', `${y}-${m}-${d}`);
-  const field = isBig ? 'lastBig' : 'lastNormal';
-
-  let nextNo = 0;
-  try {
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      const cur = snap.exists() ? Number((snap.data() || {})[field] || 0) : 0;
-      nextNo = cur + 1;
-      tx.set(ref, { ymd: `${y}-${m}-${d}`, [field]: nextNo }, { merge: true });
-    });
-  } catch (e) {
-    console.warn('serial transaction failed, fallback local counter', e);
-    const key = `ctr-${mmdd}-${field}`;
-    const cur = Number(localStorage.getItem(key) || '0');
-    nextNo = cur + 1;
-    localStorage.setItem(key, String(nextNo));
-  }
-
-  const core = mmdd + String(nextNo).padStart(3, '0');
-  return isBig ? 'B' + core : core;
-}
-
-import {collection, addDoc, Timestamp, query, orderBy, getDocs, updateDoc, doc, getDoc, setDoc, runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { Timestamp, addDoc, collection, doc, getDocs, orderBy, query, runTransaction, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
   const form = document.getElementById('envelopeForm');
@@ -100,7 +106,9 @@ window.addEventListener('load', async () => {
   }
 
   async function handleSubmit(type = 'normal') {
-    const senderCompany = form.senderCompany.value;
+    const isBigPkg = !!document.getElementById('bigPkg')?.checked;
+const serialVal = await nextSerial(isBigPkg);
+const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
     const phone = form.phone.value;
@@ -117,7 +125,7 @@ window.addEventListener('load', async () => {
       : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
-    const record = {
+    const record = { serial: serialVal, serialCore: (serialVal||'').replace(/^B/, ''),
       senderCompany,
       customSender,
       receiverName,
@@ -235,7 +243,7 @@ function renderFilteredData() {
 
       // 當日資料
       groups[dateStr].forEach(data => {
-        const timeStr = data.timestamp.new Intl.DateTimeFormat('zh-TW', {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Taipei'}).format(data.timestamp);
+        const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         const receiverBase = (data.receiverName || '');
         const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
 

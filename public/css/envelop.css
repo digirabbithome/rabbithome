@@ -155,3 +155,9 @@ form button:hover {
   font-weight: bold;
   background: #fff3cd;
 }
+
+.source-chip{ white-space:nowrap; }
+
+.serial-stamp{ position:absolute; right:48px; bottom:48px; font-size:16px; color:#222; }
+
+.product{ position:absolute; left:48px; bottom:60px; font-size:20px; color:#333; }
