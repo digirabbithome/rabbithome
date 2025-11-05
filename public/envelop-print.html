@@ -1,134 +1,171 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>列印信封（r3） - Rabbithome</title>
-  <link rel="stylesheet" href="/css/envelop.css">
+  <meta charset="UTF-8" />
+  <title>列印信封系統</title>
+  <link rel="stylesheet" href="/css/envelop.css" />
+  <script src="/js/envelop.js" type="module" defer></script>
+  
+<style>
+  /* Card + grid rows */
+  .card { background: #ffeef4; padding: 14px; border-radius: 10px; }
+  .form-compact .row3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .form-compact .row3 input { width: 100%; }
+  .form-compact .full { margin-top: 8px; }
+
+  /* 第二行：公司(小) + 帳號(小) + 商品一二(大) */
+  .second-row {
+    display: grid;
+    grid-template-columns: 120px 120px 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .second-row select, .second-row input { width: 100%; }
+
+  /* 自訂寄件公司 */
+  .custom-sender-row { margin-top: 8px; }
+  .custom-sender-row input { width: 240px; }
+
+  /* 按鈕 + 來源 同一行 */
+  .toolbar-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-group { display: flex; gap: 10px; }
+  .pink-btn, .pink-btn-alt {
+    background: #ff82a6;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .pink-btn-alt { background: #ff98b6; }
+
+  .toolbar-top .source-fieldset {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid #e5c9d4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toolbar-top .source-group {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* 日期/搜尋工具列 */
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+  .toolbar input[type="date"] { padding: 6px 8px; }
+  .toolbar #searchInput { width: 240px; padding: 6px 8px; }
+
+  /* 表格 */
+  #recordsTable { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  #recordsTable th, #recordsTable td { padding: 10px 8px; border-bottom: 1px solid #f0dbe3; text-align: left; }
+  #recordsTable th { color: #333; }
+  h2#dateTitle { margin-top: 16px; color: #ff5a8a;}
+</style>
+
 </head>
 <body>
-  <div class="wrap">
-    <header class="page-header">
-      <h1>📮 列印信封</h1>
-      <nav class="top-nav">
-        <button id="btnNew" class="btn">＋ 新增信封</button>
-        <button id="btnList" class="btn btn-ghost">📜 列印紀錄</button>
-      </nav>
-    </header>
+  <h1>✉️ 列印信封系統</h1>
 
-    <section id="formSection" class="card">
-      <h2>填寫寄件與收件資訊</h2>
-      <div class="grid">
-        <div class="field span-2">
-          <label>綽號</label>
-          <input id="nickname" class="w-24" placeholder="例如 花花" />
-        </div>
-
-        <div class="field span-2">
-          <label>來源</label>
-          <div class="row gap wrap">
-            <label class="chk"><input type="checkbox" id="bigPkg"> 大型包裹</label>
-            <div class="sep"></div>
-            <div class="chips" id="platformChips">
-              <label class="chip"><input type="checkbox" value="Line"><span>Line</span></label>
-              <label class="chip"><input type="checkbox" value="官網"><span>官網</span></label>
-              <label class="chip"><input type="checkbox" value="Yahoo"><span>Yahoo</span></label>
-              <label class="chip"><input type="checkbox" value="露天"><span>露天</span></label>
-              <label class="chip"><input type="checkbox" value="蝦皮"><span>蝦皮</span></label>
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>寄件公司</label>
-          <select id="senderCompany">
-            <option value="rabbit">數位小兔</option>
-            <option value="focus">聚焦數位</option>
-            <option value="nosleep">免睡攝影</option>
-            <option value="other">其他</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>收件人姓名</label>
-          <input id="recvName" placeholder="收件人" />
-        </div>
-        <div class="field">
-          <label>收件人電話</label>
-          <input id="recvPhone" placeholder="09xx-xxx-xxx" />
-        </div>
-        <div class="field span-2">
-          <label>收件人地址</label>
-          <input id="recvAddr" placeholder="完整地址" />
-        </div>
-
-        <div class="field span-2">
-          <label>商品資訊（選填；若填寫會印在最下方一行）</label>
-          <input id="productInfo" placeholder="例如：Godox Lux Senior / 1入 / 黑色" />
-        </div>
-      </div>
-
-      <div class="actions">
-        <div class="muted" id="serialPreview">今日下一號（預估）：MMDD???</div>
-        <div class="grow"></div>
-        <button id="btnPrint" class="btn btn-primary">🖨️ 列印信封</button>
-        <button id="btnPrintReply" class="btn btn-accent">🖨️ 列印回郵信封</button>
-        <button id="btnSaveOnly" class="btn btn-ghost">💾 只存紀錄（不列印）</button>
-      </div>
-    </section>
-
-    <section id="listSection" class="card hidden">
-      <div class="list-toolbar">
-        <h2>📜 信封列印紀錄</h2>
-        <div class="filters">
-          <div class="date-range">
-            <strong id="rangeTitle">（載入中）</strong>
-            <div class="row gap">
-              <button class="btn sm" data-range="1d">前一天</button>
-              <button class="btn sm" data-range="3d">前三天</button>
-              <button class="btn sm" data-range="1w">前一週</button>
-              <button class="btn sm" data-range="1m">前一月</button>
-              <input type="date" id="pickDate">
-              <button id="btnPickDay" class="btn sm">查該日</button>
-            </div>
-          </div>
-          <div class="search-area row gap">
-            <input id="kw" placeholder="搜尋：姓名 / 電話 / 地址 / 商品" />
-            <button id="btnSearch" class="btn sm">搜尋</button>
-            <div class="sep"></div>
-            <div class="sort row gap">
-              <span class="muted">排序：</span>
-              <button class="btn sm" id="sortTimeUp">時間↑</button>
-              <button class="btn sm" id="sortTimeDown">時間↓</button>
-              <button class="btn sm" id="sortAddrUp">地址↑</button>
-              <button class="btn sm" id="sortAddrDown">地址↓</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table class="table" id="recordsTable">
-          <thead>
-            <tr>
-              <th>時間</th>
-              <th>收件人</th>
-              <th>地址</th>
-              <th>電話</th>
-              <th>商品</th>
-              <th>來源</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="recordsBody">
-            <tr><td colspan="7" class="muted">尚無資料</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  
+<form id="envelopeForm" class="card form-compact">
+  <!-- 第一行：收件人姓名 / 電話 / 地址 -->
+  <div class="row3 full">
+    <input id="receiverName" name="receiverName" placeholder="收件人姓名" />
+    <input id="phone" name="phone" placeholder="電話" />
+    <input id="address" name="address" placeholder="地址" />
   </div>
 
-  <script src="/js/firebase.js"></script>
-  <script type="module" src="/js/envelop.js"></script>
+  <!-- 第二行：寄件公司 / 客人帳號 / 商品顯示 / 商品不顯示 -->
+  <div class="row4 full second-row">
+    <select id="senderCompany" name="senderCompany">
+      <option>數位小兔</option>
+      <option>聚焦數位</option>
+      <option>免睡攝影</option>
+      <option>其他</option>
+    </select>
+    <input id="customerAccount" name="customerAccount" placeholder="客人帳號" />
+    <input id="product" name="product" placeholder="商品資訊(顯示)" />
+    <input id="product2" name="product2" placeholder="商品資訊(不顯示)" />
+  </div>
+
+  <!-- 自訂寄件公司（選其他才顯示） -->
+  <div id="customSenderField" class="custom-sender-row" style="display:none;">
+    <input id="customSender" name="customSender" placeholder="自訂寄件公司（選擇其他時填寫）" />
+  </div>
+
+  <!-- 按鈕 + 來源（同一行靠左） -->
+  <div class="toolbar-top">
+    <div class="btn-group">
+      <button id="printNormal" class="pink-btn">列印信封</button>
+      <button id="printReply" class="pink-btn-alt">列印回郵信封</button>
+    </div>
+    <fieldset class="source-fieldset">
+      <legend>來源：</legend>
+      <div class="bigpkg-row"><label class="chk"><input type="checkbox" id="bigPkg"> 大型包裹</label></div>
+        <div class="source-group" id="sourceGroup">
+        <label><input type="checkbox" name="source" value="Line" /> Line</label>
+        <label><input type="checkbox" name="source" value="官網" /> 官網</label>
+        <label><input type="checkbox" name="source" value="Yahoo" /> Yahoo</label>
+        <label><input type="checkbox" name="source" value="露天" /> 露天</label>
+        <label><input type="checkbox" name="source" value="蝦皮" /> 蝦皮</label>
+      </div>
+    </fieldset>
+  </div>
+</form>
+
+<!-- 常用信封快捷鍵（從 favEnvelopes 集合載入） -->
+<section id="favSection" class="card fav-card" style="display:none; margin-top:10px;">
+  <div class="fav-topbar">
+    <h3 class="fav-title">常用信封快捷鍵</h3>
+    <div class="fav-auto">
+      <label><input type="checkbox" id="favClickToPrint"/> 點按即列印</label>
+      <label class="fav-radio"><input type="radio" name="favPrintType" value="normal" checked/> 一般</label>
+      <label class="fav-radio"><input type="radio" name="favPrintType" value="reply"/> 回郵</label>
+    </div>
+  </div>
+  <div id="favQuickList" class="chip-row"></div>
+</section>
+
+<div class="toolbar">
+    <button id="btnPrevDay">前一天</button>
+    <button id="btnLast3Days">前三天</button>
+    <button id="btnLastWeek">前一週</button>
+    <input type="date" id="datePicker" />
+    <input id="searchInput" placeholder="搜尋姓名/電話/地址/商品" />
+  </div>
+
+  <h2 id="dateTitle">📋 今日列印信封紀錄</h2>
+  <table id="recordsTable">
+    <thead>
+      <tr>
+        <th>時間</th>
+        <th>收件人</th>
+        <th>地址</th>
+        <th>電話</th>
+        <th>商品</th>
+        <th>來源</th>
+        <th>貨件單號</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="recordsBody"></tbody>
+  </table>
 </body>
 </html>
