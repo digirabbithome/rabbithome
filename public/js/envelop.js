@@ -1,3 +1,4 @@
+// === Dual daily serials (normal/big) with Firestore transaction ===
 async function nextSerial(isBig) {
   try {
     const now = new Date();
@@ -31,9 +32,7 @@ async function nextSerial(isBig) {
       localStorage.setItem(key, String(nxt));
       const core = mmdd + String(nxt).padStart(3,'0');
       return isBig ? ('B'+core) : core;
-    } catch(_) {
-      return '';
-    }
+    } catch(_) { return ''; }
   }
 }
 
@@ -50,11 +49,19 @@ function formatAddressFirst9(addr) {
   return '<span class="addr-first9">' + first + '</span>' + rest;
 }
 
-
 import { db } from '/js/firebase.js';
-import { Timestamp, addDoc, collection, doc, getDocs, orderBy, query, runTransaction, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  Timestamp, addDoc, collection, doc, getDocs, orderBy, query, runTransaction, updateDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
+  // 保險：若「包裹」checkbox 沒在來源那排，搬回第一顆
+  (function ensureBigPkgInSourceGroup(){
+    const group = document.getElementById('sourceGroup');
+    const loose = document.querySelector('label.source-chip');
+    if (group && loose && !group.contains(loose)) group.prepend(loose);
+  })();
+
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
@@ -72,18 +79,15 @@ window.addEventListener('load', async () => {
   let currentFilter = { start: startOfDay(__past3), end: endOfDay(__today) };
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
-    e.preventDefault();
-    handleSubmit('normal');
+    e.preventDefault(); handleSubmit('normal');
   });
   document.getElementById('printReply')?.addEventListener('click', e => {
-    e.preventDefault();
-    handleSubmit('reply');
+    e.preventDefault(); handleSubmit('reply');
   });
 
   // 日期快捷鍵
   document.getElementById('btnPrevDay')?.addEventListener('click', () => {
-    const d = new Date(); d.setDate(d.getDate() - 1);
-    applyDateFilter(d, d);
+    const d = new Date(); d.setDate(d.getDate() - 1); applyDateFilter(d, d);
   });
   document.getElementById('btnLast3Days')?.addEventListener('click', () => {
     const today = new Date(); const past = new Date(); past.setDate(today.getDate() - 2);
@@ -94,8 +98,7 @@ window.addEventListener('load', async () => {
     applyDateFilter(past, today);
   });
   document.getElementById('datePicker')?.addEventListener('change', (e) => {
-    const selected = new Date(e.target.value);
-    applyDateFilter(selected, selected);
+    const selected = new Date(e.target.value); applyDateFilter(selected, selected);
   });
 
   searchInput?.addEventListener('input', renderFilteredData);
@@ -107,8 +110,8 @@ window.addEventListener('load', async () => {
 
   async function handleSubmit(type = 'normal') {
     const isBigPkg = !!document.getElementById('bigPkg')?.checked;
-const serialVal = await nextSerial(isBigPkg);
-const senderCompany = form.senderCompany.value;
+    const serialVal = await nextSerial(isBigPkg);
+    const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
     const phone = form.phone.value;
@@ -126,19 +129,9 @@ const senderCompany = form.senderCompany.value;
 
     const now = new Date();
     const record = { serial: serialVal, serialCore: (serialVal||'').replace(/^B/, ''),
-      senderCompany,
-      customSender,
-      receiverName,
-      phone,
-      address,
-      customerAccount,
-      product,
-      product2,
-      source: displaySource,
-      account: nickname,
-      timestamp: Timestamp.fromDate(now),
-      type
-    };
+      senderCompany, customSender, receiverName, phone, address, customerAccount,
+      product, product2, source: displaySource, account: nickname,
+      timestamp: Timestamp.fromDate(now), type };
 
     // 開啟列印頁並把資料塞進 localStorage
     localStorage.setItem('envelopeData', JSON.stringify(record));
@@ -151,7 +144,7 @@ const senderCompany = form.senderCompany.value;
       if (companySelect) companySelect.value = '數位小兔';
       if (otherField) otherField.style.display = 'none';
       await loadData();
-  await loadFavQuickButtons();
+      await loadFavQuickButtons();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
     }
@@ -162,8 +155,7 @@ const senderCompany = form.senderCompany.value;
 
   async function applyDateFilter(start, end) {
     currentFilter = { start: startOfDay(start), end: endOfDay(end) };
-    await loadData();
-  await loadFavQuickButtons();
+    await loadData(); await loadFavQuickButtons();
   }
 
   let allData = [];
@@ -173,18 +165,15 @@ const senderCompany = form.senderCompany.value;
     const snapshot = await getDocs(q);
     allData = [];
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
       let ts = data.timestamp;
-      if (ts && typeof ts.toDate === 'function') {
-        ts = ts.toDate();
-      } else if (typeof ts === 'object' && ts?.seconds) {
-        ts = new Date(ts.seconds * 1000);
-      } else {
-        ts = new Date();
-      }
+      if (ts && typeof ts.toDate === 'function') ts = ts.toDate();
+      else if (typeof ts === 'object' && ts?.seconds) ts = new Date(ts.seconds * 1000);
+      else ts = new Date();
+
       if (ts >= currentFilter.start && ts <= currentFilter.end) {
-        allData.push({ id: doc.id, ...data, timestamp: ts });
+        allData.push({ id: docSnap.id, ...data, timestamp: ts });
       }
     });
 
@@ -195,12 +184,10 @@ const senderCompany = form.senderCompany.value;
         ? `${fmt(currentFilter.start)} 列印信封紀錄`
         : `${fmt(currentFilter.start)}–${fmt(currentFilter.end)} 列印信封紀錄`);
     }
-
     renderFilteredData();
   }
 
-  
-function renderFilteredData() {
+  function renderFilteredData() {
     const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
@@ -224,24 +211,18 @@ function renderFilteredData() {
       (groups[dstr] ||= []).push(data);
     });
 
-    // 3) 區域高亮關鍵字（可自行增減）
-    const HIGHLIGHT_AREAS = [
-      '台北市信義區',
-      '台中市北屯區'
-    ];
-
+    // 3) 區域高亮
+    const HIGHLIGHT_AREAS = ['台北市信義區','台中市北屯區'];
     const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
 
     // 4) 依日期由新到舊輸出
     const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
     sortedDates.forEach(dateStr => {
-      // 日期分隔列
       const sep = document.createElement('tr');
       sep.className = 'date-separator';
       sep.innerHTML = `<td colspan="8">${dateStr}</td>`;
       tbody.appendChild(sep);
 
-      // 當日資料
       groups[dateStr].forEach(data => {
         const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         const receiverBase = (data.receiverName || '');
@@ -259,7 +240,12 @@ function renderFilteredData() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${timeStr}</td>
+          <td>
+            <div class="timebox">
+              <div class="serial">${data.serial || '—'}</div>
+              <div class="time">${timeStr}</div>
+            </div>
+          </td>
           <td>${receiver}</td>
           <td class="${addrClass}">${formatAddressFirst9(addr)}</td>
           <td>${data.phone || ''}</td>
@@ -297,8 +283,7 @@ function renderFilteredData() {
         }
       });
     });
-}
-
+  }
 
   await loadData();
   await loadFavQuickButtons();
@@ -353,7 +338,6 @@ function renderFilteredData() {
 
 });
 
-
 // --- note feature: toggle row highlight and copy tracking number ---
 function copyToClipboard(text) {
   if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
@@ -386,6 +370,5 @@ function bindNoteButtons(){
     });
   }
 }
-
 // call bindNoteButtons after render
 setTimeout(bindNoteButtons, 500);
