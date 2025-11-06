@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -17,71 +16,58 @@
       background: #fff;
       margin: 10mm auto;
       padding: 6mm 7mm;
-      border: none;            /* 移除黑色邊框 */
+      border: none;
       position: relative;
       overflow: hidden;
-      letter-spacing: 0;
     }
     .header {
       display: grid;
       grid-template-columns: 1fr 3.2cm;
       column-gap: 6mm;
-      align-items: end; /* LOGO 與公司資訊底部對齊 */
+      align-items: end;
     }
-    .sender-info {
-      font-size: 10pt;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-    .logo {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      display: block;
-    }
+    .sender-info { font-size: 10pt; line-height: 1.5; word-break: break-word; }
+    .logo { width: 100%; height: auto; object-fit: contain; display: block; }
     .receiver {
       position: absolute;
-      left: 7mm;
-      right: 7mm;
-      top: 36mm;           /* 與寄件資訊之間空一行 */
-      letter-spacing: 0;
+      left: 7mm; right: 7mm; top: 36mm;
     }
-    .addr-line {           /* 第一行：地址（含 TO：） */
-      font-size: 7mm;
-      font-weight: 700;
-      line-height: 1.2;
-      word-break: break-word;
-    }
-    .to-line {             /* 第二行：姓名 + 電話 */
-      margin-top: 1.2mm;
-      font-size: 7mm;
-      font-weight: 700;
-      white-space: nowrap;
-      line-height: 1.2;
-    }
-    .to-line .phone {
-      font-size: 7mm;
-      font-weight: 600;
-      margin-left: 4mm;
-    }
-    .product {
+    .addr-line { font-size: 7mm; font-weight: 700; line-height: 1.2; word-break: break-word; }
+    .to-line   { margin-top: 1.2mm; font-size: 7mm; font-weight: 700; white-space: nowrap; line-height: 1.2; }
+    .to-line .phone { font-size: 7mm; font-weight: 600; margin-left: 4mm; }
+
+    /* 商品與流水號同列 */
+    .footer-row {
       position: absolute;
-      left: 7mm;
-      bottom: 5mm;
+      left: 7mm; right: 7mm; bottom: 5mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
       font-size: 9pt;
       color: #111;
       letter-spacing: 0;
-      max-width: calc(100% - 14mm);
+    }
+    #productInfo {
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: pre-wrap;
       word-break: break-word;
+      max-width: 70%;
     }
+    #serialNo {
+      text-align: right;
+      color: #444;
+      letter-spacing: 0.5px;
+      font-size: 9pt;
+    }
+
     @media print {
       @page { size: 14cm 9cm; margin: 0; }
       html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
-      .envelope { margin: 0; border: none; } /* 列印也不顯示邊框 */
+      .envelope { margin: 0; border: none; }
     }
   </style>
-  <script src="/js/print.js" defer></script>
+  <script src="./print.js" defer></script>
 </head>
 <body>
   <div class="envelope">
@@ -93,10 +79,10 @@
       <div class="addr-line" id="addrLine"></div>
       <div class="to-line" id="toLine"></div>
     </div>
-    <div id="footerRow" style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8mm;font-size:10pt;white-space:nowrap;">
-  <div id="productInfo" style="overflow:hidden;text-overflow:ellipsis;padding-right:8mm;"></div>
-  <div id="serialNo" style="font-size:9pt;color:#444;letter-spacing:0.5px;"></div>
-</div>
+    <div class="footer-row">
+      <div id="productInfo"></div>
+      <div id="serialNo"></div>
+    </div>
   </div>
 </body>
 </html>
