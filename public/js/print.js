@@ -87,12 +87,3 @@ window.addEventListener('load', async () => {
       if (el) el.textContent = data.serial || ''; 
     }catch(e){} 
   })();
-
-
-// ---- inject serial to bottom-right corner ----
-try{
-  var __data = {};
-  try { __data = JSON.parse(localStorage.getItem('envelopeData')||'{}'); } catch(_){}
-  var sc = document.getElementById('serialCorner');
-  if (sc) sc.textContent = __data.serial ? String(__data.serial) : '';
-}catch(_){}
