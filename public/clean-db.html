@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>資料庫清理中心 - 公布欄</title>
+  <title>資料庫清理中心</title>
   <link rel="stylesheet" href="/css/clean-db.css" />
 </head>
 <body class="clean-page">
@@ -23,6 +23,7 @@
         </thead>
 
         <tbody>
+          <!-- 公布欄 -->
           <tr>
             <td>
               <span class="module-name">公布欄</span>
@@ -30,16 +31,30 @@
                 清理邏輯：刪除 <code>markState = hidden</code> 的公告，或 <code>createdAt</code> 早於 21 天。
               </div>
             </td>
-
             <td>
               <button id="btn-calc-bulletins" class="btn-secondary">計算</button>
             </td>
-
             <td>
               <button id="btn-clean-bulletins" class="btn-primary">清理</button>
             </td>
-
             <td id="result-bulletins" class="result-text">尚未計算</td>
+          </tr>
+
+          <!-- 每日工作 -->
+          <tr>
+            <td>
+              <span class="module-name">每日工作</span>
+              <div class="module-note">
+                清理邏輯：僅保留 <code>dailyCheck</code> 中最近 30 天（依文件 ID <code>YYYY-MM-DD</code> 判斷），更早的日期全部刪除。
+              </div>
+            </td>
+            <td>
+              <button id="btn-calc-daily" class="btn-secondary">計算</button>
+            </td>
+            <td>
+              <button id="btn-clean-daily" class="btn-primary">清理</button>
+            </td>
+            <td id="result-daily" class="result-text">尚未計算</td>
           </tr>
         </tbody>
       </table>

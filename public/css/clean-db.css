@@ -1,4 +1,4 @@
-/* === Rabbithome DB Clean v2 — 公布欄 === */
+/* === Rabbithome DB Clean v3 — 公布欄 + 每日工作 === */
 
 body.clean-page {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -16,7 +16,7 @@ body.clean-page {
   color: #ff6699;
 }
 
-/* 公布欄小字說明 */
+/* 模組說明小字 */
 .module-note {
   font-size: 0.75rem;
   color: #999;

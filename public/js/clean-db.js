@@ -1,96 +1,193 @@
-// === Rabbithome 公布欄清理工具 clean-db.js v2 ===
+// === Rabbithome 資料庫清理工具 clean-db.js v3 ===
 import { db } from '/js/firebase.js'
-import { collection, getDocs, deleteDoc, doc } 
-  from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  collection,
+  getDocs,
+  deleteDoc,
+  doc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
+// 公布欄
 const BULLETIN_COLLECTION = 'bulletins'
-const CLEAN_DAYS = 21
+const BULLETIN_CLEAN_DAYS = 21
+
+// 每日工作
+const DAILY_COLLECTION = 'dailyCheck'
+const DAILY_KEEP_DAYS = 30  // 僅保留最近 30 天
 
 const $ = (s) => document.querySelector(s)
 const logArea = () => $('#log-area')
 
-function appendLog(msg,type='info'){
+function appendLog(msg, type = 'info') {
   const area = logArea()
-  if(!area) return
-  const line=document.createElement('div')
-  line.className=`log-line ${type}`
-  const ts=new Date().toLocaleTimeString('zh-TW',{hour12:false})
-  line.textContent=`[${ts}] ${msg}`
+  if (!area) return
+  const line = document.createElement('div')
+  line.className = `log-line ${type}`
+  const ts = new Date().toLocaleTimeString('zh-TW', { hour12: false })
+  line.textContent = `[${ts}] ${msg}`
   area.appendChild(line)
-  area.scrollTop=area.scrollHeight
+  area.scrollTop = area.scrollHeight
 }
 
-function cutoffDate(){
-  const d=new Date()
-  d.setHours(0,0,0,0)
-  d.setDate(d.getDate()-CLEAN_DAYS)
+/* ---------- 公布欄 ---------- */
+
+function bulletinCutoffDate() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - BULLETIN_CLEAN_DAYS)
   return d
 }
 
-function isDeletable(data,cutoff){
-  const mark=data.markState||'none'
-  const created=data.createdAt?.toDate?.()
-  const hidden=mark==='hidden'
-  const old=created instanceof Date && created<cutoff
-  return hidden||old
+function bulletinIsDeletable(data, cutoff) {
+  const mark = data.markState || 'none'
+  const created = data.createdAt?.toDate?.()
+  const hidden = mark === 'hidden'
+  const old = created instanceof Date && created < cutoff
+  return hidden || old
 }
 
-async function calculate(){
-  const result=$('#result-bulletins')
-  const cutoff=cutoffDate()
-  appendLog(`計算中：hidden 或 createdAt < ${cutoff.toISOString()}`)
+async function calculateBulletins() {
+  const result = $('#result-bulletins')
+  const cutoff = bulletinCutoffDate()
+  appendLog(`📌 公布欄：計算 hidden 或 createdAt < ${cutoff.toISOString()}`)
 
-  result.textContent='計算中…'
+  if (result) result.textContent = '計算中…'
 
-  try{
-    const snap=await getDocs(collection(db,BULLETIN_COLLECTION))
-    const total=snap.size
-    let deletable=0
+  try {
+    const snap = await getDocs(collection(db, BULLETIN_COLLECTION))
+    const total = snap.size
+    let deletable = 0
 
-    snap.forEach(d=>{
-      if(isDeletable(d.data(),cutoff)) deletable++
-    })
+    snap.forEach(d => { if (bulletinIsDeletable(d.data(), cutoff)) deletable++ })
 
-    result.textContent=`${deletable} / ${total}`
-    appendLog(`計算完成：可刪 ${deletable} / 總筆數 ${total}`,'success')
-  }catch(e){
-    result.textContent='計算失敗'
-    appendLog(`錯誤：${e.message}`,'error')
+    if (result) result.textContent = `${deletable} / ${total}`
+    appendLog(`✅ 公布欄計算完成：可刪 ${deletable} / 總筆數 ${total}`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '計算失敗'
+    appendLog(`❌ 公布欄錯誤：${e.message}`, 'error')
   }
 }
 
-async function clean(){
-  const ok=confirm("將刪除 hidden 或超過 21 天的公告，無法復原，確定？")
-  if(!ok) return
+async function cleanBulletins() {
+  const cutoff = bulletinCutoffDate()
+  const ok = confirm('將刪除 hidden 或超過 21 天的公告，無法復原，確定？')
+  if (!ok) return
 
-  const cutoff=cutoffDate()
-  const result=$('#result-bulletins')
-  result.textContent='清理中…'
-  appendLog('開始清理公布欄舊資料…')
+  const result = $('#result-bulletins')
+  if (result) result.textContent = '清理中…'
+  appendLog('🧹 開始清理公布欄舊資料…')
 
-  try{
-    const snap=await getDocs(collection(db,BULLETIN_COLLECTION))
-    const total=snap.size
-    let deleted=0
+  try {
+    const snap = await getDocs(collection(db, BULLETIN_COLLECTION))
+    const total = snap.size
+    let deleted = 0
 
-    for(const d of snap.docs){
-      if(isDeletable(d.data(),cutoff)){
-        await deleteDoc(doc(db,BULLETIN_COLLECTION,d.id))
+    for (const d of snap.docs) {
+      if (bulletinIsDeletable(d.data(), cutoff)) {
+        await deleteDoc(doc(db, BULLETIN_COLLECTION, d.id))
         deleted++
       }
     }
 
-    result.textContent=`已刪除 ${deleted} / 原總數 ${total}`
-    appendLog(`清理完成：刪除 ${deleted} 筆`,'success')
-  }catch(e){
-    result.textContent='清理失敗'
-    appendLog(`錯誤：${e.message}`,'error')
+    if (result) result.textContent = `已刪除 ${deleted} / 原總數 ${total}`
+    appendLog(`✅ 公布欄清理完成：刪除 ${deleted} 筆`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '清理失敗'
+    appendLog(`❌ 公布欄清理錯誤：${e.message}`, 'error')
   }
 }
 
-window.onload=()=>{
-  $('#btn-calc-bulletins')?.addEventListener('click',calculate)
-  $('#btn-clean-bulletins')?.addEventListener('click',clean)
-  $('#clear-log')?.addEventListener('click',()=> logArea().innerHTML="")
-  appendLog('公布欄清理工具已載入，請先按「計算」。')
+/* ---------- 每日工作 dailyCheck ---------- */
+
+function dailyCutoffDate() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  // 例如 TODAY = 12/03，KEEP=30，cutoff= 11/04 以前就刪
+  d.setDate(d.getDate() - DAILY_KEEP_DAYS)
+  return d
+}
+
+function parseDailyId(id) {
+  const parts = id.split('-')
+  if (parts.length !== 3) return null
+  const [y, m, d] = parts.map(n => parseInt(n, 10))
+  if (!y || !m || !d) return null
+  const dt = new Date(y, m - 1, d)
+  dt.setHours(0, 0, 0, 0)
+  return isNaN(dt.getTime()) ? null : dt
+}
+
+async function calculateDaily() {
+  const result = $('#result-daily')
+  const cutoff = dailyCutoffDate()
+  appendLog(`📅 每日工作：計算早於 ${cutoff.toISOString().slice(0, 10)} 的紀錄`)
+
+  if (result) result.textContent = '計算中…'
+
+  try {
+    const snap = await getDocs(collection(db, DAILY_COLLECTION))
+    const total = snap.size
+    let deletable = 0
+
+    snap.forEach(d => {
+      const dt = parseDailyId(d.id)
+      if (!dt || dt < cutoff) deletable++
+    })
+
+    if (result) result.textContent = `${deletable} / ${total}`
+    appendLog(`✅ 每日工作計算完成：可刪 ${deletable} / 總筆數 ${total}`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '計算失敗'
+    appendLog(`❌ 每日工作錯誤：${e.message}`, 'error')
+  }
+}
+
+async function cleanDaily() {
+  const cutoff = dailyCutoffDate()
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  const ok = confirm(
+    `將刪除 ${DAILY_COLLECTION} 中 ${cutoffStr} 以前的每日工作紀錄（僅保留最近 ${DAILY_KEEP_DAYS} 天），無法復原，確定？`
+  )
+  if (!ok) return
+
+  const result = $('#result-daily')
+  if (result) result.textContent = '清理中…'
+  appendLog('🧹 開始清理每日工作舊資料…')
+
+  try {
+    const snap = await getDocs(collection(db, DAILY_COLLECTION))
+    const total = snap.size
+    let deleted = 0
+
+    for (const d of snap.docs) {
+      const dt = parseDailyId(d.id)
+      if (!dt || dt < cutoff) {
+        await deleteDoc(doc(db, DAILY_COLLECTION, d.id))
+        deleted++
+      }
+    }
+
+    if (result) result.textContent = `已刪除 ${deleted} / 原總數 ${total}`
+    appendLog(`✅ 每日工作清理完成：刪除 ${deleted} 筆`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '清理失敗'
+    appendLog(`❌ 每日工作清理錯誤：${e.message}`, 'error')
+  }
+}
+
+/* ---------- 初始化 ---------- */
+
+window.onload = () => {
+  $('#btn-calc-bulletins')?.addEventListener('click', calculateBulletins)
+  $('#btn-clean-bulletins')?.addEventListener('click', cleanBulletins)
+
+  $('#btn-calc-daily')?.addEventListener('click', calculateDaily)
+  $('#btn-clean-daily')?.addEventListener('click', cleanDaily)
+
+  $('#clear-log')?.addEventListener('click', () => {
+    const area = logArea()
+    if (area) area.innerHTML = ''
+  })
+
+  appendLog('🧹 資料庫清理工具已載入，請選擇模組並先按「計算」。')
 }
