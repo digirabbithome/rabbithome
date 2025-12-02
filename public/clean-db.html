@@ -56,6 +56,23 @@
             </td>
             <td id="result-daily" class="result-text">尚未計算</td>
           </tr>
+
+          <!-- 櫃檯取貨 -->
+          <tr>
+            <td>
+              <span class="module-name">櫃檯取貨</span>
+              <div class="module-note">
+                清理邏輯：僅刪除 <code>pickups</code> 中 <code>pinStatus = 1</code>（已取貨、灰底）且 <code>createdAt</code> 早於 30 天的紀錄，未完成取貨一律保留。
+              </div>
+            </td>
+            <td>
+              <button id="btn-calc-pickups" class="btn-secondary">計算</button>
+            </td>
+            <td>
+              <button id="btn-clean-pickups" class="btn-primary">清理</button>
+            </td>
+            <td id="result-pickups" class="result-text">尚未計算</td>
+          </tr>
         </tbody>
       </table>
     </section>

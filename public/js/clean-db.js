@@ -1,4 +1,4 @@
-// === Rabbithome 資料庫清理工具 clean-db.js v3 ===
+// === Rabbithome 資料庫清理工具 clean-db.js v4 ===
 import { db } from '/js/firebase.js'
 import {
   collection,
@@ -13,7 +13,11 @@ const BULLETIN_CLEAN_DAYS = 21
 
 // 每日工作
 const DAILY_COLLECTION = 'dailyCheck'
-const DAILY_KEEP_DAYS = 30  // 僅保留最近 30 天
+const DAILY_KEEP_DAYS = 30  // 僅保留最近 30 天（依 doc ID YYYY-MM-DD 判斷）
+
+// 櫃檯取貨
+const PICKUP_COLLECTION = 'pickups'
+const PICKUP_KEEP_DAYS = 30 // 只刪除「已取貨完成且超過 30 天」
 
 const $ = (s) => document.querySelector(s)
 const logArea = () => $('#log-area')
@@ -102,7 +106,6 @@ async function cleanBulletins() {
 function dailyCutoffDate() {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
-  // 例如 TODAY = 12/03，KEEP=30，cutoff= 11/04 以前就刪
   d.setDate(d.getDate() - DAILY_KEEP_DAYS)
   return d
 }
@@ -175,6 +178,80 @@ async function cleanDaily() {
   }
 }
 
+/* ---------- 櫃檯取貨 pickups ---------- */
+
+function pickupCutoffDate() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - PICKUP_KEEP_DAYS)
+  return d
+}
+
+function pickupIsDeletable(data, cutoff) {
+  const pinStatus = data.pinStatus || 0
+  const created = data.createdAt?.toDate?.()
+  const isDone = pinStatus === 1
+  const isOld = created instanceof Date && created < cutoff
+  // 只刪除：已取貨完成（灰底） 且 超過一個月
+  return isDone && isOld
+}
+
+async function calculatePickups() {
+  const result = $('#result-pickups')
+  const cutoff = pickupCutoffDate()
+  appendLog(`🛒 櫃檯取貨：計算 pinStatus=1 且早於 ${cutoff.toISOString().slice(0, 10)} 的紀錄`)
+
+  if (result) result.textContent = '計算中…'
+
+  try {
+    const snap = await getDocs(collection(db, PICKUP_COLLECTION))
+    const total = snap.size
+    let deletable = 0
+
+    snap.forEach(d => {
+      if (pickupIsDeletable(d.data(), cutoff)) deletable++
+    })
+
+    if (result) result.textContent = `${deletable} / ${total}`
+    appendLog(`✅ 櫃檯取貨計算完成：可刪 ${deletable} / 總筆數 ${total}`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '計算失敗'
+    appendLog(`❌ 櫃檯取貨錯誤：${e.message}`, 'error')
+  }
+}
+
+async function cleanPickups() {
+  const cutoff = pickupCutoffDate()
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  const ok = confirm(
+    `將刪除 ${PICKUP_COLLECTION} 中「已取貨完成（pinStatus = 1，灰底）」且 ${cutoffStr} 以前的紀錄，未完成取貨一律保留。此動作無法復原，確定？`
+  )
+  if (!ok) return
+
+  const result = $('#result-pickups')
+  if (result) result.textContent = '清理中…'
+  appendLog('🧹 開始清理櫃檯取貨舊資料…')
+
+  try {
+    const snap = await getDocs(collection(db, PICKUP_COLLECTION))
+    const total = snap.size
+    let deleted = 0
+
+    for (const d of snap.docs) {
+      if (pickupIsDeletable(d.data(), cutoff)) {
+        await deleteDoc(doc(db, PICKUP_COLLECTION, d.id))
+        deleted++
+      }
+    }
+
+    if (result) result.textContent = `已刪除 ${deleted} / 原總數 ${total}`
+    appendLog(`✅ 櫃檯取貨清理完成：刪除 ${deleted} 筆`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '清理失敗'
+    appendLog(`❌ 櫃檯取貨清理錯誤：${e.message}`, 'error')
+  }
+}
+
 /* ---------- 初始化 ---------- */
 
 window.onload = () => {
@@ -183,6 +260,9 @@ window.onload = () => {
 
   $('#btn-calc-daily')?.addEventListener('click', calculateDaily)
   $('#btn-clean-daily')?.addEventListener('click', cleanDaily)
+
+  $('#btn-calc-pickups')?.addEventListener('click', calculatePickups)
+  $('#btn-clean-pickups')?.addEventListener('click', cleanPickups)
 
   $('#clear-log')?.addEventListener('click', () => {
     const area = logArea()
