@@ -1,1 +1,170 @@
-body{background:#fff5fb;font-family:sans-serif;}
+/* === Rabbithome DB Clean v1 — 公布欄 === */
+
+body.clean-page {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #fff5fb;
+  margin: 0;
+  padding: 1.5rem;
+  color: #444;
+}
+
+.clean-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Header */
+.clean-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.8rem;
+  color: #ff6699;
+}
+
+.clean-subtitle {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.clean-warning {
+  background: #fff0f0;
+  border: 1px solid #ffb3c1;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #c0392b;
+}
+
+/* Table */
+.clean-table-section {
+  margin-top: 1.5rem;
+}
+
+.clean-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+.clean-table thead {
+  background: #ffe6f2;
+}
+
+.clean-table th,
+.clean-table td {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid #f4d7e8;
+}
+
+.clean-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.module-name {
+  font-weight: 600;
+  color: #444;
+}
+
+.result-text {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
+}
+
+.btn-primary {
+  background: #ff8fb1;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(255,105,180,0.35);
+}
+
+.btn-primary:hover {
+  background: #ff6f9f;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #f6f6f6;
+  color: #555;
+}
+
+.btn-secondary:hover {
+  background: #ececec;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Log */
+.clean-log-panel {
+  margin-top: 1.75rem;
+}
+
+.clean-log-panel h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+  color: #ff6699;
+}
+
+.log-area {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #f2c8dd;
+  padding: 0.7rem 0.9rem;
+  min-height: 100px;
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+}
+
+.log-line {
+  margin: 0.15rem 0;
+}
+
+.log-line.info { color: #555; }
+.log-line.success { color: #1b7943; }
+.log-line.warn { color: #d9822b; }
+.log-line.error { color: #b02a37; }
+
+#clear-log {
+  margin-top: 0.3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body.clean-page {
+    padding: 1rem;
+  }
+
+  .clean-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .clean-table th,
+  .clean-table td {
+    font-size: 0.82rem;
+    padding: 0.55rem 0.6rem;
+  }
+}

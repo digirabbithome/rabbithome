@@ -1,12 +1,58 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><title>clean</title>
-<link rel="stylesheet" href="/css/clean-db.css"></head>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>資料庫清理中心 - 公布欄</title>
+  <link rel="stylesheet" href="/css/clean-db.css" />
+</head>
 <body class="clean-page">
-<button id="btn-calc-bulletins">計算</button>
-<button id="btn-clean-bulletins">清理</button>
-<div id="result-bulletins"></div>
-<div id="log-area"></div>
-<button id="clear-log">清除</button>
-<script type="module" src="/js/firebase.js"></script>
-<script type="module" src="/js/clean-db.js"></script>
-</body></html>
+  <div class="clean-wrapper">
+    <header class="clean-header">
+      <h1>🧹 Rabbithome 資料庫清理中心</h1>
+      <p class="clean-subtitle">
+        目前先針對「公布欄」做清理。<br>
+        建議先按「計算」查看可清除筆數，再決定是否執行「清理」。
+      </p>
+      <div class="clean-warning">
+        ⚠️ 按下「清理」會 <b>永久刪除</b> 公布欄文件，無法復原，請務必確認。
+      </div>
+    </header>
+
+    <section class="clean-table-section">
+      <table class="clean-table">
+        <thead>
+          <tr>
+            <th>模組</th>
+            <th>計算</th>
+            <th>清理</th>
+            <th>結果 / 狀態</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="module-name">公布欄</span></td>
+            <td>
+              <button id="btn-calc-bulletins" class="btn-secondary">計算</button>
+            </td>
+            <td>
+              <button id="btn-clean-bulletins" class="btn-primary">清理</button>
+            </td>
+            <td id="result-bulletins" class="result-text">尚未計算</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="clean-log-panel">
+      <h2>📜 執行紀錄</h2>
+      <div id="log-area" class="log-area"></div>
+      <button id="clear-log" class="btn-secondary">清除畫面紀錄</button>
+    </section>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module" src="/js/firebase.js"></script>
+  <!-- 公布欄清理邏輯 -->
+  <script type="module" src="/js/clean-db.js"></script>
+</body>
+</html>
