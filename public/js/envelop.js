@@ -282,9 +282,6 @@ window.addEventListener('load', async () => {
     });
   }
 
-  // 重新綁定標記 / 複製單號的筆按鈕
-  bindNoteButtons();
-
   await loadData();
   await loadFavQuickButtons();
   // ===== 常用信封快捷鍵（chips + auto print） =====
@@ -340,17 +337,19 @@ window.addEventListener('load', async () => {
 
 // --- note feature: toggle row highlight and copy tracking number ---
 function copyToClipboard(text) {
-  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(function(){});
-  } else {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch(e) {}
-    document.body.removeChild(ta);
+    return;
   }
+  var temp = document.createElement('input');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  temp.setSelectionRange(0, 99999);
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(temp);
 }
+
 
 function bindNoteButtons(){
   var btns = document.querySelectorAll('.note-btn');
@@ -372,3 +371,13 @@ function bindNoteButtons(){
 }
 // call bindNoteButtons after render
 setTimeout(bindNoteButtons, 500);
+// === 全域事件代理：確保筆按鈕在任何瀏覽器 / 任何重新渲染後都可用 ===
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.note-btn');
+  if (!btn) return;
+  const tr = btn.closest('tr');
+  if (tr) tr.classList.toggle('row-note');
+  const trackingInput = tr ? tr.querySelector('.tracking-input') : null;
+  const tracking = trackingInput ? (trackingInput.value || '') : '';
+  copyToClipboard(tracking);
+});
