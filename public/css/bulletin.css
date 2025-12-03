@@ -87,3 +87,14 @@ p {
   background: #ff5c8a;
   transform: translateY(-2px);
 }
+
+
+
+#date-title {
+  display: none !important;
+}
+
+/* 如果想讓工具列更貼上去一點，可以順便縮小上方空白（可選） */
+.date-toolbar {
+  margin-top: 0;
+}
