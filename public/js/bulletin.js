@@ -15,8 +15,7 @@ const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
 let currentRangeDays = 14
 let allDocs = []
 
-// 🔽 新增：排序模式與上次的範圍
-// sortMode: 'time' = 依時間(預設, 跟原本一樣) / 'name' = 依姓名＋日期
+// 🔽 排序模式：'time' = 依時間(預設) / 'name' = 依姓名＋日期
 let sortMode = 'time'
 let lastEndDate = new Date()
 let lastRangeDays = currentRangeDays
@@ -194,30 +193,51 @@ async function renderBulletins(endDate, rangeDays) {
     // 依排序模式排序：時間 / 姓名＋日期
     const items = grouped[group].slice()
     if (sortMode === 'time') {
-      // 跟原本一樣：日期新到舊
+      // 日期新到舊（原本邏輯）
       items.sort((a, b) => (b.createdAt - a.createdAt))
     } else {
       // 先依作者名稱，再依日期新到舊
       items.sort((a, b) => {
-        const an = (a.author || '').localeCompare(b.author || '','zh-Hant')
+        const an = (a.author || '').localeCompare(b.author || '', 'zh-Hant')
         if (an !== 0) return an
         return b.createdAt - a.createdAt
       })
     }
 
-    // 分隔不同公佈人的虛線
+    // 分隔用虛線：
+    // - sortMode === 'time' 時：跨「日期」畫虛線
+    // - sortMode === 'name' 時：換「公佈人」畫虛線
     let lastAuthor = null
+    let lastDateKey = null
 
     items.forEach(({ text, id, isStarred, state, author, createdAt }) => {
-      // 若作者改變，插入一條粉色虛線（第一位作者不插）
-      if (lastAuthor !== null && author !== lastAuthor) {
+      const dateKey = createdAt instanceof Date
+        ? `${createdAt.getFullYear()}-${pad(createdAt.getMonth()+1)}-${pad(createdAt.getDate())}`
+        : ''
+
+      let needHr = false
+      if (sortMode === 'time') {
+        // 同一群組裡，跨「天」才畫虛線（不看是誰發的）
+        if (lastDateKey !== null && dateKey !== lastDateKey) {
+          needHr = true
+        }
+      } else {
+        // 姓名排序時，換公佈人畫虛線
+        if (lastAuthor !== null && author !== lastAuthor) {
+          needHr = true
+        }
+      }
+
+      if (needHr) {
         const hr = document.createElement('hr')
         hr.style.border = '0'
         hr.style.borderTop = '1px dashed #ffc0e0'
         hr.style.margin = '6px 0'
         groupDiv.appendChild(hr)
       }
+
       lastAuthor = author
+      lastDateKey = dateKey
 
       const p = document.createElement('p')
       p.dataset.state = state
