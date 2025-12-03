@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>列印信封（9×14cm 橫式）</title>
-    <style>
+  <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
@@ -14,64 +14,36 @@
       width: 14cm;
       height: 9cm;
       background: #fff;
-      margin: 6mm auto;
-      padding: 5mm 7mm;
+      margin: 10mm auto;
+      padding: 6mm 7mm;
       border: none;
       position: relative;
       overflow: hidden;
     }
     .header {
       display: grid;
-      grid-template-columns: 1fr 3cm;
-      column-gap: 5mm;
-      align-items: flex-end;
+      grid-template-columns: 1fr 3.2cm;
+      column-gap: 6mm;
+      align-items: end;
     }
-    .sender-info {
-      font-size: 9pt;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-    .logo {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      display: block;
-    }
-
+    .sender-info { font-size: 10pt; line-height: 1.5; word-break: break-word; }
+    .logo { width: 100%; height: auto; object-fit: contain; display: block; }
     .receiver {
       position: absolute;
-      left: 7mm;
-      right: 7mm;
-      top: 33mm;
+      left: 7mm; right: 7mm; top: 36mm;
     }
-    .addr-line {
-      font-size: 6.5mm;
-      font-weight: 700;
-      line-height: 1.15;
-      word-break: break-word;
-    }
-    .to-line {
-      margin-top: 0.8mm;
-      font-size: 6.5mm;
-      font-weight: 700;
-      line-height: 1.15;
-      white-space: nowrap;
-    }
-    .to-line .phone {
-      font-size: 6.5mm;
-      font-weight: 600;
-      margin-left: 3mm;
-    }
+    .addr-line { font-size: 7mm; font-weight: 700; line-height: 1.2; word-break: break-word; }
+    .to-line   { margin-top: 1.2mm; font-size: 7mm; font-weight: 700; white-space: nowrap; line-height: 1.2; }
+    .to-line .phone { font-size: 7mm; font-weight: 600; margin-left: 4mm; }
 
+    /* 商品與流水號同列 */
     .footer-row {
       position: absolute;
-      left: 7mm;
-      right: 7mm;
-      bottom: 4mm;
+      left: 7mm; right: 7mm; bottom: 5mm;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      font-size: 8.5pt;
+      font-size: 9pt;
       color: #111;
       letter-spacing: 0;
     }
@@ -80,27 +52,22 @@
       text-overflow: ellipsis;
       white-space: pre-wrap;
       word-break: break-word;
-      max-width: 68%;
+      max-width: 70%;
     }
     #serialNo {
       text-align: right;
       color: #444;
       letter-spacing: 0.5px;
-      font-size: 8.5pt;
+      font-size: 9pt;
     }
 
     @media print {
       @page { size: 14cm 9cm; margin: 0; }
-      html, body {
-        width: 14cm;
-        height: 9cm;
-        margin: 0;
-        background: #fff !important;
-      }
+      html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
       .envelope { margin: 0; border: none; }
     }
   </style>
-  <script src="./print.js" defer></script>
+  <script type="module" src="/js/print.js"></script>
 </head>
 <body>
   <div class="envelope">
