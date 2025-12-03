@@ -15,6 +15,12 @@ const pastelColors = ['#ff88aa', '#a3d8ff', '#fff2a3', '#e4d8d8', '#c8facc']
 let currentRangeDays = 14
 let allDocs = []
 
+// 🔽 新增：排序模式與上次的範圍
+// sortMode: 'time' = 依時間(預設, 跟原本一樣) / 'name' = 依姓名＋日期
+let sortMode = 'time'
+let lastEndDate = new Date()
+let lastRangeDays = currentRangeDays
+
 // users nickname -> uid mapping (non-resigned only)
 let usersByNick = new Map()
 async function preloadUsersByNickname() {
@@ -43,7 +49,7 @@ const pad = n => String(n).padStart(2, '0')
 function formatNow(){ const d=new Date(); return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}` }
 function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
-// ★ 新增：可愛日期格式 MM/DD
+// 可愛日期格式 MM/DD
 function formatDateCute(d){
   if (!(d instanceof Date)) return ''
   return `${pad(d.getMonth()+1)}/${pad(d.getDate())}`
@@ -130,6 +136,10 @@ async function renderBulletins(endDate, rangeDays) {
   const endDateFull = new Date(endDate); endDateFull.setHours(23, 59, 59, 999)
   const startDate = new Date(endDateFull); startDate.setDate(startDate.getDate() - (rangeDays - 1)); startDate.setHours(0, 0, 0, 0)
 
+  // 記住這次 render 的範圍，之後點標題切換排序要用
+  lastEndDate = new Date(endDateFull)
+  lastRangeDays = rangeDays
+
   const keyword = document.getElementById('searchBox')?.value.trim().toLowerCase() || ''
   const showAll = document.getElementById('showAll')?.checked
 
@@ -156,7 +166,7 @@ async function renderBulletins(endDate, rangeDays) {
         isStarred: d.isStarred,
         state: d.markState || 'none',
         author: nickname,
-        createdAt: d._createdAt   // ★ 帶入日期給下面顯示用
+        createdAt: d._createdAt
       })
     })
   })
@@ -165,13 +175,50 @@ async function renderBulletins(endDate, rangeDays) {
   for (const group in grouped) {
     const groupDiv = document.createElement('div')
     groupDiv.className = 'group-block'
+
     const title = document.createElement('h3')
     title.textContent = groupMap[group] || group
     title.style.backgroundColor = pastelColors[colorIndex % pastelColors.length]
+    title.style.cursor = 'pointer'
+    title.title = '點我切換排序：時間 / 公佈人'
     colorIndex++
+
+    // 點群組標題：切換排序模式並重新 render
+    title.addEventListener('click', () => {
+      sortMode = (sortMode === 'time') ? 'name' : 'time'
+      renderBulletins(lastEndDate, lastRangeDays)
+    })
+
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(({ text, id, isStarred, state, author, createdAt }) => {
+    // 依排序模式排序：時間 / 姓名＋日期
+    const items = grouped[group].slice()
+    if (sortMode === 'time') {
+      // 跟原本一樣：日期新到舊
+      items.sort((a, b) => (b.createdAt - a.createdAt))
+    } else {
+      // 先依作者名稱，再依日期新到舊
+      items.sort((a, b) => {
+        const an = (a.author || '').localeCompare(b.author || '','zh-Hant')
+        if (an !== 0) return an
+        return b.createdAt - a.createdAt
+      })
+    }
+
+    // 分隔不同公佈人的虛線
+    let lastAuthor = null
+
+    items.forEach(({ text, id, isStarred, state, author, createdAt }) => {
+      // 若作者改變，插入一條粉色虛線（第一位作者不插）
+      if (lastAuthor !== null && author !== lastAuthor) {
+        const hr = document.createElement('hr')
+        hr.style.border = '0'
+        hr.style.borderTop = '1px dashed #ffc0e0'
+        hr.style.margin = '6px 0'
+        groupDiv.appendChild(hr)
+      }
+      lastAuthor = author
+
       const p = document.createElement('p')
       p.dataset.state = state
 
@@ -187,7 +234,7 @@ async function renderBulletins(endDate, rangeDays) {
         contentSpan.style.color = '#999'
       }
 
-      // ★ 新增：日期小標籤，取代原本星號的位置與功能
+      // 日期小標籤（取代星號位置與功能）
       const dateBadge = document.createElement('span')
       dateBadge.textContent = createdAt instanceof Date ? formatDateCute(createdAt) : ''
       dateBadge.style.fontSize = '0.75rem'
@@ -202,7 +249,7 @@ async function renderBulletins(endDate, rangeDays) {
       // 原本星號的「粉紅螢光筆」邏輯 → 搬到點日期上
       dateBadge.addEventListener('click', async () => {
         const isCurrentlyPink = p.dataset.state === 'pink'
-        const newStatus = !isCurrentlyPink          // 原本 star 用的是 ☆/⭐ 判斷
+        const newStatus = !isCurrentlyPink
         const newState = newStatus ? 'pink' : 'none'
         p.dataset.state = newState
 
@@ -219,8 +266,8 @@ async function renderBulletins(endDate, rangeDays) {
         }
 
         await updateDoc(doc(db, 'bulletins', id), {
-          isStarred: newStatus,      // 照舊更新 isStarred
-          markState: newState        // 照舊更新 markState（pink / none）
+          isStarred: newStatus,
+          markState: newState
         })
       })
 
@@ -235,7 +282,6 @@ async function renderBulletins(endDate, rangeDays) {
           p.style.opacity = 1; p.style.display = ''
           newState = 'highlight'
 
-          // ✅ 新版：只用收件暱稱＋內容，不加作者，不重複暱稱
           const { toNick, item } = parseTargetAndItem(contentSpan.textContent, author)
           const trimmedNick = (toNick || '').trim()
           const toUid = usersByNick.get(trimmedNick)
@@ -261,7 +307,7 @@ async function renderBulletins(endDate, rangeDays) {
       })
 
       p.appendChild(pencil)
-      p.appendChild(dateBadge)   // ★ 原本在這裡是 star，現在變成日期
+      p.appendChild(dateBadge)
       p.appendChild(contentSpan)
       groupDiv.appendChild(p)
     })
