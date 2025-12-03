@@ -1,4 +1,4 @@
-// === Rabbithome 資料庫清理工具 clean-db.js v4 ===
+// === Rabbithome 資料庫清理工具 clean-db.js v5 ===
 import { db } from '/js/firebase.js'
 import {
   collection,
@@ -18,6 +18,10 @@ const DAILY_KEEP_DAYS = 30  // 僅保留最近 30 天（依 doc ID YYYY-MM-DD �
 // 櫃檯取貨
 const PICKUP_COLLECTION = 'pickups'
 const PICKUP_KEEP_DAYS = 30 // 只刪除「已取貨完成且超過 30 天」
+
+// 貨到通知（arrival.js 使用的集合）
+const ARRIVAL_COLLECTION = 'arrival'
+const ARRIVAL_KEEP_DAYS = 365 // 一年：< 365 天前全部刪除；一年內只刪已完成/已刪除
 
 const $ = (s) => document.querySelector(s)
 const logArea = () => $('#log-area')
@@ -192,7 +196,7 @@ function pickupIsDeletable(data, cutoff) {
   const created = data.createdAt?.toDate?.()
   const isDone = pinStatus === 1
   const isOld = created instanceof Date && created < cutoff
-  // 只刪除：已取貨完成（灰底） 且 超過一個月
+  // 只刪除：已取貨完成（灰底） 且 超過 30 天
   return isDone && isOld
 }
 
@@ -252,6 +256,89 @@ async function cleanPickups() {
   }
 }
 
+/* ---------- 貨到通知 arrival ---------- */
+
+function arrivalCutoffDate() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - ARRIVAL_KEEP_DAYS)
+  return d
+}
+
+function arrivalIsDeletable(data, cutoffYear) {
+  const created = data.createdAt?.toDate?.()
+  if (!(created instanceof Date)) {
+    // 沒有 createdAt 的紀錄安全起見先保留
+    return false
+  }
+  const status = data.status || '未完成'
+  const deletedFlag = !!data.deleted
+
+  // ① 一年之前的所有：無論狀態，直接刪
+  if (created < cutoffYear) return true
+
+  // ② 一年之內：只有「已完成」或「已刪除」才刪；未完成的一律保留
+  if (created >= cutoffYear && (status === '已完成' || deletedFlag)) return true
+
+  return false
+}
+
+async function calculateArrivals() {
+  const result = $('#result-arrivals')
+  const cutoffYear = arrivalCutoffDate()
+  appendLog(`📦 貨到通知：計算 (1) 早於 ${cutoffYear.toISOString().slice(0,10)} 的所有紀錄；(2) 最近一年內已完成/已刪除的紀錄`)
+
+  if (result) result.textContent = '計算中…'
+
+  try {
+    const snap = await getDocs(collection(db, ARRIVAL_COLLECTION))
+    const total = snap.size
+    let deletable = 0
+
+    snap.forEach(d => {
+      if (arrivalIsDeletable(d.data(), cutoffYear)) deletable++
+    })
+
+    if (result) result.textContent = `${deletable} / ${total}`
+    appendLog(`✅ 貨到通知計算完成：可刪 ${deletable} / 總筆數 ${total}`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '計算失敗'
+    appendLog(`❌ 貨到通知錯誤：${e.message}`, 'error')
+  }
+}
+
+async function cleanArrivals() {
+  const cutoffYear = arrivalCutoffDate()
+  const cutoffStr = cutoffYear.toISOString().slice(0, 10)
+  const ok = confirm(
+    `將刪除 ${ARRIVAL_COLLECTION} 中：\n1) ${cutoffStr} 以前的所有紀錄；\n2) 最近一年內「已完成」或「已刪除」的紀錄。\n「未完成」且一年內的紀錄會保留。\n此動作無法復原，確定？`
+  )
+  if (!ok) return
+
+  const result = $('#result-arrivals')
+  if (result) result.textContent = '清理中…'
+  appendLog('🧹 開始清理貨到通知舊資料…')
+
+  try {
+    const snap = await getDocs(collection(db, ARRIVAL_COLLECTION))
+    const total = snap.size
+    let deleted = 0
+
+    for (const d of snap.docs) {
+      if (arrivalIsDeletable(d.data(), cutoffYear)) {
+        await deleteDoc(doc(db, ARRIVAL_COLLECTION, d.id))
+        deleted++
+      }
+    }
+
+    if (result) result.textContent = `已刪除 ${deleted} / 原總數 ${total}`
+    appendLog(`✅ 貨到通知清理完成：刪除 ${deleted} 筆`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '清理失敗'
+    appendLog(`❌ 貨到通知清理錯誤：${e.message}`, 'error')
+  }
+}
+
 /* ---------- 初始化 ---------- */
 
 window.onload = () => {
@@ -263,6 +350,9 @@ window.onload = () => {
 
   $('#btn-calc-pickups')?.addEventListener('click', calculatePickups)
   $('#btn-clean-pickups')?.addEventListener('click', cleanPickups)
+
+  $('#btn-calc-arrivals')?.addEventListener('click', calculateArrivals)
+  $('#btn-clean-arrivals')?.addEventListener('click', cleanArrivals)
 
   $('#clear-log')?.addEventListener('click', () => {
     const area = logArea()

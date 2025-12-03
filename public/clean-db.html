@@ -73,6 +73,23 @@
             </td>
             <td id="result-pickups" class="result-text">尚未計算</td>
           </tr>
+
+          <!-- 貨到通知 -->
+          <tr>
+            <td>
+              <span class="module-name">貨到通知</span>
+              <div class="module-note">
+                清理邏輯：刪除 <code>arrival</code> 中 (1) <code>createdAt</code> 早於 365 天的所有紀錄；(2) 最近一年內且 <code>status = "已完成"</code> 或 <code>deleted = true</code> 的紀錄；尚未完成通知的一律保留。
+              </div>
+            </td>
+            <td>
+              <button id="btn-calc-arrivals" class="btn-secondary">計算</button>
+            </td>
+            <td>
+              <button id="btn-clean-arrivals" class="btn-primary">清理</button>
+            </td>
+            <td id="result-arrivals" class="result-text">尚未計算</td>
+          </tr>
         </tbody>
       </table>
     </section>
