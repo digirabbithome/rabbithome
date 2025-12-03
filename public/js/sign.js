@@ -78,7 +78,8 @@ window.onload = async () => {
       container.innerHTML = `
         <select id="type2" required>
           <option>新竹</option><option>黑貓</option><option>大榮</option>
-          <option>宅配通</option><option>順豐</option>
+          <option>宅配通</option><option>順豐</option><option>UPS</option>
+          <option>DHL</option>
           <option>Uber</option><option>LALA</option><option>其他</option>
         </select>`;
     } else {
