@@ -4,69 +4,94 @@
   <meta charset="UTF-8">
   <title>列印信封（9×14cm 橫式）</title>
   <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
-      background: #f6f6f6;
-    }
-    .envelope {
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+    background: #f6f6f6;
+  }
+
+  .envelope {
+    width: 14cm;
+    height: 9cm;
+    background: #fff;
+    margin: 4mm auto;
+    padding: 5mm 7mm;
+    border: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header {
+    display: grid;
+    grid-template-columns: 1fr 3.2cm;
+    column-gap: 6mm;
+    align-items: end;
+  }
+
+  .sender-info { font-size: 10pt; line-height: 1.5; word-break: break-word; }
+  .logo { width: 100%; height: auto; object-fit: contain; display: block; }
+
+  .receiver {
+    position: absolute;
+    left: 7mm; right: 7mm;
+    top: 34mm;
+  }
+
+  .addr-line {
+    font-size: 7mm;
+    font-weight: 700;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  .to-line {
+    margin-top: 1mm;
+    font-size: 7mm;
+    font-weight: 700;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .to-line .phone { font-size: 7mm; font-weight: 600; margin-left: 4mm; }
+
+  .footer-row {
+    position: absolute;
+    left: 7mm; right: 7mm;
+    bottom: 4mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 9pt;
+    color: #111;
+    letter-spacing: 0;
+  }
+
+  #productInfo {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 70%;
+  }
+
+  #serialNo {
+    text-align: right;
+    color: #444;
+    letter-spacing: 0.5px;
+    font-size: 9pt;
+  }
+
+  @media print {
+    @page { size: 14cm 9cm; margin: 0; }
+    html, body {
       width: 14cm;
       height: 9cm;
-      background: #fff;
-      margin: 10mm auto;
-      padding: 6mm 7mm;
-      border: none;
-      position: relative;
-      overflow: hidden;
+      margin: 0;
+      background: #fff !important;
     }
-    .header {
-      display: grid;
-      grid-template-columns: 1fr 3.2cm;
-      column-gap: 6mm;
-      align-items: end;
-    }
-    .sender-info { font-size: 10pt; line-height: 1.5; word-break: break-word; }
-    .logo { width: 100%; height: auto; object-fit: contain; display: block; }
-    .receiver {
-      position: absolute;
-      left: 7mm; right: 7mm; top: 36mm;
-    }
-    .addr-line { font-size: 7mm; font-weight: 700; line-height: 1.2; word-break: break-word; }
-    .to-line   { margin-top: 1.2mm; font-size: 7mm; font-weight: 700; white-space: nowrap; line-height: 1.2; }
-    .to-line .phone { font-size: 7mm; font-weight: 600; margin-left: 4mm; }
-
-    /* 商品與流水號同列 */
-    .footer-row {
-      position: absolute;
-      left: 7mm; right: 7mm; bottom: 5mm;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      font-size: 9pt;
-      color: #111;
-      letter-spacing: 0;
-    }
-    #productInfo {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-width: 70%;
-    }
-    #serialNo {
-      text-align: right;
-      color: #444;
-      letter-spacing: 0.5px;
-      font-size: 9pt;
-    }
-
-    @media print {
-      @page { size: 14cm 9cm; margin: 0; }
-      html, body { width: 14cm; height: 9cm; margin: 0; background: #fff !important; }
-      .envelope { margin: 0; border: none; }
-    }
-  </style>
+    .envelope { margin: 0; border: none; }
+  }
+</style>
   <script type="module" src="/js/print.js"></script>
 </head>
 <body>
