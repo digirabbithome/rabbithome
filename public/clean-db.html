@@ -90,6 +90,23 @@
             </td>
             <td id="result-arrivals" class="result-text">尚未計算</td>
           </tr>
+
+          <!-- 列印信封紀錄 -->
+          <tr>
+            <td>
+              <span class="module-name">列印信封紀錄</span>
+              <div class="module-note">
+                清理邏輯：僅保留 <code>envelopes</code> 集合中最近 90 天（依 <code>timestamp</code> 判斷）的紀錄，早於 90 天的全部刪除。
+              </div>
+            </td>
+            <td>
+              <button id="btn-calc-envelopes" class="btn-secondary">計算</button>
+            </td>
+            <td>
+              <button id="btn-clean-envelopes" class="btn-primary">清理</button>
+            </td>
+            <td id="result-envelopes" class="result-text">尚未計算</td>
+          </tr>
         </tbody>
       </table>
     </section>

@@ -1,4 +1,4 @@
-// === Rabbithome 資料庫清理工具 clean-db.js v5 ===
+// === Rabbithome 資料庫清理工具 clean-db.js v6 ===
 import { db } from '/js/firebase.js'
 import {
   collection,
@@ -22,6 +22,10 @@ const PICKUP_KEEP_DAYS = 30 // 只刪除「已取貨完成且超過 30 天」
 // 貨到通知（arrival.js 使用的集合）
 const ARRIVAL_COLLECTION = 'arrival'
 const ARRIVAL_KEEP_DAYS = 365 // 一年：< 365 天前全部刪除；一年內只刪已完成/已刪除
+
+// 列印信封紀錄
+const ENVELOPE_COLLECTION = 'envelopes'
+const ENVELOPE_KEEP_DAYS = 90 // 僅保留最近 90 天，早於者全部刪除
 
 const $ = (s) => document.querySelector(s)
 const logArea = () => $('#log-area')
@@ -339,6 +343,86 @@ async function cleanArrivals() {
   }
 }
 
+/* ---------- 列印信封紀錄 envelopes ---------- */
+
+function envelopeCutoffDate() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - ENVELOPE_KEEP_DAYS)
+  return d
+}
+
+function envelopeIsDeletable(data, cutoff) {
+  let ts = data.timestamp
+  if (ts && typeof ts.toDate === 'function') {
+    ts = ts.toDate()
+  } else if (ts && typeof ts === 'object' && ts.seconds) {
+    ts = new Date(ts.seconds * 1000)
+  }
+  if (!(ts instanceof Date) || isNaN(ts.getTime())) {
+    // 沒有 timestamp 的舊資料，保守起見先保留
+    return false
+  }
+  return ts < cutoff
+}
+
+async function calculateEnvelopes() {
+  const result = $('#result-envelopes')
+  const cutoff = envelopeCutoffDate()
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  appendLog(`📮 列印信封：計算 timestamp < ${cutoffStr} 的紀錄（僅保留最近 ${ENVELOPE_KEEP_DAYS} 天）`)
+
+  if (result) result.textContent = '計算中…'
+
+  try {
+    const snap = await getDocs(collection(db, ENVELOPE_COLLECTION))
+    const total = snap.size
+    let deletable = 0
+
+    snap.forEach(d => {
+      if (envelopeIsDeletable(d.data(), cutoff)) deletable++
+    })
+
+    if (result) result.textContent = `${deletable} / ${total}`
+    appendLog(`✅ 列印信封計算完成：可刪 ${deletable} / 總筆數 ${total}`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '計算失敗'
+    appendLog(`❌ 列印信封錯誤：${e.message}`, 'error')
+  }
+}
+
+async function cleanEnvelopes() {
+  const cutoff = envelopeCutoffDate()
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  const ok = confirm(
+    `將刪除 ${ENVELOPE_COLLECTION} 中 timestamp 早於 ${cutoffStr} 的所有紀錄，僅保留最近 ${ENVELOPE_KEEP_DAYS} 天。\n此動作無法復原，確定？`
+  )
+  if (!ok) return
+
+  const result = $('#result-envelopes')
+  if (result) result.textContent = '清理中…'
+  appendLog('🧹 開始清理列印信封舊資料…')
+
+  try {
+    const snap = await getDocs(collection(db, ENVELOPE_COLLECTION))
+    const total = snap.size
+    let deleted = 0
+
+    for (const d of snap.docs) {
+      if (envelopeIsDeletable(d.data(), cutoff)) {
+        await deleteDoc(doc(db, ENVELOPE_COLLECTION, d.id))
+        deleted++
+      }
+    }
+
+    if (result) result.textContent = `已刪除 ${deleted} / 原總數 ${total}`
+    appendLog(`✅ 列印信封清理完成：刪除 ${deleted} 筆`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '清理失敗'
+    appendLog(`❌ 列印信封清理錯誤：${e.message}`, 'error')
+  }
+}
+
 /* ---------- 初始化 ---------- */
 
 window.onload = () => {
@@ -353,6 +437,9 @@ window.onload = () => {
 
   $('#btn-calc-arrivals')?.addEventListener('click', calculateArrivals)
   $('#btn-clean-arrivals')?.addEventListener('click', cleanArrivals)
+
+  $('#btn-calc-envelopes')?.addEventListener('click', calculateEnvelopes)
+  $('#btn-clean-envelopes')?.addEventListener('click', cleanEnvelopes)
 
   $('#clear-log')?.addEventListener('click', () => {
     const area = logArea()
