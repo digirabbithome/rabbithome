@@ -55,18 +55,18 @@ window.addEventListener('load', async () => {
     },
     '聚焦數位': {
       cname: '聚焦數位',
-      ename: 'Focus Digital',
-      address: '110 台北市信義區範例路10號',
-      tel: '02-2345-6789',
-      line: '@focuscam',
+      ename: 'Focus Digital Comp.',
+      address: '110 台北市信義區大道路74巷1號',
+      tel: '02-2759-2006 / 02-2759-2013',
+      line: '@digirabbit',
       logo: '/img/logo-focus.png'
     },
     '免睡攝影': {
       cname: '免睡攝影',
-      ename: 'NoSleep Photo',
-      address: '110 台北市信義區範例路20號',
-      tel: '02-2222-3333',
-      line: '@nosleep',
+      ename: 'NeverSleep Photo Comp.',
+      address: '110 台北市信義區大道路74巷1號',
+      tel: '02-2759-2006 / 02-2759-2013',
+      line: '@digirabbit',
       logo: '/img/logo-nosleep.png'
     },
     '其他': {
