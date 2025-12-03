@@ -1,10 +1,9 @@
-// print.js — v3.4.0 Firestore 補印用（依 URL id 載入 envelops）
-// 以 ES module 方式載入 Firebase
+// print.js — v3.5.0 一般信封 + 回郵信封（依 URL id 載入 envelopes）
 import { db } from '/js/firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
-  // 先嘗試從 URL ?id= 取得 envelops 文件
+  // 先從 URL 取得 id（補印用）
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
 
@@ -27,7 +26,10 @@ window.addEventListener('load', async () => {
     // 舊版「立即列印」流程，沒有 id 就用 localStorage
     data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
   }
-  // 強制自動換行設定
+
+  const isReply = (data.type === 'reply' || data.type === '回郵');
+
+  // 強制自動換行設定（TO 與地址不要被截斷）
   const style = document.createElement('style');
   style.textContent = `
     #addrLine, #toLine, .addr-line, .to-line {
@@ -41,7 +43,7 @@ window.addEventListener('load', async () => {
   `;
   document.head.appendChild(style);
 
-  // 公司資料
+  // 公司資料（一般信封用）
   const senderMap = {
     '數位小兔': {
       cname: '數位小兔攝影器材批發零售',
@@ -51,40 +53,93 @@ window.addEventListener('load', async () => {
       line: '@digirabbit',
       logo: '/img/logo.png'
     },
-    '聚焦數位': { cname:'聚焦數位', ename:'Focus Digital', address:'110 台北市信義區範例路10號', tel:'02-2345-6789', line:'@focuscam', logo:'/img/logo-focus.png' },
-    '免睡攝影': { cname:'免睡攝影', ename:'NoSleep Photo', address:'110 台北市信義區範例路20號', tel:'02-2222-3333', line:'@nosleep', logo:'/img/logo-nosleep.png' },
-    '其他': { cname: (data.customSender || '其他'), ename:'', address:'', tel:'', line:'', logo:'/img/logo.png' }
+    '聚焦數位': {
+      cname: '聚焦數位',
+      ename: 'Focus Digital',
+      address: '110 台北市信義區範例路10號',
+      tel: '02-2345-6789',
+      line: '@focuscam',
+      logo: '/img/logo-focus.png'
+    },
+    '免睡攝影': {
+      cname: '免睡攝影',
+      ename: 'NoSleep Photo',
+      address: '110 台北市信義區範例路20號',
+      tel: '02-2222-3333',
+      line: '@nosleep',
+      logo: '/img/logo-nosleep.png'
+    },
+    '其他': {
+      cname: (data.customSender || '其他'),
+      ename: '',
+      address: '',
+      tel: '',
+      line: '',
+      logo: '/img/logo.png'
+    }
   };
-  const senderKey = (data.senderCompany && senderMap[data.senderCompany]) ? data.senderCompany : '數位小兔';
-  const sender = senderMap[senderKey];
 
   const senderInfo = document.getElementById('senderInfo');
-  if (senderInfo) {
-    senderInfo.innerHTML = [
-      `${sender.cname} ${sender.ename}`.trim(),
-      sender.address || '',
-      sender.tel ? `TEL：${sender.tel}` : '',
-      sender.line ? `Line: ${sender.line}` : ''
-    ].filter(Boolean).join('<br>');
-  }
   const logoImg = document.getElementById('logoImg');
-  if (logoImg && sender.logo) logoImg.src = sender.logo;
 
-  // 收件人資料
-  const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  // 先整理客戶資料
   const name = (data.receiverName || '').trim();
   const phone = (data.phone || '').trim();
   const address = (data.address || '').trim();
-  const addrEl = document.getElementById('addrLine');
-  const toEl = document.getElementById('toLine');
-  if (addrEl && toEl) {
-    addrEl.textContent = address ? `TO：${address}` : 'TO：';
-    toEl.textContent = [name, phone].filter(Boolean).join(' ');
-  } else if (toEl) {
-    toEl.innerHTML = `TO：${esc(address)}<br>${esc([name, phone].filter(Boolean).join(' '))}`;
+
+  if (isReply) {
+    // === 回郵信封 ===
+    // 左上角 From：顯示「客戶」資料
+    if (senderInfo) {
+      const lines = [];
+      if (name) lines.push(name);
+      if (address) lines.push(address);
+      if (phone) lines.push('TEL：' + phone);
+      senderInfo.innerHTML = lines.join('<br>');
+    }
+    // Logo 使用數位小兔
+    const company = senderMap['數位小兔'];
+    if (logoImg && company.logo) {
+      logoImg.src = company.logo;
+    }
+  } else {
+    // === 一般信封 ===
+    const senderKey =
+      (data.senderCompany && senderMap[data.senderCompany])
+        ? data.senderCompany
+        : '數位小兔';
+    const sender = senderMap[senderKey];
+
+    if (senderInfo) {
+      senderInfo.innerHTML = [
+        `${sender.cname} ${sender.ename}`.trim(),
+        sender.address || '',
+        sender.tel ? `TEL：${sender.tel}` : '',
+        sender.line ? `Line: ${sender.line}` : ''
+      ].filter(Boolean).join('<br>');
+    }
+    if (logoImg && sender.logo) {
+      logoImg.src = sender.logo;
+    }
   }
 
-  // 商品與流水號
+  // ===== 收件人區塊（大 TO） =====
+  const addrEl = document.getElementById('addrLine');
+  const toEl = document.getElementById('toLine');
+
+  if (addrEl && toEl) {
+    if (isReply) {
+      // 回郵：TO 固定為公司
+      addrEl.textContent = 'TO：數位小兔攝影器材批發零售 Digital Rabbit';
+      toEl.textContent = '110 台北市信義區大道路74巷1號 TEL：02-2759-2006 / 02-2759-2013';
+    } else {
+      // 一般：TO 為客戶地址 + 姓名電話
+      addrEl.textContent = address ? 'TO：' + address : 'TO：';
+      toEl.textContent = [name, phone].filter(Boolean).join(' ');
+    }
+  }
+
+  // ===== 商品與流水號（一般 / 回郵共用）=====
   const productInfo = document.getElementById('productInfo');
   const serialNo = document.getElementById('serialNo');
   if (productInfo) {
@@ -95,7 +150,9 @@ window.addEventListener('load', async () => {
     serialNo.textContent = data.serial ? String(data.serial) : '';
   }
 
-  if (name) document.title = '列印信封 - ' + name;
+  if (name) {
+    document.title = (isReply ? '回郵信封 - ' : '列印信封 - ') + name;
+  }
 
   await new Promise(r => setTimeout(r, 120));
   window.print();
