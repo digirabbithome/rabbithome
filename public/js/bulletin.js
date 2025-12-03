@@ -43,6 +43,12 @@ const pad = n => String(n).padStart(2, '0')
 function formatNow(){ const d=new Date(); return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}` }
 function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
+// ★ 新增：可愛日期格式 MM/DD
+function formatDateCute(d){
+  if (!(d instanceof Date)) return ''
+  return `${pad(d.getMonth()+1)}/${pad(d.getDate())}`
+}
+
 // Detect first "colon-like" character
 const COLONS = new Set([':', '：', '﹕', '∶'])
 function splitByFirstColon(s){
@@ -144,7 +150,14 @@ async function renderBulletins(endDate, rangeDays) {
 
     targets.forEach(group => {
       if (!grouped[group]) grouped[group] = []
-      grouped[group].push({ text: displayText, id: d._id, isStarred: d.isStarred, state: d.markState || 'none', author: nickname })
+      grouped[group].push({
+        text: displayText,
+        id: d._id,
+        isStarred: d.isStarred,
+        state: d.markState || 'none',
+        author: nickname,
+        createdAt: d._createdAt   // ★ 帶入日期給下面顯示用
+      })
     })
   })
 
@@ -158,7 +171,7 @@ async function renderBulletins(endDate, rangeDays) {
     colorIndex++
     groupDiv.appendChild(title)
 
-    grouped[group].forEach(({ text, id, isStarred, state, author }) => {
+    grouped[group].forEach(({ text, id, isStarred, state, author, createdAt }) => {
       const p = document.createElement('p')
       p.dataset.state = state
 
@@ -174,18 +187,41 @@ async function renderBulletins(endDate, rangeDays) {
         contentSpan.style.color = '#999'
       }
 
-      const star = document.createElement('span')
-      star.textContent = isStarred ? '⭐' : '☆'
-      star.style.cursor = 'pointer'
-      star.style.marginRight = '0.5rem'
-      star.addEventListener('click', async () => {
-        const newStatus = star.textContent === '☆'
-        star.textContent = newStatus ? '⭐' : '☆'
+      // ★ 新增：日期小標籤，取代原本星號的位置與功能
+      const dateBadge = document.createElement('span')
+      dateBadge.textContent = createdAt instanceof Date ? formatDateCute(createdAt) : ''
+      dateBadge.style.fontSize = '0.75rem'
+      dateBadge.style.padding = '2px 8px'
+      dateBadge.style.borderRadius = '999px'
+      dateBadge.style.backgroundColor = '#ffeef4'
+      dateBadge.style.marginRight = '0.5rem'
+      dateBadge.style.verticalAlign = 'middle'
+      dateBadge.style.cursor = 'pointer'
+      dateBadge.style.opacity = (state === 'pink') ? 1 : 0.9
+
+      // 原本星號的「粉紅螢光筆」邏輯 → 搬到點日期上
+      dateBadge.addEventListener('click', async () => {
+        const isCurrentlyPink = p.dataset.state === 'pink'
+        const newStatus = !isCurrentlyPink          // 原本 star 用的是 ☆/⭐ 判斷
         const newState = newStatus ? 'pink' : 'none'
         p.dataset.state = newState
-        if (newState === 'pink') { contentSpan.style.backgroundColor = '#ffddee'; p.style.opacity = 1; p.style.display = '' }
-        else { contentSpan.style.backgroundColor = ''; p.style.opacity = 1; p.style.display = '' }
-        await updateDoc(doc(db, 'bulletins', id), { isStarred: newStatus, markState: newState })
+
+        if (newState === 'pink') {
+          contentSpan.style.backgroundColor = '#ffddee'
+          p.style.opacity = 1
+          p.style.display = ''
+          dateBadge.style.opacity = 1
+        } else {
+          contentSpan.style.backgroundColor = ''
+          p.style.opacity = 1
+          p.style.display = ''
+          dateBadge.style.opacity = 0.9
+        }
+
+        await updateDoc(doc(db, 'bulletins', id), {
+          isStarred: newStatus,      // 照舊更新 isStarred
+          markState: newState        // 照舊更新 markState（pink / none）
+        })
       })
 
       const pencil = document.createElement('span')
@@ -225,7 +261,7 @@ async function renderBulletins(endDate, rangeDays) {
       })
 
       p.appendChild(pencil)
-      p.appendChild(star)
+      p.appendChild(dateBadge)   // ★ 原本在這裡是 star，現在變成日期
       p.appendChild(contentSpan)
       groupDiv.appendChild(p)
     })
