@@ -77,7 +77,6 @@ window.addEventListener('load', async () => {
 
   const __today = new Date(); const __past3 = new Date(); __past3.setDate(__today.getDate()-2);
   let currentFilter = { start: startOfDay(__past3), end: endOfDay(__today) };
-  let sortMode = null; // null | 'serialAsc' | 'serialDesc' | 'sourceAsc' | 'sourceDesc'
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
     e.preventDefault(); handleSubmit('normal');
@@ -103,30 +102,6 @@ window.addEventListener('load', async () => {
   });
 
   searchInput?.addEventListener('input', renderFilteredData);
-
-  // 點欄位標題排序：時間(流水號)與來源
-  const recordsTable = document.getElementById('recordsTable');
-  if (recordsTable) {
-    const ths = recordsTable.querySelectorAll('thead th');
-    // 第 0 欄：時間（流水號）
-    if (ths[0]) {
-      ths[0].style.cursor = 'pointer';
-      ths[0].title = '點一下依流水號排序 / 再點一下反向';
-      ths[0].addEventListener('click', () => {
-        sortMode = (sortMode === 'serialAsc') ? 'serialDesc' : 'serialAsc';
-        renderFilteredData();
-      });
-    }
-    // 第 5 欄：來源
-    if (ths[5]) {
-      ths[5].style.cursor = 'pointer';
-      ths[5].title = '點一下依來源排序 / 再點一下反向';
-      ths[5].addEventListener('click', () => {
-        sortMode = (sortMode === 'sourceAsc') ? 'sourceDesc' : 'sourceAsc';
-        renderFilteredData();
-      });
-    }
-  }
 
   function getCheckedSources() {
     const nodes = form.querySelectorAll('input[name="source"]:checked');
@@ -210,8 +185,7 @@ window.addEventListener('load', async () => {
     renderFilteredData();
   }
 
-  
-function renderFilteredData() {
+  function renderFilteredData() {
     const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
@@ -227,85 +201,30 @@ function renderFilteredData() {
       (item.product2 || '').toLowerCase().includes(keyword)
     );
 
-    // 2) 依日期分組（key: yyyy/MM/dd）
+    // 2) 依「日期字串」分群
+    const fmtDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const groups = {};
-    filtered.forEach(item => {
-      const d = item.timestamp || new Date();
-      const key =
-        d.getFullYear() + '/' +
-        String(d.getMonth() + 1).padStart(2, '0') + '/' +
-        String(d.getDate()).padStart(2, '0');
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(item);
+    filtered.forEach(data => {
+      const dstr = fmtDate(data.timestamp);
+      (groups[dstr] ||= []).push(data);
     });
 
-    // 3) 每日內依 sortMode 排序
-    const sortBySerial = arr => {
-      arr.sort((a, b) => {
-        const ca = (a.serialCore || a.serial || '').toString();
-        const cb = (b.serialCore || b.serial || '').toString();
-        const na = parseInt(ca.replace(/^B/, ''), 10) || 0;
-        const nb = parseInt(cb.replace(/^B/, ''), 10) || 0;
-        // 同一天內先比數字，再比是否為 B 開頭（大型包裹，要跟同號排在一起）
-        let cmp = na - nb;
-        if (cmp === 0) {
-          const isBa = (a.serial || '').startsWith('B');
-          const isBb = (b.serial || '').startsWith('B');
-          if (isBa !== isBb) cmp = isBa ? -1 : 1; // B 優先
-          else cmp = ca.localeCompare(cb, 'zh-Hant');
-        }
-        return (sortMode === 'serialAsc') ? cmp : -cmp;
-      });
-    };
+    // 3) 區域高亮
+    const HIGHLIGHT_AREAS = ['台北市信義區','台中市北屯區'];
+    const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
 
-    const sortBySource = arr => {
-      arr.sort((a, b) => {
-        const sa = (a.source || '');
-        const sb = (b.source || '');
-        let cmp = sa.localeCompare(sb, 'zh-Hant');
-        if (cmp === 0) {
-          // 同來源再依時間新到舊
-          cmp = (b.timestamp || 0) - (a.timestamp || 0);
-        }
-        return (sortMode === 'sourceAsc') ? cmp : -cmp;
-      });
-    };
-
-    const sortDefault = arr => {
-      // 預設：時間由新到舊
-      arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    };
-
-    // 4) 日期由新到舊輸出
-    const sortedDates = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
-
-    // 區域高亮設定
-    const HIGHLIGHT_AREAS = ['台北市信義區', '台中市北屯區'];
-    const isAreaHit = (addr = '') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
-
+    // 4) 依日期由新到舊輸出
+    const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
     sortedDates.forEach(dateStr => {
       const sep = document.createElement('tr');
       sep.className = 'date-separator';
       sep.innerHTML = `<td colspan="8">${dateStr}</td>`;
       tbody.appendChild(sep);
 
-      const rows = groups[dateStr].slice(); // 複製一份避免影響原陣列
-      if (sortMode === 'serialAsc' || sortMode === 'serialDesc') {
-        sortBySerial(rows);
-      } else if (sortMode === 'sourceAsc' || sortMode === 'sourceDesc') {
-        sortBySource(rows);
-      } else {
-        sortDefault(rows);
-      }
-
-      rows.forEach(data => {
-        const timeStr = data.timestamp
-          ? data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
-          : '';
+      groups[dateStr].forEach(data => {
+        const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         const receiverBase = (data.receiverName || '');
-        const receiver = data.customerAccount
-          ? `${receiverBase} (${data.customerAccount})`
-          : receiverBase;
+        const receiver = data.customerAccount ? `${receiverBase} (${data.customerAccount})` : receiverBase;
 
         const p1 = (data.product || '').trim();
         const p2 = (data.product2 || '').trim();
@@ -330,26 +249,14 @@ function renderFilteredData() {
           <td>${data.phone || ''}</td>
           <td>${productStr}</td>
           <td>${data.source || ''}</td>
-          <td>
-            <input
-              type="text"
-              class="tracking-input"
-              data-id="${data.id}"
-              value="${data.trackingNumber || ''}"
-              placeholder="輸入貨件單號"
-            />
-          </td>
-          <td>
-            <button type="button" class="note-btn" data-id="${data.id}" title="標記並複製單號">📝</button>
-            <a href="#" data-id="${data.id}" class="reprint-link">補印</a>
-          </td>
+          <td><input type="text" class="tracking-input" data-id="${data.id}" value="${data.trackingNumber || ''}" placeholder="輸入貨件單號" /></td>
+          <td><button type="button" class="note-btn" data-id="${data.id}" title="標記並複製貨件單號">✎</button> <a href="#" data-id="${data.id}" data-type="${data.type || 'normal'}" class="reprint-link">補印</a></td>
         `;
         tbody.appendChild(tr);
       });
     });
 
     // 5) 綁定事件（補印、追蹤單號回填）
-
     document.querySelectorAll('.tracking-input').forEach(input => {
       input.addEventListener('blur', async (e) => {
         const id = e.target.getAttribute('data-id');
@@ -374,6 +281,9 @@ function renderFilteredData() {
       });
     });
   }
+
+  // 重新綁定標記 / 複製單號的筆按鈕
+  bindNoteButtons();
 
   await loadData();
   await loadFavQuickButtons();
