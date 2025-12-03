@@ -1,32 +1,7 @@
-// print.js — v3.4.0 Firestore 補印用（依 URL id 載入 envelops）
-// 以 ES module 方式載入 Firebase
-import { db } from '/js/firebase.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-
+// print.js — v3.3.12 商品行右側顯示流水號
 window.addEventListener('load', async () => {
-  // 先嘗試從 URL ?id= 取得 envelops 文件
-  const params = new URLSearchParams(location.search);
-  const id = params.get('id');
+  const data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
 
-  let data = {};
-  if (id) {
-    try {
-      const ref = doc(db, 'envelopes', id);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        data = snap.data();
-      } else {
-        console.warn('指定的信封資料不存在，改用 localStorage fallback');
-        data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
-      }
-    } catch (err) {
-      console.error('載入信封資料失敗，改用 localStorage fallback:', err);
-      data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
-    }
-  } else {
-    // 舊版「立即列印」流程，沒有 id 就用 localStorage
-    data = JSON.parse(localStorage.getItem('envelopeData') || '{}');
-  }
   // 強制自動換行設定
   const style = document.createElement('style');
   style.textContent = `
