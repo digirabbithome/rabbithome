@@ -1,4 +1,4 @@
-// === Rabbithome 資料庫清理工具 clean-db.js v6 ===
+// === Rabbithome 資料庫清理工具 clean-db.js — 內場錢櫃版 ===
 import { db } from '/js/firebase.js'
 import {
   collection,
@@ -13,19 +13,24 @@ const BULLETIN_CLEAN_DAYS = 21
 
 // 每日工作
 const DAILY_COLLECTION = 'dailyCheck'
-const DAILY_KEEP_DAYS = 30  // 僅保留最近 30 天（依 doc ID YYYY-MM-DD 判斷）
+const DAILY_KEEP_DAYS = 30  // 僅保留最近 30 天
 
 // 櫃檯取貨
 const PICKUP_COLLECTION = 'pickups'
 const PICKUP_KEEP_DAYS = 30 // 只刪除「已取貨完成且超過 30 天」
 
-// 貨到通知（arrival.js 使用的集合）
+// 貨到通知
 const ARRIVAL_COLLECTION = 'arrival'
 const ARRIVAL_KEEP_DAYS = 365 // 一年：< 365 天前全部刪除；一年內只刪已完成/已刪除
 
 // 列印信封紀錄
 const ENVELOPE_COLLECTION = 'envelopes'
-const ENVELOPE_KEEP_DAYS = 90 // 僅保留最近 90 天，早於者全部刪除
+const ENVELOPE_KEEP_DAYS = 90 // 僅保留最近 90 天
+
+// 內場錢櫃
+const CASHBOX_RECORDS_COLLECTION = 'cashbox-records'
+const CASHBOX_CHANGE_COLLECTION = 'cashbox-change-request'
+const CASHBOX_KEEP_DAYS = 60 // 僅保留最近 60 天（約兩個月）
 
 const $ = (s) => document.querySelector(s)
 const logArea = () => $('#log-area')
@@ -423,6 +428,134 @@ async function cleanEnvelopes() {
   }
 }
 
+/* ---------- 內場錢櫃紀錄 cashbox ---------- */
+
+function cashboxCutoffDate() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - CASHBOX_KEEP_DAYS)
+  return d
+}
+
+// 交易紀錄：看 createdAt
+function cashboxRecordIsDeletable(data, cutoff) {
+  let ts = data.createdAt
+  if (ts && typeof ts.toDate === 'function') {
+    ts = ts.toDate()
+  } else if (ts && typeof ts === 'object' && ts.seconds) {
+    ts = new Date(ts.seconds * 1000)
+  }
+  if (!(ts instanceof Date) || isNaN(ts.getTime())) return false
+  return ts < cutoff
+}
+
+// 找零需求：doc ID = YYYY-MM-DD 或欄位 date = YYYY-MM-DD
+function parseYmdString(s) {
+  if (!s || typeof s !== 'string') return null
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return null
+  const y = parseInt(m[1], 10)
+  const mm = parseInt(m[2], 10)
+  const d = parseInt(m[3], 10)
+  if (!y || !mm || !d) return null
+  const dt = new Date(y, mm - 1, d)
+  dt.setHours(0, 0, 0, 0)
+  return isNaN(dt.getTime()) ? null : dt
+}
+
+function cashboxChangeIsDeletable(docId, data, cutoff) {
+  let dt = parseYmdString(docId)
+  if (!dt && data?.date) {
+    dt = parseYmdString(data.date)
+  }
+  if (!dt) return false
+  return dt < cutoff
+}
+
+async function calculateCashbox() {
+  const result = $('#result-cashbox')
+  const cutoff = cashboxCutoffDate()
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  appendLog(`💰 內場錢櫃：計算 (1) ${CASHBOX_RECORDS_COLLECTION} 中 createdAt < ${cutoffStr} 的紀錄；(2) ${CASHBOX_CHANGE_COLLECTION} 中 ${cutoffStr} 以前的找零需求`)
+
+  if (result) result.textContent = '計算中…'
+
+  try {
+    // ① cashbox-records
+    const snapRecords = await getDocs(collection(db, CASHBOX_RECORDS_COLLECTION))
+    const totalRecords = snapRecords.size
+    let deletableRecords = 0
+
+    snapRecords.forEach(d => {
+      if (cashboxRecordIsDeletable(d.data(), cutoff)) deletableRecords++
+    })
+
+    // ② cashbox-change-request
+    const snapChange = await getDocs(collection(db, CASHBOX_CHANGE_COLLECTION))
+    const totalChange = snapChange.size
+    let deletableChange = 0
+
+    snapChange.forEach(d => {
+      if (cashboxChangeIsDeletable(d.id, d.data(), cutoff)) deletableChange++
+    })
+
+    if (result) {
+      result.textContent = `紀錄：${deletableRecords} / ${totalRecords}，找零：${deletableChange} / ${totalChange}`
+    }
+    appendLog(`✅ 內場錢櫃計算完成：紀錄可刪 ${deletableRecords}/${totalRecords}，找零可刪 ${deletableChange}/${totalChange}`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '計算失敗'
+    appendLog(`❌ 內場錢櫃錯誤：${e.message}`, 'error')
+  }
+}
+
+async function cleanCashbox() {
+  const cutoff = cashboxCutoffDate()
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  const ok = confirm(
+    `將刪除：\n1) ${CASHBOX_RECORDS_COLLECTION} 中 createdAt 早於 ${cutoffStr} 的所有交易紀錄；\n2) ${CASHBOX_CHANGE_COLLECTION} 中 ${cutoffStr} 以前的找零需求。\n不會動到目前餘額（cashbox-status/main）。\n此動作無法復原，確定？`
+  )
+  if (!ok) return
+
+  const result = $('#result-cashbox')
+  if (result) result.textContent = '清理中…'
+  appendLog('🧹 開始清理內場錢櫃舊資料…')
+
+  try {
+    // ① cashbox-records
+    const snapRecords = await getDocs(collection(db, CASHBOX_RECORDS_COLLECTION))
+    let deletedRecords = 0
+    const totalRecords = snapRecords.size
+
+    for (const d of snapRecords.docs) {
+      if (cashboxRecordIsDeletable(d.data(), cutoff)) {
+        await deleteDoc(doc(db, CASHBOX_RECORDS_COLLECTION, d.id))
+        deletedRecords++
+      }
+    }
+
+    // ② cashbox-change-request
+    const snapChange = await getDocs(collection(db, CASHBOX_CHANGE_COLLECTION))
+    let deletedChange = 0
+    const totalChange = snapChange.size
+
+    for (const d of snapChange.docs) {
+      if (cashboxChangeIsDeletable(d.id, d.data(), cutoff)) {
+        await deleteDoc(doc(db, CASHBOX_CHANGE_COLLECTION, d.id))
+        deletedChange++
+      }
+    }
+
+    if (result) {
+      result.textContent = `紀錄已刪 ${deletedRecords}/${totalRecords}，找零已刪 ${deletedChange}/${totalChange}`
+    }
+    appendLog(`✅ 內場錢櫃清理完成：紀錄刪除 ${deletedRecords} 筆，找零刪除 ${deletedChange} 筆`, 'success')
+  } catch (e) {
+    if (result) result.textContent = '清理失敗'
+    appendLog(`❌ 內場錢櫃清理錯誤：${e.message}`, 'error')
+  }
+}
+
 /* ---------- 初始化 ---------- */
 
 window.onload = () => {
@@ -440,6 +573,9 @@ window.onload = () => {
 
   $('#btn-calc-envelopes')?.addEventListener('click', calculateEnvelopes)
   $('#btn-clean-envelopes')?.addEventListener('click', cleanEnvelopes)
+
+  $('#btn-calc-cashbox')?.addEventListener('click', calculateCashbox)
+  $('#btn-clean-cashbox')?.addEventListener('click', cleanCashbox)
 
   $('#clear-log')?.addEventListener('click', () => {
     const area = logArea()

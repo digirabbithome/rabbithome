@@ -107,6 +107,23 @@
             </td>
             <td id="result-envelopes" class="result-text">尚未計算</td>
           </tr>
+
+          <!-- 內場錢櫃紀錄 -->
+          <tr>
+            <td>
+              <span class="module-name">內場錢櫃</span>
+              <div class="module-note">
+                清理邏輯：僅保留 <code>cashbox-records</code> 與 <code>cashbox-change-request</code> 中最近 60 天（約兩個月）的紀錄；早於 60 天的交易與找零需求全部刪除。不會動到目前餘額 <code>cashbox-status/main</code>。
+              </div>
+            </td>
+            <td>
+              <button id="btn-calc-cashbox" class="btn-secondary">計算</button>
+            </td>
+            <td>
+              <button id="btn-clean-cashbox" class="btn-primary">清理</button>
+            </td>
+            <td id="result-cashbox" class="result-text">尚未計算</td>
+          </tr>
         </tbody>
       </table>
     </section>
