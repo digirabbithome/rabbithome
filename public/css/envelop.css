@@ -1,4 +1,3 @@
-
 body {
   font-family: "Noto Sans TC", sans-serif;
   background-color: #fff6fb;
@@ -15,10 +14,7 @@ body {
   box-shadow: 0 0 10px rgba(0,0,0,0.06);
 }
 
-h2 {
-  color: #e64a83;
-  margin-bottom: 16px;
-}
+h2 { color: #e64a83; margin-bottom: 16px; }
 
 form {
   background-color: #fff0f5;
@@ -27,86 +23,29 @@ form {
   margin-bottom: 24px;
 }
 
-form .form-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-  gap: 12px;
-}
-
-form label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
+form .form-row { display: flex; flex-wrap: wrap; margin-bottom: 12px; gap: 12px; }
+form label { display: block; font-weight: bold; margin-bottom: 4px; }
 form input, form select, form textarea {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 8px; border: 1px solid #ccc; border-radius: 8px;
+  font-size: 14px; width: 100%; box-sizing: border-box;
 }
 
 form button {
-  padding: 8px 16px;
-  background-color: #ff6699;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+  padding: 8px 16px; background-color: #ff6699; color: white;
+  border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
 }
+form button:hover { background-color: #ff4477; }
 
-form button:hover {
-  background-color: #ff4477;
-}
+#recordTable { width: 100%; border-collapse: collapse; margin-top: 20px; }
+#recordTable th, #recordTable td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+#recordTable th { background-color: #ffe0ec; color: #333; }
+#recordTable td button { background-color: #eee; padding: 4px 8px; border-radius: 6px; border: none; cursor: pointer; }
+#recordTable td button:hover { background-color: #ccc; }
 
-#recordTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
+#searchBar { margin-bottom: 16px; display: flex; gap: 10px; }
+#searchBar input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
 
-#recordTable th, #recordTable td {
-  border-bottom: 1px solid #eee;
-  padding: 10px;
-  text-align: left;
-}
-
-#recordTable th {
-  background-color: #ffe0ec;
-  color: #333;
-}
-
-#recordTable td button {
-  background-color: #eee;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-#recordTable td button:hover {
-  background-color: #ccc;
-}
-
-#searchBar {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 10px;
-}
-
-#searchBar input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-
-/* === 常用信封快捷鍵（favEnvelopes） with auto-print toggle === */
+/* === 常用信封快捷鍵（favEnvelopes） === */
 .fav-card .fav-title{margin:0;color:#e64a83;font-weight:700}
 .fav-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:12px;flex-wrap:wrap}
 .fav-auto{display:flex;align-items:center;gap:12px}
@@ -114,84 +53,165 @@ form button:hover {
 .chip-row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:none;border-radius:999px;padding:6px 12px;background:#fcddec;cursor:pointer;font-weight:600}
 .chip:hover{background:#ff82a6;color:#fff}
-\n
+
 /* 日期分隔列樣式 */
 .date-separator td{
-  background: #ffeef4;
-  color: #d63384;
-  font-weight: 700;
-  padding: 8px 10px;
-  border-top: 2px solid #f8cfe0;
+  background: #ffeef4; color: #d63384; font-weight: 700;
+  padding: 8px 10px; border-top: 2px solid #f8cfe0;
 }
 
-/* 地址命中區域高亮 */
-.area-highlight{
-  background: #fff7cc;
-}
+/* 地址高亮 */
+.area-highlight{ background: #fff7cc; }
 
-/* 地址前6字底色 */
-.addr-lead{
-  background: #fff7cc;
-  border-radius: 3px;
-  padding: 0 1px;
-}
+/* 地址前 9 字底色 */
+.addr-first9 { font-weight: bold; background: #fff3cd; }
 
-/* row highlight after noting */
+/* note 樣式 */
 .row-note { background: #fff3cd !important; }
-/* note button inside action cell */
 .note-btn {
-  border: 0;
-  background: #f1f3f5;
-  padding: 4px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-  margin-right: 6px;
+  border: 0; background: #f1f3f5; padding: 4px 6px; border-radius: 6px;
+  cursor: pointer; font-size: 12px; line-height: 1; margin-right: 6px;
 }
 .note-btn:hover { background:#e9ecef; }
 
-.addr-first9 {
-  font-weight: bold;
-  background: #fff3cd;
+/* ✅ 來源一排不換行 */
+.toolbar-top .source-group { flex-wrap: nowrap; gap: 14px; }
+.toolbar-top .source-group label { white-space: nowrap; }
+.source-chip{ white-space:nowrap; }
+
+/* ✅ 記錄表：時間欄顯示「流水號」 + 「時間」 */
+.timebox { display: flex; flex-direction: column; gap: 2px; line-height: 1.15; }
+.timebox .serial { font-weight: 700; color: #d63384; font-size: 13px; }
+.timebox .time { font-size: 12px; color: #666; }
+
+/* （若 print.html 使用）列印頁右下角流水號 / 左下角商品 */
+.serial-stamp{ position:absolute; right:48px; bottom:48px; font-size:16px; color:#222; }
+.product{ position:absolute; left:48px; bottom:60px; font-size:20px; color:#333; }
+
+
+
+/* === v3.3.9 Cute Round '來源' chips + circular checkboxes === */
+.source-fieldset {
+  border: 1.5px solid #f7cfe1;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #fff8fb;
+  display: inline-block;
 }
 
-/* === 扁平來源區 v3（視覺調整，邏輯不變） === */
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-#sourceGroup{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
-.source-group,.source-wrap,.source-box{background:transparent!important;border:0!important;box-shadow:none!important}
-.card:has(#sourceGroup),.form-row:has(#sourceGroup),div:has(> #sourceGroup){background:transparent!important;border:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important}
-#sourceGroup label{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ffe8f1;border:1px solid #f7cfe4}
-#sourceGroup input[type="checkbox"]{accent-color:#ef5fa7}
-.bigpkg-standalone{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #f7cfe4}
+.source-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-/* === v3.1: 讓來源 chips 同列顯示，不換行 === */
-#sourceGroup {
+.source-group label {
   display: inline-flex;
-  flex-wrap: nowrap !important; /* 禁止換行 */
+  align-items: center;
   gap: 8px;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  padding: 0;
-  overflow-x: auto;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  border: 2px solid #f7cfe1;
+  background: #ffffff;
+  font-weight: 700;
+  line-height: 1;
   white-space: nowrap;
-}
-#sourceGroup::-webkit-scrollbar {
-  height: 6px;
+  transition: background .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 
-/* === v3.2.1: 強制「包裹」不換行 === */
-.bigpkg-standalone{
-  white-space: nowrap !important;
-  word-break: keep-all !important;
-  width: auto !important;
-  max-width: none !important;
-  display: inline-flex !important;
-  align-items: center;
-  line-height: 1.2;
+.source-group label:hover {
+  background: #ffe6ef;
+  box-shadow: 0 0 0 4px rgba(247, 207, 225, 0.35);
 }
-.bigpkg-standalone *{
-  white-space: nowrap !important;
-  word-break: keep-all !important;
+
+/* remove default checkbox and draw a cute round knob */
+.source-group input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #f7cfe1;
+  border-radius: 50%;
+  background: #fff;
+  display: inline-block;
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  vertical-align: middle;
 }
+
+.source-group input[type="checkbox"]:checked {
+  background: #f7cfe1;
+  border-color: #f08bb9;
+  box-shadow: inset 0 0 0 4px #fbd9e7;
+}
+
+/* When checked, the whole chip can pop slightly */
+.source-group input[type="checkbox"]:checked + *,
+.source-group input[type="checkbox"]:checked ~ span {
+  /* If someone wraps text in span we still look fine */
+}
+
+
+
+
+/* === v3.3.10 Compact Source Chips (legend hidden, first white, others pink) === */
+
+/* Hide '來源：' legend but keep semantics for screen readers */
+.source-fieldset legend {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Make the fieldset and chips more compact */
+.source-fieldset {
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+}
+
+/* Row layout tighter */
+.source-group {
+  gap: 8px !important;
+}
+
+/* Chip size down */
+.source-group label {
+  padding: 4px 10px !important;
+  border-width: 1.5px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+/* First chip: white background; others: light pink */
+.source-group label { background: #fde5f0 !important; }
+.source-group label:first-child { background: #ffffff !important; }
+
+/* Checkbox knob smaller */
+.source-group input[type="checkbox"] {
+  width: 14px !important;
+  height: 14px !important;
+  border-width: 1.5px !important;
+}
+
+/* Checked state remains subtle */
+.source-group input[type="checkbox"]:checked {
+  box-shadow: inset 0 0 0 3px #fbd9e7 !important;
+}
+
+/* When space is tight, allow wrapping but keep compact height */
+@media (max-width: 1200px) {
+  .source-group { gap: 6px !important; }
+  .source-group label { padding: 3px 8px !important; font-size: 13px !important; }
+  .source-fieldset { padding: 6px 8px !important; }
+}
+
+/* Slightly reduce the outer block height footprint */
+.toolbar-top .source-fieldset { margin-top: 4px !important; margin-bottom: 4px !important; }

@@ -1,3 +1,40 @@
+// === Dual daily serials (normal/big) with Firestore transaction ===
+async function nextSerial(isBig) {
+  try {
+    const now = new Date();
+    const y = String(now.getFullYear());
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const mmdd = m + d;
+    const ref = doc(db, 'envelop-counters', `${y}-${m}-${d}`);
+    const n = await runTransaction(db, async (tx)=>{
+      const snap = await tx.get(ref);
+      let data = snap.exists()? snap.data():{};
+      const field = isBig ? 'lastBig':'lastNormal';
+      const last = Number(data[field]||0);
+      const next = last + 1;
+      data[field] = next;
+      data.ymd = `${y}-${m}-${d}`;
+      tx.set(ref, data, { merge:true });
+      return next;
+    });
+    const core = mmdd + String(n).padStart(3,'0');
+    return isBig ? ('B'+core) : core;
+  } catch(e) {
+    // fallback local only
+    try {
+      const now = new Date();
+      const m = String(now.getMonth()+1).padStart(2,'0');
+      const d = String(now.getDate()).padStart(2,'0');
+      const mmdd = m + d;
+      const key = `ctr-${mmdd}-${isBig?'big':'normal'}`;
+      const nxt = Number(localStorage.getItem(key)||'0') + 1;
+      localStorage.setItem(key, String(nxt));
+      const core = mmdd + String(nxt).padStart(3,'0');
+      return isBig ? ('B'+core) : core;
+    } catch(_) { return ''; }
+  }
+}
 
 // 將地址前 9 個字套上粗體 + 黃底
 function formatAddressFirst9(addr) {
@@ -12,20 +49,19 @@ function formatAddressFirst9(addr) {
   return '<span class="addr-first9">' + first + '</span>' + rest;
 }
 
-
 import { db } from '/js/firebase.js';
 import {
-  collection,
-  addDoc,
-  Timestamp,
-  query,
-  orderBy,
-  getDocs,
-  updateDoc,
-  doc
-, setDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  Timestamp, addDoc, collection, doc, getDocs, orderBy, query, runTransaction, updateDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 window.addEventListener('load', async () => {
+  // 保險：若「包裹」checkbox 沒在來源那排，搬回第一顆
+  (function ensureBigPkgInSourceGroup(){
+    const group = document.getElementById('sourceGroup');
+    const loose = document.querySelector('label.source-chip');
+    if (group && loose && !group.contains(loose)) group.prepend(loose);
+  })();
+
   const form = document.getElementById('envelopeForm');
   const otherField = document.getElementById('customSenderField');
   const companySelect = document.getElementById('senderCompany');
@@ -43,18 +79,15 @@ window.addEventListener('load', async () => {
   let currentFilter = { start: startOfDay(__past3), end: endOfDay(__today) };
 
   document.getElementById('printNormal')?.addEventListener('click', e => {
-    e.preventDefault();
-    handleSubmit('normal');
+    e.preventDefault(); handleSubmit('normal');
   });
   document.getElementById('printReply')?.addEventListener('click', e => {
-    e.preventDefault();
-    handleSubmit('reply');
+    e.preventDefault(); handleSubmit('reply');
   });
 
   // 日期快捷鍵
   document.getElementById('btnPrevDay')?.addEventListener('click', () => {
-    const d = new Date(); d.setDate(d.getDate() - 1);
-    applyDateFilter(d, d);
+    const d = new Date(); d.setDate(d.getDate() - 1); applyDateFilter(d, d);
   });
   document.getElementById('btnLast3Days')?.addEventListener('click', () => {
     const today = new Date(); const past = new Date(); past.setDate(today.getDate() - 2);
@@ -65,8 +98,7 @@ window.addEventListener('load', async () => {
     applyDateFilter(past, today);
   });
   document.getElementById('datePicker')?.addEventListener('change', (e) => {
-    const selected = new Date(e.target.value);
-    applyDateFilter(selected, selected);
+    const selected = new Date(e.target.value); applyDateFilter(selected, selected);
   });
 
   searchInput?.addEventListener('input', renderFilteredData);
@@ -76,48 +108,9 @@ window.addEventListener('load', async () => {
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
   }
 
-// === Dual daily serials (normal/big) — v3.3.2 ===
-async function nextSerial(isBig) {
-  try {
-    const now = new Date();
-    const y = String(now.getFullYear());
-    const m = String(now.getMonth()+1).padStart(2,'0');
-    const d = String(now.getDate()).padStart(2,'0');
-    const mmdd = m + d;
-    const type = isBig ? 'big' : 'normal';
-    const refId = `${y}-${m}-${d}-${type}`;
-    const ref = doc(db, 'envelop-counters', refId);
-    let last = 0;
-    try {
-      const snap = await getDoc(ref);
-      if (snap.exists()) last = Number((snap.data()||{}).last || 0);
-    } catch(e){ console.warn('getDoc counter error', e) }
-    const next = last + 1;
-    try {
-      await setDoc(ref, { last: next, ymd:`${y}-${m}-${d}`, type }, { merge: true });
-    } catch(e){ console.warn('setDoc counter error', e) }
-    const core = mmdd + String(next).padStart(3,'0');
-    return isBig ? ('B'+core) : core;
-  } catch(e){
-    try {
-      const now = new Date();
-      const m = String(now.getMonth()+1).padStart(2,'0');
-      const d = String(now.getDate()).padStart(2,'0');
-      const mmdd = m + d;
-      const type = isBig ? 'big' : 'normal';
-      const key = `ctr-${mmdd}-${type}`;
-      const next = Number(localStorage.getItem(key)||'0') + 1;
-      localStorage.setItem(key, String(next));
-      const core = mmdd + String(next).padStart(3,'0');
-      return isBig ? ('B'+core) : core;
-    } catch(ee){
-      console.error('serial fallback failed', ee);
-      return '';
-    }
-  }
-}
-
-async function handleSubmit(type = 'normal') {
+  async function handleSubmit(type = 'normal') {
+    const isBigPkg = !!document.getElementById('bigPkg')?.checked;
+    const serialVal = await nextSerial(isBigPkg);
     const senderCompany = form.senderCompany.value;
     const customSender = form.customSender?.value || '';
     const receiverName = form.receiverName.value;
@@ -130,42 +123,26 @@ async function handleSubmit(type = 'normal') {
     const sourceStr = checkedSources.join('、');
     const nickname = localStorage.getItem('nickname') || '匿名';
 
-    const bigEl = document.getElementById('bigPkg');
-    const isBigPkg = !!(bigEl && bigEl.checked);
-    const serialVal = await nextSerial(isBigPkg);
-
     const displaySource = type === 'reply'
       ? (sourceStr ? `${nickname}(${sourceStr})(回郵)` : `${nickname}(回郵)`)
       : (sourceStr ? `${nickname}(${sourceStr})` : nickname);
 
     const now = new Date();
     const record = { serial: serialVal, serialCore: (serialVal||'').replace(/^B/, ''),
-      senderCompany,
-      customSender,
-      receiverName,
-      phone,
-      address,
-      customerAccount,
-      product,
-      product2,
-      source: displaySource,
-      account: nickname,
-      timestamp: Timestamp.fromDate(now),
-      type
-    };
+      senderCompany, customSender, receiverName, phone, address, customerAccount,
+      product, product2, source: displaySource, account: nickname,
+      timestamp: Timestamp.fromDate(now), type };
 
-    // 開啟列印頁並把資料塞進 localStorage
-    localStorage.setItem('envelopeData', JSON.stringify(record));
-    window.open('/print.html', '_blank');
-
+    // 先寫入 DB，再用文件 ID 開啟列印頁（讓列印頁直接讀 Firestore）
     try {
-      await addDoc(collection(db, 'envelopes'), record);
+      const ref = await addDoc(collection(db, 'envelopes'), record);
+      window.open(`/print.html?id=${ref.id}`, '_blank');
       alert('✅ 資料已儲存！');
       form.reset();
       if (companySelect) companySelect.value = '數位小兔';
       if (otherField) otherField.style.display = 'none';
       await loadData();
-  await loadFavQuickButtons();
+      await loadFavQuickButtons();
     } catch (err) {
       alert('❌ 寫入失敗：' + err.message);
     }
@@ -176,8 +153,7 @@ async function handleSubmit(type = 'normal') {
 
   async function applyDateFilter(start, end) {
     currentFilter = { start: startOfDay(start), end: endOfDay(end) };
-    await loadData();
-  await loadFavQuickButtons();
+    await loadData(); await loadFavQuickButtons();
   }
 
   let allData = [];
@@ -187,18 +163,15 @@ async function handleSubmit(type = 'normal') {
     const snapshot = await getDocs(q);
     allData = [];
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
       let ts = data.timestamp;
-      if (ts && typeof ts.toDate === 'function') {
-        ts = ts.toDate();
-      } else if (typeof ts === 'object' && ts?.seconds) {
-        ts = new Date(ts.seconds * 1000);
-      } else {
-        ts = new Date();
-      }
+      if (ts && typeof ts.toDate === 'function') ts = ts.toDate();
+      else if (typeof ts === 'object' && ts?.seconds) ts = new Date(ts.seconds * 1000);
+      else ts = new Date();
+
       if (ts >= currentFilter.start && ts <= currentFilter.end) {
-        allData.push({ id: doc.id, ...data, timestamp: ts });
+        allData.push({ id: docSnap.id, ...data, timestamp: ts });
       }
     });
 
@@ -209,12 +182,10 @@ async function handleSubmit(type = 'normal') {
         ? `${fmt(currentFilter.start)} 列印信封紀錄`
         : `${fmt(currentFilter.start)}–${fmt(currentFilter.end)} 列印信封紀錄`);
     }
-
     renderFilteredData();
   }
 
-  
-function renderFilteredData() {
+  function renderFilteredData() {
     const keyword = ((searchInput && searchInput.value) || '').toLowerCase();
     const tbody = document.getElementById('recordsBody');
     if (!tbody) return;
@@ -238,24 +209,18 @@ function renderFilteredData() {
       (groups[dstr] ||= []).push(data);
     });
 
-    // 3) 區域高亮關鍵字（可自行增減）
-    const HIGHLIGHT_AREAS = [
-      '台北市信義區',
-      '台中市北屯區'
-    ];
-
+    // 3) 區域高亮
+    const HIGHLIGHT_AREAS = ['台北市信義區','台中市北屯區'];
     const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
 
     // 4) 依日期由新到舊輸出
     const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
     sortedDates.forEach(dateStr => {
-      // 日期分隔列
       const sep = document.createElement('tr');
       sep.className = 'date-separator';
       sep.innerHTML = `<td colspan="8">${dateStr}</td>`;
       tbody.appendChild(sep);
 
-      // 當日資料
       groups[dateStr].forEach(data => {
         const timeStr = data.timestamp.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         const receiverBase = (data.receiverName || '');
@@ -273,7 +238,12 @@ function renderFilteredData() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><div class="timebox"><div class="serial">${data.serial || '—'}</div><div class="time">${timeStr}</div></div></td>
+          <td>
+            <div class="timebox">
+              <div class="serial">${data.serial || '—'}</div>
+              <div class="time">${timeStr}</div>
+            </div>
+          </td>
           <td>${receiver}</td>
           <td class="${addrClass}">${formatAddressFirst9(addr)}</td>
           <td>${data.phone || ''}</td>
@@ -306,13 +276,11 @@ function renderFilteredData() {
         const type = e.currentTarget.getAttribute('data-type');
         const record = allData.find(d => d.id === docId);
         if (record) {
-          localStorage.setItem('envelopeData', JSON.stringify(record));
-          window.open('/print.html', '_blank');
+          window.open(`/print.html?id=${docId}`,'_blank');
         }
       });
     });
-}
-
+  }
 
   await loadData();
   await loadFavQuickButtons();
@@ -367,7 +335,6 @@ function renderFilteredData() {
 
 });
 
-
 // --- note feature: toggle row highlight and copy tracking number ---
 function copyToClipboard(text) {
   if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
@@ -400,6 +367,5 @@ function bindNoteButtons(){
     });
   }
 }
-
 // call bindNoteButtons after render
 setTimeout(bindNoteButtons, 500);
