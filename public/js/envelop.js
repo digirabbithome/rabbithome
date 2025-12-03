@@ -103,6 +103,36 @@ window.addEventListener('load', async () => {
 
   searchInput?.addEventListener('input', renderFilteredData);
 
+  // 標題排序：時間（流水號）、來源
+  const thTime = document.querySelector('#recordsTable thead th:nth-child(1)');
+  const thSource = document.querySelector('#recordsTable thead th:nth-child(6)');
+  if (thTime) {
+    thTime.style.cursor = 'pointer';
+    thTime.title = '依流水號排序（再按一次反向）';
+    thTime.addEventListener('click', () => {
+      if (sortMode === 'serial') {
+        sortAsc = !sortAsc;
+      } else {
+        sortMode = 'serial';
+        sortAsc = true;
+      }
+      renderFilteredData();
+    });
+  }
+  if (thSource) {
+    thSource.style.cursor = 'pointer';
+    thSource.title = '依來源排序（再按一次反向）';
+    thSource.addEventListener('click', () => {
+      if (sortMode === 'source') {
+        sortAsc = !sortAsc;
+      } else {
+        sortMode = 'source';
+        sortAsc = true;
+      }
+      renderFilteredData();
+    });
+  }
+
   function getCheckedSources() {
     const nodes = form.querySelectorAll('input[name="source"]:checked');
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
@@ -157,6 +187,8 @@ window.addEventListener('load', async () => {
   }
 
   let allData = [];
+  let sortMode = null; // 'serial' | 'source'
+  let sortAsc = true;
 
   async function loadData() {
     const q = query(collection(db, 'envelopes'), orderBy('timestamp', 'desc'));
@@ -213,7 +245,35 @@ window.addEventListener('load', async () => {
     const HIGHLIGHT_AREAS = ['台北市信義區','台中市北屯區'];
     const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
 
-    // 4) 依日期由新到舊輸出
+    // 4) 每日內依排序模式（流水號 / 來源 / 預設時間）排序
+    Object.keys(groups).forEach(dateStr => {
+      const arr = groups[dateStr];
+      if (!arr || arr.length <= 1) return;
+      if (sortMode === 'serial') {
+        const dir = sortAsc ? 1 : -1;
+        arr.sort((a, b) => {
+          const aNum = Number(a.serialCore || a.serial || 0);
+          const bNum = Number(b.serialCore || b.serial || 0);
+          if (aNum !== bNum) return (aNum - bNum) * dir;
+          const aB = (a.serial || '').startsWith('B');
+          const bB = (b.serial || '').startsWith('B');
+          if (aB !== bB) return (aB ? -1 : 1) * dir; // B 開頭優先
+          return ((a.serial || '').localeCompare(b.serial || '')) * dir;
+        });
+      } else if (sortMode === 'source') {
+        const dir = sortAsc ? 1 : -1;
+        arr.sort((a, b) => {
+          const sa = (a.source || '').localeCompare(b.source || '');
+          if (sa !== 0) return sa * dir;
+          return (a.timestamp - b.timestamp) * dir;
+        });
+      } else {
+        // 預設：每日期內依時間（新到舊）
+        arr.sort((a, b) => b.timestamp - a.timestamp);
+      }
+    });
+
+    // 5) 依日期由新到舊輸出
     const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
     sortedDates.forEach(dateStr => {
       const sep = document.createElement('tr');
@@ -280,6 +340,11 @@ window.addEventListener('load', async () => {
         }
       });
     });
+
+    // 筆按鈕複製功能每次重繪後重新綁定
+    if (typeof bindNoteButtons === 'function') {
+      bindNoteButtons();
+    }
   }
 
   await loadData();
@@ -337,19 +402,17 @@ window.addEventListener('load', async () => {
 
 // --- note feature: toggle row highlight and copy tracking number ---
 function copyToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(function(){});
-    return;
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
   }
-  var temp = document.createElement('input');
-  temp.value = text;
-  document.body.appendChild(temp);
-  temp.select();
-  temp.setSelectionRange(0, 99999);
-  try { document.execCommand('copy'); } catch(e) {}
-  document.body.removeChild(temp);
 }
-
 
 function bindNoteButtons(){
   var btns = document.querySelectorAll('.note-btn');
@@ -369,15 +432,3 @@ function bindNoteButtons(){
     });
   }
 }
-// call bindNoteButtons after render
-setTimeout(bindNoteButtons, 500);
-// === 全域事件代理：確保筆按鈕在任何瀏覽器 / 任何重新渲染後都可用 ===
-document.addEventListener('click', function(e){
-  const btn = e.target.closest('.note-btn');
-  if (!btn) return;
-  const tr = btn.closest('tr');
-  if (tr) tr.classList.toggle('row-note');
-  const trackingInput = tr ? tr.querySelector('.tracking-input') : null;
-  const tracking = trackingInput ? (trackingInput.value || '') : '';
-  copyToClipboard(tracking);
-});
