@@ -281,6 +281,7 @@ function renderTodayDone() {
     divider.style.display = 'flex'
     divider.style.alignItems = 'center'
     divider.style.margin = '25px 0 12px'
+    divider.style.gridColumn = '1 / -1'   // 🔸 這行讓分隔線橫跨整排
     divider.innerHTML = `
       <div style="flex:1; height:1px; background:#ccc;"></div>
       <span style="padding:0 12px; color:#333; font-weight:600; white-space:nowrap; font-size:18px;">
