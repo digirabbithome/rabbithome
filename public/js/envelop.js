@@ -431,19 +431,38 @@ function copyToClipboard(text) {
   }
 }
 
+
+
 function bindNoteButtons(){
   var btns = document.querySelectorAll('.note-btn');
-  for (var i=0;i<btns.length;i++){
+  for (var i = 0; i < btns.length; i++){
     btns[i].addEventListener('click', function(e){
       e.preventDefault();
+
       var tr = e.target.closest('tr');
       if (tr) tr.classList.toggle('row-note');
+
       var trackingInput = tr ? tr.querySelector('.tracking-input') : null;
       var tracking = trackingInput ? (trackingInput.value || '') : '';
-      copyToClipboard(tracking);
+
+      if (tracking) {
+        var message =
+          '哈囉～您的包裹小兔已經幫您寄出囉！📦💗\n\n' +
+          '這是您的貨件追蹤單號：\n' +
+          '👉  ' + tracking + '\n' +
+          '大約 1～2 個工作天就會抵達嚕 😊\n' +
+          '記得留意一下包裹唷！\n\n' +
+          '謝謝您支持數位小兔 🐰✨\n' +
+          '祝您開箱愉快～～！';
+
+        copyToClipboard(message);
+      }
+
       try {
         var oldTitle = e.target.title;
-        e.target.title = tracking ? ('已複製：' + tracking) : '已標記（此列尚未填單號）';
+        e.target.title = tracking
+          ? ('已複製：' + tracking)
+          : '已標記（此列尚未填單號）';
         setTimeout(function(){ e.target.title = oldTitle; }, 1200);
       } catch(_){}
     });
