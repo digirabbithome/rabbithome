@@ -6,6 +6,14 @@ import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/fireb
 
 let pickupList = []
 
+// 🕒 台北時區時間格式（顯示取貨時間用）
+const TPE = 'Asia/Taipei'
+const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
+  timeZone: TPE,
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
 window.onload = async () => {
   document.getElementById('addBtn').addEventListener('click', addPickup)
   document.getElementById('search').addEventListener('input', renderList)
@@ -146,7 +154,7 @@ async function fetchData() {
   pickupList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 
-// 共用排序：付款狀態優先，其次建立時間
+// 共用排序：付款狀態優先，其次建立時間（一般列表用）
 function comparePickup(a, b) {
   const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
   const p1 = priority[a.paid] || 99
@@ -155,6 +163,13 @@ function comparePickup(a, b) {
   const t1 = a.createdAt?.toDate?.() || new Date(0)
   const t2 = b.createdAt?.toDate?.() || new Date(0)
   return t2 - t1
+}
+
+// 🆕 排序：依照取貨完成時間 doneAt（今日已取貨用）
+function compareByDoneTime(a, b) {
+  const t1 = a.doneAt?.toDate?.() || new Date(0)
+  const t2 = b.doneAt?.toDate?.() || new Date(0)
+  return t2 - t1   // 新 → 舊
 }
 
 // 建卡片（一般列表 & 本日已取貨共用）
@@ -172,6 +187,13 @@ function createPickupCard(p) {
 
   // 已取走 → 灰（搜尋時或「本日已取貨」中出現）
   if (p.pinStatus === 1) bgColor = '#e0e0e0'
+
+  // 🕒 取貨時間文字（有 doneAt 才顯示）
+  let doneTimeText = ''
+  if (p.doneAt?.toDate) {
+    const d = p.doneAt.toDate()
+    doneTimeText = timeFormatter.format(d)
+  }
 
   const div = document.createElement('div')
   div.className = 'pickup-card'
@@ -196,6 +218,10 @@ function createPickupCard(p) {
       </span>
       （${p.paid || '—'}）(${p.createdBy || ''})
     </small>
+    ${doneTimeText
+      ? `<div style="margin-top:4px; font-size:12px; color:#555;">取貨時間：${doneTimeText}</div>`
+      : ''
+    }
   `
   return div
 }
@@ -226,9 +252,7 @@ function renderList() {
   })
 }
 
-// 🆕 本日已取貨列表（今天 00:00 之後 pinStatus=1 且有 doneAt）
-// 🆕 本日已取貨（依照 doneBy 分區）
-// 🆕 本日已取貨（依照 doneBy 分區 + 中間有名字 + 頭像）
+// 🆕 本日已取貨（依照 doneBy 分區 + 中間有名字 + 頭像，卡片依 doneAt 排序）
 function renderTodayDone() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
@@ -281,7 +305,7 @@ function renderTodayDone() {
     divider.style.display = 'flex'
     divider.style.alignItems = 'center'
     divider.style.margin = '25px 0 12px'
-    divider.style.gridColumn = '1 / -1'   // 🔸 這行讓分隔線橫跨整排
+    divider.style.gridColumn = '1 / -1'   // 分隔線橫跨整排
     divider.innerHTML = `
       <div style="flex:1; height:1px; background:#ccc;"></div>
       <span style="padding:0 12px; color:#333; font-weight:600; white-space:nowrap; font-size:18px;">
@@ -291,17 +315,12 @@ function renderTodayDone() {
     `
     list.appendChild(divider)
 
-    // 卡片
-    groups[name].sort(comparePickup).forEach(p => {
+    // 卡片：依完成時間排序（新 → 舊）
+    groups[name].sort(compareByDoneTime).forEach(p => {
       list.appendChild(createPickupCard(p))
     })
   })
 }
-
-
-
-
-
 
 async function addPickup() {
   const contact = document.getElementById('contact').value.trim()
