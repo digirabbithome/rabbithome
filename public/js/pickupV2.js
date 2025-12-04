@@ -11,8 +11,10 @@ const TPE = 'Asia/Taipei'
 const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
   timeZone: TPE,
   hour: '2-digit',
-  minute: '2-digit'
+  minute: '2-digit',
+  hour12: false
 })
+
 
 window.onload = async () => {
   document.getElementById('addBtn').addEventListener('click', addPickup)
@@ -219,8 +221,10 @@ function createPickupCard(p) {
       （${p.paid || '—'}）(${p.createdBy || ''})
     </small>
     ${doneTimeText
-      ? `<div style="margin-top:4px; font-size:12px; color:#555;">取貨時間：${doneTimeText}</div>`
-      : ''
+       ? `<div style="margin-top:4px; font-size:12px; color:#e85b81; font-weight:700;">
+       取貨時間：${doneTimeText}
+     </div>`
+  : ''
     }
   `
   return div
