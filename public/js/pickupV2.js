@@ -228,6 +228,7 @@ function renderList() {
 
 // 🆕 本日已取貨列表（今天 00:00 之後 pinStatus=1 且有 doneAt）
 // 🆕 本日已取貨（依照 doneBy 分區）
+// 🆕 本日已取貨（依照 doneBy 分區 + 中間有名字 + 頭像）
 function renderTodayDone() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
@@ -244,6 +245,23 @@ function renderTodayDone() {
     return doneAt >= start && doneAt < end
   })
 
+  if (todayDone.length === 0) {
+    list.innerHTML = '<p style="padding:20px; color:#666;">今日尚無取貨完成紀錄</p>'
+    return
+  }
+
+  // 🧑‍🎨 頭像對照表（你可以之後再補更多）
+  const avatarMap = {
+    '花花': '👩‍🦰',
+    '妹妹': '🧑‍🧑‍🧒',
+    '阿寶': '🧑‍🔧',
+    'Laura': '👩‍💼',
+    'Hank': '🧑‍💼',
+    '小E': '🧑‍💻',
+    '億芯': '👨‍🔧',
+    '未標註': '👤'
+  }
+
   // 依 doneBy 分組
   const groups = {}
   todayDone.forEach(p => {
@@ -252,27 +270,36 @@ function renderTodayDone() {
     groups[name].push(p)
   })
 
-  // 依照名字排序（固定順序也可設定）
   const sortedNames = Object.keys(groups).sort()
 
   sortedNames.forEach(name => {
-    // 建立區塊標題
-    const header = document.createElement('h3')
-    header.textContent = `👤 ${name}`
-    header.style.margin = '20px 0 10px'
-    header.style.color = '#444'
-    list.appendChild(header)
 
-    // 卡片列表
+    const avatar = avatarMap[name] || '👤' // 預設沒有找到用👤
+
+    // ─────── 名稱區塊（含頭像）───────
+    const divider = document.createElement('div')
+    divider.style.display = 'flex'
+    divider.style.alignItems = 'center'
+    divider.style.margin = '25px 0 12px'
+    divider.innerHTML = `
+      <div style="flex:1; height:1px; background:#ccc;"></div>
+      <span style="padding:0 12px; color:#333; font-weight:600; white-space:nowrap; font-size:18px;">
+        ${avatar} ${name}
+      </span>
+      <div style="flex:1; height:1px; background:#ccc;"></div>
+    `
+    list.appendChild(divider)
+
+    // 卡片
     groups[name].sort(comparePickup).forEach(p => {
       list.appendChild(createPickupCard(p))
     })
   })
-
-  if (sortedNames.length === 0) {
-    list.innerHTML = '<p style="padding:20px; color:#666;">今日尚無取貨完成紀錄</p>'
-  }
 }
+
+
+
+
 
 
 async function addPickup() {
