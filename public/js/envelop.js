@@ -448,11 +448,11 @@ function bindNoteButtons(){
       if (tracking) {
         var message =
           '哈囉～您的包裹已經安排出貨囉！📦💗\n\n' +
-          '這是您的貨件追蹤單號：\n' +
+          '這是您的郵件追蹤單號：\n' +
           '👉  ' + tracking + '\n' +
           '大約 1～2 個工作天就會抵達嚕 😊\n' +
           '記得留意收件唷！\n\n' +
-          '謝謝您支持數位小兔 🐰✨\n' +
+          '謝謝您對數位小兔的支持 🐰✨\n' +
           '祝您開箱愉快～～！';
 
         copyToClipboard(message);
