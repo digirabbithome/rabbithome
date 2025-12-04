@@ -1,4 +1,3 @@
-
 // === Dual daily serials (normal/big) with Firestore transaction ===
 async function nextSerial(isBig) {
   try {
@@ -251,15 +250,32 @@ window.addEventListener('load', async () => {
       const arr = groups[dateStr];
       if (!arr || arr.length <= 1) return;
       if (sortMode === 'serial') {
-        const dir = sortAsc ? 1 : -1;
         arr.sort((a, b) => {
-          const aNum = Number(a.serialCore || a.serial || 0);
-          const bNum = Number(b.serialCore || b.serial || 0);
-          if (aNum !== bNum) return (aNum - bNum) * dir;
-          const aB = (a.serial || '').startsWith('B');
-          const bB = (b.serial || '').startsWith('B');
-          if (aB !== bB) return (aB ? -1 : 1) * dir; // B 開頭優先
-          return ((a.serial || '').localeCompare(b.serial || '')) * dir;
+          const aS = String(a.serial || '');
+          const bS = String(b.serial || '');
+          const aBig = aS.startsWith('B');
+          const bBig = bS.startsWith('B');
+          const aNum = Number(a.serialCore || aS.replace(/^B/, '') || 0);
+          const bNum = Number(b.serialCore || bS.replace(/^B/, '') || 0);
+
+          // 先決定一般 vs 大包裹的先後
+          if (aBig !== bBig) {
+            if (sortAsc) {
+              // 升冪：一般在上、B 在下
+              return aBig ? 1 : -1;
+            } else {
+              // 降冪：B 在上、一般在下
+              return aBig ? -1 : 1;
+            }
+          }
+          // 同類型內依數字大小
+          if (aNum !== bNum) {
+            return sortAsc ? (aNum - bNum) : (bNum - aNum);
+          }
+          // 最後以原始字串比較
+          return sortAsc
+            ? aS.localeCompare(bS)
+            : bS.localeCompare(aS);
         });
       } else if (sortMode === 'source') {
         const dir = sortAsc ? 1 : -1;
