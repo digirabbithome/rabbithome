@@ -227,6 +227,7 @@ function renderList() {
 }
 
 // 🆕 本日已取貨列表（今天 00:00 之後 pinStatus=1 且有 doneAt）
+// 🆕 本日已取貨（依照 doneBy 分區）
 function renderTodayDone() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
@@ -235,6 +236,7 @@ function renderTodayDone() {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
 
+  // 取得今天完成的訂單
   const todayDone = pickupList.filter(p => {
     if (p.pinStatus !== 1) return false
     const doneAt = p.doneAt?.toDate?.()
@@ -242,12 +244,36 @@ function renderTodayDone() {
     return doneAt >= start && doneAt < end
   })
 
-  todayDone.sort(comparePickup)
-
+  // 依 doneBy 分組
+  const groups = {}
   todayDone.forEach(p => {
-    list.appendChild(createPickupCard(p))
+    const name = p.doneBy || '未標註'
+    if (!groups[name]) groups[name] = []
+    groups[name].push(p)
   })
+
+  // 依照名字排序（固定順序也可設定）
+  const sortedNames = Object.keys(groups).sort()
+
+  sortedNames.forEach(name => {
+    // 建立區塊標題
+    const header = document.createElement('h3')
+    header.textContent = `👤 ${name}`
+    header.style.margin = '20px 0 10px'
+    header.style.color = '#444'
+    list.appendChild(header)
+
+    // 卡片列表
+    groups[name].sort(comparePickup).forEach(p => {
+      list.appendChild(createPickupCard(p))
+    })
+  })
+
+  if (sortedNames.length === 0) {
+    list.innerHTML = '<p style="padding:20px; color:#666;">今日尚無取貨完成紀錄</p>'
+  }
 }
+
 
 async function addPickup() {
   const contact = document.getElementById('contact').value.trim()
