@@ -18,6 +18,17 @@ window.onload = async () => {
     document.getElementById('list-area').style.display = 'block'
   })
 
+  // 🆕 本日已取貨按鈕
+  const todayBtn = document.getElementById('todayDoneBtn')
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+      // 清空搜尋，避免被關鍵字影響
+      const search = document.getElementById('search')
+      if (search) search.value = ''
+      renderTodayDone()
+    })
+  }
+
   await fetchData()
   renderList()
 
@@ -36,8 +47,8 @@ window.onload = async () => {
       <hr style="margin: 20px 0; border-top: 2px solid #000;" />
       <h2 style="text-align: center; margin-bottom: 24px;">數位小兔取貨單</h2>
       <p><strong>取貨人：</strong>${data.contact || ''}</p>
-      <p><strong>商品：</strong><span style='white-space:pre-line;'>${data.product || ''}</span></p>
-      <p><strong>備註：</strong><span style='white-space:pre-line;'>${data.note || '—'}</span>（${data.paid || '—'}）</p>
+      <p><strong>商品：</strong><span style="white-space:pre-line;">${data.product || ''}</span></p>
+      <p><strong>備註：</strong><span style="white-space:pre-line;">${data.note || '—'}</span>（${data.paid || '—'}）</p>
       <p><strong>服務業務：</strong>${data.createdBy || ''}</p>
     `
     document.getElementById('list-area').style.display = 'none'
@@ -47,7 +58,7 @@ window.onload = async () => {
     document.getElementById('list-area').style.display = 'block'
   })
 
-  // 內嵌編輯：商品/備註
+  // 內嵌編輯：商品／備註
   document.addEventListener('click', (e) => {
     const t = e.target
     if (!t.classList.contains('editable')) return
@@ -106,14 +117,23 @@ window.onload = async () => {
     if (!id) return
     const nickname = localStorage.getItem('nickname') || '未登入'
     const ref = doc(db, 'pickups', id)
-    await updateDoc(ref, { pinStatus: 1, doneBy: nickname, doneAt: serverTimestamp() })
+    await updateDoc(ref, {
+      pinStatus: 1,
+      doneBy: nickname,
+      doneAt: serverTimestamp()    // 🆕 取貨完成時間
+    })
     const item = pickupList.find(p => p.id === id)
-    if (item) item.pinStatus = 1
+    if (item) {
+      item.pinStatus = 1
+      item.doneBy = nickname
+      // 前端暫時用現在時間，等下次 reload 會以 serverTimestamp 為準
+      item.doneAt = { toDate: () => new Date() }
+    }
     renderList()
   })
 }
 
-// 三個月內（DB 端篩選）
+// === Firestore 讀取：三個月內 ===
 async function fetchData() {
   const now = new Date()
   const since = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
@@ -126,6 +146,61 @@ async function fetchData() {
   pickupList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 
+// 共用排序：付款狀態優先，其次建立時間
+function comparePickup(a, b) {
+  const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
+  const p1 = priority[a.paid] || 99
+  const p2 = priority[b.paid] || 99
+  if (p1 !== p2) return p1 - p2
+  const t1 = a.createdAt?.toDate?.() || new Date(0)
+  const t2 = b.createdAt?.toDate?.() || new Date(0)
+  return t2 - t1
+}
+
+// 建卡片（一般列表 & 本日已取貨共用）
+function createPickupCard(p) {
+  // 底色
+  let bgColor = '#fff9b1'
+  if (p.paid === '已付訂金') bgColor = '#d0f0ff'
+  if (p.paid === '已付全額') bgColor = '#d9f7c5'
+
+  // 超過14天未取 → 紅
+  const now = new Date()
+  const createdAt = p.createdAt?.toDate?.() || new Date(0)
+  const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
+  if (dayDiff > 14) bgColor = '#ffb1b1'
+
+  // 已取走 → 灰（搜尋時或「本日已取貨」中出現）
+  if (p.pinStatus === 1) bgColor = '#e0e0e0'
+
+  const div = document.createElement('div')
+  div.className = 'pickup-card'
+  div.style.backgroundColor = bgColor
+  div.innerHTML = `
+    <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">
+      <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>&nbsp;
+      ${p.serial || "—"}&nbsp;&nbsp;&nbsp;
+      <span class="print-link" data-id="${p.id}" style="cursor:pointer; text-decoration: underline;">
+        ${p.contact || "未填寫"}
+      </span>
+    </div>
+    <div>
+      商品：
+      <span class="editable multiline" data-id="${p.id}" data-field="product" style="cursor:text; border-bottom: 1px dashed #666;">
+        ${p.product || ''}
+      </span>
+    </div>
+    <small>
+      <span class="editable multiline" data-id="${p.id}" data-field="note" style="cursor:text; border-bottom: 1px dashed #999;">
+        ${p.note || '—'}
+      </span>
+      （${p.paid || '—'}）(${p.createdBy || ''})
+    </small>
+  `
+  return div
+}
+
+// 一般列表：預設只顯示未完成，搜尋可搜到已完成
 function renderList() {
   const kwRaw = document.getElementById('search').value || ''
   const kw = kwRaw.trim().toLowerCase()
@@ -134,64 +209,43 @@ function renderList() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
 
-  const priority = { '未付款': 1, '已付訂金': 2, '已付全額': 3 }
-  pickupList.sort((a, b) => {
-    const p1 = priority[a.paid] || 99
-    const p2 = priority[b.paid] || 99
-    if (p1 !== p2) return p1 - p2
-    const t1 = a.createdAt?.toDate?.() || new Date(0)
-    const t2 = b.createdAt?.toDate?.() || new Date(0)
-    return t2 - t1
-  })
+  pickupList.sort(comparePickup)
 
   pickupList.forEach(p => {
     // 預設（非搜尋狀態）→ 只顯示未完成
     if (!isSearching && p.pinStatus === 1) return
 
-    // 搜尋比對（搜尋時才需要吻合；非搜尋顯示全部未完成）
+    // 搜尋比對
     if (isSearching) {
       const match = [p.serial, p.contact, p.product, p.note, p.createdBy]
         .some(v => (v || '').toLowerCase().includes(kw))
       if (!match) return
     }
 
-    // 底色
-    let bgColor = '#fff9b1'
-    if (p.paid === '已付訂金') bgColor = '#d0f0ff'
-    if (p.paid === '已付全額') bgColor = '#d9f7c5'
+    list.appendChild(createPickupCard(p))
+  })
+}
 
-    // 超過14天未取 → 紅
-    const now = new Date()
-    const createdAt = p.createdAt?.toDate?.() || new Date(0)
-    const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
-    if (dayDiff > 14) bgColor = '#ffb1b1'
+// 🆕 本日已取貨列表（今天 00:00 之後 pinStatus=1 且有 doneAt）
+function renderTodayDone() {
+  const list = document.getElementById('pickup-list')
+  list.innerHTML = ''
 
-    // 已取走 → 灰（搜尋時才會出現，但顏色仍要正確）
-    if (p.pinStatus === 1) bgColor = '#e0e0e0'
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
 
-    const div = document.createElement('div')
-    div.className = 'pickup-card'
-    div.style.backgroundColor = bgColor
-    div.innerHTML = `
-      <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">
-        <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>&nbsp;
-        ${p.serial || "—"}&nbsp;&nbsp;&nbsp;
-        <span class="print-link" data-id="${p.id}" style="cursor:pointer; text-decoration: underline;">${p.contact || "未填寫"}</span>
-      </div>
-      <div>
-        商品：
-        <span class="editable multiline" data-id="${p.id}" data-field="product" style="cursor:text; border-bottom: 1px dashed #666;">
-          ${p.product || ''}
-        </span>
-      </div>
-      <small>
-        <span class="editable multiline" data-id="${p.id}" data-field="note" style="cursor:text; border-bottom: 1px dashed #999;">
-          ${p.note || '—'}
-        </span>
-        （${p.paid || '—'}）(${p.createdBy || ''})
-      </small>
-    `
-    list.appendChild(div)
+  const todayDone = pickupList.filter(p => {
+    if (p.pinStatus !== 1) return false
+    const doneAt = p.doneAt?.toDate?.()
+    if (!doneAt) return false
+    return doneAt >= start && doneAt < end
+  })
+
+  todayDone.sort(comparePickup)
+
+  todayDone.forEach(p => {
+    list.appendChild(createPickupCard(p))
   })
 }
 
