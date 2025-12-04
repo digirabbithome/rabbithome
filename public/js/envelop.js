@@ -103,36 +103,6 @@ window.addEventListener('load', async () => {
 
   searchInput?.addEventListener('input', renderFilteredData);
 
-  // 標題排序：時間（流水號）、來源
-  const thTime = document.querySelector('#recordsTable thead th:nth-child(1)');
-  const thSource = document.querySelector('#recordsTable thead th:nth-child(6)');
-  if (thTime) {
-    thTime.style.cursor = 'pointer';
-    thTime.title = '依流水號排序（再按一次反向）';
-    thTime.addEventListener('click', () => {
-      if (sortMode === 'serial') {
-        sortAsc = !sortAsc;
-      } else {
-        sortMode = 'serial';
-        sortAsc = true;
-      }
-      renderFilteredData();
-    });
-  }
-  if (thSource) {
-    thSource.style.cursor = 'pointer';
-    thSource.title = '依來源排序（再按一次反向）';
-    thSource.addEventListener('click', () => {
-      if (sortMode === 'source') {
-        sortAsc = !sortAsc;
-      } else {
-        sortMode = 'source';
-        sortAsc = true;
-      }
-      renderFilteredData();
-    });
-  }
-
   function getCheckedSources() {
     const nodes = form.querySelectorAll('input[name="source"]:checked');
     return Array.from(nodes).map(n => n.value.trim()).filter(Boolean);
@@ -187,8 +157,6 @@ window.addEventListener('load', async () => {
   }
 
   let allData = [];
-  let sortMode = null; // 'serial' | 'source'
-  let sortAsc = true;
 
   async function loadData() {
     const q = query(collection(db, 'envelopes'), orderBy('timestamp', 'desc'));
@@ -245,35 +213,7 @@ window.addEventListener('load', async () => {
     const HIGHLIGHT_AREAS = ['台北市信義區','台中市北屯區'];
     const isAreaHit = (addr='') => HIGHLIGHT_AREAS.some(tag => addr.includes(tag));
 
-    // 4) 每日內依排序模式（流水號 / 來源 / 預設時間）排序
-    Object.keys(groups).forEach(dateStr => {
-      const arr = groups[dateStr];
-      if (!arr || arr.length <= 1) return;
-      if (sortMode === 'serial') {
-        const dir = sortAsc ? 1 : -1;
-        arr.sort((a, b) => {
-          const aNum = Number(a.serialCore || a.serial || 0);
-          const bNum = Number(b.serialCore || b.serial || 0);
-          if (aNum !== bNum) return (aNum - bNum) * dir;
-          const aB = (a.serial || '').startsWith('B');
-          const bB = (b.serial || '').startsWith('B');
-          if (aB !== bB) return (aB ? -1 : 1) * dir; // B 開頭優先
-          return ((a.serial || '').localeCompare(b.serial || '')) * dir;
-        });
-      } else if (sortMode === 'source') {
-        const dir = sortAsc ? 1 : -1;
-        arr.sort((a, b) => {
-          const sa = (a.source || '').localeCompare(b.source || '');
-          if (sa !== 0) return sa * dir;
-          return (a.timestamp - b.timestamp) * dir;
-        });
-      } else {
-        // 預設：每日期內依時間（新到舊）
-        arr.sort((a, b) => b.timestamp - a.timestamp);
-      }
-    });
-
-    // 5) 依日期由新到舊輸出
+    // 4) 依日期由新到舊輸出
     const sortedDates = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
     sortedDates.forEach(dateStr => {
       const sep = document.createElement('tr');
@@ -340,12 +280,10 @@ window.addEventListener('load', async () => {
         }
       });
     });
-
-    // 筆按鈕複製功能每次重繪後重新綁定
-    if (typeof bindNoteButtons === 'function') {
-      bindNoteButtons();
-    }
   }
+
+  // 重新綁定標記 / 複製單號的筆按鈕
+  bindNoteButtons();
 
   await loadData();
   await loadFavQuickButtons();
@@ -432,3 +370,5 @@ function bindNoteButtons(){
     });
   }
 }
+// call bindNoteButtons after render
+setTimeout(bindNoteButtons, 500);
