@@ -18,6 +18,7 @@ const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
 
 
 
+
 window.onload = async () => {
   document.getElementById('addBtn').addEventListener('click', addPickup)
   document.getElementById('search').addEventListener('input', renderList)
