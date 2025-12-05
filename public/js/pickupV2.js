@@ -7,13 +7,15 @@ import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/fireb
 let pickupList = []
 
 // 🕒 台北時區時間格式（顯示取貨時間用）
-const TPE = 'Asia/Taipei'
 const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
   timeZone: TPE,
+  month: '2-digit',
+  day: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
   hour12: false
 })
+
 
 
 window.onload = async () => {
