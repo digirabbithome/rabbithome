@@ -314,6 +314,8 @@ window.addEventListener('load', async () => {
         const addrClass = isAreaHit(addr) ? 'area-highlight' : '';
 
         const tr = document.createElement('tr');
+        // 👇 這行是新的：把當初填單的小幫手暱稱塞進這一列
+        tr.dataset.account = data.account || '';
         tr.innerHTML = `
           <td>
             <div class="timebox">
@@ -445,13 +447,14 @@ function bindNoteButtons(){
       var trackingInput = tr ? tr.querySelector('.tracking-input') : null;
       var tracking = trackingInput ? (trackingInput.value || '') : '';
 
-      // 小幫手暱稱（從 localStorage 取得）
-      var nickname = localStorage.getItem('nickname') || '小幫手';
+      // 🐰 小幫手＝當初填這筆信封的人（來自 renderFilteredData 時塞進去的 data-account）
+      var helper = tr ? (tr.dataset.account || '小幫手') : '小幫手';
 
       if (tracking) {
         var message =
-          '哈囉～您的商品小幫手' + nickname + '已經幫您出貨了囉！📦💗\n\n' +
-          '這是您的貨件追蹤單號：\n👉 ' + tracking + '\n' +
+          '哈囉～您的商品小幫手' + helper + '已經幫您出貨了囉！📦💗\n\n' +
+          '這是您的貨件追蹤單號：\n' +
+          '👉 ' + tracking + '\n' +
           '大約 1～2 個工作天就會抵達嚕 😊\n' +
           '記得留意一下包裹唷！\n\n' +
           '謝謝您支持數位小兔 🐰✨\n' +
@@ -470,4 +473,3 @@ function bindNoteButtons(){
     });
   }
 }
-
