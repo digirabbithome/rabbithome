@@ -1,3 +1,4 @@
+// === Rabbithome x SmilePay 電子發票 Cloud Functions v2025-12-07 ===
 const functions = require('firebase-functions/v2/https')
 const admin = require('firebase-admin')
 const fetch = require('node-fetch')
@@ -8,19 +9,19 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore()
 
-// === SmilePay 電子發票 API URL ===
+// ⚠️ 使用新版 EInvoice API 路徑（文件寫的那一組 SPEinvoice_xxx.asp）
 const SMILEPAY_ISSUE_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage.asp'
 const SMILEPAY_VOID_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Invalid.asp'
 const SMILEPAY_QUERY_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Query.asp'
 
-// 讀取每家公司的發票設定（invoice-config/{companyId}）
+// 從 Firestore invoice-config/{companyId} 讀取各家公司的 Grvc / Verify_key / name
 async function getCompanyConfig(companyId) {
   const snap = await db.collection('invoice-config').doc(companyId).get()
   if (!snap.exists) throw new Error(`invoice-config/${companyId} 不存在`)
   return snap.data()
 }
 
-// === 開立發票 ===
+// ========== 開立發票 ==========
 exports.createInvoice = functions.onRequest(async (req, res) => {
   // CORS
   res.set('Access-Control-Allow-Origin', '*')
@@ -41,6 +42,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       donateMark, donateCode
     } = req.body || {}
 
+    // 簡單檢查
     if (!companyId || !items || !items.length || !amount) {
       res.status(400).json({ success: false, message: '缺少必要欄位' })
       return
@@ -48,42 +50,49 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     const company = await getCompanyConfig(companyId)
 
-    // === 日期時間：SmilePay 需要 YYYY/MM/DD + HH:MM:SS ===
+    // === 日期 / 時間：依 SmilePay 規格 ===
+    // InvoiceDate：YYYYMMDD 例如 20251207
+    // InvoiceTime：HHMMSS   例如 143522
     const now = new Date()
-
     const y  = now.getFullYear()
     const m  = String(now.getMonth() + 1).padStart(2, '0')
     const d  = String(now.getDate()).padStart(2, '0')
     const hh = String(now.getHours()).padStart(2, '0')
-    const mi = String(now.getMinutes()).padStart(2, '0')
+    const mm = String(now.getMinutes()).padStart(2, '0')
     const ss = String(now.getSeconds()).padStart(2, '0')
 
-    const invoiceDate = `${y}/${m}/${d}`      // 例如 2025/12/07
-    const invoiceTime = `${hh}:${mi}:${ss}`   // 例如 14:42:22
+    const invoiceDate = `${y}${m}${d}`
+    const invoiceTime = `${hh}${mm}${ss}`
 
-    // 商品資訊
+    // === 品項陣列 ===
     const itemNames  = items.map(i => i.name)
     const itemCounts = items.map(i => i.qty)
     const itemPrices = items.map(i => i.price)
     const itemAmts   = items.map(i => i.amount)
 
-    // 參數組裝
     const params = new URLSearchParams()
 
-    const grvc      = (company.grvc || '').trim()
-    const verifyKey = (company.verifyKey || '').trim()
+    // 商家認證
+    params.append('Grvc', company.grvc)          // 例：SEI1001326
+    params.append('Verify_key', company.verifyKey)
 
-    params.append('Grvc', grvc)
-    params.append('Verify_key', verifyKey)
+    // ====== 稅率類型 Intype / TaxType（這次錯誤的主角）======
+    // 一般 5% 應稅（含稅金額）：
+    //   Intype = "07"
+    //   TaxType = "1"
+    //
+    // 速買配的 EInvoice 文件裡，沒有填或填錯就會回傳「稅率類型(Intype)錯誤」
+    params.append('Intype', '07')
+    params.append('TaxType', '1')
 
-    params.append('InvoiceDate', invoiceDate)
-    params.append('InvoiceTime', invoiceTime)
-
-    params.append('BuyerName', buyerTitle || '')
-    params.append('Buyer_Identifier', buyerGUI || '')
-    params.append('Amount', String(amount))
-    params.append('SalesAmount', String(amount))
-    params.append('Remark', orderId || '')
+    // 發票基本資料
+    params.append('InvoiceDate', invoiceDate)        // YYYYMMDD
+    params.append('InvoiceTime', invoiceTime)        // HHMMSS
+    params.append('BuyerName', buyerTitle || '')     // 買受人名稱
+    params.append('Buyer_Identifier', buyerGUI || '')// 統編（若無就空字串）
+    params.append('Amount', String(amount))          // 含稅總額
+    params.append('SalesAmount', String(amount))     // 銷售額（暫時同 total）
+    params.append('Remark', orderId || '')           // 我們拿來放訂單編號
 
     // 捐贈
     params.append('DonateMark', donateMark || '0')
@@ -91,27 +100,20 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       params.append('LoveCode', donateCode)
     }
 
-    // 載具
+    // 載具：手機條碼 / 自然人憑證…等
     if (carrierType && carrierType !== 'NONE' && carrierValue) {
-      // 3J0002：手機條碼；CQ0001：自然人憑證（依 SmilePay 規格）
+      // 根據 SmilePay 文件：手機條碼 3J0002，自然人憑證 CQ0001
       params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
       params.append('CarrierId1', carrierValue)
     }
 
-    // 商品陣列（SmilePay 用 [] 當多筆欄位）
-    itemNames.forEach(n => params.append('InvoiceItemName[]', n))
-    itemCounts.forEach(c => params.append('InvoiceItemCount[]', String(c)))
-    itemPrices.forEach(p => params.append('InvoiceItemPrice[]', String(p)))
-    itemAmts.forEach(a => params.append('InvoiceItemAmount[]', String(a)))
+    // 品項
+    itemNames.forEach(n  => params.append('InvoiceItemName[]',   n))
+    itemCounts.forEach(c => params.append('InvoiceItemCount[]',  String(c)))
+    itemPrices.forEach(p => params.append('InvoiceItemPrice[]',  String(p)))
+    itemAmts.forEach(a   => params.append('InvoiceItemAmount[]', String(a)))
 
-    // Debug 用：可以在 Logs 看看實際送出的日期時間
-    console.log('SmilePay createInvoice params:', {
-      Grvc: grvc,
-      InvoiceDate: invoiceDate,
-      InvoiceTime: invoiceTime,
-      Amount: amount
-    })
-
+    // 呼叫 SmilePay EInvoice API
     const spRes = await fetch(SMILEPAY_ISSUE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -119,17 +121,19 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     })
     const text = await spRes.text()
 
+    // 解析他們回傳的 XML
     const invoiceNumber = /<InvoiceNumber>(.*?)<\/InvoiceNumber>/i.exec(text)?.[1] || ''
     const randomNumber  = /<RandomNumber>(.*?)<\/RandomNumber>/i.exec(text)?.[1] || ''
     const status        = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
     const desc          = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
 
     if (status !== 'Success' && status !== 'Successed') {
-      console.error('SmilePay createInvoice error:', text)
+      // 這裡會把他們原始 XML 打包回去 raw，方便你 debug
       res.json({ success: false, message: desc || 'SmilePay 回傳失敗', raw: text })
       return
     }
 
+    // 成功就寫一筆到 Firestore
     const docRef = await db.collection('invoices').add({
       companyId,
       companyName: company.name,
@@ -166,7 +170,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
   }
 })
 
-// === 作廢發票 ===
+// ========== 作廢發票 ==========
 exports.voidInvoice = functions.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*')
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -184,12 +188,9 @@ exports.voidInvoice = functions.onRequest(async (req, res) => {
     }
     const company = await getCompanyConfig(companyId)
 
-    const grvc      = (company.grvc || '').trim()
-    const verifyKey = (company.verifyKey || '').trim()
-
     const params = new URLSearchParams()
-    params.append('Grvc', grvc)
-    params.append('Verify_key', verifyKey)
+    params.append('Grvc', company.grvc)
+    params.append('Verify_key', company.verifyKey)
     params.append('InvoiceNumber', invoiceNumber)
     params.append('Reason', reason || '發票作廢')
 
@@ -204,11 +205,11 @@ exports.voidInvoice = functions.onRequest(async (req, res) => {
     const desc   = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
 
     if (status !== 'Success' && status !== 'Successed') {
-      console.error('SmilePay voidInvoice error:', text)
       res.json({ success: false, message: desc || 'SmilePay 作廢失敗', raw: text })
       return
     }
 
+    // 更新該發票紀錄狀態
     const snap = await db.collection('invoices')
       .where('companyId', '==', companyId)
       .where('invoiceNumber', '==', invoiceNumber)
@@ -231,7 +232,7 @@ exports.voidInvoice = functions.onRequest(async (req, res) => {
   }
 })
 
-// === 查詢發票 ===
+// ========== 查詢發票 ==========
 exports.queryInvoice = functions.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*')
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -249,12 +250,9 @@ exports.queryInvoice = functions.onRequest(async (req, res) => {
     }
 
     const company = await getCompanyConfig(companyId)
-    const grvc      = (company.grvc || '').trim()
-    const verifyKey = (company.verifyKey || '').trim()
-
     const params = new URLSearchParams()
-    params.append('Grvc', grvc)
-    params.append('Verify_key', verifyKey)
+    params.append('Grvc', company.grvc)
+    params.append('Verify_key', company.verifyKey)
     params.append('InvoiceNumber', invoiceNumber)
 
     const spRes = await fetch(SMILEPAY_QUERY_URL, {
