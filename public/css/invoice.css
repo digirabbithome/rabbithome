@@ -81,12 +81,31 @@ input:focus, select:focus, textarea:focus {
   text-align: left;
 }
 
+/* 編號欄 */
+.items-table th:nth-child(1),
+.items-table td:nth-child(1) {
+  width: 2.5rem;
+  text-align: center;
+}
+
+/* 品名欄：拉長 */
 .items-table th:nth-child(2),
-.items-table td:nth-child(2),
+.items-table td:nth-child(2) {
+  width: 55%;
+}
+
+/* 數量：縮短、置中 */
 .items-table th:nth-child(3),
-.items-table td:nth-child(3),
+.items-table td:nth-child(3) {
+  width: 5rem;
+  text-align: center;
+}
+
+/* 單價、小計：靠右 */
 .items-table th:nth-child(4),
-.items-table td:nth-child(4) {
+.items-table td:nth-child(4),
+.items-table th:nth-child(5),
+.items-table td:nth-child(5) {
   text-align: right;
 }
 

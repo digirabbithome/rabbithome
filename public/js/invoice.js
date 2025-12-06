@@ -21,6 +21,8 @@ function setupForm() {
   $('#addItemBtn').addEventListener('click', (e) => {
     e.preventDefault()
     addItemRow()
+    addItemRow()
+    addItemRow()
   })
 
   $('#issueBtn').addEventListener('click', issueInvoice)
@@ -28,7 +30,6 @@ function setupForm() {
   $('#filterStatus').addEventListener('change', reloadInvoices)
   $('#searchKeyword').addEventListener('input', () => reloadInvoices())
 
-  $('#carrierType').addEventListener('change', handleCarrierChange)
   $('#donateMark').addEventListener('change', handleDonateChange)
   $('#parsePosBtn').addEventListener('click', (e) => {
     e.preventDefault()
@@ -36,18 +37,12 @@ function setupForm() {
   })
 
   addItemRow()
-  handleCarrierChange()
   handleDonateChange()
-}
-
-function handleCarrierChange() {
-  const type = $('#carrierType').value
-  $('#carrierValueLabel').style.display = type === 'NONE' ? 'none' : 'flex'
 }
 
 function handleDonateChange() {
   const v = $('#donateMark').value
-  $('#donateCodeLabel').style.display = v === '1' ? 'flex' : 'none'
+  $('#donateCodeLabel').style.display = v === '1' ? 'flex' : 'flex'
 }
 
 function addItemRow(prefill = null) {
@@ -55,7 +50,8 @@ function addItemRow(prefill = null) {
   const tr = document.createElement('tr')
 
   tr.innerHTML = `
-    <td><input class="item-name" placeholder="品名" /></td>
+    <td class="item-index"></td>
+    <td><input class="item-name" /></td>
     <td><input class="item-qty" type="number" min="1" value="1" /></td>
     <td><input class="item-price" type="number" min="0" value="0" /></td>
     <td class="item-amount">0</td>
@@ -94,6 +90,13 @@ function addItemRow(prefill = null) {
   recalc()
 }
 
+function updateItemIndices() {
+  $$('#itemsBody tr').forEach((tr, idx) => {
+    const cell = tr.querySelector('.item-index')
+    if (cell) cell.textContent = idx + 1
+  })
+}
+
 function recalcTotal() {
   let total = 0
   $$('#itemsBody tr').forEach(tr => {
@@ -101,6 +104,7 @@ function recalcTotal() {
     total += amt
   })
   $('#totalAmount').textContent = total
+  updateItemIndices()
 }
 
 function parsePosAndFill() {
@@ -158,6 +162,12 @@ function parsePosText(text) {
   return { items: resultItems, total }
 }
 
+function detectCarrierType(value) {
+  if (!value) return 'NONE'
+  if (value.startsWith('/')) return 'MOBILE'
+  return 'NATURAL'
+}
+
 async function issueInvoice() {
   const statusEl = $('#issueStatus')
   statusEl.textContent = '發票開立中…'
@@ -169,10 +179,19 @@ async function issueInvoice() {
   const contactName = $('#contactName').value.trim()
   const contactPhone = $('#contactPhone').value.trim()
   const contactEmail = $('#contactEmail').value.trim()
-  const carrierType = $('#carrierType').value
   const carrierValue = $('#carrierValue').value.trim()
   const donateMark = $('#donateMark').value
   const donateCode = $('#donateCode').value.trim()
+
+  const carrierType = detectCarrierType(carrierValue)
+
+  if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
+    const goOn = confirm('載具好像不是 8 碼（一般手機條碼是 8 碼、開頭為 /），確定要送出嗎？')
+    if (!goOn) {
+      statusEl.textContent = '已取消送出，請確認載具內容'
+      return
+    }
+  }
 
   const items = $$('#itemsBody tr').map(tr => {
     const name = tr.querySelector('.item-name').value.trim()
@@ -235,6 +254,8 @@ function listenInvoices() {
   })
 }
 
+function setupList() {}
+
 function reloadInvoices() {
   const tbody = $('#invoiceListBody')
   tbody.innerHTML = ''
@@ -289,6 +310,10 @@ async function handleRowAction(e) {
   if (!inv) return
 
   if (action === 'print') {
+    if (inv.carrierValue) {
+      const goOn = confirm('這張是「載具發票」，一般不需要列印實體。若只是要留存內部紀錄，可以按「確定」繼續列印。')
+      if (!goOn) return
+    }
     buildPrintArea(inv)
     window.print()
   } else if (action === 'query') {
@@ -350,14 +375,19 @@ async function voidInvoice(inv) {
 
 function buildPrintArea(inv) {
   const area = $('#printArea')
-  const itemsHtml = (inv.items || []).map(it => `
+  const itemsHtml = (inv.items || []).map((it, idx) => `
     <tr>
+      <td style="text-align:center;">${idx + 1}</td>
       <td>${it.name}</td>
       <td style="text-align:center;">${it.qty}</td>
       <td style="text-align:right;">${it.price}</td>
       <td style="text-align:right;">${it.amount}</td>
     </tr>
   `).join('')
+
+  const note = inv.carrierValue
+    ? '（此張為載具發票，實體列印僅供內部留存）'
+    : '（此張為紙本發票，請妥善交付與留存）'
 
   area.innerHTML = `
     <div style="text-align:center;margin-bottom:0.3cm;">
@@ -370,10 +400,12 @@ function buildPrintArea(inv) {
     <p>買受人：${inv.buyerTitle || ''}${inv.buyerGUI ? '（統編：' + inv.buyerGUI + '）' : ''}</p>
     <p>聯絡人：${inv.contactName || ''}　電話：${inv.contactPhone || ''}</p>
     <p>E-mail：${inv.contactEmail || ''}</p>
+    <p>${note}</p>
     <hr />
     <table style="width:100%;border-collapse:collapse;font-size:10pt;">
       <thead>
         <tr>
+          <th style="border-bottom:1px solid #000;text-align:center;">#</th>
           <th style="border-bottom:1px solid #000;text-align:left;">品名</th>
           <th style="border-bottom:1px solid #000;">數量</th>
           <th style="border-bottom:1px solid #000;text-align:right;">單價</th>

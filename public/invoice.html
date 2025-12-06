@@ -21,52 +21,43 @@
           <select id="companySelect">
             <option value="rabbit">數位小兔</option>
             <option value="focus">聚焦數位</option>
-            <option value="nosleep">免睡攝影</option>
+            <option value="neversleep">NeverSleep 免睡攝影</option>
           </select>
         </label>
 
         <label>
           訂單編號
-          <input id="orderId" type="text" placeholder="例如：POS-20251206-001" />
+          <input id="orderId" type="text" />
         </label>
 
         <label>
           買受人統編
-          <input id="buyerGUI" type="text" maxlength="8" placeholder="無統編可留空" />
+          <input id="buyerGUI" type="text" maxlength="8" />
         </label>
 
         <label>
           買受人抬頭
-          <input id="buyerTitle" type="text" placeholder="公司名稱或個人姓名" />
+          <input id="buyerTitle" type="text" />
         </label>
 
         <label>
           聯絡人姓名
-          <input id="contactName" type="text" placeholder="例如：王小明" />
+          <input id="contactName" type="text" />
         </label>
 
         <label>
           聯絡電話
-          <input id="contactPhone" type="tel" placeholder="例如：0912-345678" />
+          <input id="contactPhone" type="tel" />
         </label>
 
         <label>
           聯絡 E-mail
-          <input id="contactEmail" type="email" placeholder="發票通知信箱（可留空）" />
+          <input id="contactEmail" type="email" />
         </label>
 
         <label>
-          載具
-          <select id="carrierType">
-            <option value="NONE">無載具（列印紙本）</option>
-            <option value="MOBILE">手機條碼</option>
-            <option value="NATURAL">自然人憑證</option>
-          </select>
-        </label>
-
-        <label id="carrierValueLabel">
-          載具號碼
-          <input id="carrierValue" type="text" placeholder="/ABCD123（手機條碼）" />
+          載具（有填視為使用載具，沒填視為紙本）
+          <input id="carrierValue" type="text" />
         </label>
 
         <label>
@@ -79,7 +70,7 @@
 
         <label id="donateCodeLabel">
           捐贈碼
-          <input id="donateCode" type="text" placeholder="例如：慈濟捐贈碼" />
+          <input id="donateCode" type="text" />
         </label>
       </div>
 
@@ -114,6 +105,7 @@ x 1=
         <table class="items-table">
           <thead>
             <tr>
+              <th>#</th>
               <th>品名</th>
               <th>數量</th>
               <th>單價</th>
@@ -123,7 +115,7 @@ x 1=
           </thead>
           <tbody id="itemsBody"></tbody>
         </table>
-        <button id="addItemBtn" class="btn-secondary">＋ 新增一列</button>
+        <button id="addItemBtn" class="btn-secondary">＋ 一次新增三列</button>
 
         <div class="amount-row">
           <span>總金額：</span>

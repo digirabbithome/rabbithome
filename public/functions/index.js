@@ -8,7 +8,6 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore()
 
-// TODO: 確認這三個 URL 是否與速買配文件一致
 const SMILEPAY_ISSUE_URL  = 'https://ssl.smse.com.tw/api/SPInvoice_Storage.asp'
 const SMILEPAY_VOID_URL   = 'https://ssl.smse.com.tw/api/SPInvoice_Invalid.asp'
 const SMILEPAY_QUERY_URL  = 'https://ssl.smse.com.tw/api/SPInvoice_Query.asp'
@@ -46,8 +45,8 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const company = await getCompanyConfig(companyId)
 
     const now = new Date()
-    const invoiceDate = now.toISOString().slice(0, 10) // yyyy-mm-dd
-    const invoiceTime = now.toTimeString().slice(0, 8) // HH:MM:SS
+    const invoiceDate = now.toISOString().slice(0, 10)
+    const invoiceTime = now.toTimeString().slice(0, 8)
 
     const itemNames  = items.map(i => i.name)
     const itemCounts = items.map(i => i.qty)
@@ -59,7 +58,6 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('Grvc', company.grvc)
     params.append('Verify_key', company.verifyKey)
 
-    // ⚠️ 以下欄位名稱與格式請依照速買配電子發票文件微調
     params.append('InvoiceDate', invoiceDate.replace(/-/g, ''))
     params.append('InvoiceTime', invoiceTime)
     params.append('BuyerName', buyerTitle || '')
@@ -73,7 +71,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       params.append('LoveCode', donateCode)
     }
 
-    if (carrierType !== 'NONE' && carrierValue) {
+    if (carrierType && carrierType !== 'NONE' && carrierValue) {
       params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
       params.append('CarrierId1', carrierValue)
     }
@@ -111,6 +109,10 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       contactEmail,
       amount,
       items,
+      carrierType,
+      carrierValue,
+      donateMark,
+      donateCode,
       status: 'ISSUED',
       invoiceNumber,
       randomNumber,
