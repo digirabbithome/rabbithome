@@ -1,0 +1,215 @@
+body {
+  font-family: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff7fb;
+  margin: 0;
+  padding: 1.5rem;
+}
+
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0.3rem 0 1.2rem;
+  color: #777;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.2rem 1.3rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  margin-bottom: 1rem;
+}
+
+.card h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.3rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  gap: 0.2rem;
+}
+
+input, select, textarea {
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #ff88aa;
+  box-shadow: 0 0 0 1px #ff88aa33;
+}
+
+.items-block {
+  margin-top: 1rem;
+}
+
+.items-block h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+
+.items-table, .list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.items-table th, .items-table td,
+.list-table th, .list-table td {
+  border-bottom: 1px solid #f1f1f1;
+  padding: 0.35rem 0.4rem;
+  text-align: left;
+}
+
+.items-table th:nth-child(2),
+.items-table td:nth-child(2),
+.items-table th:nth-child(3),
+.items-table td:nth-child(3),
+.items-table th:nth-child(4),
+.items-table td:nth-child(4) {
+  text-align: right;
+}
+
+.amount-row {
+  margin-top: 0.5rem;
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.actions-row {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.btn-primary, .btn-secondary, .btn-outline, .btn-small {
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  background: #ff88aa;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #ff6c96;
+}
+
+.btn-secondary {
+  background: #ffe4ef;
+  color: #c35578;
+}
+
+.btn-outline {
+  border: 1px solid #ff88aa;
+  color: #ff88aa;
+  background: #fff;
+}
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.78rem;
+  background: #ffeef6;
+  color: #c35578;
+}
+
+.btn-small.danger {
+  background: #ffe1e4;
+  color: #d33;
+}
+
+.status-text {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.list-tools {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.list-tools input {
+  min-width: 200px;
+}
+
+/* POS 區塊 */
+.pos-block {
+  margin-top: 1rem;
+}
+
+.pos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+#posPaste {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  resize: vertical;
+  font-family: "Noto Sans TC", monospace;
+}
+
+.hint {
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: #888;
+}
+
+/* 列印用區域：平常隱藏，印表時顯示 */
+#printArea {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #fff;
+    padding: 0;
+  }
+  .page-container, .card {
+    display: none;
+  }
+  #printArea {
+    display: block;
+    padding: 1cm;
+    font-size: 11pt;
+  }
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rabbithome 電子發票</title>
+  <link rel="stylesheet" href="/css/invoice.css" />
+</head>
+<body>
+  <div class="page-container">
+    <header class="page-header">
+      <h1>🐰 Rabbithome 電子發票</h1>
+      <p class="subtitle">選公司 → 填寫買受人 → 貼上或輸入商品 → 開立 / 作廢 / 查詢 / 列印</p>
+    </header>
+
+    <section class="card">
+      <h2>開立發票</h2>
+
+      <div class="form-grid">
+        <label>
+          開立公司
+          <select id="companySelect">
+            <option value="rabbit">數位小兔</option>
+            <option value="focus">聚焦數位</option>
+            <option value="nosleep">免睡攝影</option>
+          </select>
+        </label>
+
+        <label>
+          訂單編號
+          <input id="orderId" type="text" placeholder="例如：POS-20251206-001" />
+        </label>
+
+        <label>
+          買受人統編
+          <input id="buyerGUI" type="text" maxlength="8" placeholder="無統編可留空" />
+        </label>
+
+        <label>
+          買受人抬頭
+          <input id="buyerTitle" type="text" placeholder="公司名稱或個人姓名" />
+        </label>
+
+        <label>
+          聯絡人姓名
+          <input id="contactName" type="text" placeholder="例如：王小明" />
+        </label>
+
+        <label>
+          聯絡電話
+          <input id="contactPhone" type="tel" placeholder="例如：0912-345678" />
+        </label>
+
+        <label>
+          聯絡 E-mail
+          <input id="contactEmail" type="email" placeholder="發票通知信箱（可留空）" />
+        </label>
+
+        <label>
+          載具
+          <select id="carrierType">
+            <option value="NONE">無載具（列印紙本）</option>
+            <option value="MOBILE">手機條碼</option>
+            <option value="NATURAL">自然人憑證</option>
+          </select>
+        </label>
+
+        <label id="carrierValueLabel">
+          載具號碼
+          <input id="carrierValue" type="text" placeholder="/ABCD123（手機條碼）" />
+        </label>
+
+        <label>
+          是否捐贈
+          <select id="donateMark">
+            <option value="0">否</option>
+            <option value="1">是</option>
+          </select>
+        </label>
+
+        <label id="donateCodeLabel">
+          捐贈碼
+          <input id="donateCode" type="text" placeholder="例如：慈濟捐贈碼" />
+        </label>
+      </div>
+
+      <div class="pos-block">
+        <div class="pos-header">
+          <h3>從 POS 貼上明細（選用）</h3>
+          <button id="parsePosBtn" class="btn-secondary">
+            解析貼上的內容 ➜ 填入商品列表
+          </button>
+        </div>
+        <textarea id="posPaste" rows="6"
+          placeholder="在這裡貼上 POS 明細，例如：
+1. NOMATIC McKinnon 25L PM Ranger 綠 攝影後背包 Ladde系統包+2個小內膽
+$ 9,379
+個
+x 1=
+9,379
+2. NOMATIC MCKINNON ACCESSORY STRAPS 配件帶 2入
+$ 489
+個
+x 1=
+489
+本單已折4230 服務費 0 總額 9,868"></textarea>
+        <p class="hint">
+          目前先支援你貼上的這種格式：<br>
+          <code>1. 品名… / $ 單價 / x 數量 = 小計 … 最後一行有「總額 金額」</code>
+        </p>
+      </div>
+
+      <div class="items-block">
+        <h3>商品明細</h3>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>品名</th>
+              <th>數量</th>
+              <th>單價</th>
+              <th>小計</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+        <button id="addItemBtn" class="btn-secondary">＋ 新增一列</button>
+
+        <div class="amount-row">
+          <span>總金額：</span>
+          <span id="totalAmount">0</span> 元
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button id="issueBtn" class="btn-primary">開立發票並上傳速買配</button>
+        <span id="issueStatus" class="status-text"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="list-header">
+        <h2>發票列表</h2>
+        <div class="list-tools">
+          <input id="searchKeyword" placeholder="搜尋：發票號碼 / 訂單 / 買受人" />
+          <select id="filterStatus">
+            <option value="ALL">全部</option>
+            <option value="ISSUED">已開立</option>
+            <option value="VOIDED">已作廢</option>
+          </select>
+          <button id="refreshListBtn" class="btn-outline">重新整理</button>
+        </div>
+      </div>
+
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>公司</th>
+            <th>發票號碼</th>
+            <th>訂單編號</th>
+            <th>買受人抬頭</th>
+            <th>金額</th>
+            <th>狀態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="invoiceListBody"></tbody>
+      </table>
+    </section>
+
+    <section id="printArea"></section>
+  </div>
+
+  <script type="module" src="/js/invoice.js"></script>
+</body>
+</html>
