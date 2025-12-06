@@ -22,6 +22,7 @@ async function getCompanyConfig(companyId) {
 }
 
 // ========== 開立發票 ==========
+// ========== 開立發票 ==========
 exports.createInvoice = functions.onRequest(async (req, res) => {
   // CORS
   res.set('Access-Control-Allow-Origin', '*')
@@ -43,16 +44,14 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     } = req.body || {}
 
     // 簡單檢查
-    if (!companyId || !items || !items.length || !amount) {
-      res.status(400).json({ success: false, message: '缺少必要欄位' })
+    if (!companyId || !items || !items.length) {
+      res.status(400).json({ success: false, message: '缺少必要欄位（companyId 或 items）' })
       return
     }
 
     const company = await getCompanyConfig(companyId)
 
-    // === 日期 / 時間：依 SmilePay 規格 ===
-    // InvoiceDate : YYYY/MM/DD  例如 2025/12/07
-    // InvoiceTime : HH:MM:SS    例如 14:35:22
+    // === 日期 / 時間 ===
     const now = new Date()
     const y  = now.getFullYear()
     const m  = String(now.getMonth() + 1).padStart(2, '0')
@@ -61,21 +60,19 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const mm = String(now.getMinutes()).padStart(2, '0')
     const ss = String(now.getSeconds()).padStart(2, '0')
 
-    // ✅ 注意：要有斜線與冒號
-    const invoiceDate = `${y}/${m}/${d}`    // 例如 2025/12/07
-    const invoiceTime = `${hh}:${mm}:${ss}` // 例如 14:35:22
+    const invoiceDate = `${y}/${m}/${d}`      // 2025/12/07
+    const invoiceTime = `${hh}:${mm}:${ss}`   // 14:35:22
 
-    // === 品項陣列 ===
-    // === 重新整理品項，確保數量 / 單價 / 小計 都正確 ===
+    // === 整理品項：過濾掉空行，並算出每一筆小計 ===
     const normalizedItems = (items || []).map(it => {
       const qty   = Number(it.qty)   || 0
       const price = Number(it.price) || 0
-      const amount = qty * price     // 🔸 各明細總額 = 數量 * 單價
+      const lineAmt = qty * price
       return {
-        name: String(it.name || ''),
+        name: String(it.name || '').trim(),
         qty,
         price,
-        amount
+        amount: lineAmt
       }
     }).filter(it => it.name && it.qty > 0)
 
@@ -84,114 +81,72 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       return
     }
 
-    // 🔸 重新算一遍總金額，避免跟 POS 傳來的 amount 有落差
+    // 重新計算總金額，避免跟前端 amount 不一致
     const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
 
-    // === 品項陣列 ===
-    const itemNames   = normalizedItems.map(i => i.name)
-    const itemCounts  = normalizedItems.map(i => i.qty)
-    const itemPrices  = normalizedItems.map(i => i.price)
-    const itemAmts    = normalizedItems.map(i => i.amount)
+    // === 依 SmilePay 規格組四個「|」分隔的欄位 ===
+    const descStr  = normalizedItems
+      .map(it => it.name.replace(/\|/g, '、'))          // 避免品名裡自己有「|」
+      .join('|')
+    const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
+    const priceStr = normalizedItems.map(it => String(it.price)).join('|')
+    const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')  // 🔸 各項目金額
 
     const params = new URLSearchParams()
 
-    // 商家認證
+    // === 商家認證 ===
     params.append('Grvc', company.grvc)
     params.append('Verify_key', company.verifyKey)
 
-    // 稅率類型：一般 5% 應稅（含稅金額）
+    // === 稅率類型：一般 5% 應稅（含稅金額） ===
     params.append('Intype', '07')
     params.append('TaxType', '1')
 
-    // 發票基本資料（這裡用重新計算的 totalAmount）
-    params.append('InvoiceDate', invoiceDate)           // YYYY/MM/DD
-    params.append('InvoiceTime', invoiceTime)           // HH:MM:SS
+    // === 發票基本資料 ===
+    params.append('InvoiceDate', invoiceDate)
+    params.append('InvoiceTime', invoiceTime)
     params.append('BuyerName', buyerTitle || '')
     params.append('Buyer_Identifier', buyerGUI || '')
-    params.append('Amount', String(totalAmount))        // 總金額（含稅）
-    params.append('AllAmount', String(totalAmount))     // 文件裡的「總金額(含稅)」
-    params.append('SalesAmount', String(totalAmount))   // 銷售額
+
+    // ✅ 金額相關（全部用重新計算的 totalAmount）
+    // 文件裡的說明是：
+    // Amount：各項目總額（用 | 分隔）
+    // AllAmount / SalesAmount：總金額
+    params.append('AllAmount', String(totalAmount))    // 總金額(含稅)
+    params.append('SalesAmount', String(totalAmount))  // 銷售額
+    params.append('TotalAmount', String(totalAmount))  // 若文件有這個欄位就一起給
+    // 給 SmilePay 當「含稅總額」，有些範例是這樣叫
+    params.append('Amt', String(totalAmount))
+
+    // 單價是否含稅：我們 POS 單價是含稅價
+    params.append('UnitTAX', 'Y')
+    params.append('TaxAmount', '0') // 讓 SmilePay 自己算稅額即可
+
     params.append('Remark', orderId || '')
 
-    // 捐贈
+    // === 捐贈 ===
     params.append('DonateMark', donateMark || '0')
     if (donateMark === '1' && donateCode) {
       params.append('LoveCode', donateCode)
     }
 
-    // 載具：手機條碼 / 自然人憑證等
+    // === 載具 ===
     if (carrierType && carrierType !== 'NONE' && carrierValue) {
+      // 文件：手機條碼 3J0002，自然人憑證 CQ0001
       params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
       params.append('CarrierId1', carrierValue)
     }
 
-    // === 明細欄位：長度一定完全一樣 ===
-    itemNames.forEach(n  => params.append('InvoiceItemName[]',   n))
-    itemCounts.forEach(c => params.append('InvoiceItemCount[]',  String(c)))
-    itemPrices.forEach(p => params.append('InvoiceItemPrice[]',  String(p)))
+    // === 商品明細（四個「|」字串）===
+    params.append('Description', descStr)
+    params.append('Quantity', qtyStr)
+    params.append('UnitPrice', priceStr)
+    params.append('Amount', amtStr)   // 🔸 各明細總額（最關鍵，一定要 = qty*price）
 
-    // 🔸 明細金額（各項目）— 對應文件的 Amount（各明細總額）
-    itemAmts.forEach(a   => {
-      params.append('InvoiceItemAmount[]', String(a))  // 有些範例用這個名稱
-      params.append('Amount[]',             String(a))  // 文件欄位名是 Amount
-    })
+    // ⭐ 在這裡印出完整 payload，方便你在 Logs 看到
+    console.log('[SmilePay Payload]', params.toString())
 
-    // 🔸 商品稅率型態：全部 1 = 應稅
-    normalizedItems.forEach(() => {
-      params.append('ProductTaxType[]', '1')
-    })
-
-
-    // 商家認證
-    params.append('Grvc', company.grvc)          // 例：SEI1001326
-    params.append('Verify_key', company.verifyKey)
-
-    // ====== 稅率類型 Intype / TaxType ======
-    // 一般 5% 應稅（含稅金額）：
-    //   Intype = "07"
-    //   TaxType = "1"
-    params.append('Intype', '07')
-    params.append('TaxType', '1')
-
-    // 發票基本資料
-    params.append('InvoiceDate', invoiceDate)          // YYYY/MM/DD
-    params.append('InvoiceTime', invoiceTime)          // HH:MM:SS
-    params.append('BuyerName', buyerTitle || '')       // 買受人名稱
-    params.append('Buyer_Identifier', buyerGUI || '')  // 統編（若無就空字串）
-
-    // ✅ 金額相關（全部用明細加總）
-    params.append('Amount', String(totalForSmile))       // 舊欄位，含稅總額
-    params.append('AllAmount', String(totalForSmile))    // 總金額(含稅)
-    params.append('SalesAmount', String(totalForSmile))  // 銷售額
-
-    // 單價是否含稅：我們 POS 的單價是「含稅價」
-    params.append('UnitTAX', 'Y')
-
-    // 目前先當 B2C 含稅，稅額讓 SmilePay 自己算，這裡先填 0
-    params.append('TaxAmount', '0')
-
-    params.append('Remark', orderId || '')              // 我們拿來放訂單編號
-
-    // 捐贈
-    params.append('DonateMark', donateMark || '0')
-    if (donateMark === '1' && donateCode) {
-      params.append('LoveCode', donateCode)
-    }
-
-    // 載具：手機條碼 / 自然人憑證…等
-    if (carrierType && carrierType !== 'NONE' && carrierValue) {
-      // 根據 SmilePay 文件：手機條碼 3J0002，自然人憑證 CQ0001
-      params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
-      params.append('CarrierId1', carrierValue)
-    }
-
-    // 品項
-    itemNames.forEach(n  => params.append('InvoiceItemName[]',   n))
-    itemCounts.forEach(c => params.append('InvoiceItemCount[]',  String(c)))
-    itemPrices.forEach(p => params.append('InvoiceItemPrice[]',  String(p)))
-    itemAmts.forEach(a   => params.append('InvoiceItemAmount[]', String(a)))
-
-    // 呼叫 SmilePay EInvoice API
+    // === 呼叫 SmilePay EInvoice API ===
     const spRes = await fetch(SMILEPAY_ISSUE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -199,14 +154,13 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     })
     const text = await spRes.text()
 
-    // 解析他們回傳的 XML
+    // 解析 XML
     const invoiceNumber = /<InvoiceNumber>(.*?)<\/InvoiceNumber>/i.exec(text)?.[1] || ''
     const randomNumber  = /<RandomNumber>(.*?)<\/RandomNumber>/i.exec(text)?.[1] || ''
     const status        = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
     const desc          = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
 
     if (status !== 'Success' && status !== 'Successed') {
-      // 這裡會把他們原始 XML 打包回去 raw，方便你 debug
       res.json({ success: false, message: desc || 'SmilePay 回傳失敗', raw: text })
       return
     }
@@ -221,8 +175,8 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       contactName,
       contactPhone,
       contactEmail,
-      amount,
-      items,
+      amount: totalAmount,           // 這裡也統一用重新計算的
+      items: normalizedItems,
       carrierType,
       carrierValue,
       donateMark,
@@ -247,6 +201,11 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     res.status(500).json({ success: false, message: err.message })
   }
 })
+
+
+
+
+
 
 // ========== 作廢發票 ==========
 exports.voidInvoice = functions.onRequest(async (req, res) => {
