@@ -358,4 +358,4 @@ exports.queryInvoice = functions.onRequest(async (req, res) => {
 })
 
 
-console.log('[SmilePay Payload]', params.toString());
+
