@@ -8,9 +8,6 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore()
 
-//const SMILEPAY_ISSUE_URL  = 'https://ssl.smse.com.tw/api/SPInvoice_Storage.asp'
-//const SMILEPAY_VOID_URL   = 'https://ssl.smse.com.tw/api/SPInvoice_Invalid.asp'
-//const SMILEPAY_QUERY_URL  = 'https://ssl.smse.com.tw/api/SPInvoice_Query.asp'
 
 const SMILEPAY_ISSUE_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage.asp'
 const SMILEPAY_VOID_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Invalid.asp'
