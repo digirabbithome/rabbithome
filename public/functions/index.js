@@ -48,8 +48,20 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const company = await getCompanyConfig(companyId)
 
     const now = new Date()
-    const invoiceDate = now.toISOString().slice(0, 10)
-    const invoiceTime = now.toTimeString().slice(0, 8)
+
+// 日期：YYYYMMDD（例如 20251206）
+const y = now.getFullYear()
+const m = String(now.getMonth() + 1).padStart(2, '0')
+const d = String(now.getDate()).padStart(2, '0')
+const invoiceDate = `${y}${m}${d}`
+
+// 時間：HHMMSS（例如 144222）
+const hh = String(now.getHours()).padStart(2, '0')
+const mm = String(now.getMinutes()).padStart(2, '0')
+const ss = String(now.getSeconds()).padStart(2, '0')
+const invoiceTime = `${hh}${mm}${ss}`
+
+
 
     const itemNames  = items.map(i => i.name)
     const itemCounts = items.map(i => i.qty)
@@ -61,8 +73,11 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('Grvc', company.grvc)
     params.append('Verify_key', company.verifyKey)
 
-    params.append('InvoiceDate', invoiceDate.replace(/-/g, ''))
+    
+    params.append('InvoiceDate', invoiceDate)
     params.append('InvoiceTime', invoiceTime)
+
+    
     params.append('BuyerName', buyerTitle || '')
     params.append('Buyer_Identifier', buyerGUI || '')
     params.append('Amount', String(amount))
