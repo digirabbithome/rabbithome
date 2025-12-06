@@ -232,3 +232,110 @@ input:focus, select:focus, textarea:focus {
     font-size: 11pt;
   }
 }
+
+
+
+/* 列印區容器 */
+#printArea {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+}
+
+/* 發票卡片 */
+.einv-card {
+  width: 280px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px 10px 16px;
+  box-sizing: border-box;
+  font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.einv-header {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.einv-logo-ch {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.einv-logo-en {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.einv-title {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.einv-period {
+  text-align: center;
+  font-size: 16px;
+  margin-top: 4px;
+}
+
+.einv-number {
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+
+.einv-datetime {
+  text-align: center;
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.einv-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.einv-barcode {
+  margin-top: 10px;
+  text-align: center;
+  height: 50px; /* 未來條碼畫在這裡 */
+}
+
+.einv-qrs {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.einv-qr {
+  width: 90px;
+  height: 90px;
+  border: 1px solid #ccc; /* 之後會被 QR code 填滿 */
+}
+
+/* 明細區 */
+.einv-sep {
+  margin: 12px 0 8px;
+  border: none;
+  border-top: 1px dashed #ccc;
+}
+
+.einv-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.einv-detail-table th,
+.einv-detail-table td {
+  border-bottom: 1px solid #eee;
+  padding: 2px 4px;
+}
+
+.einv-detail-table th {
+  text-align: left;
+}
