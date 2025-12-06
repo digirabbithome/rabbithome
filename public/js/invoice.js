@@ -3,7 +3,8 @@ import {
   collection, onSnapshot, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-const FUNCTIONS_BASE = 'https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net' // TODO: 換成實際 Functions URL
+//const FUNCTIONS_BASE = 'https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net' // TODO: 換成實際 Functions URL
+const FUNCTIONS_BASE = 'https://us-central1-rabbithome-auth.cloudfunctions.net'
 
 const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
