@@ -50,19 +50,25 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     const company = await getCompanyConfig(companyId)
 
-    // === 日期 / 時間：依 SmilePay 規格 ===
-    // InvoiceDate：YYYYMMDD 例如 20251207
-    // InvoiceTime：HHMMSS   例如 143522
-    const now = new Date()
-    const y  = now.getFullYear()
-    const m  = String(now.getMonth() + 1).padStart(2, '0')
-    const d  = String(now.getDate()).padStart(2, '0')
-    const hh = String(now.getHours()).padStart(2, '0')
-    const mm = String(now.getMinutes()).padStart(2, '0')
-    const ss = String(now.getSeconds()).padStart(2, '0')
 
-    const invoiceDate = `${y}${m}${d}`
-    const invoiceTime = `${hh}${mm}${ss}`
+// === 日期 / 時間：依 SmilePay 規格 ===
+// InvoiceDate : YYYY/MM/DD  例如 2025/12/07
+// InvoiceTime : HH:MM:SS    例如 14:35:22
+const now = new Date()
+const y  = now.getFullYear()
+const m  = String(now.getMonth() + 1).padStart(2, '0')
+const d  = String(now.getDate()).padStart(2, '0')
+const hh = String(now.getHours()).padStart(2, '0')
+const mm = String(now.getMinutes()).padStart(2, '0')
+const ss = String(now.getSeconds()).padStart(2, '0')
+
+// ✅ 注意：要有斜線與冒號
+const invoiceDate = `${y}/${m}/${d}`   // 例如 2025/12/07
+const invoiceTime = `${hh}:${mm}:${ss}` // 例如 14:35:22
+
+
+
+    
 
     // === 品項陣列 ===
     const itemNames  = items.map(i => i.name)
