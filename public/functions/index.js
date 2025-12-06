@@ -50,25 +50,20 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     const company = await getCompanyConfig(companyId)
 
+    // === 日期 / 時間：依 SmilePay 規格 ===
+    // InvoiceDate : YYYY/MM/DD  例如 2025/12/07
+    // InvoiceTime : HH:MM:SS    例如 14:35:22
+    const now = new Date()
+    const y  = now.getFullYear()
+    const m  = String(now.getMonth() + 1).padStart(2, '0')
+    const d  = String(now.getDate()).padStart(2, '0')
+    const hh = String(now.getHours()).padStart(2, '0')
+    const mm = String(now.getMinutes()).padStart(2, '0')
+    const ss = String(now.getSeconds()).padStart(2, '0')
 
-// === 日期 / 時間：依 SmilePay 規格 ===
-// InvoiceDate : YYYY/MM/DD  例如 2025/12/07
-// InvoiceTime : HH:MM:SS    例如 14:35:22
-const now = new Date()
-const y  = now.getFullYear()
-const m  = String(now.getMonth() + 1).padStart(2, '0')
-const d  = String(now.getDate()).padStart(2, '0')
-const hh = String(now.getHours()).padStart(2, '0')
-const mm = String(now.getMinutes()).padStart(2, '0')
-const ss = String(now.getSeconds()).padStart(2, '0')
-
-// ✅ 注意：要有斜線與冒號
-const invoiceDate = `${y}/${m}/${d}`   // 例如 2025/12/07
-const invoiceTime = `${hh}:${mm}:${ss}` // 例如 14:35:22
-
-
-
-    
+    // ✅ 注意：要有斜線與冒號
+    const invoiceDate = `${y}/${m}/${d}`    // 例如 2025/12/07
+    const invoiceTime = `${hh}:${mm}:${ss}` // 例如 14:35:22
 
     // === 品項陣列 ===
     const itemNames  = items.map(i => i.name)
@@ -76,29 +71,52 @@ const invoiceTime = `${hh}:${mm}:${ss}` // 例如 14:35:22
     const itemPrices = items.map(i => i.price)
     const itemAmts   = items.map(i => i.amount)
 
+    // 依明細再算一次總額，讓 AllAmount / SalesAmount / Amount 一致
+    const detailTotal = itemAmts.reduce(
+      (sum, a) => sum + Number(a || 0),
+      0
+    )
+
+    // 如果前端傳來的 amount 跟明細加總不一樣，寫個 log 但仍以明細為準送給 SmilePay
+    if (Number(amount) !== detailTotal) {
+      console.warn(
+        `[SmilePay] amount(${amount}) 與明細加總(${detailTotal}) 不一致，送出時以明細加總為主`
+      )
+    }
+
+    const totalForSmile = detailTotal
+
     const params = new URLSearchParams()
 
     // 商家認證
     params.append('Grvc', company.grvc)          // 例：SEI1001326
     params.append('Verify_key', company.verifyKey)
 
-    // ====== 稅率類型 Intype / TaxType（這次錯誤的主角）======
+    // ====== 稅率類型 Intype / TaxType ======
     // 一般 5% 應稅（含稅金額）：
     //   Intype = "07"
     //   TaxType = "1"
-    //
-    // 速買配的 EInvoice 文件裡，沒有填或填錯就會回傳「稅率類型(Intype)錯誤」
     params.append('Intype', '07')
     params.append('TaxType', '1')
 
     // 發票基本資料
-    params.append('InvoiceDate', invoiceDate)        // YYYYMMDD
-    params.append('InvoiceTime', invoiceTime)        // HHMMSS
-    params.append('BuyerName', buyerTitle || '')     // 買受人名稱
-    params.append('Buyer_Identifier', buyerGUI || '')// 統編（若無就空字串）
-    params.append('Amount', String(amount))          // 含稅總額
-    params.append('SalesAmount', String(amount))     // 銷售額（暫時同 total）
-    params.append('Remark', orderId || '')           // 我們拿來放訂單編號
+    params.append('InvoiceDate', invoiceDate)          // YYYY/MM/DD
+    params.append('InvoiceTime', invoiceTime)          // HH:MM:SS
+    params.append('BuyerName', buyerTitle || '')       // 買受人名稱
+    params.append('Buyer_Identifier', buyerGUI || '')  // 統編（若無就空字串）
+
+    // ✅ 金額相關（全部用明細加總）
+    params.append('Amount', String(totalForSmile))       // 舊欄位，含稅總額
+    params.append('AllAmount', String(totalForSmile))    // 總金額(含稅)
+    params.append('SalesAmount', String(totalForSmile))  // 銷售額
+
+    // 單價是否含稅：我們 POS 的單價是「含稅價」
+    params.append('UnitTAX', 'Y')
+
+    // 目前先當 B2C 含稅，稅額讓 SmilePay 自己算，這裡先填 0
+    params.append('TaxAmount', '0')
+
+    params.append('Remark', orderId || '')              // 我們拿來放訂單編號
 
     // 捐贈
     params.append('DonateMark', donateMark || '0')
