@@ -1,9 +1,11 @@
+// /js/invoice.js
+
 import { db } from '/js/firebase.js'
 import {
   collection, onSnapshot, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-//const FUNCTIONS_BASE = 'https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net' // TODO: 換成實際 Functions URL
+// === ✅ Firebase Functions base URL（你的專案） ===
 const FUNCTIONS_BASE = 'https://us-central1-rabbithome-auth.cloudfunctions.net'
 
 const $ = (s, r = document) => r.querySelector(s)
@@ -12,42 +14,76 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
 let cachedInvoices = []
 let invoicesUnsub = null
 
+// === 初始化 ===
 window.onload = () => {
   setupForm()
   setupList()
   listenInvoices()
 }
 
+// === 表單區 ===
 function setupForm() {
-  $('#addItemBtn').addEventListener('click', (e) => {
-    e.preventDefault()
-    addItemRow()
-    addItemRow()
-    addItemRow()
-  })
+  const addBtn = $('#addItemBtn')
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      addItemRow()
+      addItemRow()
+      addItemRow()
+    })
+  }
 
-  $('#issueBtn').addEventListener('click', issueInvoice)
-  $('#refreshListBtn').addEventListener('click', () => reloadInvoices())
-  $('#filterStatus').addEventListener('change', reloadInvoices)
-  $('#searchKeyword').addEventListener('input', () => reloadInvoices())
+  const issueBtn = $('#issueBtn')
+  if (issueBtn) {
+    issueBtn.addEventListener('click', issueInvoice)
+  }
 
-  $('#donateMark').addEventListener('change', handleDonateChange)
-  $('#parsePosBtn').addEventListener('click', (e) => {
-    e.preventDefault()
-    parsePosAndFill()
-  })
+  const refreshListBtn = $('#refreshListBtn')
+  if (refreshListBtn) {
+    refreshListBtn.addEventListener('click', () => reloadInvoices())
+  }
 
+  const filterStatus = $('#filterStatus')
+  if (filterStatus) {
+    filterStatus.addEventListener('change', reloadInvoices)
+  }
+
+  const searchKeyword = $('#searchKeyword')
+  if (searchKeyword) {
+    searchKeyword.addEventListener('input', () => reloadInvoices())
+  }
+
+  const donateMark = $('#donateMark')
+  if (donateMark) {
+    donateMark.addEventListener('change', handleDonateChange)
+  }
+
+  const parsePosBtn = $('#parsePosBtn')
+  if (parsePosBtn) {
+    parsePosBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      parsePosAndFill()
+    })
+  }
+
+  // 預設一列
   addItemRow()
   handleDonateChange()
 }
 
 function handleDonateChange() {
-  const v = $('#donateMark').value
-  $('#donateCodeLabel').style.display = v === '1' ? 'flex' : 'flex'
+  const v = $('#donateMark')?.value
+  const label = $('#donateCodeLabel')
+  if (!label) return
+  // 有勾「捐贈」才顯示愛心碼欄位
+  label.style.display = v === '1' ? 'flex' : 'none'
 }
 
+// === 商品列 ===
 function addItemRow(prefill = null) {
   const tbody = $('#itemsBody')
+  if (!tbody) return
+
   const tr = document.createElement('tr')
 
   tr.innerHTML = `
@@ -83,6 +119,7 @@ function addItemRow(prefill = null) {
   qtyInput.addEventListener('input', recalc)
   priceInput.addEventListener('input', recalc)
   nameInput.addEventListener('input', recalc)
+
   delBtn.addEventListener('click', () => {
     tr.remove()
     recalcTotal()
@@ -104,12 +141,17 @@ function recalcTotal() {
     const amt = Number(tr.querySelector('.item-amount').textContent) || 0
     total += amt
   })
-  $('#totalAmount').textContent = total
+  const totalEl = $('#totalAmount')
+  if (totalEl) totalEl.textContent = total
   updateItemIndices()
 }
 
+// === POS 內容解析 ===
 function parsePosAndFill() {
-  const raw = $('#posPaste').value.trim()
+  const textarea = $('#posPaste')
+  if (!textarea) return
+
+  const raw = textarea.value.trim()
   if (!raw) {
     alert('請先在上方貼上 POS 明細文字')
     return
@@ -121,14 +163,16 @@ function parsePosAndFill() {
     return
   }
 
-  $('#itemsBody').innerHTML = ''
+  const tbody = $('#itemsBody')
+  tbody.innerHTML = ''
   for (const it of items) {
     addItemRow(it)
   }
   recalcTotal()
 
   if (total > 0) {
-    $('#totalAmount').textContent = total
+    const totalEl = $('#totalAmount')
+    if (totalEl) totalEl.textContent = total
   }
 
   alert(`已解析出 ${items.length} 個品項${total ? `，總額：${total} 元` : ''}`)
@@ -137,6 +181,8 @@ function parsePosAndFill() {
 function parsePosText(text) {
   const resultItems = []
   const cleaned = text.replace(/\r/g, '')
+
+  // 依照你之前 POS 的樣式規則
   const itemRegex = /(\d+)\.\s*([\s\S]*?)\$\s*([\d,]+)[\s\S]*?x\s*(\d+)\s*=\s*([\d,]+)/g
   let m
   while ((m = itemRegex.exec(cleaned)) !== null) {
@@ -163,33 +209,35 @@ function parsePosText(text) {
   return { items: resultItems, total }
 }
 
+// === 載具類型判斷 ===
 function detectCarrierType(value) {
   if (!value) return 'NONE'
   if (value.startsWith('/')) return 'MOBILE'
   return 'NATURAL'
 }
 
+// === 呼叫 Cloud Functions 開立發票 ===
 async function issueInvoice() {
   const statusEl = $('#issueStatus')
-  statusEl.textContent = '發票開立中…'
+  if (statusEl) statusEl.textContent = '發票開立中…'
 
-  const companyId = $('#companySelect').value
-  const orderId = $('#orderId').value.trim()
-  const buyerGUI = $('#buyerGUI').value.trim()
-  const buyerTitle = $('#buyerTitle').value.trim()
-  const contactName = $('#contactName').value.trim()
-  const contactPhone = $('#contactPhone').value.trim()
-  const contactEmail = $('#contactEmail').value.trim()
-  const carrierValue = $('#carrierValue').value.trim()
-  const donateMark = $('#donateMark').value
-  const donateCode = $('#donateCode').value.trim()
+  const companyId = $('#companySelect')?.value
+  const orderId = $('#orderId')?.value.trim()
+  const buyerGUI = $('#buyerGUI')?.value.trim()
+  const buyerTitle = $('#buyerTitle')?.value.trim()
+  const contactName = $('#contactName')?.value.trim()
+  const contactPhone = $('#contactPhone')?.value.trim()
+  const contactEmail = $('#contactEmail')?.value.trim()
+  const carrierValue = $('#carrierValue')?.value.trim()
+  const donateMark = $('#donateMark')?.value || '0'
+  const donateCode = $('#donateCode')?.value.trim()
 
   const carrierType = detectCarrierType(carrierValue)
 
   if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
     const goOn = confirm('載具好像不是 8 碼（一般手機條碼是 8 碼、開頭為 /），確定要送出嗎？')
     if (!goOn) {
-      statusEl.textContent = '已取消送出，請確認載具內容'
+      if (statusEl) statusEl.textContent = '已取消送出，請確認載具內容'
       return
     }
   }
@@ -203,7 +251,7 @@ async function issueInvoice() {
   }).filter(i => i.name && i.qty > 0)
 
   if (!items.length) {
-    statusEl.textContent = '請至少輸入或解析出一項商品'
+    if (statusEl) statusEl.textContent = '請至少輸入或解析出一項商品'
     return
   }
 
@@ -233,21 +281,27 @@ async function issueInvoice() {
 
     if (!res.ok || !data.success) {
       console.error(data)
-      statusEl.textContent = `開立失敗：${data.message || res.statusText}`
+      if (statusEl) statusEl.textContent = `開立失敗：${data.message || res.statusText}`
       return
     }
 
-    statusEl.textContent = `開立成功：${data.invoiceNumber}（隨機碼 ${data.randomNumber}）`
+    if (statusEl) {
+      statusEl.textContent = `開立成功：${data.invoiceNumber}（隨機碼 ${data.randomNumber}）`
+    }
     reloadInvoices()
   } catch (err) {
     console.error(err)
-    statusEl.textContent = '開立失敗：網路或伺服器錯誤'
+    if (statusEl) statusEl.textContent = '開立失敗：網路或伺服器錯誤'
   }
 }
 
+// === 實時監聽 Firestore 中的發票 ===
 function listenInvoices() {
-  const q = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'))
-  invoicesUnsub = onSnapshot(q, snap => {
+  const listBody = $('#invoiceListBody')
+  if (!listBody) return
+
+  const qRef = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'))
+  invoicesUnsub = onSnapshot(qRef, snap => {
     const rows = []
     snap.forEach(doc => rows.push({ id: doc.id, ...doc.data() }))
     cachedInvoices = rows
@@ -255,14 +309,18 @@ function listenInvoices() {
   })
 }
 
+// 預留（有需要再加功能）
 function setupList() {}
 
+// 重新渲染下方列表
 function reloadInvoices() {
   const tbody = $('#invoiceListBody')
+  if (!tbody) return
+
   tbody.innerHTML = ''
 
-  const keyword = $('#searchKeyword').value.trim().toLowerCase()
-  const statusFilter = $('#filterStatus').value
+  const keyword = $('#searchKeyword')?.value.trim().toLowerCase() || ''
+  const statusFilter = $('#filterStatus')?.value || 'ALL'
 
   const filtered = cachedInvoices.filter(inv => {
     if (statusFilter !== 'ALL' && inv.status !== statusFilter) return false
@@ -302,6 +360,7 @@ function reloadInvoices() {
   })
 }
 
+// === 列表按鈕 ===
 async function handleRowAction(e) {
   const btn = e.currentTarget
   const action = btn.dataset.action
@@ -324,6 +383,7 @@ async function handleRowAction(e) {
   }
 }
 
+// === 查詢 ===
 async function queryInvoice(inv) {
   const ok = confirm(`查詢發票狀態？\n發票號碼：${inv.invoiceNumber}`)
   if (!ok) return
@@ -345,6 +405,7 @@ async function queryInvoice(inv) {
   }
 }
 
+// === 作廢 ===
 async function voidInvoice(inv) {
   const reason = prompt(
     `請輸入作廢原因：\n發票號碼：${inv.invoiceNumber}`,
@@ -374,51 +435,128 @@ async function voidInvoice(inv) {
   }
 }
 
+// === 列印區：電子發票證明聯 +（必要時）明細 ===
 function buildPrintArea(inv) {
   const area = $('#printArea')
-  const itemsHtml = (inv.items || []).map((it, idx) => `
-    <tr>
-      <td style="text-align:center;">${idx + 1}</td>
-      <td>${it.name}</td>
-      <td style="text-align:center;">${it.qty}</td>
-      <td style="text-align:right;">${it.price}</td>
-      <td style="text-align:right;">${it.amount}</td>
-    </tr>
-  `).join('')
+  if (!area) return
 
-  const note = inv.carrierValue
-    ? '（此張為載具發票，實體列印僅供內部留存）'
-    : '（此張為紙本發票，請妥善交付與留存）'
+  // 1. 日期時間
+  let d
+  if (inv.invoiceDate) {
+    d = new Date(inv.invoiceDate + 'T00:00:00')
+  } else if (inv.createdAt?.toDate) {
+    d = inv.createdAt.toDate()
+  } else {
+    d = new Date()
+  }
 
+  const year = d.getFullYear()
+  const m = d.getMonth() + 1
+  const day = d.getDate().toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  const ss = d.getSeconds().toString().padStart(2, '0')
+
+  const rocYear = year - 1911
+  const periodStart = m % 2 === 1 ? m : m - 1
+  const periodEnd = periodStart + 1
+  const periodText =
+    `${rocYear}年${periodStart.toString().padStart(2, '0')}` +
+    `-${periodEnd.toString().padStart(2, '0')}月`
+
+  const invoiceNo = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || ''
+  const amount = inv.amount || 0
+  const sellerGUI = inv.sellerGUI || '48594728' // TODO: 換成你自己的統編
+  const buyerGUI = inv.buyerGUI || ''
+
+  // 2. 是否顯示明細
+  const printDetailCheckbox = document.querySelector('#printDetail')
+  const mustShowDetailByGUI = !!(buyerGUI && buyerGUI.trim())
+  const wantDetailByCheckbox = !!(printDetailCheckbox && printDetailCheckbox.checked)
+  const showDetail = (inv.items && inv.items.length) && (mustShowDetailByGUI || wantDetailByCheckbox)
+
+  // 3. 明細表 HTML（有需要才產）
+  let detailHtml = ''
+  if (showDetail) {
+    const items = inv.items || []
+    const rows = items.map((it, idx) => `
+      <tr>
+        <td style="text-align:center;">${idx + 1}</td>
+        <td>${it.name}</td>
+        <td style="text-align:center;">${it.qty}</td>
+        <td style="text-align:right;">${it.price}</td>
+        <td style="text-align:right;">${it.amount}</td>
+      </tr>
+    `).join('')
+
+    detailHtml = `
+      <hr class="einv-sep" />
+      <table class="einv-detail-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>品名</th>
+            <th>數量</th>
+            <th>單價</th>
+            <th>小計</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" style="text-align:right;">銷售額合計：${amount} 元</td>
+          </tr>
+        </tfoot>
+      </table>
+    `
+  }
+
+  // 4. 主體卡片
   area.innerHTML = `
-    <div style="text-align:center;margin-bottom:0.3cm;">
-      <div style="font-size:14pt;font-weight:bold;">電子發票證明聯</div>
-      <div style="font-size:10pt;">${inv.companyName || ''}</div>
+    <div class="einv-card">
+      <div class="einv-header">
+        <div class="einv-logo-ch">數位小兔</div>
+        <div class="einv-logo-en">Digital Rabbit</div>
+      </div>
+
+      <div class="einv-title">電子發票證明聯</div>
+      <div class="einv-period">${periodText}</div>
+      <div class="einv-number">${invoiceNo}</div>
+
+      <div class="einv-datetime">
+        ${year}-${m.toString().padStart(2, '0')}-${day}
+        ${hh}:${mm}:${ss}
+      </div>
+
+      <div class="einv-row">
+        <span>隨機碼 ${randomNumber || '----'}</span>
+        <span>總計 ${amount}</span>
+      </div>
+
+      <div class="einv-row">
+        <span>賣方</span>
+        <span>買方</span>
+      </div>
+      <div class="einv-row">
+        <span>${sellerGUI}</span>
+        <span>${buyerGUI || '—'}</span>
+      </div>
+
+      <div class="einv-barcode" id="einv-barcode">
+        <!-- TODO: 之後放條碼 -->
+      </div>
+
+      <div class="einv-qrs">
+        <div class="einv-qr" id="einv-qr-left"></div>
+        <div class="einv-qr" id="einv-qr-right"></div>
+      </div>
     </div>
-    <p>發票號碼：${inv.invoiceNumber || ''}</p>
-    <p>開立日期：${inv.invoiceDate || ''}</p>
-    <p>訂單編號：${inv.orderId || ''}</p>
-    <p>買受人：${inv.buyerTitle || ''}${inv.buyerGUI ? '（統編：' + inv.buyerGUI + '）' : ''}</p>
-    <p>聯絡人：${inv.contactName || ''}　電話：${inv.contactPhone || ''}</p>
-    <p>E-mail：${inv.contactEmail || ''}</p>
-    <p>${note}</p>
-    <hr />
-    <table style="width:100%;border-collapse:collapse;font-size:10pt;">
-      <thead>
-        <tr>
-          <th style="border-bottom:1px solid #000;text-align:center;">#</th>
-          <th style="border-bottom:1px solid #000;text-align:left;">品名</th>
-          <th style="border-bottom:1px solid #000;">數量</th>
-          <th style="border-bottom:1px solid #000;text-align:right;">單價</th>
-          <th style="border-bottom:1px solid #000;text-align:right;">小計</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHtml}
-      </tbody>
-    </table>
-    <p style="text-align:right;margin-top:0.3cm;">
-      銷售額合計：${inv.amount || 0} 元
-    </p>
+
+    ${detailHtml}
   `
+
+  // 目前條碼 / QR 先留白，之後再一起接 SmilePay 回傳欄位 + JsBarcode / QRCode
 }
