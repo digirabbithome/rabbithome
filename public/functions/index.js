@@ -66,27 +66,81 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const invoiceTime = `${hh}:${mm}:${ss}` // 例如 14:35:22
 
     // === 品項陣列 ===
-    const itemNames  = items.map(i => i.name)
-    const itemCounts = items.map(i => i.qty)
-    const itemPrices = items.map(i => i.price)
-    const itemAmts   = items.map(i => i.amount)
+    // === 重新整理品項，確保數量 / 單價 / 小計 都正確 ===
+    const normalizedItems = (items || []).map(it => {
+      const qty   = Number(it.qty)   || 0
+      const price = Number(it.price) || 0
+      const amount = qty * price     // 🔸 各明細總額 = 數量 * 單價
+      return {
+        name: String(it.name || ''),
+        qty,
+        price,
+        amount
+      }
+    }).filter(it => it.name && it.qty > 0)
 
-    // 依明細再算一次總額，讓 AllAmount / SalesAmount / Amount 一致
-    const detailTotal = itemAmts.reduce(
-      (sum, a) => sum + Number(a || 0),
-      0
-    )
-
-    // 如果前端傳來的 amount 跟明細加總不一樣，寫個 log 但仍以明細為準送給 SmilePay
-    if (Number(amount) !== detailTotal) {
-      console.warn(
-        `[SmilePay] amount(${amount}) 與明細加總(${detailTotal}) 不一致，送出時以明細加總為主`
-      )
+    if (!normalizedItems.length) {
+      res.status(400).json({ success: false, message: '至少需要一筆有效商品明細' })
+      return
     }
 
-    const totalForSmile = detailTotal
+    // 🔸 重新算一遍總金額，避免跟 POS 傳來的 amount 有落差
+    const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
+
+    // === 品項陣列 ===
+    const itemNames   = normalizedItems.map(i => i.name)
+    const itemCounts  = normalizedItems.map(i => i.qty)
+    const itemPrices  = normalizedItems.map(i => i.price)
+    const itemAmts    = normalizedItems.map(i => i.amount)
 
     const params = new URLSearchParams()
+
+    // 商家認證
+    params.append('Grvc', company.grvc)
+    params.append('Verify_key', company.verifyKey)
+
+    // 稅率類型：一般 5% 應稅（含稅金額）
+    params.append('Intype', '07')
+    params.append('TaxType', '1')
+
+    // 發票基本資料（這裡用重新計算的 totalAmount）
+    params.append('InvoiceDate', invoiceDate)           // YYYY/MM/DD
+    params.append('InvoiceTime', invoiceTime)           // HH:MM:SS
+    params.append('BuyerName', buyerTitle || '')
+    params.append('Buyer_Identifier', buyerGUI || '')
+    params.append('Amount', String(totalAmount))        // 總金額（含稅）
+    params.append('AllAmount', String(totalAmount))     // 文件裡的「總金額(含稅)」
+    params.append('SalesAmount', String(totalAmount))   // 銷售額
+    params.append('Remark', orderId || '')
+
+    // 捐贈
+    params.append('DonateMark', donateMark || '0')
+    if (donateMark === '1' && donateCode) {
+      params.append('LoveCode', donateCode)
+    }
+
+    // 載具：手機條碼 / 自然人憑證等
+    if (carrierType && carrierType !== 'NONE' && carrierValue) {
+      params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
+      params.append('CarrierId1', carrierValue)
+    }
+
+    // === 明細欄位：長度一定完全一樣 ===
+    itemNames.forEach(n  => params.append('InvoiceItemName[]',   n))
+    itemCounts.forEach(c => params.append('InvoiceItemCount[]',  String(c)))
+    itemPrices.forEach(p => params.append('InvoiceItemPrice[]',  String(p)))
+
+    // 🔸 明細金額（各項目）— 對應文件的 Amount（各明細總額）
+    itemAmts.forEach(a   => {
+      params.append('InvoiceItemAmount[]', String(a))  // 有些範例用這個名稱
+      params.append('Amount[]',             String(a))  // 文件欄位名是 Amount
+    })
+
+    // 🔸 商品稅率型態：全部 1 = 應稅
+    normalizedItems.forEach(() => {
+      params.append('ProductTaxType[]', '1')
+    })
+
 
     // 商家認證
     params.append('Grvc', company.grvc)          // 例：SEI1001326
