@@ -287,6 +287,13 @@ async function issueInvoice() {
 
     if (statusEl) {
       statusEl.textContent = `開立成功：${data.invoiceNumber}（隨機碼 ${data.randomNumber}）`
+
+  // ⭐⭐⭐ 開立成功後 → 立即跳出發票預覽
+  const previewUrl =
+    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(data.invoiceNumber)}&companyId=${encodeURIComponent(payload.companyId)}`
+  window.open(previewUrl, "_blank")
+}
+      
     }
     reloadInvoices()
   } catch (err) {
