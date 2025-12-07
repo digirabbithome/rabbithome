@@ -88,26 +88,29 @@ body {
 .inv-no {
   margin: 0;
   padding: 0;
-  line-height: 1.05;
+  line-height: 1.02;
 }
 
+/* 第二行：電子發票證明聯（再放大兩號） */
 .title-main {
-  font-size: 22px;
+  font-size: 26px;
   letter-spacing: 0.25em;
+  margin-top: 4px;
+}
+
+/* 第三行：發票期別 114年11-12月（再放大兩號） */
+.period {
+  font-size: 24px;
+  font-weight: 600;
   margin-top: 2px;
 }
 
-.period {
-  font-size: 22px;
-  font-weight: 600;
-  margin-top: 4px;
-}
-
+/* 第四行：發票號碼，去掉字距、加大加粗 */
 .inv-no {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: 0.26em;
-  margin-top: 4px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-top: 2px;
 }
 
 .datetime {
@@ -247,6 +250,8 @@ body {
 
 /* === 列印時優化 === */
 @media print {
+  .detail-toggle { display: none !important; }
+
   body {
     background: #ffffff;
   }

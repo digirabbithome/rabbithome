@@ -64,13 +64,22 @@ function renderInvoice(inv) {
   const buyerRowValues = $('#buyerRowValues')
   const buyerEl = $('#buyerGUI')
 
-  if (!buyerGUI || buyerGUI === '00000000') {
-    if (buyerRowLabels) buyerRowLabels.classList.add('hidden-row')
-    if (buyerRowValues) buyerRowValues.classList.add('hidden-row')
-  } else {
-    if (buyerRowLabels) buyerRowLabels.classList.remove('hidden-row')
-    if (buyerRowValues) buyerRowValues.classList.remove('hidden-row')
+  const hasBuyer = !!(buyerGUI && buyerGUI !== '00000000')
+
+  if (buyerRowLabels) buyerRowLabels.classList.remove('hidden-row')
+  if (buyerRowValues) buyerRowValues.classList.remove('hidden-row')
+
+  const buyerLabelCell = buyerRowLabels ? buyerRowLabels.querySelector('div:nth-child(2)') : null
+  const buyerValueCell = buyerRowValues ? buyerRowValues.querySelector('div:nth-child(2)') : null
+
+  if (hasBuyer) {
     if (buyerEl) buyerEl.textContent = buyerGUI
+    if (buyerLabelCell) buyerLabelCell.textContent = '買方'
+  } else {
+    // 沒有買方統編：不顯示文字與內容，但保留賣方欄位
+    if (buyerEl) buyerEl.textContent = ''
+    if (buyerLabelCell) buyerLabelCell.textContent = ''
+    if (buyerValueCell) buyerValueCell.textContent = ''
   }
 
   // === 發票年月雙月期 ===
