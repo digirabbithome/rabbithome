@@ -1,75 +1,164 @@
-// /js/invoice-preview.js
-(function () {
+/* invoice-preview.js — 依據發票號碼從 Firestore 讀取資料並渲染 */
+
+import { db } from '/js/firebase.js'
+import {
+  collection,
+  query,
+  where,
+  limit,
+  getDocs
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+
+const $ = (s, r = document) => r.querySelector(s)
+
+window.onload = () => {
+  setupButtons()
+  loadAndRender()
+}
+
+function setupButtons () {
+  const backBtn = $('#backBtn')
+  const printBtn = $('#printBtn')
+
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      if (window.history.length > 1) {
+        window.history.back()
+      } else {
+        window.close()
+      }
+    })
+  }
+
+  if (printBtn) {
+    printBtn.addEventListener('click', () => window.print())
+  }
+}
+
+async function loadAndRender () {
   const params = new URLSearchParams(window.location.search)
   const invoiceNumber = params.get('invoiceNumber') || ''
   const companyId = params.get('companyId') || ''
 
-  const invoiceNumberEl = document.getElementById('invoiceNumber')
-  const periodEl = document.getElementById('invoicePeriod')
-  const dateTimeEl = document.getElementById('invoiceDateTime')
-  const randomEl = document.getElementById('randomNumber')
-  const totalEl = document.getElementById('totalAmount')
-  const sellerEl = document.getElementById('sellerGUI')
-  const buyerEl = document.getElementById('buyerGUI')
-
-  const backBtn = document.getElementById('backBtn')
-  const printBtn = document.getElementById('printBtn')
-
-  if (backBtn) backBtn.addEventListener('click', () => window.close())
-  if (printBtn) printBtn.addEventListener('click', () => window.print())
-
-  if (invoiceNumberEl && invoiceNumber) {
-    invoiceNumberEl.textContent = invoiceNumber
+  if (!invoiceNumber) {
+    alert('缺少發票號碼參數')
+    return
   }
 
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
+  try {
+    const col = collection(db, 'invoices')
+    let q = query(col, where('invoiceNumber', '==', invoiceNumber), limit(1))
+    if (companyId) {
+      q = query(col,
+        where('invoiceNumber', '==', invoiceNumber),
+        where('companyId', '==', companyId),
+        limit(1)
+      )
+    }
+
+    const snap = await getDocs(q)
+    if (snap.empty) {
+      alert('找不到此發票資料，請確認是否已寫入 Firestore')
+      return
+    }
+
+    const doc = snap.docs[0]
+    const inv = { id: doc.id, ...doc.data() }
+    renderInvoice(inv)
+  } catch (err) {
+    console.error(err)
+    alert('讀取發票資料失敗')
+  }
+}
+
+function renderInvoice (inv) {
+  const invoiceNo = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || '----'
+  const amount = inv.amount ?? 0
+  const sellerGUI = inv.sellerGUI || '48594728'
+  const buyerGUI = (inv.buyerGUI || '').trim()
+
+  // 日期 / 期別
+  let d
+  if (inv.invoiceDate) {
+    d = new Date(inv.invoiceDate + 'T00:00:00')
+  } else if (inv.createdAt?.toDate) {
+    d = inv.createdAt.toDate()
+  } else {
+    d = new Date()
+  }
+
+  const year = d.getFullYear()
+  const month = d.getMonth() + 1
+  const day = d.getDate().toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  const ss = d.getSeconds().toString().padStart(2, '0')
+
   const rocYear = year - 1911
   const periodStart = month % 2 === 1 ? month : month - 1
   const periodEnd = periodStart + 1
-  const periodText = `${rocYear}年${String(periodStart).padStart(2, '0')}-${String(periodEnd).padStart(2, '0')}月`
-  if (periodEl) periodEl.textContent = periodText
+  const periodText =
+    `${rocYear}年${periodStart.toString().padStart(2, '0')}` +
+    `-${periodEnd.toString().padStart(2, '0')}月`
 
-  const dateText = `${year}-${String(month).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  if (dateTimeEl) dateTimeEl.textContent = dateText
+  // 套到畫面
+  $('#invoiceNumber').textContent = invoiceNo
+  $('#randomNumber').textContent = randomNumber
+  $('#totalAmount').textContent = amount
+  $('#sellerGUI').textContent = sellerGUI
+  $('#periodText').textContent = periodText
+  $('#datetimeText').textContent =
+    `${year}-${month.toString().padStart(2, '0')}-${day} ${hh}:${mm}:${ss}`
 
-  if (randomEl) randomEl.textContent = '隨機碼 ----'
-  if (totalEl) totalEl.textContent = '總計 0'
-  if (sellerEl) sellerEl.textContent = '48594728'
-  if (buyerEl) buyerEl.textContent = '00000000'
+  // 沒有買方統編就不要顯示 00000000
+  const buyerEl = $('#buyerGUI')
+  if (buyerGUI) {
+    buyerEl.textContent = buyerGUI
+  } else {
+    buyerEl.textContent = '' // 保持空白即可
+  }
 
+  // 條碼內容：這裡先用「發票號碼 + 隨機碼」
   try {
-    if (window.JsBarcode) {
-      JsBarcode('#barcode', invoiceNumber || '0000000000', {
+    const barcodeValue = invoiceNo && randomNumber
+      ? `${invoiceNo}${randomNumber}`
+      : invoiceNo || ' '
+    if (barcodeValue && window.JsBarcode) {
+      window.JsBarcode('#barcode', barcodeValue, {
         format: 'CODE128',
-        lineColor: '#333',
-        width: 2,
-        height: 60,
         displayValue: false,
-        margin: 0
+        margin: 0,
+        height: 70
       })
-    } else {
-      document.getElementById('barcode').textContent = 'Barcode Generator Error'
     }
-  } catch (err) {
-    console.error('Barcode error:', err)
+  } catch (e) {
+    console.error('條碼產生失敗', e)
   }
 
+  // QR code：左邊可以放簡單文字，右邊放較完整字串
   try {
-    if (window.QRCode) {
-      new QRCode(document.getElementById('qrLeft'), {
-        text: invoiceNumber || 'NO-DATA',
-        width: 170,
-        height: 170
-      })
-      new QRCode(document.getElementById('qrRight'), {
-        text: `https://rabbithome.vercel.app/invoice-preview.html?invoiceNumber=${encodeURIComponent(invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`,
-        width: 170,
-        height: 170
-      })
-    }
-  } catch (err) {
-    console.error('QR error:', err)
+    const leftData = invoiceNo || 'DR-INVOICE'
+    const rightData = JSON.stringify({
+      no: invoiceNo,
+      random: randomNumber,
+      amt: amount,
+      s: sellerGUI,
+      b: buyerGUI
+    })
+
+    new window.QRCode($('#qrLeft'), {
+      text: leftData,
+      width: 140,
+      height: 140
+    })
+
+    new window.QRCode($('#qrRight'), {
+      text: rightData,
+      width: 140,
+      height: 140
+    })
+  } catch (e) {
+    console.error('QR 產生失敗', e)
   }
-})()
+}
