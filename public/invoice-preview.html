@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>電子發票證明聯</title>
+  <link rel="stylesheet" href="/css/invoice-preview.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="top-bar">
+    <button id="backBtn">⬅ 返回</button>
+    <button id="printBtn">🖨 列印發票</button>
+  </div>
+  <div id="invoiceCard" class="invoice-card">
+    <div class="logo-block">
+      <div class="brand">數位小兔<br>Digital Rabbit</div>
+    </div>
+    <div id="invoiceInfo" class="info">載入中...</div>
+    <div id="barcode" class="barcode"></div>
+    <div class="qr-row">
+      <div id="qrLeft"></div>
+      <div id="qrRight"></div>
+    </div>
+  </div>
+  <script src="/js/invoice-preview.js"></script>
+</body>
+</html>
