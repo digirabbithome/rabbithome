@@ -370,6 +370,32 @@ function reloadInvoices() {
   })
 }
 
+
+// === 開啟發票預覽頁 ===
+function openInvoicePreview(inv) {
+  if (!inv.invoiceNumber) {
+    alert('這筆資料沒有發票號碼，無法預覽')
+    return
+  }
+
+  // 優先用這筆發票記錄裡的 companyId，沒有的話再退而求其次用畫面上的選擇
+  const companyId = inv.companyId || document.getElementById('companySelect')?.value || ''
+
+  const previewUrl =
+    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(inv.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
+
+  window.open(previewUrl, '_blank')
+}
+
+
+
+
+
+
+
+
+
+
 // === 列表按鈕 ===
 async function handleRowAction(e) {
   const btn = e.currentTarget
@@ -384,8 +410,13 @@ async function handleRowAction(e) {
       const goOn = confirm('這張是「載具發票」，一般不需要列印實體。若只是要留存內部紀錄，可以按「確定」繼續列印。')
       if (!goOn) return
     }
-    buildPrintArea(inv)
-    window.print()
+    //buildPrintArea(inv)
+    //window.print()
+
+    // ✅ 改成用預覽頁顯示＆列印
+    openInvoicePreview(inv)
+
+    
   } else if (action === 'query') {
     await queryInvoice(inv)
   } else if (action === 'void') {
