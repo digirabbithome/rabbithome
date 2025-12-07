@@ -6,19 +6,16 @@ import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/fireb
 
 let pickupList = []
 
+// 🕒 台北時區 + 日期時間顯示（例如：12/5 00:05）
 const TPE = 'Asia/Taipei'
-// 🕒 台北時區時間格式（顯示取貨時間用）
 const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
   timeZone: TPE,
-  month: '2-digit',
-  day: '2-digit',
+  month: 'numeric',   // 想要 12/05 就改成 '2-digit'
+  day: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false
+  hour12: false       // 24 小時制
 })
-
-
-
 
 window.onload = async () => {
   document.getElementById('addBtn').addEventListener('click', addPickup)
@@ -46,6 +43,7 @@ window.onload = async () => {
   await fetchData()
   renderList()
 
+  // 列印取貨單
   document.addEventListener('click', e => {
     if (!e.target.classList.contains('print-link')) return
     const id = e.target.dataset.id
@@ -124,7 +122,7 @@ window.onload = async () => {
     })
   })
 
-  // 📌 設為完成 → 灰底（預設不顯示已完成；搜尋時才會顯示）
+  // 📌 左邊圖釘：設為完成
   document.addEventListener('click', async (e) => {
     if (!e.target.classList.contains('pin-toggle')) return
     const id = e.target.dataset.id
@@ -134,7 +132,7 @@ window.onload = async () => {
     await updateDoc(ref, {
       pinStatus: 1,
       doneBy: nickname,
-      doneAt: serverTimestamp()    // 🆕 取貨完成時間
+      doneAt: serverTimestamp()    // 取貨完成時間
     })
     const item = pickupList.find(p => p.id === id)
     if (item) {
@@ -144,6 +142,38 @@ window.onload = async () => {
       item.doneAt = { toDate: () => new Date() }
     }
     renderList()
+  })
+
+  // 📌 右邊圖釘：複製給客人的通知文字
+  document.addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('pin-copy')) return
+
+    const id = e.target.dataset.id
+    if (!id) return
+
+    const item = pickupList.find(p => p.id === id)
+    if (!item) return
+
+    const serial = item.serial || ''
+
+    const msg = `您好
+商品已經幫您保留在櫃檯嚕
+來數位小兔取貨時
+和小幫手出示您的取貨編號
+📌  ${serial} 📌
+就會迅速幫您準備好！節省等待的時間唷`
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(msg)
+        alert('已複製訊息，可直接貼到 LINE 給客人！')
+      } else {
+        window.prompt('瀏覽器無法自動複製，請手動複製以下內容：', msg)
+      }
+    } catch (err) {
+      console.error('copy failed', err)
+      window.prompt('複製失敗，請手動複製以下內容：', msg)
+    }
   })
 }
 
@@ -171,7 +201,7 @@ function comparePickup(a, b) {
   return t2 - t1
 }
 
-// 🆕 排序：依照取貨完成時間 doneAt（今日已取貨用）
+// 依照取貨完成時間 doneAt（今日已取貨用）
 function compareByDoneTime(a, b) {
   const t1 = a.doneAt?.toDate?.() || new Date(0)
   const t2 = b.doneAt?.toDate?.() || new Date(0)
@@ -191,10 +221,10 @@ function createPickupCard(p) {
   const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
   if (dayDiff > 14) bgColor = '#ffb1b1'
 
-  // 已取走 → 灰（搜尋時或「本日已取貨」中出現）
+  // 已取走 → 灰
   if (p.pinStatus === 1) bgColor = '#e0e0e0'
 
-  // 🕒 取貨時間文字（有 doneAt 才顯示）
+  // 取貨時間文字（有 doneAt 才顯示）
   let doneTimeText = ''
   if (p.doneAt?.toDate) {
     const d = p.doneAt.toDate()
@@ -206,8 +236,12 @@ function createPickupCard(p) {
   div.style.backgroundColor = bgColor
   div.innerHTML = `
     <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">
-      <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>&nbsp;
-      ${p.serial || "—"}&nbsp;&nbsp;&nbsp;
+      <!-- 左邊：設為完成 -->
+      <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
+      &nbsp;${p.serial || "—"}&nbsp;
+      <!-- 右邊：複製訊息 -->
+      <span class="pin-copy" data-id="${p.id}" style="cursor:pointer;">📌</span>
+      &nbsp;&nbsp;
       <span class="print-link" data-id="${p.id}" style="cursor:pointer; text-decoration: underline;">
         ${p.contact || "未填寫"}
       </span>
@@ -225,10 +259,10 @@ function createPickupCard(p) {
       （${p.paid || '—'}）(${p.createdBy || ''})
     </small>
     ${doneTimeText
-       ? `<div style="margin-top:4px; font-size:12px; color:#e85b81; font-weight:700;">
-       取貨時間：${doneTimeText}
-     </div>`
-  : ''
+      ? `<div style="margin-top:4px; font-size:12px; color:#e85b81; font-weight:700;">
+           取貨時間：${doneTimeText}
+         </div>`
+      : ''
     }
   `
   return div
@@ -260,7 +294,7 @@ function renderList() {
   })
 }
 
-// 🆕 本日已取貨（依照 doneBy 分區 + 中間有名字 + 頭像，卡片依 doneAt 排序）
+// 本日已取貨（依照 doneBy 分區 + 中間有名字 + 頭像，卡片依 doneAt 排序）
 function renderTodayDone() {
   const list = document.getElementById('pickup-list')
   list.innerHTML = ''
@@ -282,7 +316,7 @@ function renderTodayDone() {
     return
   }
 
-  // 🧑‍🎨 頭像對照表（你可以之後再補更多）
+  // 頭像對照表
   const avatarMap = {
     '花花': '👩‍🦰',
     '妹妹': '🧑‍🧑‍🧒',
@@ -306,14 +340,14 @@ function renderTodayDone() {
 
   sortedNames.forEach(name => {
 
-    const avatar = avatarMap[name] || '👤' // 預設沒有找到用👤
+    const avatar = avatarMap[name] || '👤'
 
-    // ─────── 名稱區塊（含頭像）───────
+    // 分隔線 + 名稱
     const divider = document.createElement('div')
     divider.style.display = 'flex'
     divider.style.alignItems = 'center'
     divider.style.margin = '25px 0 12px'
-    divider.style.gridColumn = '1 / -1'   // 分隔線橫跨整排
+    divider.style.gridColumn = '1 / -1'
     divider.innerHTML = `
       <div style="flex:1; height:1px; background:#ccc;"></div>
       <span style="padding:0 12px; color:#333; font-weight:600; white-space:nowrap; font-size:18px;">
