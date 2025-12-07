@@ -166,10 +166,12 @@ const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
     const status        = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
     const desc          = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
 
-    if (status !== 'Success' && status !== 'Successed') {
-      res.json({ success: false, message: desc || 'SmilePay 回傳失敗', raw: text })
-      return
-    }
+  const okStatuses = ['0', '0000', 'Success', 'Successed', 'Succeeded']
+
+if (!okStatuses.includes(status)) {
+  res.json({ success: false, message: desc || status || 'SmilePay 回傳失敗', raw: text })
+  return
+}
 
     // 成功就寫一筆到 Firestore
     const docRef = await db.collection('invoices').add({
