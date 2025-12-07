@@ -51,17 +51,23 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     const company = await getCompanyConfig(companyId)
 
-    // === 日期 / 時間 ===
-    const now = new Date()
-    const y  = now.getFullYear()
-    const m  = String(now.getMonth() + 1).padStart(2, '0')
-    const d  = String(now.getDate()).padStart(2, '0')
-    const hh = String(now.getHours()).padStart(2, '0')
-    const mm = String(now.getMinutes()).padStart(2, '0')
-    const ss = String(now.getSeconds()).padStart(2, '0')
 
-    const invoiceDate = `${y}/${m}/${d}`      // 2025/12/07
-    const invoiceTime = `${hh}:${mm}:${ss}`   // 14:35:22
+ // === 日期 / 時間：用台北時間（Asia/Taipei） ===
+const now = new Date()
+// 轉成台北時間的 Date 物件
+const tpeNow = new Date(
+  now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })
+)
+
+const y  = tpeNow.getFullYear()
+const m  = String(tpeNow.getMonth() + 1).padStart(2, '0')
+const d  = String(tpeNow.getDate()).padStart(2, '0')
+const hh = String(tpeNow.getHours()).padStart(2, '0')
+const mm = String(tpeNow.getMinutes()).padStart(2, '0')
+const ss = String(tpeNow.getSeconds()).padStart(2, '0')
+
+const invoiceDate = `${y}/${m}/${d}`      // 例如 2025/12/07
+const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
 
     // === 整理品項：過濾掉空行，並算出每一筆小計 ===
     const normalizedItems = (items || []).map(it => {
