@@ -285,17 +285,20 @@ async function issueInvoice() {
       return
     }
 
-    if (statusEl) {
-      statusEl.textContent = `開立成功：${data.invoiceNumber}（隨機碼 ${data.randomNumber}）`
+if (statusEl) {
+  statusEl.textContent =
+    `開立成功：${data.invoiceNumber}（隨機碼  ${data.randomNumber}）`
 
   // ⭐⭐⭐ 開立成功後 → 立即跳出發票預覽
+  const companyId = document.getElementById('companySelect').value
   const previewUrl =
-    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(data.invoiceNumber)}&companyId=${encodeURIComponent(payload.companyId)}`
+    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(data.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
   window.open(previewUrl, "_blank")
 }
-      
+
+reloadInvoices()
+
     
-    reloadInvoices()
   } catch (err) {
     console.error(err)
     if (statusEl) statusEl.textContent = '開立失敗：網路或伺服器錯誤'
