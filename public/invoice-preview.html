@@ -13,13 +13,7 @@
   <div class="page">
     <header class="top-bar">
       <button id="backBtn" class="btn-ghost">← 返回</button>
-      <div class="right-tools">
-        <label class="detail-toggle">
-          <input type="checkbox" id="toggleDetail" checked />
-          列印銷售明細
-        </label>
-        <button id="printBtn" class="btn-primary">列印發票</button>
-      </div>
+      <button id="printBtn" class="btn-primary">列印發票</button>
     </header>
 
     <main class="card-wrapper">
@@ -32,20 +26,20 @@
         <div class="period" id="periodText">114年11-12月</div>
         <div class="inv-no" id="invoiceNumber">VH00000000</div>
 
-        <div class="datetime" id="datetimeText">2025-12-07 12:34</div>
+        <div class="datetime" id="datetimeText">2025-12-07 14:52</div>
 
         <div class="row two-cols meta-row">
           <div>隨機碼 <span id="randomNumber">----</span></div>
           <div>總計 <span id="totalAmount">0</span></div>
         </div>
 
-        <div class="row two-cols label-row">
+        <div class="row two-cols label-row seller-buyer-row">
           <div>賣方</div>
-          <div id="buyerLabel">買方</div>
+          <div class="buyer-label">買方</div>
         </div>
-        <div class="row two-cols taxid-row">
+        <div class="row two-cols taxid-row seller-buyer-row">
           <div id="sellerGUI">48594728</div>
-          <div id="buyerGUI"></div>
+          <div id="buyerGUI">00000000</div>
         </div>
 
         <div class="barcode-wrap">
@@ -57,7 +51,40 @@
           <div id="qrRight" class="qr-box"></div>
         </div>
 
-        <section class="detail-section" id="detailSection"></section>
+        <div class="detail-toggle">
+          <label>
+            <input type="checkbox" id="printDetail" checked />
+            同時列印銷售明細
+          </label>
+        </div>
+
+        <section class="detail-section" id="detailSection">
+          <h2>銷售明細</h2>
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>品名</th>
+                <th>數量</th>
+                <th>單價</th>
+                <th>金額</th>
+              </tr>
+            </thead>
+            <tbody id="detailBody">
+              <!-- JS 產出 -->
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" class="detail-total" id="detailTotalCell">總計：0 元</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="store-info">
+            臺北市信義區大道路74巷1號<br />
+            TEL：02-27592006
+          </div>
+        </section>
       </section>
     </main>
   </div>

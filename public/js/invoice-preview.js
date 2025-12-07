@@ -1,187 +1,146 @@
-
+// /js/invoice-preview.js — Rabbithome 電子發票預覽 v2025-12-07
 import { db } from '/js/firebase.js'
 import {
   collection,
   query,
   where,
-  limit,
-  getDocs
+  getDocs,
+  limit
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-const $ = (s) => document.querySelector(s)
+const $ = (s, r = document) => r.querySelector(s)
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
 
-window.onload = () => {
-  $('#backBtn')?.addEventListener('click', () => {
-    if (window.history.length > 1) history.back()
-    else window.close()
-  })
-  $('#printBtn')?.addEventListener('click', () => window.print())
-
-  const toggle = $('#toggleDetail')
-  const detailSection = $('#detailSection')
-  if (toggle && detailSection) {
-    const sync = () => {
-      detailSection.style.display = toggle.checked ? 'block' : 'none'
-    }
-    toggle.addEventListener('change', sync)
-    sync()
-  }
-
-  loadInvoice()
+window.onload = async () => {
+  setupButtons()
+  await loadInvoiceAndRender()
 }
 
-async function loadInvoice() {
+function setupButtons () {
+  const backBtn = $('#backBtn')
+  const printBtn = $('#printBtn')
+  const detailCheckbox = $('#printDetail')
+  const detailSection = $('#detailSection')
+
+  if (backBtn) backBtn.onclick = () => window.history.back()
+  if (printBtn) printBtn.onclick = () => window.print()
+
+  if (detailCheckbox && detailSection) {
+    detailCheckbox.addEventListener('change', () => {
+      detailSection.style.display = detailCheckbox.checked ? 'block' : 'none'
+    })
+  }
+}
+
+function getQueryParam (name) {
   const url = new URL(window.location.href)
-  const invoiceNumber = url.searchParams.get('invoiceNumber')
-  const companyId = url.searchParams.get('companyId')
+  return url.searchParams.get(name)
+}
+
+async function loadInvoiceAndRender () {
+  const invoiceNumber = getQueryParam('invoiceNumber')
+  const companyId = getQueryParam('companyId')
 
   if (!invoiceNumber) {
-    alert('網址缺少 invoiceNumber 參數')
+    alert('缺少 invoiceNumber 參數')
     return
   }
 
   try {
-    let qRef = query(
-      collection(db, 'invoices'),
-      where('invoiceNumber', '==', invoiceNumber),
-      limit(1)
-    )
-
+    let invoice = null
     if (companyId) {
-      qRef = query(
+      const qRef = query(
         collection(db, 'invoices'),
         where('invoiceNumber', '==', invoiceNumber),
         where('companyId', '==', companyId),
         limit(1)
       )
+      const snap = await getDocs(qRef)
+      if (!snap.empty) {
+        invoice = { id: snap.docs[0].id, ...snap.docs[0].data() }
+      }
     }
 
-    const snap = await getDocs(qRef)
-    if (snap.empty) {
-      alert('找不到這張發票資料')
-      return
+    if (!invoice) {
+      const qRef = query(
+        collection(db, 'invoices'),
+        where('invoiceNumber', '==', invoiceNumber),
+        limit(1)
+      )
+      const snap = await getDocs(qRef)
+      if (snap.empty) {
+        alert('找不到此發票資料')
+        return
+      }
+      invoice = { id: snap.docs[0].id, ...snap.docs[0].data() }
     }
-    const inv = { id: snap.docs[0].id, ...snap.docs[0].data() }
-    renderInvoice(inv)
+
+    renderInvoice(invoice)
   } catch (err) {
     console.error(err)
-    alert('載入發票失敗')
+    alert('載入發票資料時發生錯誤')
   }
 }
 
-function renderInvoice(inv) {
-  const invoiceNo = inv.invoiceNumber || ''
-  const randomNumber = inv.randomNumber || '----'
+function renderInvoice (inv) {
+  const invNo = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || ''
   const amount = inv.amount || 0
-  const buyerGUI = (inv.buyerGUI || '').trim()
   const sellerGUI = inv.sellerGUI || '48594728'
-  const items = inv.items || []
+  const buyerGUI = inv.buyerGUI || ''
 
-  const { dateTimeText, periodText } = buildDateTexts(inv)
-
-  $('#invoiceNumber').textContent = invoiceNo
-  $('#randomNumber').textContent = randomNumber
-  $('#totalAmount').textContent = amount
-  $('#datetimeText').textContent = dateTimeText
-  $('#periodText').textContent = periodText
-  $('#sellerGUI').textContent = sellerGUI
-
-  const buyerLabelEl = document.getElementById('buyerLabel')
-  const buyerGUIEl   = document.getElementById('buyerGUI')
-  const buyerDisplay = BuyerDisplay(buyerGUI)
-
-  if (buyerDisplay) {
-    buyerGUIEl.textContent = buyerDisplay
-    buyerLabelEl.style.display = ''
-    buyerGUIEl.style.display = ''
+  let d
+  if (inv.invoiceDate) {
+    d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
+  } else if (inv.createdAt?.toDate) {
+    d = inv.createdAt.toDate()
   } else {
-    buyerGUIEl.textContent = ''
-    buyerLabelEl.style.display = 'none'
-    buyerGUIEl.style.display = 'none'
+    d = new Date()
   }
 
-  buildBarcode(invoiceNo)
-  buildQRCodes(invoiceNo, randomNumber, amount)
-  buildDetailSection(items, amount)
-}
+  const year = d.getFullYear()
+  const rocYear = year - 1911
+  const m = d.getMonth() + 1
+  const day = d.getDate().toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
 
-function BuyerDisplay(gui) {
-  if (!gui || gui === '00000000') return '—'
-  return gui
-}
-
-function buildDateTexts(inv) {
-  let y, m, d, hh, mm
-
-  const xml = inv.smilepayRaw && inv.smilepayRaw.xml
-  if (xml) {
-    const dateMatch = /<InvoiceDate>(.*?)<\/InvoiceDate>/i.exec(xml)
-    const timeMatch = /<InvoiceTime>(.*?)<\/InvoiceTime>/i.exec(xml)
-    if (dateMatch) {
-      const [yy, mo, dd] = dateMatch[1].split('/').map((v) => parseInt(v, 10))
-      y = yy
-      m = mo
-      d = dd
-    }
-    if (timeMatch) {
-      const parts = timeMatch[1].split(':').map((v) => parseInt(v, 10))
-      hh = parts[0] ?? 0
-      mm = parts[1] ?? 0
-    }
-  }
-
-  if (!y || !m || !d) {
-    const fallback =
-      inv.createdAt && inv.createdAt.toDate ? inv.createdAt.toDate() : new Date()
-    y = fallback.getFullYear()
-    m = fallback.getMonth() + 1
-    d = fallback.getDate()
-    hh = fallback.getHours()
-    mm = fallback.getMinutes()
-  }
-
-  const rocYear = y - 1911
   const periodStart = m % 2 === 1 ? m : m - 1
   const periodEnd = periodStart + 1
-
   const periodText =
-    rocYear +
-    '年' +
-    String(periodStart).padStart(2, '0') +
-    '-' +
-    String(periodEnd).padStart(2, '0') +
-    '月'
+    `${rocYear}年${periodStart.toString().padStart(2, '0')}` +
+    `-${periodEnd.toString().padStart(2, '0')}月`
 
-  const dateTimeText =
-    y +
-    '-' +
-    String(m).padStart(2, '0') +
-    '-' +
-    String(d).padStart(2, '0') +
-    ' ' +
-    String(hh ?? 0).padStart(2, '0') +
-    ':' +
-    String(mm ?? 0).padStart(2, '0')
+  $('#invoiceNumber').textContent = invNo
+  $('#periodText').textContent = periodText
+  $('#datetimeText').textContent =
+    `${year}-${m.toString().padStart(2, '0')}-${day} ${hh}:${mm}`
+  $('#randomNumber').textContent = randomNumber || '----'
+  $('#totalAmount').textContent = amount
+  $('#sellerGUI').textContent = sellerGUI
 
-  return { dateTimeText, periodText }
-}
-
-function buildBarcode(invoiceNo) {
-  const svg = document.getElementById('barcode')
-  if (!svg) return
-
-  if (!invoiceNo) {
-    svg.innerHTML = ''
-    return
+  const buyerRows = $$('.seller-buyer-row')
+  if (!buyerGUI || buyerGUI === '00000000') {
+    buyerRows.forEach(el => { el.style.display = 'none' })
+  } else {
+    $('#buyerGUI').textContent = buyerGUI
   }
 
+  buildBarcode(invNo)
+  buildQRCodes(invNo, randomNumber, rocYear, m, amount)
+  renderDetails(inv)
+}
+
+function buildBarcode (invNo) {
+  const svg = document.getElementById('barcode')
+  if (!svg || !window.JsBarcode) return
   try {
-    JsBarcode(svg, invoiceNo, {
+    window.JsBarcode(svg, invNo || 'NO-DATA', {
       format: 'CODE128',
       displayValue: false,
       lineColor: '#000000',
-      width: 2,
-      height: 80,
+      width: 1.4,
+      height: 70,
       margin: 0
     })
   } catch (err) {
@@ -189,79 +148,58 @@ function buildBarcode(invoiceNo) {
   }
 }
 
-function buildQRCodes(invoiceNo, randomNumber, amount) {
-  const left = document.getElementById('qrLeft')
-  const right = document.getElementById('qrRight')
-  if (!left || !right) return
+function buildQRCodes (invNo, random, rocYear, month, amount) {
+  if (!window.QRCode) return
 
-  left.innerHTML = ''
-  right.innerHTML = ''
+  const leftEl = document.getElementById('qrLeft')
+  const rightEl = document.getElementById('qrRight')
+  leftEl.innerHTML = ''
+  rightEl.innerHTML = ''
 
-  const payloadLeft = 'INV|' + invoiceNo + '|' + randomNumber
-  const payloadRight = 'AMT|' + amount
+  const leftPayload = `DR:${invNo}:${random}:${rocYear}${month
+    .toString()
+    .padStart(2, '0')}:${amount}`
+  const rightPayload = `https://rabbithome.vercel.app/invoice-preview.html?invoiceNumber=${encodeURIComponent(invNo)}`
 
-  new QRCode(left, {
-    text: payloadLeft,
-    width: 220,
-    height: 220
+  new window.QRCode(leftEl, {
+    text: leftPayload,
+    width: 180,
+    height: 180
   })
 
-  new QRCode(right, {
-    text: payloadRight,
-    width: 220,
-    height: 220
+  new window.QRCode(rightEl, {
+    text: rightPayload,
+    width: 180,
+    height: 180
   })
 }
 
-function buildDetailSection(items, amount) {
-  const section = document.getElementById('detailSection')
-  if (!section) return
+function renderDetails (inv) {
+  const tbody = $('#detailBody')
+  const totalCell = $('#detailTotalCell')
+  if (!tbody || !totalCell) return
 
-  if (!items || !items.length) {
-    section.style.display = 'none'
-    return
-  }
+  const items = inv.items || []
+  tbody.innerHTML = ''
+  let runningTotal = 0
 
-  const rowsHtml = items
-    .map(
-      (it, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${escapeHtml(it.name || '')}</td>
-        <td style="text-align:right;">${it.qty || 0}</td>
-        <td style="text-align:right;">${it.amount || 0}</td>
-      </tr>
+  items.forEach((it, idx) => {
+    const tr = document.createElement('tr')
+    const name = it.name || ''
+    const qty = Number(it.qty) || 0
+    const price = Number(it.price) || 0
+    const amt = Number(it.amount) || qty * price
+    runningTotal += amt
+
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${name}</td>
+      <td>${qty}</td>
+      <td>${price}</td>
+      <td>${amt}</td>
     `
-    )
-    .join('')
+    tbody.appendChild(tr)
+  })
 
-  section.innerHTML = `
-    <div class="detail-divider">-------------------- ✂ --------------------</div>
-    <div class="detail-title">銷售明細</div>
-    <table class="detail-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>品名</th>
-          <th style="text-align:right;">數量</th>
-          <th style="text-align:right;">金額</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rowsHtml}
-      </tbody>
-    </table>
-    <div class="detail-total">總計：${amount} 元</div>
-    <div class="detail-foot">臺北市信義區大道路74巷1號</div>
-    <div class="detail-foot">TEL：02-27592006</div>
-  `
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+  totalCell.textContent = `總計：${runningTotal} 元`
 }
