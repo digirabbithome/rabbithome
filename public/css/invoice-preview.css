@@ -1,128 +1,226 @@
-body {
-  font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  background: #ffeef6;
-  margin: 0;
-  padding: 20px;
+:root {
+  --pink-bg: #ffeef7;
+  --card-bg: #ffffff;
+  --accent: #ff91b3;
+  --accent-dark: #ff6f9e;
+  --text-main: #333333;
+  --text-sub: #777777;
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 12px 30px rgba(255, 145, 179, 0.25);
+  --btn-height: 44px;
+  --font-sans: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* 上方功能列（不要列印） */
-.top-bar {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  background: radial-gradient(circle at top left, #ffeef7 0, #fff5fb 40%, #ffe4f0 100%);
+  color: var(--text-main);
+}
+
+.preview-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px 32px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
+  margin: 0 auto 18px;
+}
+
+.btn {
+  border: none;
+  outline: none;
+  padding: 0 18px;
+  height: var(--btn-height);
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0, var(--accent-dark) 100%);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(255, 145, 179, 0.45);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--accent-dark);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.preview-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px 0;
+}
+
+.invoice-card {
+  width: min(540px, 100%);
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  padding: 42px 40px 32px;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  position: relative;
+}
+
+.logo-block {
+  margin-bottom: 12px;
+}
+
+.logo-ch {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.logo-en {
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.invoice-title {
+  margin-top: 10px;
+  font-size: 18px;
+  letter-spacing: 0.22em;
+}
+
+.invoice-period {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.invoice-number {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  padding: 6px 12px;
+  display: inline-block;
+  border-radius: 999px;
+  background: rgba(255, 145, 179, 0.08);
+}
+
+.invoice-datetime {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+.invoice-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-button {
-  background: #ff8bb0;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
+  margin-top: 12px;
   font-size: 15px;
-  border-radius: 999px;
-  cursor: pointer;
 }
 
-button:hover {
-  background: #ff6f9c;
+.invoice-row:nth-of-type(4) {
+  margin-top: 18px;
 }
 
-/* 發票卡片 */
-.invoice-card {
-  background: #fff;
-  padding: 24px 28px 28px;
-  border-radius: 24px;
-  max-width: 420px;
-  margin: 0 auto;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  text-align: center;
+.invoice-row span:last-child {
+  text-align: right;
 }
 
-/* 標題區 */
-.title-block {
-  margin-bottom: 10px;
-}
-
-.brand-main {
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.brand-sub {
-  font-size: 16px;
-  margin-top: 2px;
-}
-
-.title-line {
-  margin-top: 10px;
-  font-size: 16px;
-}
-
-.period-line {
-  margin-top: 4px;
-  font-size: 14px;
-  color: #555;
-}
-
-/* 發票號碼 */
-.inv-number-line {
-  margin-top: 14px;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 3px;
-}
-
-/* 日期時間 */
-.datetime-line {
-  margin-top: 4px;
-  font-size: 14px;
-}
-
-/* 金額與隨機碼 */
-.amount-block {
-  margin-top: 16px;
-  font-size: 15px;
-  line-height: 1.8;
-}
-
-.random-amount-line {
-  margin-bottom: 4px;
-}
-
-.buyer-seller-line {
-  margin-top: 4px;
-}
-
-/* 條碼區 */
 .barcode-wrapper {
-  margin-top: 16px;
+  margin: 22px auto 12px;
+  max-width: 360px;
 }
 
-#barcodeSvg {
-  width: 260px;
-  height: 60px;
+.barcode-wrapper svg {
+  width: 100%;
+  height: 64px;
 }
 
-/* QR Codes */
-.qr-row {
+.qr-wrapper {
+  margin-top: 18px;
   display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
+  justify-content: center;
+  gap: 12px;
 }
 
 .qr-box {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 列印樣式 */
+@media (max-width: 768px) {
+  .preview-page {
+    padding: 14px 10px 24px;
+  }
+
+  .preview-header {
+    margin-bottom: 10px;
+  }
+
+  .invoice-card {
+    padding: 30px 22px 28px;
+    border-radius: var(--radius-lg);
+  }
+
+  .qr-wrapper {
+    gap: 8px;
+  }
+
+  .qr-box {
+    width: 150px;
+    height: 150px;
+  }
+}
+
 @media print {
   body {
     background: #ffffff;
+  }
+  .preview-header {
+    display: none;
+  }
+  .preview-page {
     padding: 0;
   }
-  .no-print {
-    display: none;
+  .preview-main {
+    padding: 0;
   }
   .invoice-card {
     box-shadow: none;

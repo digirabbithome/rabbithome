@@ -2,56 +2,57 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>電子發票證明聯</title>
-
-  <link rel="stylesheet" href="/css/invoice-preview.css">
-
-  <!-- QR Code -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- 一維條碼：CODE128 -->
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <title>電子發票預覽 - 數位小兔</title>
+  <link rel="stylesheet" href="/css/invoice-preview.css" />
 </head>
-
 <body>
-  <div class="top-bar no-print">
-    <button id="backBtn">⬅ 返回</button>
-    <button id="printBtn">🖨 列印發票</button>
+  <div class="preview-page">
+    <header class="preview-header">
+      <button id="backBtn" class="btn btn-secondary">← 返回</button>
+      <button id="printBtn" class="btn btn-primary">🖨 列印發票</button>
+    </header>
+
+    <main class="preview-main">
+      <section class="invoice-card" id="invoiceCard">
+        <div class="logo-block">
+          <div class="logo-ch">數位小兔</div>
+          <div class="logo-en">Digital Rabbit</div>
+        </div>
+
+        <div class="invoice-title">電子發票證明聯</div>
+        <div class="invoice-period" id="invoicePeriod">---</div>
+        <div class="invoice-number" id="invoiceNumber">---</div>
+
+        <div class="invoice-datetime" id="invoiceDateTime">----</div>
+
+        <div class="invoice-row">
+          <span id="randomNumber">隨機碼 ----</span>
+          <span id="totalAmount">總計 0</span>
+        </div>
+
+        <div class="invoice-row">
+          <span>賣方</span>
+          <span>買方</span>
+        </div>
+        <div class="invoice-row">
+          <span id="sellerGUI">----</span>
+          <span id="buyerGUI">----</span>
+        </div>
+
+        <div class="barcode-wrapper">
+          <svg id="barcode"></svg>
+        </div>
+
+        <div class="qr-wrapper">
+          <div id="qrLeft" class="qr-box"></div>
+          <div id="qrRight" class="qr-box"></div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <div id="invoiceCard" class="invoice-card">
-    <!-- 標題區 -->
-    <div class="title-block">
-      <div class="brand-main">數位小兔</div>
-      <div class="brand-sub">Digital Rabbit</div>
-      <div class="title-line">電子發票證明聯</div>
-      <div id="periodLine" class="period-line"></div>
-    </div>
-
-    <!-- 發票號碼 -->
-    <div id="invNumberLine" class="inv-number-line"></div>
-
-    <!-- 日期時間 -->
-    <div id="dateTimeLine" class="datetime-line"></div>
-
-    <!-- 金額與隨機碼 -->
-    <div class="amount-block">
-      <div id="randomAmountLine" class="random-amount-line"></div>
-      <div id="buyerSellerLine" class="buyer-seller-line"></div>
-    </div>
-
-    <!-- 一維條碼 -->
-    <div class="barcode-wrapper">
-      <svg id="barcodeSvg"></svg>
-    </div>
-
-    <!-- QR Code -->
-    <div class="qr-row">
-      <div id="qrLeft" class="qr-box"></div>
-      <div id="qrRight" class="qr-box"></div>
-    </div>
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="/js/invoice-preview.js"></script>
 </body>
 </html>
