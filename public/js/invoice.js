@@ -294,7 +294,7 @@ async function issueInvoice() {
   window.open(previewUrl, "_blank")
 }
       
-    }
+    
     reloadInvoices()
   } catch (err) {
     console.error(err)
