@@ -77,10 +77,11 @@ body {
 }
 
 .logo-img {
-  max-width: 260px;
-  width: 85%;
+  max-width: 100%;
+  width: 100%;
   height: auto;
 }
+
 
 /* === 上半部四行：LOGO + 標題 + 月份 + 發票號碼 + 日期 === */
 .title-main,
@@ -141,7 +142,7 @@ body {
 }
 
 .meta-row > div:last-child {
-  text-align: right;
+  text-align: left;
 }
 
 .label-row {
@@ -160,7 +161,7 @@ body {
 }
 
 .taxid-row > div:last-child {
-  text-align: right;
+  text-align: left;
 }
 
 /* 若買方隱藏時，整列不佔空間 */
@@ -180,21 +181,27 @@ body {
 
 /* === QR Codes === */
 .qr-row {
+  margin-top: 12px;
   display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  margin-bottom: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
+
 
 .qr-box {
   flex: 0 0 auto;
-  width: 150px;
-  height: 150px;
+  width: 135px;
+  height: 135px;
 }
+
 
 /* === 銷售明細 === */
 .detail-block {
-  margin-top: 4px;
+  margin-top: 8px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
   text-align: left;
 }
 
