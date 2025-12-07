@@ -1,205 +1,180 @@
-// /js/invoice-preview.js — Rabbithome 電子發票預覽 v2025-12-07
+
 import { db } from '/js/firebase.js'
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  limit
+  collection, query, where, getDocs
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 const $ = (s, r = document) => r.querySelector(s)
-const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
 
-window.onload = async () => {
-  setupButtons()
-  await loadInvoiceAndRender()
-}
-
-function setupButtons () {
-  const backBtn = $('#backBtn')
-  const printBtn = $('#printBtn')
-  const detailCheckbox = $('#printDetail')
-  const detailSection = $('#detailSection')
-
-  if (backBtn) backBtn.onclick = () => window.history.back()
-  if (printBtn) printBtn.onclick = () => window.print()
-
-  if (detailCheckbox && detailSection) {
-    detailCheckbox.addEventListener('change', () => {
-      detailSection.style.display = detailCheckbox.checked ? 'block' : 'none'
-    })
+function getQueryParams() {
+  const params = new URLSearchParams(window.location.search)
+  return {
+    invoiceNumber: params.get('invoiceNumber') || '',
+    companyId: params.get('companyId') || ''
   }
 }
 
-function getQueryParam (name) {
-  const url = new URL(window.location.href)
-  return url.searchParams.get(name)
-}
+window.onload = async () => {
+  $('#backBtn')?.addEventListener('click', () => {
+    window.history.length > 1 ? window.history.back() : window.close()
+  })
+  $('#printBtn')?.addEventListener('click', () => window.print())
+  $('#toggleDetail')?.addEventListener('change', (e) => {
+    const area = $('#detailArea')
+    if (!area) return
+    area.classList.toggle('visible', e.target.checked)
+  })
 
-async function loadInvoiceAndRender () {
-  const invoiceNumber = getQueryParam('invoiceNumber')
-  const companyId = getQueryParam('companyId')
-
+  const { invoiceNumber, companyId } = getQueryParams()
   if (!invoiceNumber) {
-    alert('缺少 invoiceNumber 參數')
+    alert('缺少發票號碼')
     return
   }
 
   try {
-    let invoice = null
-    if (companyId) {
-      const qRef = query(
-        collection(db, 'invoices'),
-        where('invoiceNumber', '==', invoiceNumber),
-        where('companyId', '==', companyId),
-        limit(1)
-      )
-      const snap = await getDocs(qRef)
-      if (!snap.empty) {
-        invoice = { id: snap.docs[0].id, ...snap.docs[0].data() }
-      }
-    }
+    const q = companyId
+      ? query(collection(db, 'invoices'),
+              where('invoiceNumber', '==', invoiceNumber),
+              where('companyId', '==', companyId))
+      : query(collection(db, 'invoices'),
+              where('invoiceNumber', '==', invoiceNumber))
 
-    if (!invoice) {
-      const qRef = query(
-        collection(db, 'invoices'),
-        where('invoiceNumber', '==', invoiceNumber),
-        limit(1)
-      )
-      const snap = await getDocs(qRef)
-      if (snap.empty) {
-        alert('找不到此發票資料')
-        return
-      }
-      invoice = { id: snap.docs[0].id, ...snap.docs[0].data() }
+    const snap = await getDocs(q)
+    if (snap.empty) {
+      alert('找不到這張發票資料')
+      return
     }
-
-    renderInvoice(invoice)
+    const doc = snap.docs[0]
+    const data = doc.data()
+    renderInvoice(data)
   } catch (err) {
     console.error(err)
-    alert('載入發票資料時發生錯誤')
+    alert('載入發票失敗')
   }
 }
 
-function renderInvoice (inv) {
-  const invNo = inv.invoiceNumber || ''
-  const randomNumber = inv.randomNumber || ''
-  const amount = inv.amount || 0
-  const sellerGUI = inv.sellerGUI || '48594728'
-  const buyerGUI = inv.buyerGUI || ''
+function renderInvoice(inv) {
+  $('#invoiceNumber').textContent = inv.invoiceNumber || ''
+  $('#randomNumber').textContent = inv.randomNumber || '----'
+  $('#totalAmount').textContent = (inv.amount || 0).toString()
+  $('#sellerGUI').textContent = inv.sellerGUI || '48594728'
 
-  let d
-  if (inv.invoiceDate) {
-    d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
-  } else if (inv.createdAt?.toDate) {
-    d = inv.createdAt.toDate()
+  const buyerGUI = (inv.buyerGUI || '').trim()
+  const buyerRowLabels = $('#buyerRowLabels')
+  const buyerRowValues = $('#buyerRowValues')
+  const buyerEl = $('#buyerGUI')
+
+  if (!buyerGUI || buyerGUI === '00000000') {
+    if (buyerRowLabels) buyerRowLabels.classList.add('hidden-row')
+    if (buyerRowValues) buyerRowValues.classList.add('hidden-row')
   } else {
-    d = new Date()
+    if (buyerRowLabels) buyerRowLabels.classList.remove('hidden-row')
+    if (buyerRowValues) buyerRowValues.classList.remove('hidden-row')
+    if (buyerEl) buyerEl.textContent = buyerGUI
   }
 
-  const year = d.getFullYear()
-  const rocYear = year - 1911
-  const m = d.getMonth() + 1
-  const day = d.getDate().toString().padStart(2, '0')
-  const hh = d.getHours().toString().padStart(2, '0')
-  const mm = d.getMinutes().toString().padStart(2, '0')
+  // === 發票年月雙月期 ===
+  let baseDate
+  if (inv.createdAt && typeof inv.createdAt.toDate === 'function') {
+    baseDate = inv.createdAt.toDate()
+  } else if (inv.invoiceDate) {
+    baseDate = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
+  } else {
+    baseDate = new Date()
+  }
 
+  const tpeString = baseDate.toLocaleString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+  const m = baseDate.getMonth() + 1
+  const rocYear = baseDate.getFullYear() - 1911
   const periodStart = m % 2 === 1 ? m : m - 1
   const periodEnd = periodStart + 1
-  const periodText =
-    `${rocYear}年${periodStart.toString().padStart(2, '0')}` +
-    `-${periodEnd.toString().padStart(2, '0')}月`
+  $('#periodText').textContent = `${rocYear}年${periodStart.toString().padStart(2,'0')}-${periodEnd.toString().padStart(2,'0')}月`
 
-  $('#invoiceNumber').textContent = invNo
-  $('#periodText').textContent = periodText
-  $('#datetimeText').textContent =
-    `${year}-${m.toString().padStart(2, '0')}-${day} ${hh}:${mm}`
-  $('#randomNumber').textContent = randomNumber || '----'
-  $('#totalAmount').textContent = amount
-  $('#sellerGUI').textContent = sellerGUI
+  const [datePart, timePart] = tpeString.split(' ')
+  const dateFormatted = datePart.replaceAll('/', '-')
+  $('#datetimeText').textContent = `${dateFormatted} ${timePart.slice(0,5)}`
 
-  const buyerRows = $$('.seller-buyer-row')
-  if (!buyerGUI || buyerGUI === '00000000') {
-    buyerRows.forEach(el => { el.style.display = 'none' })
-  } else {
-    $('#buyerGUI').textContent = buyerGUI
+  // === 條碼 ===
+  if (inv.invoiceNumber) {
+    try {
+      JsBarcode('#barcode', inv.invoiceNumber, {
+        format: 'CODE128',
+        displayValue: false,
+        margin: 0,
+        height: 80
+      })
+    } catch (e) {
+      console.error('Barcode error', e)
+    }
   }
 
-  buildBarcode(invNo)
-  buildQRCodes(invNo, randomNumber, rocYear, m, amount)
-  renderDetails(inv)
-}
+  // === QR Codes ===
+  const left = $('#qrLeft')
+  const right = $('#qrRight')
+  if (left) left.innerHTML = ''
+  if (right) right.innerHTML = ''
 
-function buildBarcode (invNo) {
-  const svg = document.getElementById('barcode')
-  if (!svg || !window.JsBarcode) return
-  try {
-    window.JsBarcode(svg, invNo || 'NO-DATA', {
-      format: 'CODE128',
-      displayValue: false,
-      lineColor: '#000000',
-      width: 1.4,
-      height: 70,
-      margin: 0
+  const qrDataLeft = `INV*${inv.invoiceNumber || ''}*${inv.randomNumber || ''}`
+  const qrDataRight = JSON.stringify({
+    amt: inv.amount || 0,
+    orderId: inv.orderId || '',
+    companyId: inv.companyId || ''
+  })
+
+  if (left) {
+    new QRCode(left, {
+      text: qrDataLeft,
+      width: 150,
+      height: 150
     })
-  } catch (err) {
-    console.error('Barcode error', err)
   }
-}
+  if (right) {
+    new QRCode(right, {
+      text: qrDataRight,
+      width: 150,
+      height: 150
+    })
+  }
 
-function buildQRCodes (invNo, random, rocYear, month, amount) {
-  if (!window.QRCode) return
+  // === 銷售明細 ===
+  const detailArea = $('#detailArea')
+  if (detailArea && Array.isArray(inv.items) && inv.items.length) {
+    const rows = inv.items.map(it => `
+      <tr>
+        <td>${it.name || ''}</td>
+        <td>${it.price || 0}</td>
+        <td>${it.qty || 0}</td>
+        <td>${it.amount || (it.price || 0) * (it.qty || 0)}</td>
+      </tr>`).join('')
 
-  const leftEl = document.getElementById('qrLeft')
-  const rightEl = document.getElementById('qrRight')
-  leftEl.innerHTML = ''
-  rightEl.innerHTML = ''
-
-  const leftPayload = `DR:${invNo}:${random}:${rocYear}${month
-    .toString()
-    .padStart(2, '0')}:${amount}`
-  const rightPayload = `https://rabbithome.vercel.app/invoice-preview.html?invoiceNumber=${encodeURIComponent(invNo)}`
-
-  new window.QRCode(leftEl, {
-    text: leftPayload,
-    width: 180,
-    height: 180
-  })
-
-  new window.QRCode(rightEl, {
-    text: rightPayload,
-    width: 180,
-    height: 180
-  })
-}
-
-function renderDetails (inv) {
-  const tbody = $('#detailBody')
-  const totalCell = $('#detailTotalCell')
-  if (!tbody || !totalCell) return
-
-  const items = inv.items || []
-  tbody.innerHTML = ''
-  let runningTotal = 0
-
-  items.forEach((it, idx) => {
-    const tr = document.createElement('tr')
-    const name = it.name || ''
-    const qty = Number(it.qty) || 0
-    const price = Number(it.price) || 0
-    const amt = Number(it.amount) || qty * price
-    runningTotal += amt
-
-    tr.innerHTML = `
-      <td>${idx + 1}</td>
-      <td>${name}</td>
-      <td>${qty}</td>
-      <td>${price}</td>
-      <td>${amt}</td>
+    detailArea.innerHTML = `
+      <div>銷售明細</div>
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>品名</th>
+            <th>單價</th>
+            <th>數量</th>
+            <th>金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right;">總計：${inv.amount || 0}</td>
+          </tr>
+        </tfoot>
+      </table>
     `
-    tbody.appendChild(tr)
-  })
-
-  totalCell.textContent = `總計：${runningTotal} 元`
+  }
 }
