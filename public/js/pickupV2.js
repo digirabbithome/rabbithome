@@ -159,9 +159,8 @@ window.onload = async () => {
     const msg = `您好
 商品已經幫您保留在櫃檯嚕
 來數位小兔取貨時
-和小幫手出示您的取貨編號
-📌  ${serial} 📌
-就會迅速幫您準備好！節省等待的時間唷`
+和小幫手告知您的取貨編號
+📌  ${serial} 📌 就可以嚕
 
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
