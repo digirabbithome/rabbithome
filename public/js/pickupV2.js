@@ -144,38 +144,36 @@ window.onload = async () => {
     renderList()
   })
 
-// 📌 右邊圖釘：複製給客人的通知文字
-document.addEventListener('click', async (e) => {
-  if (!e.target.classList.contains('pin-copy')) return
+  // 📌 右邊圖釘：複製給客人的通知文字（靜默模式，不跳視窗）
+  document.addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('pin-copy')) return
 
-  const id = e.target.dataset.id
-  if (!id) return
+    const id = e.target.dataset.id
+    if (!id) return
 
-  const item = pickupList.find(p => p.id === id)
-  if (!item) return
+    const item = pickupList.find(p => p.id === id)
+    if (!item) return
 
-  const serial = item.serial || ''
+    const serial = item.serial || ''
 
-  const msg = `您好
+    const msg = `您好
 商品已經幫您保留在櫃檯嚕
 來數位小兔取貨時
 和小幫手出示您的取貨編號
 📌  ${serial} 📌
 就會迅速幫您準備好！節省等待的時間唷`
 
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(msg)
-      alert('已複製訊息，可直接貼到 LINE 給客人！')
-    } else {
-      window.prompt('瀏覽器無法自動複製，請手動複製以下內容：', msg)
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(msg)
+        // 靜靜完成，不跳 alert
+      } else {
+        console.warn('此瀏覽器不支援 navigator.clipboard')
+      }
+    } catch (err) {
+      console.error('copy failed', err)
     }
-  } catch (err) {
-    console.error('copy failed', err)
-    window.prompt('複製失敗，請手動複製以下內容：', msg)
-  }
-})
-
+  })
 }
 
 // === Firestore 讀取：三個月內 ===
@@ -340,7 +338,6 @@ function renderTodayDone() {
   const sortedNames = Object.keys(groups).sort()
 
   sortedNames.forEach(name => {
-
     const avatar = avatarMap[name] || '👤'
 
     // 分隔線 + 名稱
