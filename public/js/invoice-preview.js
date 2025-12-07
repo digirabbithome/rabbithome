@@ -85,7 +85,20 @@ function renderInvoice(inv) {
   $('#datetimeText').textContent = dateTimeText
   $('#periodText').textContent = periodText
   $('#sellerGUI').textContent = sellerGUI
-  $('#buyerGUI').textContent = BuyerDisplay(buyerGUI)
+
+  const buyerLabelEl = document.getElementById('buyerLabel')
+  const buyerGUIEl   = document.getElementById('buyerGUI')
+  const buyerDisplay = BuyerDisplay(buyerGUI)
+
+  if (buyerDisplay) {
+    buyerGUIEl.textContent = buyerDisplay
+    buyerLabelEl.style.display = ''
+    buyerGUIEl.style.display = ''
+  } else {
+    buyerGUIEl.textContent = ''
+    buyerLabelEl.style.display = 'none'
+    buyerGUIEl.style.display = 'none'
+  }
 
   buildBarcode(invoiceNo)
   buildQRCodes(invoiceNo, randomNumber, amount)
