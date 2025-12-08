@@ -13,13 +13,7 @@
   <div class="page">
     <header class="top-bar">
       <button id="backBtn" class="btn-ghost">← 返回</button>
-      <div class="right-tools">
-        <label class="detail-toggle">
-          <input type="checkbox" id="toggleDetail" checked />
-          列印銷售明細
-        </label>
-        <button id="printBtn" class="btn-primary">列印發票</button>
-      </div>
+      <button id="printBtn" class="btn-primary">列印發票</button>
     </header>
 
     <main class="card-wrapper">
@@ -32,18 +26,18 @@
         <div class="period" id="periodText">114年11-12月</div>
         <div class="inv-no" id="invoiceNumber">VH00000000</div>
 
-        <div class="datetime" id="datetimeText">2025-12-07 12:34</div>
+        <div class="datetime" id="datetimeText">2025-12-07 14:52</div>
 
         <div class="row two-cols meta-row">
           <div>隨機碼 <span id="randomNumber">----</span></div>
           <div>總計 <span id="totalAmount">0</span></div>
         </div>
 
-        <div class="row two-cols label-row">
+        <div class="row two-cols label-row" id="buyerRowLabels">
           <div>賣方</div>
-          <div id="buyerLabel">買方</div>
+          <div>買方</div>
         </div>
-        <div class="row two-cols taxid-row">
+        <div class="row two-cols taxid-row" id="buyerRowValues">
           <div id="sellerGUI">48594728</div>
           <div id="buyerGUI"></div>
         </div>
@@ -57,9 +51,19 @@
           <div id="qrRight" class="qr-box"></div>
         </div>
 
-        <section class="detail-section" id="detailSection"></section>
+        
       </section>
     </main>
+    <section class="detail-block no-print">
+          <header class="detail-header">
+            <label class="detail-toggle">
+              <input type="checkbox" id="toggleDetail" />
+              <span>列印銷售明細</span>
+            </label>
+          </header>
+          <div id="detailArea" class="detail-area"></div>
+        </section>
+
   </div>
 
   <script type="module" src="/js/invoice-preview.js"></script>

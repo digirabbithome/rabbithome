@@ -2,11 +2,9 @@
 :root {
   --pink-bg: #ffeef6;
   --card-bg: #ffffff;
-  --pink-pill: #ffd7e8;
-  --pink-border: #ffc5dd;
   --text-main: #333333;
-  --text-muted: #777777;
-  --accent: #ff7fa8;
+  --text-sub: #777777;
+  --accent: #ff99bb;
 }
 
 * {
@@ -15,10 +13,8 @@
 
 body {
   margin: 0;
-  font-family: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top, #fff5fb 0, #ffeef6 40%, #ffe3f1 100%);
-  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: radial-gradient(circle at top, #ffeef6 0, #ffeef6 40%, #ffdce9 100%);
 }
 
 .page {
@@ -31,46 +27,29 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-}
-
-.right-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.detail-toggle {
-  font-size: 13px;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.detail-toggle input {
-  width: 14px;
-  height: 14px;
+  padding: 12px 16px;
 }
 
 .btn-ghost,
 .btn-primary {
-  border-radius: 20px;
+  border-radius: 999px;
   padding: 6px 16px;
+  font-size: 14px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-weight: 500;
 }
 
 .btn-ghost {
   background: transparent;
   color: var(--accent);
+  border: 1px solid var(--accent);
 }
 
 .btn-primary {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(255, 127, 168, 0.45);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
 .card-wrapper {
@@ -78,194 +57,208 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 10px 12px 24px;
+  padding: 8px 12px 24px;
 }
 
 .invoice-card {
-  width: 360px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 420px;
   background: var(--card-bg);
   border-radius: 32px;
-  padding: 24px 18px 28px;
+  padding: 18px 22px 28px;
+  margin: 0 auto;
   box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  text-align: center;
+  color: var(--text-main);
 }
 
 .logo-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
 }
 
 .logo-img {
-  max-width: 280px;
-  width: 90%;
+  max-width: 100%;
+  width: 100%;
   height: auto;
 }
 
-.title-main {
-  text-align: center;
-  font-size: 24px;
-  letter-spacing: 0.4em;
-  margin-right: -0.4em;
-  margin-top: 6px;
-  margin-bottom: 12px;
-}
 
-.period {
-  text-align: center;
-  font-size: 20px;
-  letter-spacing: 0.12em;
-  margin-right: -0.12em;
-  padding: 10px 22px;
-  border-radius: 999px;
-  background: var(--pink-pill);
-  border: 1px solid var(--pink-border);
-  margin-bottom: 16px;
-}
-
+/* === 上半部四行：LOGO + 標題 + 月份 + 發票號碼 + 日期 === */
+.title-main,
+.period,
 .inv-no {
-  text-align: center;
+  margin: 0;
+  padding: 0;
+  line-height: 1.02;
+}
+
+/* 第二行：電子發票證明聯（再放大兩號） */
+.title-main {
   font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 0.36em;
-  margin-right: -0.36em;
-  padding: 10px 22px;
-  border-radius: 999px;
-  background: white;
-  border: 1px solid var(--pink-border);
-  margin-bottom: 18px;
+  letter-spacing: 0.25em;
+  margin-top: 4px;
+}
+
+/* 第三行：發票期別 114年11-12月（再放大兩號） */
+.period {
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* 第四行：發票號碼，去掉字距、加大加粗 */
+.inv-no {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-top: 2px;
 }
 
 .datetime {
-  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 12px;
   font-size: 18px;
-  color: var(--text-muted);
-  margin-bottom: 18px;
+  color: var(--text-sub);
 }
 
+/* === Meta Row === */
 .row {
-  display: flex;
-  justify-content: space-between;
   width: 100%;
 }
 
-.two-cols > div {
-  flex: 1;
-}
-
-.meta-row,
-.label-row,
-.taxid-row {
-  font-size: 15px;
-  margin-bottom: 6px;
+.two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
 .meta-row {
-  margin-top: 8px;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+
+.meta-row > div {
+  text-align: left;
+}
+
+.meta-row > div:last-child {
+  text-align: left;
 }
 
 .label-row {
-  margin-top: 14px;
+  font-size: 15px;
+  margin-top: 8px;
 }
 
 .taxid-row {
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
+  margin-top: 2px;
 }
 
-.label-row div {
-  color: var(--text-muted);
+.taxid-row > div:first-child {
+  text-align: left;
 }
 
+.taxid-row > div:last-child {
+  text-align: left;
+}
+
+/* 若買方隱藏時，整列不佔空間 */
+.hidden-row {
+  display: none;
+}
+
+/* === Barcode === */
 .barcode-wrap {
-  margin: 22px 0 18px;
-  text-align: center;
+  margin: 22px auto 18px;
 }
 
-.barcode-wrap svg {
+#barcode {
   width: 100%;
-  max-width: 340px;
-  height: 78px;
+  height: 80px;
 }
 
+/* === QR Codes === */
 .qr-row {
+  margin-top: 12px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
   gap: 10px;
 }
 
+
 .qr-box {
-  width: calc(50% - 6px);
-  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+  width: 135px;
+  height: 135px;
 }
 
-.qr-box canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
 
 /* === 銷售明細 === */
-.detail-section {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px dashed #bbbbbb;
-  font-size: 14px;
+.detail-block {
+  margin-top: 8px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
 }
 
-.detail-divider {
-  text-align: center;
-  margin-bottom: 10px;
-  font-size: 14px;
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 13px;
+  color: var(--text-sub);
+  margin-bottom: 4px;
 }
 
-.detail-title {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 10px;
+.detail-toggle input {
+  margin-right: 6px;
+}
+
+.detail-area {
+  display: none;
+  font-size: 13px;
+  border-top: 1px dashed #ccc;
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.detail-area.visible {
+  display: block;
 }
 
 .detail-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 8px;
+  margin-top: 4px;
 }
 
-.detail-table thead th {
-  border-bottom: 1px dotted #999;
-  padding-bottom: 4px;
+.detail-table th,
+.detail-table td {
+  padding: 2px 0;
+}
+
+.detail-table th {
+  border-bottom: 1px dotted #aaa;
   font-weight: 500;
 }
 
-.detail-table td {
-  padding: 3px 0;
-}
-
 .detail-table td:nth-child(1) {
-  width: 10%;
+  text-align: left;
 }
-
-.detail-table td:nth-child(2) {
-  width: 40%;
-}
-
+.detail-table td:nth-child(2),
 .detail-table td:nth-child(3),
 .detail-table td:nth-child(4) {
-  width: 25%;
   text-align: right;
 }
 
-.detail-total {
-  margin-top: 2px;
-  margin-bottom: 6px;
-  text-align: right;
-}
-
-.detail-foot {
-  font-size: 12px;
-}
-
-/* === 列印樣式 === */
+/* === 列印時優化 === */
 @media print {
+  .detail-toggle { display: none !important; }
+
   body {
     background: #ffffff;
   }
@@ -273,11 +266,10 @@ body {
     display: none;
   }
   .invoice-card {
-  width: 360px;
-  max-width: 100%;
-  background: var(--card-bg);
-  border-radius: 32px;
-  padding: 24px 18px 28px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-}
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+  }
 }
