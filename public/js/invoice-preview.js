@@ -57,31 +57,23 @@ function renderInvoice(inv) {
   $('#invoiceNumber').textContent = inv.invoiceNumber || ''
   $('#randomNumber').textContent = inv.randomNumber || '----'
   $('#totalAmount').textContent = (inv.amount || 0).toString()
-  
-  // === 賣方 / 買方統編列 ===
-  const sellerGUI = inv.sellerGUI || '48594728'
+  $('#sellerGUI').textContent = inv.sellerGUI || '48594728'
+
   const buyerGUI = (inv.buyerGUI || '').trim()
+  const buyerRowLabels = $('#buyerRowLabels')
+  const buyerRowValues = $('#buyerRowValues')
+  const buyerEl = $('#buyerGUI')
 
-  const sellerCell = document.getElementById('sellerGUI')
-  const buyerCell = document.getElementById('buyerGUI')
-
-  const hasBuyer = buyerGUI && buyerGUI !== '00000000'
-
-  if (sellerCell) {
-    sellerCell.textContent = `賣方 ${sellerGUI}`
+  if (!buyerGUI || buyerGUI === '00000000') {
+    if (buyerRowLabels) buyerRowLabels.classList.add('hidden-row')
+    if (buyerRowValues) buyerRowValues.classList.add('hidden-row')
+  } else {
+    if (buyerRowLabels) buyerRowLabels.classList.remove('hidden-row')
+    if (buyerRowValues) buyerRowValues.classList.remove('hidden-row')
+    if (buyerEl) buyerEl.textContent = buyerGUI
   }
 
-  if (buyerCell) {
-    if (hasBuyer) {
-      buyerCell.textContent = `買方 ${buyerGUI}`
-      if (buyerCell.parentElement) buyerCell.parentElement.style.display = 'block'
-    } else {
-      buyerCell.textContent = ''
-      if (buyerCell.parentElement) buyerCell.parentElement.style.display = 'none'
-    }
-  }
-
-// === 發票年月雙月期 ===
+  // === 發票年月雙月期 ===
   let baseDate
   if (inv.createdAt && typeof inv.createdAt.toDate === 'function') {
     baseDate = inv.createdAt.toDate()
