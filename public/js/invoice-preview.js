@@ -57,97 +57,204 @@ window.onload = async () => {
 }
 
 function renderInvoice(inv) {
-  const invoiceNumber = inv.invoiceNumber || ''
-  const randomNumber = inv.randomNumber || '----'
-  const amount = inv.amount || 0
+  const invoiceNo    = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || inv.randomNumber === 0 ? String(inv.randomNumber) : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
+  const amount       = Number(inv.amount || 0)
+  const buyerGUI     = (inv.buyerGUI || '').trim()
+  const sellerGUI    = inv.sellerGUI || '48594728'
+  const items        = inv.items || []
 
-  $('#invoiceNumber').textContent = invoiceNumber
-  $('#randomNumber').textContent = randomNumber
-  $('#totalAmount').textContent = amount.toString()
+  const dateInfo = buildDateTexts(inv)
 
-  // 賣方 / 買方統編：同一行顯示
-  const sellerGUI = inv.sellerGUI || '48594728'
-  const buyerGUI = (inv.buyerGUI || '').trim()
-  const hasBuyer = buyerGUI && buyerGUI !== '00000000'
+  $('#invoiceNumber').textContent = invoiceNo
+  $('#randomNumber').textContent  = randomNumber
+  $('#totalAmount').textContent   = amount
+  $('#datetimeText').textContent  = dateInfo.dateTimeText
+  $('#periodText').textContent    = dateInfo.periodText
+  $('#sellerGUI').textContent     = `賣方 ${sellerGUI}`
 
-  const sellerCell = $('#sellerGUI')
-  const buyerCell = $('#buyerGUI')
+  if (buyerGUI && buyerGUI !== '00000000') {
+    $('#buyerGUI').textContent = `買方 ${buyerGUI}`
+  } else {
+    $('#buyerGUI').textContent = '買方 —'
+  }
 
-  if (sellerCell) sellerCell.textContent = `賣方 ${sellerGUI}`
-  if (buyerCell) buyerCell.textContent = hasBuyer ? `買方 ${buyerGUI}` : '買方 —'
-
-  // 發票期別 & 日期時間
-  const baseDate =
-    inv.createdAt && typeof inv.createdAt.toDate === 'function'
-      ? inv.createdAt.toDate()
-      : new Date()
-
-  const rocYear = baseDate.getFullYear() - 1911
-  const month = baseDate.getMonth() + 1
-  const periodStart = month % 2 === 1 ? month : month - 1
-  const periodEnd = periodStart + 1
-
-  $('#periodText').textContent =
-    `${rocYear}年${String(periodStart).padStart(2, '0')}-${String(
-      periodEnd
-    ).padStart(2, '0')}月`
-
-  const dateStr = baseDate.toLocaleString('zh-TW', {
-    timeZone: 'Asia/Taipei',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
+  buildBarcode(invoiceNo, dateInfo.rocYear, dateInfo.periodEnd, randomNumber)
+  buildQRCodes({
+    invoiceNo,
+    randomNumber,
+    amount,
+    rocDate: dateInfo.rocDate,
+    buyerGUI,
+    sellerGUI,
+    items
   })
-  const [dPart, tPart] = dateStr.split(' ')
-  $('#datetimeText').textContent = dPart.replace(/\//g, '-') + ' ' + tPart
 
-  // Barcode
-  try {
-    if (invoiceNumber) {
-      JsBarcode('#barcode', invoiceNumber, {
-        format: 'CODE128',
-        displayValue: false,
-        height: 80,
-        margin: 0
-      })
-    }
-  } catch (e) {
-    console.error('Barcode error', e)
-  }
-
-  // QRCodes (110 x 110)
-  const left = $('#qrLeft')
-  const right = $('#qrRight')
-  if (left) left.innerHTML = ''
-  if (right) right.innerHTML = ''
-
-  if (left) {
-    new QRCode(left, {
-      text: `INV*${invoiceNumber}*${randomNumber}`,
-      width: 110,
-      height: 110
-    })
-  }
-  if (right) {
-    new QRCode(right, {
-      text: String(amount),
-      width: 110,
-      height: 110
-    })
-  }
-
-  buildDetail(inv.items || [], amount)
+  buildDetail(items, amount)
 }
 
+// 解析日期：優先從 smilepayRaw.xml 中的 InvoiceDate/InvoiceTime，其次用 createdAt
+function buildDateTexts(inv) {
+  let y, m, d, hh, mm
+
+  const xml = inv.smilepayRaw && inv.smilepayRaw.xml
+  if (xml) {
+    const dateMatch = /<InvoiceDate>(.*?)<\/InvoiceDate>/i.exec(xml)
+    const timeMatch = /<InvoiceTime>(.*?)<\/InvoiceTime>/i.exec(xml)
+    if (dateMatch) {
+      const parts = dateMatch[1].split(/[\/-]/).map(v => parseInt(v, 10))
+      if (parts.length >= 3) {
+        y = parts[0]
+        m = parts[1]
+        d = parts[2]
+      }
+    }
+    if (timeMatch) {
+      const parts = timeMatch[1].split(':').map(v => parseInt(v, 10))
+      hh = parts[0] ?? 0
+      mm = parts[1] ?? 0
+    }
+  }
+
+  if (!y || !m || !d) {
+    const fallback =
+      inv.createdAt && inv.createdAt.toDate ? inv.createdAt.toDate() : new Date()
+    y = fallback.getFullYear()
+    m = fallback.getMonth() + 1
+    d = fallback.getDate()
+    hh = fallback.getHours()
+    mm = fallback.getMinutes()
+  }
+
+  const rocYearNum  = y - 1911
+  const periodStart = m % 2 === 1 ? m : m - 1
+  const periodEnd   = periodStart + 1
+
+  const periodText =
+    rocYearNum +
+    '年' +
+    String(periodStart).padStart(2, '0') +
+    '-' +
+    String(periodEnd).padStart(2, '0') +
+    '月'
+
+  const dateTimeText =
+    `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')} ` +
+    `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+
+  const rocYearStr = String(rocYearNum).padStart(3, '0')
+  const rocDate    = rocYearStr + String(m).padStart(2, '0') + String(d).padStart(2, '0')
+
+  return {
+    dateTimeText,
+    periodText,
+    rocYear: rocYearStr,
+    periodEnd: String(periodEnd).padStart(2, '0'),
+    rocDate
+  }
+}
+
+// 一維條碼：ROC 年度(3) + 期別最後一月(2) + 發票字軌號碼(10) + 隨機碼(4)
+function buildBarcode(invoiceNo, rocYear, periodEnd, randomNumber) {
+  const svg = $('#barcode')
+  if (!svg) return
+
+  const y   = String(rocYear || '').padStart(3, '0')
+  const p   = String(periodEnd || '').padStart(2, '0')
+  const rnd = String(randomNumber || '').padStart(4, '0')
+
+  if (!invoiceNo || invoiceNo.length !== 10) {
+    console.warn('invoiceNumber 長度不是 10 碼，條碼資料可能不正確')
+  }
+
+  const content = `${y}${p}${invoiceNo}${rnd}`
+
+  try {
+    JsBarcode(svg, content, {
+      format: 'CODE39',
+      displayValue: false,
+      lineColor: '#000000',
+      width: 2,
+      height: 80,
+      margin: 0
+    })
+  } catch (err) {
+    console.error('Barcode error', err)
+  }
+}
+
+// 兩組 QRCode
+function buildQRCodes(payload) {
+  const leftEl  = $('#qrLeft')
+  const rightEl = $('#qrRight')
+  if (!leftEl || !rightEl) return
+
+  leftEl.innerHTML  = ''
+  rightEl.innerHTML = ''
+
+  const {
+    invoiceNo,
+    randomNumber,
+    amount,
+    rocDate,
+    buyerGUI,
+    sellerGUI,
+    items
+  } = payload
+
+  const buyerId  = buyerGUI && buyerGUI !== '00000000' ? buyerGUI : '00000000'
+  const sellerId = sellerGUI || '00000000'
+
+  const salesAmount = Number(amount || 0) // 未稅額（暫時等於總額）
+  const taxAmount   = 0
+  const totalAmount = salesAmount + taxAmount
+
+  const rnd4 = String(randomNumber || '').padStart(4, '0')
+
+  // 左 QR 主要內容：發票字軌號碼(10) + 開立日期(ROC 7 碼) + 隨機碼(4) + 銷售額16進位(8) + 總額16進位(8) + 買方統編(8) + 賣方統編(8)
+  const leftPayload =
+    invoiceNo +
+    rocDate +
+    rnd4 +
+    toHex8(salesAmount) +
+    toHex8(totalAmount) +
+    buyerId +
+    sellerId
+
+  // 右 QR：前兩碼固定 "**" + 品名:數量:單價:...
+  const parts = []
+  ;(items || []).forEach(item => {
+    const name  = String(item.name || '').replace(/:/g, ' ')
+    const qty   = item.qty != null ? item.qty : item.amount || 1
+    const price = item.price != null ? item.price : item.amount || 0
+    parts.push(name, String(qty), String(price))
+  })
+  const rightPayload = '**' + parts.join(':')
+
+  new QRCode(leftEl, {
+    text: leftPayload,
+    width: 110,
+    height: 110
+  })
+
+  new QRCode(rightEl, {
+    text: rightPayload,
+    width: 110,
+    height: 110
+  })
+}
+
+function toHex8(n) {
+  const v = Math.max(0, Math.round(Number(n) || 0))
+  return v.toString(16).toUpperCase().padStart(8, '0')
+}
+
+// 銷售明細區塊
 function buildDetail(items, amount) {
   const area = $('#detailArea')
   if (!area) return
 
-  if (!items.length) {
+  if (!items || !items.length) {
     area.innerHTML = ''
     area.style.display = 'none'
     return
