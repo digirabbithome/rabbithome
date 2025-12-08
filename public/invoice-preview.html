@@ -5,7 +5,6 @@
   <title>數位小兔 電子發票預覽</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/invoice-preview.css" />
-  <!-- JsBarcode & QRCode CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
@@ -15,57 +14,42 @@
       <button id="backBtn" class="btn-ghost">← 返回</button>
       <button id="printBtn" class="btn-primary">列印發票</button>
     </header>
-
     <main class="card-wrapper">
       <section class="invoice-card" id="invoiceCard">
         <div class="logo-wrap">
           <img src="/img/invoice-rabbit.jpg" alt="數位小兔 Digital Rabbit" class="logo-img" />
         </div>
-
         <div class="title-main">電子發票證明聯</div>
         <div class="period" id="periodText">114年11-12月</div>
         <div class="inv-no" id="invoiceNumber">VH00000000</div>
-
-        <div class="datetime" id="datetimeText">2025-12-07 14:52</div>
-
+        <div class="datetime" id="datetimeText">2025-12-07 13:48</div>
         <div class="row two-cols meta-row">
           <div>隨機碼 <span id="randomNumber">----</span></div>
           <div>總計 <span id="totalAmount">0</span></div>
         </div>
-
-        <div class="row two-cols label-row" id="buyerRowLabels">
-          <div>賣方</div>
-          <div>買方</div>
+        <div class="row two-cols taxid-row">
+          <div id="sellerGUI">賣方 48594728</div>
+          <div id="buyerGUI">買方 —</div>
         </div>
-        <div class="row two-cols taxid-row" id="buyerRowValues">
-          <div id="sellerGUI">48594728</div>
-          <div id="buyerGUI"></div>
-        </div>
-
         <div class="barcode-wrap">
           <svg id="barcode"></svg>
         </div>
-
         <div class="qr-row">
           <div id="qrLeft" class="qr-box"></div>
           <div id="qrRight" class="qr-box"></div>
         </div>
-
-        
       </section>
     </main>
     <section class="detail-block no-print">
-          <header class="detail-header">
-            <label class="detail-toggle">
-              <input type="checkbox" id="toggleDetail" />
-              <span>列印銷售明細</span>
-            </label>
-          </header>
-          <div id="detailArea" class="detail-area"></div>
-        </section>
-
+      <header class="detail-header">
+        <label class="detail-toggle">
+          <input type="checkbox" id="toggleDetail" />
+          <span>列印銷售明細</span>
+        </label>
+      </header>
+      <div id="detailArea" class="detail-area"></div>
+    </section>
   </div>
-
   <script type="module" src="/js/invoice-preview.js"></script>
 </body>
 </html>
