@@ -1,76 +1,205 @@
 import { db } from '/js/firebase.js'
-import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+import {
+  collection,
+  query,
+  where,
+  getDocs
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-const $ = (s, r=document)=>r.querySelector(s)
+const $ = (s, r = document) => r.querySelector(s)
 
 window.onload = async () => {
-  $('#backBtn')?.addEventListener('click', ()=> window.history.back())
-  $('#printBtn')?.addEventListener('click', ()=> window.print())
-  $('#toggleDetail')?.addEventListener('change', e=>{
-    $('#detailArea').classList.toggle('visible', e.target.checked)
+  $('#backBtn')?.addEventListener('click', () => {
+    if (window.history.length > 1) window.history.back()
+    else window.close()
   })
 
-  const params = new URLSearchParams(location.search)
+  $('#printBtn')?.addEventListener('click', () => window.print())
+
+  const toggle = $('#toggleDetail')
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      const area = $('#detailArea')
+      if (!area) return
+      area.style.display = toggle.checked && area.innerHTML.trim() ? 'block' : 'none'
+    })
+  }
+
+  const params = new URLSearchParams(window.location.search)
   const invoiceNumber = params.get('invoiceNumber')
   const companyId = params.get('companyId') || ''
 
-  if (!invoiceNumber) { alert('缺少發票號碼'); return }
+  if (!invoiceNumber) {
+    alert('缺少發票號碼')
+    return
+  }
 
-  let q = companyId
-    ? query(collection(db,'invoices'), where('invoiceNumber','==',invoiceNumber), where('companyId','==',companyId))
-    : query(collection(db,'invoices'), where('invoiceNumber','==',invoiceNumber))
+  try {
+    const baseQuery = [
+      collection(db, 'invoices'),
+      where('invoiceNumber', '==', invoiceNumber)
+    ]
 
-  const snap = await getDocs(q)
-  if (snap.empty) { alert('找不到這張發票資料'); return }
-  renderInvoice(snap.docs[0].data())
+    if (companyId) {
+      baseQuery.push(where('companyId', '==', companyId))
+    }
+
+    const q = query.apply(null, baseQuery)
+    const snap = await getDocs(q)
+    if (snap.empty) {
+      alert('找不到這張發票資料')
+      return
+    }
+
+    const data = snap.docs[0].data()
+    renderInvoice(data)
+  } catch (err) {
+    console.error(err)
+    alert('載入發票失敗')
+  }
 }
 
-function renderInvoice(inv){
-  $('#invoiceNumber').textContent = inv.invoiceNumber || ''
-  $('#randomNumber').textContent = inv.randomNumber || '----'
-  $('#totalAmount').textContent = inv.amount || 0
+function renderInvoice(inv) {
+  const invoiceNumber = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || '----'
+  const amount = inv.amount || 0
 
-  const seller = inv.sellerGUI || '48594728'
-  const buyer = (inv.buyerGUI||'').trim()
-  $('#sellerGUI').textContent = `賣方 ${seller}`
-  $('#buyerGUI').textContent  = buyer && buyer!=='00000000' ? `買方 ${buyer}` : '買方 —'
+  $('#invoiceNumber').textContent = invoiceNumber
+  $('#randomNumber').textContent = randomNumber
+  $('#totalAmount').textContent = amount.toString()
 
-  const d = inv.createdAt?.toDate() || new Date()
-  const roc = d.getFullYear() - 1911
-  const m = d.getMonth()+1
-  const ps = m%2===1?m:m-1
-  const pe = ps+1
-  $('#periodText').textContent = `${roc}年${String(ps).padStart(2,'0')}-${String(pe).padStart(2,'0')}月`
-  $('#datetimeText').textContent = d.toLocaleString('zh-TW',{hour12:false}).replace(/\//g,'-')
+  // 賣方 / 買方統編：同一行顯示
+  const sellerGUI = inv.sellerGUI || '48594728'
+  const buyerGUI = (inv.buyerGUI || '').trim()
+  const hasBuyer = buyerGUI && buyerGUI !== '00000000'
 
-  try{ JsBarcode('#barcode', inv.invoiceNumber||'', {format:'CODE128',displayValue:false,height:80,margin:0}) }catch(e){}
+  const sellerCell = $('#sellerGUI')
+  const buyerCell = $('#buyerGUI')
 
-  $('#qrLeft').innerHTML=''
-  $('#qrRight').innerHTML=''
-  new QRCode($('#qrLeft'), {text:`INV*${inv.invoiceNumber}*${inv.randomNumber}`,width:150,height:150})
-  new QRCode($('#qrRight'),{text:String(inv.amount||0),width:150,height:150})
+  if (sellerCell) sellerCell.textContent = `賣方 ${sellerGUI}`
+  if (buyerCell) buyerCell.textContent = hasBuyer ? `買方 ${buyerGUI}` : '買方 —'
 
-  buildDetail(inv.items||[], inv.amount||0)
+  // 發票期別 & 日期時間
+  const baseDate =
+    inv.createdAt && typeof inv.createdAt.toDate === 'function'
+      ? inv.createdAt.toDate()
+      : new Date()
+
+  const rocYear = baseDate.getFullYear() - 1911
+  const month = baseDate.getMonth() + 1
+  const periodStart = month % 2 === 1 ? month : month - 1
+  const periodEnd = periodStart + 1
+
+  $('#periodText').textContent =
+    `${rocYear}年${String(periodStart).padStart(2, '0')}-${String(
+      periodEnd
+    ).padStart(2, '0')}月`
+
+  const dateStr = baseDate.toLocaleString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+
+  const [dPart, tPart] = dateStr.split(' ')
+  $('#datetimeText').textContent = dPart.replace(/\//g, '-') + ' ' + tPart
+
+  // Barcode
+  try {
+    if (invoiceNumber) {
+      JsBarcode('#barcode', invoiceNumber, {
+        format: 'CODE128',
+        displayValue: false,
+        height: 80,
+        margin: 0
+      })
+    }
+  } catch (e) {
+    console.error('Barcode error', e)
+  }
+
+  // QRCodes
+  const left = $('#qrLeft')
+  const right = $('#qrRight')
+  if (left) left.innerHTML = ''
+  if (right) right.innerHTML = ''
+
+  if (left) {
+    new QRCode(left, {
+      text: `INV*${invoiceNumber}*${randomNumber}`,
+      width: 150,
+      height: 150
+    })
+  }
+  if (right) {
+    new QRCode(right, {
+      text: String(amount),
+      width: 150,
+      height: 150
+    })
+  }
+
+  buildDetail(inv.items || [], amount)
 }
 
-function buildDetail(items, amount){
+function buildDetail(items, amount) {
   const area = $('#detailArea')
-  if (!items.length){ area.innerHTML=''; return }
+  if (!area) return
+
+  if (!items.length) {
+    area.innerHTML = ''
+    area.style.display = 'none'
+    return
+  }
+
+  const rowsHtml = items
+    .map(
+      (it, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(it.name || '')}</td>
+        <td style="text-align:right;">${it.qty || 0}</td>
+        <td style="text-align:right;">${it.amount || 0}</td>
+      </tr>`
+    )
+    .join('')
+
   area.innerHTML = `
     <div class="detail-divider">-------------------- ✂ --------------------</div>
     <div class="detail-title">銷售明細</div>
     <table class="detail-table">
-      <thead><tr><th>#</th><th>品名</th><th>數量</th><th>金額</th></tr></thead>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>品名</th>
+          <th style="text-align:right;">數量</th>
+          <th style="text-align:right;">金額</th>
+        </tr>
+      </thead>
       <tbody>
-      ${items.map((it,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(it.name||'')}</td><td style="text-align:right;">${it.qty||0}</td><td style="text-align:right;">${it.amount||0}</td></tr>`).join('')}
+        ${rowsHtml}
       </tbody>
     </table>
     <div class="detail-total">總計：${amount} 元</div>
     <div class="detail-foot">臺北市信義區大道路74巷1號</div>
     <div class="detail-foot">TEL：02-27592006</div>
   `
+
+  const toggle = $('#toggleDetail')
+  area.style.display =
+    toggle && toggle.checked && area.innerHTML.trim() ? 'block' : 'none'
 }
 
-function escapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
