@@ -191,13 +191,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 2px; /* 兩個 QR 之間 2px */
+  gap: 5px; /* 間距 5px */
 }
 
 .qr-box {
   flex: 0 0 auto;
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
 }
 
 .qr-box canvas {

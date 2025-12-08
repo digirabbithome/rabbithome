@@ -119,7 +119,7 @@ function renderInvoice(inv) {
     console.error('Barcode error', e)
   }
 
-  // QRCodes
+  // QRCodes (110 x 110)
   const left = $('#qrLeft')
   const right = $('#qrRight')
   if (left) left.innerHTML = ''
@@ -128,15 +128,15 @@ function renderInvoice(inv) {
   if (left) {
     new QRCode(left, {
       text: `INV*${invoiceNumber}*${randomNumber}`,
-      width: 100,
-      height: 100
+      width: 110,
+      height: 110
     })
   }
   if (right) {
     new QRCode(right, {
       text: String(amount),
-      width: 100,
-      height: 100
+      width: 110,
+      height: 110
     })
   }
 
