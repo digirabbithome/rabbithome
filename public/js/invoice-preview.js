@@ -8,6 +8,25 @@ import {
 
 const $ = (s, r = document) => r.querySelector(s)
 
+// === 公司對應設定：LOGO + 賣方統編 ===
+const COMPANY_CONFIG = {
+  rabbit: {
+    logo: '/img/invoice-rabbit.jpg',
+    alt: '數位小兔 Digital Rabbit',
+    sellerGUI: '48594728'
+  },
+  neversleep: {
+    logo: '/img/invoice-neversleep.jpg',
+    alt: '免睡攝影 Never Sleep Camera',
+    sellerGUI: '88371759'
+  },
+  focus: {
+    logo: '/img/invoice-focus.jpg',
+    alt: '聚焦數位 Never Pay Camera',
+    sellerGUI: '72979792'
+  }
+}
+
 window.onload = async () => {
   $('#backBtn')?.addEventListener('click', () => {
     if (window.history.length > 1) window.history.back()
@@ -27,7 +46,7 @@ window.onload = async () => {
 
   const params = new URLSearchParams(window.location.search)
   const invoiceNumber = params.get('invoiceNumber')
-  const companyId = params.get('companyId') || ''
+  const urlCompanyId = (params.get('companyId') || '').toLowerCase()
 
   if (!invoiceNumber) {
     alert('缺少發票號碼')
@@ -39,8 +58,8 @@ window.onload = async () => {
       collection(db, 'invoices'),
       where('invoiceNumber', '==', invoiceNumber)
     ]
-    if (companyId) {
-      base.push(where('companyId', '==', companyId))
+    if (urlCompanyId) {
+      base.push(where('companyId', '==', urlCompanyId))
     }
     const q = query.apply(null, base)
     const snap = await getDocs(q)
@@ -49,19 +68,35 @@ window.onload = async () => {
       return
     }
     const inv = snap.docs[0].data()
-    renderInvoice(inv)
+    renderInvoice(inv, urlCompanyId)
   } catch (err) {
     console.error(err)
     alert('載入發票失敗')
   }
 }
 
-function renderInvoice(inv) {
+function renderInvoice(inv, urlCompanyId) {
   const invoiceNo    = inv.invoiceNumber || ''
-  const randomNumber = inv.randomNumber || inv.randomNumber === 0 ? String(inv.randomNumber) : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
+  const randomNumber =
+    inv.randomNumber || inv.randomNumber === 0
+      ? String(inv.randomNumber)
+      : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
   const amount       = Number(inv.amount || 0)
   const buyerGUI     = (inv.buyerGUI || '').trim()
-  const sellerGUI    = inv.sellerGUI || '48594728'
+
+  // 依照網址參數 companyId 或資料裡的 companyId 來決定品牌／統編
+  const docCompanyId = (inv.companyId || '').toLowerCase()
+  const key = (urlCompanyId || docCompanyId || 'rabbit').toLowerCase()
+  const cfg = COMPANY_CONFIG[key] || COMPANY_CONFIG.rabbit
+  const sellerGUI    = cfg.sellerGUI || '48594728'
+
+  // 套用 LOGO
+  const logoEl = $('#companyLogo')
+  if (logoEl) {
+    if (cfg.logo) logoEl.src = cfg.logo
+    if (cfg.alt) logoEl.alt = cfg.alt
+  }
+
   const items        = inv.items || []
 
   const dateInfo = buildDateTexts(inv)

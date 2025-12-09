@@ -1,63 +1,64 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang=\"zh-Hant\">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset=\"UTF-8\" />
   <title>數位小兔 電子發票預覽</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/css/invoice-preview.css" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+  <link rel=\"stylesheet\" href=\"/css/invoice-preview.css\" />
   <!-- JsBarcode & QRCode CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src=\"https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js\"></script>
+  <script src=\"https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js\"></script>
 </head>
 <body>
-  <div class="page">
-    <header class="top-bar">
-      <button id="backBtn" class="btn-ghost">← 返回</button>
-      <div class="right-tools">
-        <label class="detail-toggle">
-          <input type="checkbox" id="toggleDetail" checked />
+  <div class=\"page\">
+    <header class=\"top-bar\">
+      <button id=\"backBtn\" class=\"btn-ghost\">← 返回</button>
+      <div class=\"right-tools\">
+        <label class=\"detail-toggle\">
+          <input type=\"checkbox\" id=\"toggleDetail\" checked />
           列印銷售明細
         </label>
-        <button id="printBtn" class="btn-primary">列印發票</button>
+        <button id=\"printBtn\" class=\"btn-primary\">列印發票</button>
       </div>
     </header>
 
-    <main class="card-wrapper">
-      <section class="invoice-card" id="invoiceCard">
-        <div class="logo-wrap">
-          <img src="/img/invoice-rabbit.jpg" alt="數位小兔 Digital Rabbit" class="logo-img" />
+    <main class=\"card-wrapper\">
+      <section class=\"invoice-card\" id=\"invoiceCard\">
+        <div class=\"logo-wrap\">
+          <!-- src / alt 由 JS 根據 companyId 自動帶入 -->
+          <img id=\"companyLogo\" src=\"/img/invoice-rabbit.jpg\" alt=\"數位小兔 Digital Rabbit\" class=\"logo-img\" />
         </div>
 
-        <div class="title-main">電子發票證明聯</div>
-        <div class="period" id="periodText">114年11-12月</div>
-        <div class="inv-no" id="invoiceNumber">VH00000000</div>
-        <div class="datetime" id="datetimeText">2025-12-07 13:48</div>
+        <div class=\"title-main\">電子發票證明聯</div>
+        <div class=\"period\" id=\"periodText\">114年11-12月</div>
+        <div class=\"inv-no\" id=\"invoiceNumber\">VH00000000</div>
+        <div class=\"datetime\" id=\"datetimeText\">2025-12-07 13:48</div>
 
-        <div class="row two-cols meta-row">
-          <div>隨機碼 <span id="randomNumber">----</span></div>
-          <div>總計 <span id="totalAmount">0</span></div>
+        <div class=\"row two-cols meta-row\">
+          <div>隨機碼 <span id=\"randomNumber\">----</span></div>
+          <div>總計 <span id=\"totalAmount\">0</span></div>
         </div>
 
-        <div class="row two-cols taxid-row">
-          <div id="sellerGUI">賣方 48594728</div>
-          <div id="buyerGUI">買方 —</div>
+        <div class=\"row two-cols taxid-row\">
+          <div id=\"sellerGUI\">賣方 48594728</div>
+          <div id=\"buyerGUI\">買方 —</div>
         </div>
 
-        <div class="barcode-wrap">
-          <svg id="barcode"></svg>
+        <div class=\"barcode-wrap\">
+          <svg id=\"barcode\"></svg>
         </div>
 
-        <div class="qr-row">
-          <div id="qrLeft" class="qr-box"></div>
-          <div id="qrRight" class="qr-box"></div>
+        <div class=\"qr-row\">
+          <div id=\"qrLeft\" class=\"qr-box\"></div>
+          <div id=\"qrRight\" class=\"qr-box\"></div>
         </div>
 
         <!-- 銷售明細：跟在發票卡片下面、同一塊白底 -->
-        <section class="detail-section" id="detailArea"></section>
+        <section class=\"detail-section\" id=\"detailArea\"></section>
       </section>
     </main>
   </div>
 
-  <script type="module" src="/js/invoice-preview.js"></script>
+  <script type=\"module\" src=\"/js/invoice-preview.js\"></script>
 </body>
 </html>
