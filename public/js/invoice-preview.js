@@ -27,6 +27,8 @@ window.onload = async () => {
 
   const params = new URLSearchParams(window.location.search)
   const invoiceNumber = params.get('invoiceNumber')
+  const companyId = params.get('companyId') || ''
+
   if (!invoiceNumber) {
     alert('缺少發票號碼')
     return
@@ -37,6 +39,9 @@ window.onload = async () => {
       collection(db, 'invoices'),
       where('invoiceNumber', '==', invoiceNumber)
     ]
+    if (companyId) {
+      base.push(where('companyId', '==', companyId))
+    }
     const q = query.apply(null, base)
     const snap = await getDocs(q)
     if (snap.empty) {
@@ -52,28 +57,6 @@ window.onload = async () => {
 }
 
 function renderInvoice(inv) {
-  // 根據公司自動切換 LOGO 圖檔
-  const logoImg = document.querySelector('.logo-img')
-  const companyId = (inv.companyId || '').toLowerCase()
-
-  if (logoImg) {
-    switch (companyId) {
-      case 'rabbit':
-        logoImg.src = '/img/invoice-rabbit.jpg'
-        break
-      case 'neversleep':
-        logoImg.src = '/img/invoice-neversleep.jpg'
-        break
-      case 'focus':
-        logoImg.src = '/img/invoice-focus.jpg'
-        break
-      default:
-        logoImg.src = '/img/invoice-rabbit.jpg'
-        break
-    }
-  }
-
-
   const invoiceNo    = inv.invoiceNumber || ''
   const randomNumber = inv.randomNumber || inv.randomNumber === 0 ? String(inv.randomNumber) : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
   const amount       = Number(inv.amount || 0)
