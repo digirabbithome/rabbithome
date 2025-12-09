@@ -1,3 +1,4 @@
+
 import { db } from '/js/firebase.js'
 import {
   collection,
@@ -8,7 +9,14 @@ import {
 
 const $ = (s, r = document) => r.querySelector(s)
 
-// === 公司對應設定：LOGO + 賣方統編 ===
+// === 速買配官方列印相關設定 ===
+// 正式環境路徑（若要改成測試環境，請把 _test 版網址填進來）
+const SMILEPAY_PRINT_URL = 'https://einvoice.smilepay.net/einvoice/SmilePayCarrier/InvoiceDetails.php'
+// 這兩個值是速買配提供的帳號與驗證碼，之後如果要更安全可改成 Cloud Functions 代轉
+const SMILEPAY_GRVC = 'SEI1001326'
+const SMILEPAY_VERIFY_KEY = '9FAF83F5E00B2CB7AC67C0894B4653F5'
+
+// === 公司對應設定：LOGO 圖檔 + 賣方統編 ===
 const COMPANY_CONFIG = {
   rabbit: {
     logo: '/img/invoice-rabbit.jpg',
@@ -27,6 +35,8 @@ const COMPANY_CONFIG = {
   }
 }
 
+let smilepayUrl = null
+
 window.onload = async () => {
   $('#backBtn')?.addEventListener('click', () => {
     if (window.history.length > 1) window.history.back()
@@ -38,9 +48,20 @@ window.onload = async () => {
   const toggle = $('#toggleDetail')
   if (toggle) {
     toggle.addEventListener('change', () => {
-      const area = $('#detailArea')
+      const area = $('#detailSection')
       if (!area) return
       area.style.display = toggle.checked && area.innerHTML.trim() ? 'block' : 'none'
+    })
+  }
+
+  const smileBtn = $('#smilepayBtn')
+  if (smileBtn) {
+    smileBtn.addEventListener('click', () => {
+      if (!smilepayUrl) {
+        alert('目前無法取得官方列印連結')
+        return
+      }
+      window.open(smilepayUrl, '_blank')
     })
   }
 
@@ -54,14 +75,14 @@ window.onload = async () => {
   }
 
   try {
-    const base = [
+    const constraints = [
       collection(db, 'invoices'),
       where('invoiceNumber', '==', invoiceNumber)
     ]
     if (urlCompanyId) {
-      base.push(where('companyId', '==', urlCompanyId))
+      constraints.push(where('companyId', '==', urlCompanyId))
     }
-    const q = query.apply(null, base)
+    const q = query.apply(null, constraints)
     const snap = await getDocs(q)
     if (snap.empty) {
       alert('找不到這張發票資料')
@@ -76,19 +97,18 @@ window.onload = async () => {
 }
 
 function renderInvoice(inv, urlCompanyId) {
-  const invoiceNo    = inv.invoiceNumber || ''
-  const randomNumber =
-    inv.randomNumber || inv.randomNumber === 0
-      ? String(inv.randomNumber)
-      : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
-  const amount       = Number(inv.amount || 0)
-  const buyerGUI     = (inv.buyerGUI || '').trim()
+  const invoiceNo = inv.invoiceNumber || ''
+  const rawRandom =
+    inv.randomNumber ?? (Array.isArray(inv.items) && inv.items[0] && inv.items[0].randomNumber)
+  const randomNumber = rawRandom != null ? String(rawRandom) : '0000'
+  const amount = Number(inv.amount || 0)
+  const buyerGUI = (inv.buyerGUI || '').trim()
+  const items = Array.isArray(inv.items) ? inv.items : []
 
-  // 依照網址參數 companyId 或資料裡的 companyId 來決定品牌／統編
   const docCompanyId = (inv.companyId || '').toLowerCase()
   const key = (urlCompanyId || docCompanyId || 'rabbit').toLowerCase()
   const cfg = COMPANY_CONFIG[key] || COMPANY_CONFIG.rabbit
-  const sellerGUI    = cfg.sellerGUI || '48594728'
+  const sellerGUI = cfg.sellerGUI || '48594728'
 
   // 套用 LOGO
   const logoEl = $('#companyLogo')
@@ -97,16 +117,14 @@ function renderInvoice(inv, urlCompanyId) {
     if (cfg.alt) logoEl.alt = cfg.alt
   }
 
-  const items        = inv.items || []
-
   const dateInfo = buildDateTexts(inv)
 
   $('#invoiceNumber').textContent = invoiceNo
-  $('#randomNumber').textContent  = randomNumber
-  $('#totalAmount').textContent   = amount
-  $('#datetimeText').textContent  = dateInfo.dateTimeText
-  $('#periodText').textContent    = dateInfo.periodText
-  $('#sellerGUI').textContent     = `賣方 ${sellerGUI}`
+  $('#randomNumber').textContent = randomNumber
+  $('#totalAmount').textContent = amount
+  $('#datetimeText').textContent = dateInfo.dateTimeText
+  $('#periodText').textContent = dateInfo.periodText
+  $('#sellerGUI').textContent = `賣方 ${sellerGUI}`
 
   if (buyerGUI && buyerGUI !== '00000000') {
     $('#buyerGUI').textContent = `買方 ${buyerGUI}`
@@ -126,16 +144,40 @@ function renderInvoice(inv, urlCompanyId) {
   })
 
   buildDetail(items, amount)
+
+  // 建立速買配官方列印連結
+  const raNumber =
+    (dateInfo.invoiceType || '').toUpperCase() === 'B2B'
+      ? (buyerGUI || '')
+      : randomNumber
+  smilepayUrl = buildSmilepayUrl(invoiceNo, dateInfo.invoiceDateParam, raNumber)
 }
 
-// 解析日期：優先從 smilepayRaw.xml 中的 InvoiceDate/InvoiceTime，其次用 createdAt
+function buildSmilepayUrl(invoiceNo, invoiceDate, raNumber) {
+  if (!invoiceNo || !invoiceDate || !raNumber) return null
+  const params = new URLSearchParams({
+    Grvc: SMILEPAY_GRVC,
+    Verify_key: SMILEPAY_VERIFY_KEY,
+    InNumber: invoiceNo,
+    InvoiceDate: invoiceDate,
+    RaNumber: String(raNumber),
+    DetailPrint: 'Y',
+    AutoPrint: 'N'
+  })
+  return `${SMILEPAY_PRINT_URL}?${params.toString()}`
+}
+
+// 解析日期與期別：優先用 SmilePay XML，其次用 createdAt
 function buildDateTexts(inv) {
   let y, m, d, hh, mm
+  let invoiceType = 'B2C'
 
   const xml = inv.smilepayRaw && inv.smilepayRaw.xml
   if (xml) {
     const dateMatch = /<InvoiceDate>(.*?)<\/InvoiceDate>/i.exec(xml)
     const timeMatch = /<InvoiceTime>(.*?)<\/InvoiceTime>/i.exec(xml)
+    const typeMatch = /<InvoiceType>(.*?)<\/InvoiceType>/i.exec(xml)
+
     if (dateMatch) {
       const parts = dateMatch[1].split(/[\/-]/).map(v => parseInt(v, 10))
       if (parts.length >= 3) {
@@ -149,6 +191,9 @@ function buildDateTexts(inv) {
       hh = parts[0] ?? 0
       mm = parts[1] ?? 0
     }
+    if (typeMatch && typeMatch[1]) {
+      invoiceType = typeMatch[1].toUpperCase()
+    }
   }
 
   if (!y || !m || !d) {
@@ -161,9 +206,9 @@ function buildDateTexts(inv) {
     mm = fallback.getMinutes()
   }
 
-  const rocYearNum  = y - 1911
+  const rocYearNum = y - 1911
   const periodStart = m % 2 === 1 ? m : m - 1
-  const periodEnd   = periodStart + 1
+  const periodEnd = periodStart + 1
 
   const periodText =
     rocYearNum +
@@ -178,14 +223,19 @@ function buildDateTexts(inv) {
     `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
 
   const rocYearStr = String(rocYearNum).padStart(3, '0')
-  const rocDate    = rocYearStr + String(m).padStart(2, '0') + String(d).padStart(2, '0')
+  const rocDate = rocYearStr + String(m).padStart(2, '0') + String(d).padStart(2, '0')
+
+  const invoiceDateParam =
+    `${String(y).padStart(4, '0')}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`
 
   return {
     dateTimeText,
     periodText,
     rocYear: rocYearStr,
     periodEnd: String(periodEnd).padStart(2, '0'),
-    rocDate
+    rocDate,
+    invoiceDateParam,
+    invoiceType
   }
 }
 
@@ -194,8 +244,8 @@ function buildBarcode(invoiceNo, rocYear, periodEnd, randomNumber) {
   const svg = $('#barcode')
   if (!svg) return
 
-  const y   = String(rocYear || '').padStart(3, '0')
-  const p   = String(periodEnd || '').padStart(2, '0')
+  const y = String(rocYear || '').padStart(3, '0')
+  const p = String(periodEnd || '').padStart(2, '0')
   const rnd = String(randomNumber || '').padStart(4, '0')
 
   if (!invoiceNo || invoiceNo.length !== 10) {
@@ -220,33 +270,25 @@ function buildBarcode(invoiceNo, rocYear, periodEnd, randomNumber) {
 
 // 兩組 QRCode
 function buildQRCodes(payload) {
-  const leftEl  = $('#qrLeft')
+  const leftEl = $('#qrLeft')
   const rightEl = $('#qrRight')
   if (!leftEl || !rightEl) return
 
-  leftEl.innerHTML  = ''
+  leftEl.innerHTML = ''
   rightEl.innerHTML = ''
 
-  const {
-    invoiceNo,
-    randomNumber,
-    amount,
-    rocDate,
-    buyerGUI,
-    sellerGUI,
-    items
-  } = payload
+  const { invoiceNo, randomNumber, amount, rocDate, buyerGUI, sellerGUI, items } = payload
 
-  const buyerId  = buyerGUI && buyerGUI !== '00000000' ? buyerGUI : '00000000'
+  const buyerId = buyerGUI && buyerGUI !== '00000000' ? buyerGUI : '00000000'
   const sellerId = sellerGUI || '00000000'
 
-  const salesAmount = Number(amount || 0) // 未稅額（暫時等於總額）
-  const taxAmount   = 0
+  const salesAmount = Number(amount || 0)
+  const taxAmount = 0
   const totalAmount = salesAmount + taxAmount
 
   const rnd4 = String(randomNumber || '').padStart(4, '0')
 
-  // 左 QR 主要內容：發票字軌號碼(10) + 開立日期(ROC 7 碼) + 隨機碼(4) + 銷售額16進位(8) + 總額16進位(8) + 買方統編(8) + 賣方統編(8)
+  // 左 QR 主要內容：字軌號碼10 + 開立日期7(ROC) + 隨機碼4 + 銷售額16進位8 + 總額16進位8 + 買方統編8 + 賣方統編8
   const leftPayload =
     invoiceNo +
     rocDate +
@@ -259,8 +301,8 @@ function buildQRCodes(payload) {
   // 右 QR：前兩碼固定 "**" + 品名:數量:單價:...
   const parts = []
   ;(items || []).forEach(item => {
-    const name  = String(item.name || '').replace(/:/g, ' ')
-    const qty   = item.qty != null ? item.qty : item.amount || 1
+    const name = String(item.name || '').replace(/:/g, ' ')
+    const qty = item.qty != null ? item.qty : item.amount || 1
     const price = item.price != null ? item.price : item.amount || 0
     parts.push(name, String(qty), String(price))
   })
@@ -286,7 +328,7 @@ function toHex8(n) {
 
 // 銷售明細區塊
 function buildDetail(items, amount) {
-  const area = $('#detailArea')
+  const area = $('#detailSection')
   if (!area) return
 
   if (!items || !items.length) {
@@ -301,8 +343,8 @@ function buildDetail(items, amount) {
       <tr>
         <td>${idx + 1}</td>
         <td>${escapeHtml(it.name || '')}</td>
-        <td style="text-align:right;">${it.qty || 0}</td>
-        <td style="text-align:right;">${it.amount || 0}</td>
+        <td class="num">${it.qty || 0}</td>
+        <td class="num">${it.amount || 0}</td>
       </tr>`
     )
     .join('')
@@ -315,8 +357,8 @@ function buildDetail(items, amount) {
         <tr>
           <th>#</th>
           <th>品名</th>
-          <th style="text-align:right;">數量</th>
-          <th style="text-align:right;">金額</th>
+          <th class="num">數量</th>
+          <th class="num">金額</th>
         </tr>
       </thead>
       <tbody>
