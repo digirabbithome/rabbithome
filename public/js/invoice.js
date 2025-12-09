@@ -1,6 +1,7 @@
 // /js/invoice.js
 
 import { db } from '/js/firebase.js'
+import { openSmilepayPrint } from '/js/smilepay-print.js';
 import {
   collection, onSnapshot, query, orderBy
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
@@ -291,7 +292,15 @@ if (statusEl) {
 
   // ⭐⭐⭐ 開立成功後 → 立即跳出發票預覽
   const companyId = document.getElementById('companySelect').value
-  const previewUrl =
+  // 官方列印
+  const invoiceData = {
+    companyId,
+    invoiceNumber: data.invoiceNumber,
+    invoiceDate: data.invoiceDate,
+    randomNumber: data.randomNumber
+  };
+  openSmilepayPrint(invoiceData);
+  // const previewUrl =
     `/invoice-preview.html?invoiceNumber=${encodeURIComponent(data.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
   window.open(previewUrl, "_blank")
 }
@@ -381,7 +390,15 @@ function openInvoicePreview(inv) {
   // 優先用這筆發票記錄裡的 companyId，沒有的話再退而求其次用畫面上的選擇
   const companyId = inv.companyId || document.getElementById('companySelect')?.value || ''
 
-  const previewUrl =
+  // 官方列印
+  const invoiceData = {
+    companyId,
+    invoiceNumber: data.invoiceNumber,
+    invoiceDate: data.invoiceDate,
+    randomNumber: data.randomNumber
+  };
+  openSmilepayPrint(invoiceData);
+  // const previewUrl =
     `/invoice-preview.html?invoiceNumber=${encodeURIComponent(inv.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
 
   window.open(previewUrl, '_blank')
