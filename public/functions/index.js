@@ -10,9 +10,14 @@ if (!admin.apps.length) {
 const db = admin.firestore()
 
 // ⚠️ 使用新版 EInvoice API 路徑（文件寫的那一組 SPEinvoice_xxx.asp）
-const SMILEPAY_ISSUE_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage.asp'
-const SMILEPAY_VOID_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Invalid.asp'
-const SMILEPAY_QUERY_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Query.asp'
+const SMILEPAY_ISSUE_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage.asp'
+// 改用 Modify 這條來作廢 / 註銷
+const SMILEPAY_MODIFY_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage_Modify.asp'
+const SMILEPAY_QUERY_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Query.asp'
+
+
+
+
 
 // 從 Firestore invoice-config/{companyId} 讀取各家公司的 Grvc / Verify_key / name
 async function getCompanyConfig(companyId) {
@@ -216,6 +221,7 @@ if (!okStatuses.includes(status)) {
 
 
 // ========== 作廢發票 ==========
+// ========== 作廢發票（使用 SPEinvoice_Storage_Modify.asp + types=Cancel） ==========
 exports.voidInvoice = functions.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*')
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -231,51 +237,88 @@ exports.voidInvoice = functions.onRequest(async (req, res) => {
       res.status(400).json({ success: false, message: '缺少 companyId 或 invoiceNumber' })
       return
     }
+
     const company = await getCompanyConfig(companyId)
+
+    // 先從 Firestore 找這張發票，拿到 InvoiceDate
+    const snap = await db.collection('invoices')
+      .where('companyId', '==', companyId)
+      .where('invoiceNumber', '==', invoiceNumber)
+      .limit(1)
+      .get()
+
+    if (snap.empty) {
+      res.json({ success: false, message: 'Firestore 中查無該發票，無法作廢' })
+      return
+    }
+
+    const invDoc = snap.docs[0]
+    const invData = invDoc.data()
+
+    let invoiceDate = invData.invoiceDate
+    if (!invoiceDate) {
+      res.json({ success: false, message: '發票日期缺失（invoiceDate），無法作廢' })
+      return
+    }
+    // 文件格式用 2025/12/10，如有 "-" 就轉一下
+    invoiceDate = invoiceDate.replace(/-/g, '/')
+
+    const cancelReason = (reason || '發票作廢').slice(0, 20)
+    const remark = (`Rabbithome void ${invoiceNumber}`).slice(0, 200)
 
     const params = new URLSearchParams()
     params.append('Grvc', company.grvc)
     params.append('Verify_key', company.verifyKey)
     params.append('InvoiceNumber', invoiceNumber)
-    params.append('Reason', reason || '發票作廢')
+    params.append('InvoiceDate', invoiceDate)
+    params.append('types', 'Cancel')            // ⭐ 關鍵：作廢發票
+    params.append('CancelReason', cancelReason) // ⭐ 文件要求的欄位名
+    params.append('Remark', remark)
 
-    const spRes = await fetch(SMILEPAY_VOID_URL, {
+    console.log('[SmilePay VOID payload]', params.toString())
+
+    const spRes = await fetch(SMILEPAY_MODIFY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params
     })
     const text = await spRes.text()
+    console.log('[SmilePay VOID response]', text)
 
-    const status = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
-    const desc   = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
+    const statusMatch = /<Status>(-?\d+)<\/Status>/i.exec(text)
+    const descMatch   = /<Desc>(.*?)<\/Desc>/i.exec(text)
 
-    if (status !== 'Success' && status !== 'Successed') {
-      res.json({ success: false, message: desc || 'SmilePay 作廢失敗', raw: text })
+    const status = statusMatch ? statusMatch[1] : ''
+    const desc   = descMatch ? descMatch[1] : ''
+
+    // 依文件：Status > 0 表成功，或你可以照實測來調整
+    const successCodes = ['1', '0', '0000', 'Success', 'Successed', 'Succeeded']
+
+    if (!successCodes.includes(status)) {
+      res.json({
+        success: false,
+        message: `SmilePay 作廢失敗（${status}）：${desc || '無詳細訊息'}`,
+        raw: text
+      })
       return
     }
 
-    // 更新該發票紀錄狀態
-    const snap = await db.collection('invoices')
-      .where('companyId', '==', companyId)
-      .where('invoiceNumber', '==', invoiceNumber)
-      .limit(1).get()
+    // ✅ SmilePay 作廢成功 → 更新 Firestore
+    await invDoc.ref.update({
+      status: 'VOIDED',
+      voidReason: cancelReason,
+      voidDesc: desc,
+      voidAt: admin.firestore.FieldValue.serverTimestamp(),
+      voidRaw: text
+    })
 
-    if (!snap.empty) {
-      const docRef = snap.docs[0].ref
-      await docRef.update({
-        status: 'VOIDED',
-        voidReason: reason || '',
-        voidAt: admin.firestore.FieldValue.serverTimestamp(),
-        voidRaw: text
-      })
-    }
-
-    res.json({ success: true })
+    res.json({ success: true, message: desc || '作廢成功' })
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: err.message })
   }
 })
+
 
 // ========== 查詢發票 ==========
 exports.queryInvoice = functions.onRequest(async (req, res) => {
