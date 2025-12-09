@@ -27,7 +27,7 @@ window.onload = async () => {
 
   const params = new URLSearchParams(window.location.search)
   const invoiceNumber = params.get('invoiceNumber')
-  const companyId = params.get('companyId') || ''
+  const companyIdParam = params.get('companyId') || ''
 
   if (!invoiceNumber) {
     alert('缺少發票號碼')
@@ -39,8 +39,8 @@ window.onload = async () => {
       collection(db, 'invoices'),
       where('invoiceNumber', '==', invoiceNumber)
     ]
-    if (companyId) {
-      base.push(where('companyId', '==', companyId))
+    if (companyIdParam) {
+      base.push(where('companyId', '==', companyIdParam))
     }
     const q = query.apply(null, base)
     const snap = await getDocs(q)
@@ -57,8 +57,30 @@ window.onload = async () => {
 }
 
 function renderInvoice(inv) {
+  // --- 根據公司自動切換 LOGO 圖檔 ---
+  const logoImg = document.querySelector('.logo-img')
+  const companyId = inv.companyId || ''
+
+  if (logoImg) {
+    switch (companyId) {
+      case 'rabbit':
+        logoImg.src = '/img/invoice-rabbit.jpg'
+        break
+      case 'neversleep':
+        logoImg.src = '/img/invoice-neversleep.jpg'
+        break
+      case 'focus':
+        logoImg.src = '/img/invoice-focus.jpg'
+        break
+      default:
+        // 若資料庫沒寫 companyId，就當作數位小兔
+        logoImg.src = '/img/invoice-rabbit.jpg'
+        break
+    }
+  }
+
   const invoiceNo    = inv.invoiceNumber || ''
-  const randomNumber = inv.randomNumber || inv.randomNumber === 0 ? String(inv.randomNumber) : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
+  const randomNumber = inv.randomNumber != null ? String(inv.randomNumber) : '0000'
   const amount       = Number(inv.amount || 0)
   const buyerGUI     = (inv.buyerGUI || '').trim()
   const sellerGUI    = inv.sellerGUI || '48594728'
@@ -302,7 +324,6 @@ function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 }
