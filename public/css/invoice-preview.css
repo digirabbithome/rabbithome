@@ -189,16 +189,13 @@ body {
 
 .qr-row {
   display: flex;
-  justify-content: center;
-  column-gap: 5px;
-  margin-top: 18px;
-  margin-bottom: 18px;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .qr-box {
-  width: 110px;
-  height: 110px;
-  flex: 0 0 auto;
+  width: calc(50% - 6px);
+  aspect-ratio: 1 / 1;
 }
 
 .qr-box canvas {
