@@ -217,6 +217,9 @@ async function issueInvoice() {
   const contactEmail = $('#contactEmail')?.value.trim()
   const carrierValue = $('#carrierValue')?.value.trim()
 
+  // ⭐ 新增：讀取「預開發票」勾選
+  const preInvoice = $('#preInvoice')?.checked || false
+
   const carrierType = detectCarrierType(carrierValue)
 
   if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
@@ -263,7 +266,8 @@ async function issueInvoice() {
         carrierType,
         carrierValue,
         donateMark,
-        donateCode
+        donateCode,
+        preInvoice        // ⭐ 新增：這筆是否為預開發票（尚未收款）
       })
     })
     const data = await res.json()
