@@ -54,11 +54,6 @@ function setupForm() {
     searchKeyword.addEventListener('input', () => reloadInvoices())
   }
 
-  const donateMark = $('#donateMark')
-  if (donateMark) {
-    donateMark.addEventListener('change', handleDonateChange)
-  }
-
   const parsePosBtn = $('#parsePosBtn')
   if (parsePosBtn) {
     parsePosBtn.addEventListener('click', (e) => {
@@ -69,15 +64,6 @@ function setupForm() {
 
   // 預設一列
   addItemRow()
-  handleDonateChange()
-}
-
-function handleDonateChange() {
-  const v = $('#donateMark')?.value
-  const label = $('#donateCodeLabel')
-  if (!label) return
-  // 有勾「捐贈」才顯示愛心碼欄位
-  label.style.display = v === '1' ? 'flex' : 'none'
 }
 
 // === 商品列 ===
@@ -230,8 +216,6 @@ async function issueInvoice() {
   const contactPhone = $('#contactPhone')?.value.trim()
   const contactEmail = $('#contactEmail')?.value.trim()
   const carrierValue = $('#carrierValue')?.value.trim()
-  const donateMark = $('#donateMark')?.value || '0'
-  const donateCode = $('#donateCode')?.value.trim()
 
   const carrierType = detectCarrierType(carrierValue)
 
@@ -257,6 +241,10 @@ async function issueInvoice() {
   }
 
   const amount = items.reduce((s, it) => s + it.amount, 0)
+
+  // 捐贈功能已移除，統一當「不捐贈」
+  const donateMark = '0'
+  const donateCode = ''
 
   try {
     const res = await fetch(`${FUNCTIONS_BASE}/createInvoice`, {
