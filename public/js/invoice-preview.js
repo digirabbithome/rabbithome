@@ -1,58 +1,49 @@
-
 import { db } from '/js/firebase.js'
 import {
   collection,
   query,
   where,
-  limit,
   getDocs
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-const $ = (s) => document.querySelector(s)
+const $ = (s, r = document) => r.querySelector(s)
 
-window.onload = () => {
+window.onload = async () => {
   $('#backBtn')?.addEventListener('click', () => {
-    if (window.history.length > 1) history.back()
+    if (window.history.length > 1) window.history.back()
     else window.close()
   })
+
   $('#printBtn')?.addEventListener('click', () => window.print())
 
   const toggle = $('#toggleDetail')
-  const detailSection = $('#detailSection')
-  if (toggle && detailSection) {
-    const sync = () => {
-      detailSection.style.display = toggle.checked ? 'block' : 'none'
-    }
-    toggle.addEventListener('change', sync)
-    sync()
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      const area = $('#detailArea')
+      if (!area) return
+      area.style.display = toggle.checked && area.innerHTML.trim() ? 'block' : 'none'
+    })
   }
 
-  loadInvoice()
-}
-
-async function loadInvoice() {
-  const url = new URL(window.location.href)
-  const invoiceNumber = url.searchParams.get('invoiceNumber')
-  const companyId = url.searchParams.get('companyId')
+  const params = new URLSearchParams(window.location.search)
+  const invoiceNumber = params.get('invoiceNumber')
 
   if (!invoiceNumber) {
-    alert('網址缺少 invoiceNumber 參數')
+    alert('缺少發票號碼')
     return
   }
 
   try {
-    const qRef = query(
+    const q = query(
       collection(db, 'invoices'),
-      where('invoiceNumber', '==', invoiceNumber),
-      limit(1)
+      where('invoiceNumber', '==', invoiceNumber)
     )
-
-    const snap = await getDocs(qRef)
+    const snap = await getDocs(q)
     if (snap.empty) {
       alert('找不到這張發票資料')
       return
     }
-    const inv = { id: snap.docs[0].id, ...snap.docs[0].data() }
+    const inv = snap.docs[0].data()
     renderInvoice(inv)
   } catch (err) {
     console.error(err)
@@ -83,46 +74,43 @@ function renderInvoice(inv) {
   }
 
 
-  const invoiceNo = inv.invoiceNumber || ''
-  const randomNumber = inv.randomNumber || '----'
-  const amount = inv.amount || 0
-  const buyerGUI = (inv.buyerGUI || '').trim()
-  const sellerGUI = inv.sellerGUI || '48594728'
-  const items = inv.items || []
+  const invoiceNo    = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || inv.randomNumber === 0 ? String(inv.randomNumber) : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
+  const amount       = Number(inv.amount || 0)
+  const buyerGUI     = (inv.buyerGUI || '').trim()
+  const sellerGUI    = inv.sellerGUI || '48594728'
+  const items        = inv.items || []
 
-  const { dateTimeText, periodText } = buildDateTexts(inv)
+  const dateInfo = buildDateTexts(inv)
 
   $('#invoiceNumber').textContent = invoiceNo
-  $('#randomNumber').textContent = randomNumber
-  $('#totalAmount').textContent = amount
-  $('#datetimeText').textContent = dateTimeText
-  $('#periodText').textContent = periodText
-  $('#sellerGUI').textContent = sellerGUI
+  $('#randomNumber').textContent  = randomNumber
+  $('#totalAmount').textContent   = amount
+  $('#datetimeText').textContent  = dateInfo.dateTimeText
+  $('#periodText').textContent    = dateInfo.periodText
+  $('#sellerGUI').textContent     = `賣方 ${sellerGUI}`
 
-  const buyerLabelEl = document.getElementById('buyerLabel')
-  const buyerGUIEl   = document.getElementById('buyerGUI')
-  const buyerDisplay = BuyerDisplay(buyerGUI)
-
-  if (buyerDisplay) {
-    buyerGUIEl.textContent = buyerDisplay
-    buyerLabelEl.style.display = ''
-    buyerGUIEl.style.display = ''
+  if (buyerGUI && buyerGUI !== '00000000') {
+    $('#buyerGUI').textContent = `買方 ${buyerGUI}`
   } else {
-    buyerGUIEl.textContent = ''
-    buyerLabelEl.style.display = 'none'
-    buyerGUIEl.style.display = 'none'
+    $('#buyerGUI').textContent = '買方 —'
   }
 
-  buildBarcode(invoiceNo)
-  buildQRCodes(invoiceNo, randomNumber, amount)
-  buildDetailSection(items, amount)
+  buildBarcode(invoiceNo, dateInfo.rocYear, dateInfo.periodEnd, randomNumber)
+  buildQRCodes({
+    invoiceNo,
+    randomNumber,
+    amount,
+    rocDate: dateInfo.rocDate,
+    buyerGUI,
+    sellerGUI,
+    items
+  })
+
+  buildDetail(items, amount)
 }
 
-function BuyerDisplay(gui) {
-  if (!gui || gui === '00000000') return '—'
-  return gui
-}
-
+// 解析日期：優先從 smilepayRaw.xml 中的 InvoiceDate/InvoiceTime，其次用 createdAt
 function buildDateTexts(inv) {
   let y, m, d, hh, mm
 
@@ -131,13 +119,15 @@ function buildDateTexts(inv) {
     const dateMatch = /<InvoiceDate>(.*?)<\/InvoiceDate>/i.exec(xml)
     const timeMatch = /<InvoiceTime>(.*?)<\/InvoiceTime>/i.exec(xml)
     if (dateMatch) {
-      const [yy, mo, dd] = dateMatch[1].split('/').map((v) => parseInt(v, 10))
-      y = yy
-      m = mo
-      d = dd
+      const parts = dateMatch[1].split(/[\/-]/).map(v => parseInt(v, 10))
+      if (parts.length >= 3) {
+        y = parts[0]
+        m = parts[1]
+        d = parts[2]
+      }
     }
     if (timeMatch) {
-      const parts = timeMatch[1].split(':').map((v) => parseInt(v, 10))
+      const parts = timeMatch[1].split(':').map(v => parseInt(v, 10))
       hh = parts[0] ?? 0
       mm = parts[1] ?? 0
     }
@@ -153,12 +143,12 @@ function buildDateTexts(inv) {
     mm = fallback.getMinutes()
   }
 
-  const rocYear = y - 1911
+  const rocYearNum  = y - 1911
   const periodStart = m % 2 === 1 ? m : m - 1
-  const periodEnd = periodStart + 1
+  const periodEnd   = periodStart + 1
 
   const periodText =
-    rocYear +
+    rocYearNum +
     '年' +
     String(periodStart).padStart(2, '0') +
     '-' +
@@ -166,31 +156,39 @@ function buildDateTexts(inv) {
     '月'
 
   const dateTimeText =
-    y +
-    '-' +
-    String(m).padStart(2, '0') +
-    '-' +
-    String(d).padStart(2, '0') +
-    ' ' +
-    String(hh ?? 0).padStart(2, '0') +
-    ':' +
-    String(mm ?? 0).padStart(2, '0')
+    `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')} ` +
+    `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
 
-  return { dateTimeText, periodText }
+  const rocYearStr = String(rocYearNum).padStart(3, '0')
+  const rocDate    = rocYearStr + String(m).padStart(2, '0') + String(d).padStart(2, '0')
+
+  return {
+    dateTimeText,
+    periodText,
+    rocYear: rocYearStr,
+    periodEnd: String(periodEnd).padStart(2, '0'),
+    rocDate
+  }
 }
 
-function buildBarcode(invoiceNo) {
-  const svg = document.getElementById('barcode')
+// 一維條碼：ROC 年度(3) + 期別最後一月(2) + 發票字軌號碼(10) + 隨機碼(4)
+function buildBarcode(invoiceNo, rocYear, periodEnd, randomNumber) {
+  const svg = $('#barcode')
   if (!svg) return
 
-  if (!invoiceNo) {
-    svg.innerHTML = ''
-    return
+  const y   = String(rocYear || '').padStart(3, '0')
+  const p   = String(periodEnd || '').padStart(2, '0')
+  const rnd = String(randomNumber || '').padStart(4, '0')
+
+  if (!invoiceNo || invoiceNo.length !== 10) {
+    console.warn('invoiceNumber 長度不是 10 碼，條碼資料可能不正確')
   }
 
+  const content = `${y}${p}${invoiceNo}${rnd}`
+
   try {
-    JsBarcode(svg, invoiceNo, {
-      format: 'CODE128',
+    JsBarcode(svg, content, {
+      format: 'CODE39',
       displayValue: false,
       lineColor: '#000000',
       width: 2,
@@ -202,36 +200,80 @@ function buildBarcode(invoiceNo) {
   }
 }
 
-function buildQRCodes(invoiceNo, randomNumber, amount) {
-  const left = document.getElementById('qrLeft')
-  const right = document.getElementById('qrRight')
-  if (!left || !right) return
+// 兩組 QRCode
+function buildQRCodes(payload) {
+  const leftEl  = $('#qrLeft')
+  const rightEl = $('#qrRight')
+  if (!leftEl || !rightEl) return
 
-  left.innerHTML = ''
-  right.innerHTML = ''
+  leftEl.innerHTML  = ''
+  rightEl.innerHTML = ''
 
-  const payloadLeft = 'INV|' + invoiceNo + '|' + randomNumber
-  const payloadRight = 'AMT|' + amount
+  const {
+    invoiceNo,
+    randomNumber,
+    amount,
+    rocDate,
+    buyerGUI,
+    sellerGUI,
+    items
+  } = payload
 
-  new QRCode(left, {
-    text: payloadLeft,
-    width: 220,
-    height: 220
+  const buyerId  = buyerGUI && buyerGUI !== '00000000' ? buyerGUI : '00000000'
+  const sellerId = sellerGUI || '00000000'
+
+  const salesAmount = Number(amount || 0) // 未稅額（暫時等於總額）
+  const taxAmount   = 0
+  const totalAmount = salesAmount + taxAmount
+
+  const rnd4 = String(randomNumber || '').padStart(4, '0')
+
+  // 左 QR 主要內容：發票字軌號碼(10) + 開立日期(ROC 7 碼) + 隨機碼(4) + 銷售額16進位(8) + 總額16進位(8) + 買方統編(8) + 賣方統編(8)
+  const leftPayload =
+    invoiceNo +
+    rocDate +
+    rnd4 +
+    toHex8(salesAmount) +
+    toHex8(totalAmount) +
+    buyerId +
+    sellerId
+
+  // 右 QR：前兩碼固定 "**" + 品名:數量:單價:...
+  const parts = []
+  ;(items || []).forEach(item => {
+    const name  = String(item.name || '').replace(/:/g, ' ')
+    const qty   = item.qty != null ? item.qty : item.amount || 1
+    const price = item.price != null ? item.price : item.amount || 0
+    parts.push(name, String(qty), String(price))
+  })
+  const rightPayload = '**' + parts.join(':')
+
+  new QRCode(leftEl, {
+    text: leftPayload,
+    width: 110,
+    height: 110
   })
 
-  new QRCode(right, {
-    text: payloadRight,
-    width: 220,
-    height: 220
+  new QRCode(rightEl, {
+    text: rightPayload,
+    width: 110,
+    height: 110
   })
 }
 
-function buildDetailSection(items, amount) {
-  const section = document.getElementById('detailSection')
-  if (!section) return
+function toHex8(n) {
+  const v = Math.max(0, Math.round(Number(n) || 0))
+  return v.toString(16).toUpperCase().padStart(8, '0')
+}
+
+// 銷售明細區塊
+function buildDetail(items, amount) {
+  const area = $('#detailArea')
+  if (!area) return
 
   if (!items || !items.length) {
-    section.style.display = 'none'
+    area.innerHTML = ''
+    area.style.display = 'none'
     return
   }
 
@@ -243,12 +285,11 @@ function buildDetailSection(items, amount) {
         <td>${escapeHtml(it.name || '')}</td>
         <td style="text-align:right;">${it.qty || 0}</td>
         <td style="text-align:right;">${it.amount || 0}</td>
-      </tr>
-    `
+      </tr>`
     )
     .join('')
 
-  section.innerHTML = `
+  area.innerHTML = `
     <div class="detail-divider">-------------------- ✂ --------------------</div>
     <div class="detail-title">銷售明細</div>
     <table class="detail-table">
@@ -268,6 +309,10 @@ function buildDetailSection(items, amount) {
     <div class="detail-foot">臺北市信義區大道路74巷1號</div>
     <div class="detail-foot">TEL：02-27592006</div>
   `
+
+  const toggle = $('#toggleDetail')
+  area.style.display =
+    toggle && toggle.checked && area.innerHTML.trim() ? 'block' : 'none'
 }
 
 function escapeHtml(str) {
