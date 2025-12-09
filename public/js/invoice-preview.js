@@ -57,7 +57,30 @@ window.onload = async () => {
 }
 
 function renderInvoice(inv) {
-  const invoiceNo    = inv.invoiceNumber || ''
+  
+  // --- 根據公司自動切換 LOGO 圖檔 ---
+  const logoImg = document.querySelector('.logo-img');
+  const companyId = inv.companyId || '';
+
+  if (logoImg) {
+    switch (companyId) {
+      case 'rabbit':
+        logoImg.src = '/img/invoice-rabbit.jpg';
+        break;
+      case 'neversleep':
+        logoImg.src = '/img/invoice-neversleep.jpg';
+        break;
+      case 'focus':
+        logoImg.src = '/img/invoice-focus.jpg';
+        break;
+      default:
+        // 若資料庫沒寫 companyId，就當作數位小兔
+        logoImg.src = '/img/invoice-rabbit.jpg';
+        break;
+    }
+  }
+
+const invoiceNo    = inv.invoiceNumber || ''
   const randomNumber = inv.randomNumber || inv.randomNumber === 0 ? String(inv.randomNumber) : (inv.items && inv.items[0] && inv.items[0].randomNumber) || '0000'
   const amount       = Number(inv.amount || 0)
   const buyerGUI     = (inv.buyerGUI || '').trim()
