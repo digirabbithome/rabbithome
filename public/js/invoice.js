@@ -382,34 +382,24 @@ function reloadInvoices() {
 
 // === 開啟發票預覽頁 ===
 function openInvoicePreview(inv) {
-  if (!inv.invoiceNumber) {
-    alert('這筆資料沒有發票號碼，無法預覽')
+  if (!inv || !inv.invoiceNumber) {
+    alert('這筆資料沒有發票號碼，無法列印')
     return
   }
 
   // 優先用這筆發票記錄裡的 companyId，沒有的話再退而求其次用畫面上的選擇
-  const companyId = inv.companyId || document.getElementById('companySelect')?.value || ''
+  const companyId = inv.companyId || document.getElementById('companySelect')?.value || '';
 
-  // 官方列印
+  // 直接呼叫速買配官方列印
   const invoiceData = {
     companyId,
-    invoiceNumber: data.invoiceNumber,
-    invoiceDate: data.invoiceDate,
-    randomNumber: data.randomNumber
+    invoiceNumber: inv.invoiceNumber,
+    invoiceDate: inv.invoiceDate || inv.invoiceDateRaw || '',
+    randomNumber: inv.randomNumber || inv.randomNumberRaw || ''
   };
+
   openSmilepayPrint(invoiceData);
-  // const previewUrl =
-    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(inv.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
-
-  window.open(previewUrl, '_blank')
 }
-
-
-
-
-
-
-
 
 
 
