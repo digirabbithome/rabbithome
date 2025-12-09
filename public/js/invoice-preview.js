@@ -41,7 +41,7 @@ async function loadInvoice() {
   }
 
   try {
-    let qRef = query(
+    const qRef = query(
       collection(db, 'invoices'),
       where('invoiceNumber', '==', invoiceNumber),
       limit(1)
@@ -61,6 +61,28 @@ async function loadInvoice() {
 }
 
 function renderInvoice(inv) {
+  // 根據公司自動切換 LOGO 圖檔
+  const logoImg = document.querySelector('.logo-img')
+  const companyId = inv.companyId || ''
+
+  if (logoImg) {
+    switch (companyId) {
+      case 'rabbit':
+        logoImg.src = '/img/invoice-rabbit.jpg'
+        break
+      case 'neversleep':
+        logoImg.src = '/img/invoice-neversleep.jpg'
+        break
+      case 'focus':
+        logoImg.src = '/img/invoice-focus.jpg'
+        break
+      default:
+        logoImg.src = '/img/invoice-rabbit.jpg'
+        break
+    }
+  }
+
+
   const invoiceNo = inv.invoiceNumber || ''
   const randomNumber = inv.randomNumber || '----'
   const amount = inv.amount || 0
