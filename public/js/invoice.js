@@ -218,6 +218,7 @@ function detectCarrierType(value) {
 }
 
 // === 呼叫 Cloud Functions 開立發票 ===
+
 async function issueInvoice() {
   const statusEl = $('#issueStatus')
   if (statusEl) statusEl.textContent = '發票開立中…'
@@ -235,28 +236,22 @@ async function issueInvoice() {
 
   const carrierType = detectCarrierType(carrierValue)
 
-  if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
-    const goOn = confirm('載具好像不是 8 碼（一般手機條碼是 8 碼、開頭為 /），確定要送出嗎？')
-    if (!goOn) {
-      if (statusEl) statusEl.textContent = '已取消送出，請確認載具內容'
-      return
-    }
-  }
-
-  const items = $$('#itemsBody tr').map(tr => {
-    const name = tr.querySelector('.item-name').value.trim()
-    const qty = Number(tr.querySelector('.item-qty').value) || 0
-    const price = Number(tr.querySelector('.item-price').value) || 0
+  // 組商品明細
+  const rows = $$('#itemsTable tbody tr')
+  const items = rows.map((tr) => {
+    const name = tr.querySelector('.item-name')?.value.trim()
+    const qty = Number(tr.querySelector('.item-qty')?.value || 0)
+    const price = Number(tr.querySelector('.item-price')?.value || 0)
     const amount = qty * price
     return { name, qty, price, amount }
-  }).filter(i => i.name && i.qty > 0)
+  }).filter(it => it.name && it.qty > 0)
 
   if (!items.length) {
     if (statusEl) statusEl.textContent = '請至少輸入或解析出一項商品'
     return
   }
 
-  const amount = items.reduce((s, it) => s + it.amount, 0)
+  const amount = items.reduce((sum, it) => sum + it.amount, 0)
 
   try {
     const res = await fetch(`${FUNCTIONS_BASE}/createInvoice`, {
@@ -278,41 +273,53 @@ async function issueInvoice() {
         donateCode
       })
     })
-    const data = await res.json()
 
-    if (!res.ok || !data.success) {
-      console.error(data)
-      if (statusEl) statusEl.textContent = `開立失敗：${data.message || res.statusText}`
+    let data = null
+    try {
+      data = await res.json()
+    } catch (e) {
+      // 有些情況可能沒有 JSON，先略過，僅用 HTTP 狀態判斷
+      console.warn('createInvoice response is not JSON', e)
+    }
+
+    if (!res.ok) {
+      console.error('createInvoice HTTP error', res.status, data)
+      if (statusEl) statusEl.textContent = `開立失敗：${res.status} ${res.statusText || ''}`
       return
     }
 
-if (statusEl) {
-  statusEl.textContent =
-    `開立成功：${data.invoiceNumber}（隨機碼  ${data.randomNumber}）`
+    // 如果後端有回 success=false，再當成失敗
+    if (data && data.success === false) {
+      console.error('createInvoice logical error', data)
+      if (statusEl) statusEl.textContent = `開立失敗：${data.message || '後端錯誤'}`
+      return
+    }
 
-  // ⭐⭐⭐ 開立成功後 → 立即跳出發票預覽
-  const companyId = document.getElementById('companySelect').value
-  // 官方列印
-  const invoiceData = {
-    companyId,
-    invoiceNumber: data.invoiceNumber,
-    invoiceDate: data.invoiceDate,
-    randomNumber: data.randomNumber
-  };
-  openSmilepayPrint(invoiceData);
-  // const previewUrl =
-    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(data.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
-  window.open(previewUrl, "_blank")
-}
+    // 走到這裡就當作「開立成功」
+    if (statusEl && data) {
+      statusEl.textContent =
+        `開立成功：${data.invoiceNumber}（隨機碼 ${data.randomNumber}）`
+    } else if (statusEl) {
+      statusEl.textContent = '開立成功'
+    }
 
-reloadInvoices()
+    // ✅ 開立成功後 → 立即跳官方列印
+    const invoiceData = {
+      companyId,
+      invoiceNumber: data?.invoiceNumber || '',
+      invoiceDate: data?.invoiceDate || '',
+      randomNumber: data?.randomNumber || ''
+    }
+    openSmilepayPrint(invoiceData)
 
-    
+    // 重新載入列表
+    reloadInvoices()
   } catch (err) {
     console.error(err)
     if (statusEl) statusEl.textContent = '開立失敗：網路或伺服器錯誤'
   }
 }
+
 
 // === 實時監聽 Firestore 中的發票 ===
 function listenInvoices() {
