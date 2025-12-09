@@ -286,28 +286,27 @@ async function issueInvoice() {
       return
     }
 
-if (statusEl) {
-  statusEl.textContent =
-    `開立成功：${data.invoiceNumber}（隨機碼  ${data.randomNumber}）`
+    // ✅ 開立成功
+    if (statusEl) {
+      statusEl.textContent =
+        `開立成功：${data.invoiceNumber}（隨機碼  ${data.randomNumber}）`
+    }
 
-  // ⭐⭐⭐ 開立成功後 → 立即跳出發票預覽
-  const companyId = document.getElementById('companySelect').value
-  // 官方列印
-  const invoiceData = {
-    companyId,
-    invoiceNumber: data.invoiceNumber,
-    invoiceDate: data.invoiceDate,
-    randomNumber: data.randomNumber
-  };
-  openSmilepayPrint(invoiceData);
-  // const previewUrl =
-    `/invoice-preview.html?invoiceNumber=${encodeURIComponent(data.invoiceNumber)}&companyId=${encodeURIComponent(companyId)}`
-  window.open(previewUrl, "_blank")
-}
+    // ⭐⭐⭐ 開立成功後 → 直接呼叫速買配官方列印
+    const companyIdForPrint =
+      companyId || document.getElementById('companySelect')?.value || ''
 
-reloadInvoices()
+    const invoiceData = {
+      companyId: companyIdForPrint,
+      invoiceNumber: data.invoiceNumber,
+      invoiceDate: data.invoiceDate,
+      randomNumber: data.randomNumber
+    }
+    openSmilepayPrint(invoiceData)
 
-    
+    // 重新載入下方發票列表
+    reloadInvoices()
+
   } catch (err) {
     console.error(err)
     if (statusEl) statusEl.textContent = '開立失敗：網路或伺服器錯誤'
@@ -379,8 +378,7 @@ function reloadInvoices() {
   })
 }
 
-
-// === 開啟發票預覽頁 ===
+// === 開啟發票預覽／列印 ===
 function openInvoicePreview(inv) {
   if (!inv || !inv.invoiceNumber) {
     alert('這筆資料沒有發票號碼，無法列印')
@@ -388,7 +386,7 @@ function openInvoicePreview(inv) {
   }
 
   // 優先用這筆發票記錄裡的 companyId，沒有的話再退而求其次用畫面上的選擇
-  const companyId = inv.companyId || document.getElementById('companySelect')?.value || '';
+  const companyId = inv.companyId || document.getElementById('companySelect')?.value || ''
 
   // 直接呼叫速買配官方列印
   const invoiceData = {
@@ -396,12 +394,10 @@ function openInvoicePreview(inv) {
     invoiceNumber: inv.invoiceNumber,
     invoiceDate: inv.invoiceDate || inv.invoiceDateRaw || '',
     randomNumber: inv.randomNumber || inv.randomNumberRaw || ''
-  };
+  }
 
-  openSmilepayPrint(invoiceData);
+  openSmilepayPrint(invoiceData)
 }
-
-
 
 // === 列表按鈕 ===
 async function handleRowAction(e) {
@@ -417,13 +413,10 @@ async function handleRowAction(e) {
       const goOn = confirm('這張是「載具發票」，一般不需要列印實體。若只是要留存內部紀錄，可以按「確定」繼續列印。')
       if (!goOn) return
     }
-    //buildPrintArea(inv)
-    //window.print()
 
-    // ✅ 改成用預覽頁顯示＆列印
+    // ✅ 改成用官方列印
     openInvoicePreview(inv)
 
-    
   } else if (action === 'query') {
     await queryInvoice(inv)
   } else if (action === 'void') {
