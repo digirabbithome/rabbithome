@@ -13,53 +13,63 @@
     </header>
 
     <section class="card">
-      <h2>開立發票</h2>
+      <h2 class="invoice-header-row">
+  開立發票
+  <label class="company-inline">
+    <span class="label-text">開立公司：</span>
+    <select id="companySelect" class="company-select">
+      <option value="rabbit">數位小兔</option>
+      <option value="focus">聚焦數位</option>
+      <option value="neversleep">NeverSleep 免睡攝影</option>
+    </select>
+  </label>
+</h2>
 
-      <div class="form-grid">
-        <label>
-          開立公司
-          <select id="companySelect">
-            <option value="rabbit">數位小兔</option>
-            <option value="focus">聚焦數位</option>
-            <option value="neversleep">NeverSleep 免睡攝影</option>
-          </select>
-        </label>
+<div class="form-grid">
 
-        <label>
-          訂單編號
-          <input id="orderId" type="text" />
-        </label>
+  <label>
+    訂單編號
+    <input id="orderId" type="text" />
+  </label>
 
-        <label>
-          買受人統編
-          <input id="buyerGUI" type="text" maxlength="8" />
-        </label>
+  <label>
+    買受人統編
+    <input id="buyerGUI" type="text" maxlength="8" />
+  </label>
 
-        <label>
-          買受人抬頭
-          <input id="buyerTitle" type="text" />
-        </label>
+  <label>
+    買受人抬頭
+    <input id="buyerTitle" type="text" />
+  </label>
 
-        <label>
-          聯絡人姓名
-          <input id="contactName" type="text" />
-        </label>
+  <label>
+    聯絡人姓名
+    <input id="contactName" type="text" />
+  </label>
 
-        <label>
-          聯絡電話
-          <input id="contactPhone" type="tel" />
-        </label>
+  <label>
+    聯絡電話
+    <input id="contactPhone" type="tel" />
+  </label>
 
-        <label>
-          聯絡 E-mail
-          <input id="contactEmail" type="email" />
-        </label>
+  <label>
+    聯絡 E-mail
+    <input id="contactEmail" type="email" />
+  </label>
 
-        <label>
-          載具（有填視為使用載具，沒填視為紙本）
-          <input id="carrierValue" type="text" />
-        </label>
-      </div>
+  <label>
+    載具（有填視為使用載具，沒填視為紙本）
+    <input id="carrierValue" type="text" />
+  </label>
+
+  <!-- ⭐ 新增的預開發票欄位 -->
+  <label class="pre-invoice">
+    <input id="preInvoice" type="checkbox" />
+    預開發票
+  </label>
+
+</div>
+
 
       <div class="pos-block">
         <div class="pos-header">
