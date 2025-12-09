@@ -339,3 +339,31 @@ input:focus, select:focus, textarea:focus {
 .einv-detail-table th {
   text-align: left;
 }
+
+
+.invoice-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.company-inline {
+  font-weight: bold;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.company-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.pre-invoice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+}
