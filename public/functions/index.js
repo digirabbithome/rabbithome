@@ -10,7 +10,7 @@ if (!admin.apps.length) {
 const db = admin.firestore()
 
 // ⚠️ 使用新版 EInvoice API 路徑（文件寫的那一組 SPEinvoice_xxx.asp）
-const SMILEPAY_ISSUE_URL = 'https://ssl.smse.com.tw/api_test/SPEinvoice_Storage.asp'
+const SMILEPAY_ISSUE_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage.asp'
 const SMILEPAY_VOID_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Invalid.asp'
 const SMILEPAY_QUERY_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Query.asp'
 
