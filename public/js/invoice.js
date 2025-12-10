@@ -199,6 +199,11 @@ async function issueInvoice() {
   const contactPhone= $('#contactPhone')?.value.trim()
   const contactEmail= $('#contactEmail')?.value.trim()
   const carrierValue= $('#carrierValue')?.value.trim()
+
+
+  // ⭐ 新增這一行：預開發票 checkbox
+  const preInvoice = !!document.getElementById('preInvoice')?.checked
+  
   const carrierType = detectCarrierType(carrierValue)
 
   if (carrierType==='MOBILE' && carrierValue && carrierValue.length!==8) {
@@ -230,7 +235,11 @@ async function issueInvoice() {
         companyId, orderId, buyerGUI, buyerTitle,
         contactName, contactPhone, contactEmail,
         amount, items, carrierType, carrierValue,
-        donateMark:'0', donateCode:''
+        donateMark:'0', donateCode:'',
+    // ⭐ 加這兩個
+    preInvoice,
+    unpaid: preInvoice   // 勾預開 = 未收款
+        
       })
     })
 
