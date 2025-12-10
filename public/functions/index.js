@@ -145,7 +145,9 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('Remark', orderId || '')
     // === 自訂訂單編號（速買配欄位：orderid） ===
     params.append('orderid', orderId || '')
-
+    // ★ 新增這行：data_id = 自訂發票編號（也就是訂單編號）
+    params.append('data_id', orderId || '')
+    
     // === 捐贈 ===
     params.append('DonateMark', donateMark || '0')
     if (donateMark === '1' && donateCode) {
