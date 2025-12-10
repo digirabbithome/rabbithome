@@ -143,6 +143,8 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('TaxAmount',   '0')
 
     params.append('Remark', orderId || '')
+    // === 自訂訂單編號（速買配欄位：orderid） ===
+    params.append('orderid', orderId || '')
 
     // === 捐贈 ===
     params.append('DonateMark', donateMark || '0')
@@ -151,11 +153,12 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     }
 
     // === 載具（照文件：CarrierType + CarrierID） ===
-    if (carrierType && carrierType !== 'NONE' && carrierValue) {
-      const typeCode = carrierType === 'MOBILE' ? '3J0002' : 'CQ0001'
-      params.append('CarrierType', typeCode)
-      params.append('CarrierID', carrierValue)   // ✅ 正確欄位名
-    }
+    // === 載具 ===
+if (carrierType && carrierType !== 'NONE' && carrierValue) {
+  // 手機條碼：3J0002，自然人憑證：CQ0001
+  params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
+  params.append('CarrierID', carrierValue)   // ✅ 只有有填載具才傳，欄位名改成文件寫的
+}
 
     // === 商品明細 ===
     params.append('Description', descStr)
