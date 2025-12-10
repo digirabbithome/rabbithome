@@ -504,12 +504,22 @@ function getPeriodIndexByMonth(month) {
 }
 
 // === 產生發票統計表（列：公司；欄：雙月份 + 總金額） ===
+// === 產生 / 隱藏 發票統計表（列：公司；欄：雙月份 + 總金額） ===
 function renderStatsTable() {
   const area = $('#statsArea')
   if (!area) return
 
+  // 如果現在是顯示中，就隱藏並結束（當成 toggle）
+  if (area.dataset.visible === '1') {
+    area.innerHTML = ''
+    area.dataset.visible = '0'
+    return
+  }
+
+  // 還沒顯示 → 準備重算並畫表
   if (!cachedInvoices || !cachedInvoices.length) {
     area.innerHTML = '<p class="stats-hint">目前沒有發票資料可以統計。</p>'
+    area.dataset.visible = '1'
     return
   }
 
@@ -569,7 +579,9 @@ function renderStatsTable() {
       </table>
     </div>
   `
+  area.dataset.visible = '1'
 }
+
 
 function getFilteredSortedInvoices() {
   const keyword = $('#searchKeyword')?.value.trim().toLowerCase() || ''
