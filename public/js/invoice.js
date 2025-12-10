@@ -15,6 +15,13 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
 let cachedInvoices = []
 let invoicesUnsub = null
 
+// === 列表排序 / 分頁狀態 ===
+let currentSortField = 'date'   // 'date' | 'company' | 'status'
+let currentSortDir = 'desc'     // 'asc' | 'desc'
+let currentPage = 1
+const ROWS_PER_PAGE = 50
+let pagerEl = null
+
 // === 初始化 ===
 window.onload = () => {
   setupForm()
@@ -41,17 +48,26 @@ function setupForm() {
 
   const refreshListBtn = $('#refreshListBtn')
   if (refreshListBtn) {
-    refreshListBtn.addEventListener('click', () => reloadInvoices())
+    refreshListBtn.addEventListener('click', () => {
+      // 重整列表其實是用 Firestore 即時監聽，但保留按鈕手感
+      reloadInvoices()
+    })
   }
 
   const filterStatus = $('#filterStatus')
   if (filterStatus) {
-    filterStatus.addEventListener('change', reloadInvoices)
+    filterStatus.addEventListener('change', () => {
+      currentPage = 1
+      reloadInvoices()
+    })
   }
 
   const searchKeyword = $('#searchKeyword')
   if (searchKeyword) {
-    searchKeyword.addEventListener('input', () => reloadInvoices())
+    searchKeyword.addEventListener('input', () => {
+      currentPage = 1
+      reloadInvoices()
+    })
   }
 
   const parsePosBtn = $('#parsePosBtn')
@@ -217,9 +233,6 @@ async function issueInvoice() {
   const contactEmail = $('#contactEmail')?.value.trim()
   const carrierValue = $('#carrierValue')?.value.trim()
 
-  // ⭐ 新增：讀取「預開發票」勾選
-  const preInvoice = $('#preInvoice')?.checked || false
-
   const carrierType = detectCarrierType(carrierValue)
 
   if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
@@ -266,8 +279,7 @@ async function issueInvoice() {
         carrierType,
         carrierValue,
         donateMark,
-        donateCode,
-        preInvoice        // ⭐ 新增：這筆是否為預開發票（尚未收款）
+        donateCode
       })
     })
     const data = await res.json()
@@ -319,8 +331,173 @@ function listenInvoices() {
   })
 }
 
-// 預留（有需要再加功能）
-function setupList() {}
+// === 列表相關 ===
+function setupList() {
+  const headerCells = $$('.list-table thead th')
+  if (!headerCells.length) return
+
+  const dateTh = headerCells[0]    // 日期
+  const companyTh = headerCells[1] // 公司
+  const statusTh = headerCells[6]  // 狀態
+
+  ;[dateTh, companyTh, statusTh].forEach(th => {
+    if (!th) return
+    th.style.cursor = 'pointer'
+  })
+
+  if (dateTh) {
+    dateTh.addEventListener('click', () => {
+      toggleSort('date')
+    })
+  }
+  if (companyTh) {
+    companyTh.addEventListener('click', () => {
+      toggleSort('company')
+    })
+  }
+  if (statusTh) {
+    statusTh.addEventListener('click', () => {
+      toggleSort('status')
+    })
+  }
+
+  // 建立簡單分頁列
+  const table = $('.list-table')
+  if (table) {
+    pagerEl = document.createElement('div')
+    pagerEl.className = 'invoice-pagination'
+    pagerEl.innerHTML = `
+      <button type="button" class="btn-small" data-page="prev">上一頁</button>
+      <span class="page-info"></span>
+      <button type="button" class="btn-small" data-page="next">下一頁</button>
+    `
+    table.insertAdjacentElement('afterend', pagerEl)
+
+    pagerEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-page]')
+      if (!btn) return
+      const all = getFilteredSortedInvoices()
+      const totalPages = Math.max(1, Math.ceil(all.length / ROWS_PER_PAGE))
+
+      if (btn.dataset.page === 'prev') {
+        if (currentPage > 1) {
+          currentPage--
+          reloadInvoices()
+        }
+      } else if (btn.dataset.page === 'next') {
+        if (currentPage < totalPages) {
+          currentPage++
+          reloadInvoices()
+        }
+      }
+    })
+  }
+}
+
+function toggleSort(field) {
+  if (currentSortField === field) {
+    currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc'
+  } else {
+    currentSortField = field
+    currentSortDir = field === 'date' ? 'desc' : 'asc'
+  }
+  currentPage = 1
+  reloadInvoices()
+}
+
+function isUnpaid(inv) {
+  // 支援幾種欄位名，預設 preInvoice 為「預開 / 未付款」
+  return !!(inv.preInvoice || inv.unpaid || inv.preInvoiceFlag)
+}
+
+function getInvoiceTime(inv) {
+  if (inv.createdAt?.toDate) {
+    return inv.createdAt.toDate().getTime()
+  }
+  if (inv.invoiceDate) {
+    // invoiceDate 會是 2025/12/10 這種
+    const d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
+    return d.getTime()
+  }
+  return 0
+}
+
+function statusOrder(inv) {
+  const s = inv.status || ''
+  if (s === 'ISSUED') return 1
+  if (s === 'VOIDED') return 2
+  return 99
+}
+
+function statusToText(inv) {
+  const s = inv.status || ''
+  const unpaid = isUnpaid(inv)
+  if (s === 'ISSUED') {
+    return unpaid ? '已開立（未收款）' : '已開立'
+  }
+  if (s === 'VOIDED') return '已作廢'
+  return s || '-'
+}
+
+function formatDateTime(inv) {
+  let d = null
+  if (inv.createdAt?.toDate) {
+    d = inv.createdAt.toDate()
+  } else if (inv.invoiceDate) {
+    d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
+  }
+  if (!d) return '-'
+  return d.toLocaleString('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+}
+
+function getFilteredSortedInvoices() {
+  const keyword = $('#searchKeyword')?.value.trim().toLowerCase() || ''
+  const statusFilter = $('#filterStatus')?.value || 'ALL'
+
+  let filtered = cachedInvoices.filter(inv => {
+    if (statusFilter !== 'ALL' && inv.status !== statusFilter) return false
+    if (!keyword) return true
+    const s = `${inv.invoiceNumber || ''} ${inv.orderId || ''} ${inv.buyerTitle || ''}`.toLowerCase()
+    return s.includes(keyword)
+  })
+
+  const sorted = filtered.slice().sort((a, b) => {
+    // 先讓「未付款」的排最前面
+    const ua = isUnpaid(a) ? 1 : 0
+    const ub = isUnpaid(b) ? 1 : 0
+    if (ua !== ub) return ub - ua
+
+    let av, bv
+    switch (currentSortField) {
+      case 'company':
+        av = (a.companyName || a.companyId || '').toString()
+        bv = (b.companyName || b.companyId || '').toString()
+        break
+      case 'status':
+        av = statusOrder(a)
+        bv = statusOrder(b)
+        break
+      case 'date':
+      default:
+        av = getInvoiceTime(a)
+        bv = getInvoiceTime(b)
+        break
+    }
+
+    if (av < bv) return currentSortDir === 'asc' ? -1 : 1
+    if (av > bv) return currentSortDir === 'asc' ? 1 : -1
+    return 0
+  })
+
+  return sorted
+}
 
 // 重新渲染下方列表
 function reloadInvoices() {
@@ -329,35 +506,43 @@ function reloadInvoices() {
 
   tbody.innerHTML = ''
 
-  const keyword = $('#searchKeyword')?.value.trim().toLowerCase() || ''
-  const statusFilter = $('#filterStatus')?.value || 'ALL'
+  const all = getFilteredSortedInvoices()
+  const totalPages = Math.max(1, Math.ceil(all.length / ROWS_PER_PAGE))
+  if (currentPage > totalPages) currentPage = totalPages
 
-  const filtered = cachedInvoices.filter(inv => {
-    if (statusFilter !== 'ALL' && inv.status !== statusFilter) return false
-    if (!keyword) return true
-    const s = `${inv.invoiceNumber || ''} ${inv.orderId || ''} ${inv.buyerTitle || ''}`.toLowerCase()
-    return s.includes(keyword)
-  })
+  const start = (currentPage - 1) * ROWS_PER_PAGE
+  const pageItems = all.slice(start, start + ROWS_PER_PAGE)
 
-  for (const inv of filtered) {
+  for (const inv of pageItems) {
     const tr = document.createElement('tr')
-    const d = inv.invoiceDate ||
-      (inv.createdAt?.toDate?.().toLocaleDateString('zh-TW') ?? '')
+
+    const dText = formatDateTime(inv)
+
+    const creator =
+      inv.createdByNickname ||
+      inv.createdBy ||
+      inv.nickname ||
+      ''
+    const companyBase = inv.companyName || inv.companyId || ''
+    const companyText = creator ? `${companyBase}（${creator}）` : companyBase
+
+    const statusText = statusToText(inv)
 
     tr.innerHTML = `
-      <td>${d}</td>
-      <td>${inv.companyName || inv.companyId}</td>
+      <td>${dText}</td>
+      <td>${companyText}</td>
       <td>${inv.invoiceNumber || '-'}</td>
       <td>${inv.orderId || '-'}</td>
       <td>${inv.buyerTitle || '-'}</td>
       <td>${inv.amount || 0}</td>
-      <td>${inv.status}</td>
+      <td>${statusText}</td>
       <td>
         <button class="btn-small" data-action="print">列印</button>
-        <button class="btn-small" data-action="query">查詢</button>
-        ${inv.status === 'ISSUED'
-          ? '<button class="btn-small danger" data-action="void">作廢</button>'
-          : ''}
+        ${
+          inv.status === 'ISSUED'
+            ? '<button class="btn-small danger" data-action="void">作廢</button>'
+            : ''
+        }
       </td>
     `
 
@@ -365,9 +550,18 @@ function reloadInvoices() {
     tbody.appendChild(tr)
   }
 
+  // 綁定列上的按鈕事件
   tbody.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', handleRowAction)
   })
+
+  // 更新分頁資訊
+  if (pagerEl) {
+    const info = pagerEl.querySelector('.page-info')
+    if (info) {
+      info.textContent = `${currentPage} / ${totalPages} 頁（共 ${all.length} 筆）`
+    }
+  }
 }
 
 // === 開啟發票預覽／列印 ===
@@ -406,17 +600,14 @@ async function handleRowAction(e) {
       if (!goOn) return
     }
 
-    // ✅ 改成用官方列印
     openInvoicePreview(inv)
 
-  } else if (action === 'query') {
-    await queryInvoice(inv)
   } else if (action === 'void') {
     await voidInvoice(inv)
   }
 }
 
-// === 查詢 ===
+// === 查詢（保留 function，雖然按鈕已拿掉） ===
 async function queryInvoice(inv) {
   const ok = confirm(`查詢發票狀態？\n發票號碼：${inv.invoiceNumber}`)
   if (!ok) return
@@ -500,16 +691,14 @@ function buildPrintArea(inv) {
   const invoiceNo = inv.invoiceNumber || ''
   const randomNumber = inv.randomNumber || ''
   const amount = inv.amount || 0
-  const sellerGUI = inv.sellerGUI || '48594728' // TODO: 換成你自己的統編
+  const sellerGUI = inv.sellerGUI || '48594728'
   const buyerGUI = inv.buyerGUI || ''
 
-  // 2. 是否顯示明細
   const printDetailCheckbox = document.querySelector('#printDetail')
   const mustShowDetailByGUI = !!(buyerGUI && buyerGUI.trim())
   const wantDetailByCheckbox = !!(printDetailCheckbox && printDetailCheckbox.checked)
   const showDetail = (inv.items && inv.items.length) && (mustShowDetailByGUI || wantDetailByCheckbox)
 
-  // 3. 明細表 HTML（有需要才產）
   let detailHtml = ''
   if (showDetail) {
     const items = inv.items || []
@@ -547,7 +736,6 @@ function buildPrintArea(inv) {
     `
   }
 
-  // 4. 主體卡片
   area.innerHTML = `
     <div class="einv-card">
       <div class="einv-header">
@@ -578,9 +766,7 @@ function buildPrintArea(inv) {
         <span>${buyerGUI || '—'}</span>
       </div>
 
-      <div class="einv-barcode" id="einv-barcode">
-        <!-- TODO: 之後放條碼 -->
-      </div>
+      <div class="einv-barcode" id="einv-barcode"></div>
 
       <div class="einv-qrs">
         <div class="einv-qr" id="einv-qr-left"></div>
@@ -590,6 +776,4 @@ function buildPrintArea(inv) {
 
     ${detailHtml}
   `
-
-  // 目前條碼 / QR 先留白，之後再一起接 SmilePay 回傳欄位 + JsBarcode / QRCode
 }
