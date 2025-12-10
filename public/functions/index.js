@@ -28,6 +28,7 @@ async function getCompanyConfig(companyId) {
 
 // ========== 開立發票 ==========
 // ========== 開立發票 ==========
+// ========== 開立發票 ==========
 exports.createInvoice = functions.onRequest(async (req, res) => {
   // CORS
   res.set('Access-Control-Allow-Origin', '*')
@@ -46,8 +47,15 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       amount, items,
       carrierType, carrierValue,
       donateMark, donateCode,
-      preInvoice,unpaid
+      preInvoice, unpaid
     } = req.body || {}
+
+    // ➕ 把前端送來的預開 / 未收款 做成穩定的布林值
+    const preInvoiceFlag =
+      preInvoice === true || preInvoice === '1' || preInvoice === 'Y'
+    const unpaidFlag =
+      unpaid === true || unpaid === '1' || unpaid === 'Y' || preInvoiceFlag
+      // 預開發票預設視為未收款
 
     // 簡單檢查
     if (!companyId || !items || !items.length) {
@@ -57,23 +65,22 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     const company = await getCompanyConfig(companyId)
 
+    // === 日期 / 時間：用台北時間（Asia/Taipei） ===
+    const now = new Date()
+    // 轉成台北時間的 Date 物件
+    const tpeNow = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })
+    )
 
- // === 日期 / 時間：用台北時間（Asia/Taipei） ===
-const now = new Date()
-// 轉成台北時間的 Date 物件
-const tpeNow = new Date(
-  now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })
-)
+    const y  = tpeNow.getFullYear()
+    const m  = String(tpeNow.getMonth() + 1).padStart(2, '0')
+    const d  = String(tpeNow.getDate()).padStart(2, '0')
+    const hh = String(tpeNow.getHours()).padStart(2, '0')
+    const mm = String(tpeNow.getMinutes()).padStart(2, '0')
+    const ss = String(tpeNow.getSeconds()).padStart(2, '0')
 
-const y  = tpeNow.getFullYear()
-const m  = String(tpeNow.getMonth() + 1).padStart(2, '0')
-const d  = String(tpeNow.getDate()).padStart(2, '0')
-const hh = String(tpeNow.getHours()).padStart(2, '0')
-const mm = String(tpeNow.getMinutes()).padStart(2, '0')
-const ss = String(tpeNow.getSeconds()).padStart(2, '0')
-
-const invoiceDate = `${y}/${m}/${d}`      // 例如 2025/12/07
-const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
+    const invoiceDate = `${y}/${m}/${d}`      // 例如 2025/12/07
+    const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
 
     // === 整理品項：過濾掉空行，並算出每一筆小計 ===
     const normalizedItems = (items || []).map(it => {
@@ -121,14 +128,10 @@ const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
     params.append('Buyer_Identifier', buyerGUI || '')
 
     // ✅ 金額相關（全部用重新計算的 totalAmount）
-    // 文件裡的說明是：
-    // Amount：各項目總額（用 | 分隔）
-    // AllAmount / SalesAmount：總金額
     params.append('AllAmount', String(totalAmount))    // 總金額(含稅)
     params.append('SalesAmount', String(totalAmount))  // 銷售額
     params.append('TotalAmount', String(totalAmount))  // 若文件有這個欄位就一起給
-    // 給 SmilePay 當「含稅總額」，有些範例是這樣叫
-    params.append('Amt', String(totalAmount))
+    params.append('Amt', String(totalAmount))          // 部分文件用這個名稱
 
     // 單價是否含稅：我們 POS 單價是含稅價
     params.append('UnitTAX', 'Y')
@@ -172,14 +175,14 @@ const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
     const status        = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
     const desc          = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
 
-  const okStatuses = ['0', '0000', 'Success', 'Successed', 'Succeeded']
+    const okStatuses = ['0', '0000', 'Success', 'Successed', 'Succeeded']
 
-if (!okStatuses.includes(status)) {
-  res.json({ success: false, message: desc || status || 'SmilePay 回傳失敗', raw: text })
-  return
-}
+    if (!okStatuses.includes(status)) {
+      res.json({ success: false, message: desc || status || 'SmilePay 回傳失敗', raw: text })
+      return
+    }
 
-    // 成功就寫一筆到 Firestore
+    // ✅ 成功就寫一筆到 Firestore
     const docRef = await db.collection('invoices').add({
       companyId,
       companyName: company.name,
@@ -200,7 +203,11 @@ if (!okStatuses.includes(status)) {
       randomNumber,
       invoiceDate,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      smilepayRaw: { xml: text }
+      smilepayRaw: { xml: text },
+
+      // ⭐⭐ 新增：預開 / 未收款欄位
+      preInvoice: preInvoiceFlag,
+      unpaid: unpaidFlag
     })
 
     res.json({
@@ -215,9 +222,6 @@ if (!okStatuses.includes(status)) {
     res.status(500).json({ success: false, message: err.message })
   }
 })
-
-
-
 
 
 
