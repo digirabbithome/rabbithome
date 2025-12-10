@@ -22,6 +22,22 @@ let currentPage = 1
 const ROWS_PER_PAGE = 50
 let pagerEl = null
 
+// === 發票統計用設定（列：公司；欄：雙月份 + 總金額） ===
+const STATS_COMPANIES = [
+  { id: 'rabbit',     label: '數位小兔' },
+  { id: 'focus',      label: '聚焦數位' },
+  { id: 'neversleep', label: '免睡攝影' }
+]
+
+const STATS_PERIODS = [
+  { key: '1-2',   label: '1 / 2 月',   months: [1, 2] },
+  { key: '3-4',   label: '3 / 4 月',   months: [3, 4] },
+  { key: '5-6',   label: '5 / 6 月',   months: [5, 6] },
+  { key: '7-8',   label: '7 / 8 月',   months: [7, 8] },
+  { key: '9-10',  label: '9 / 10 月',  months: [9, 10] },
+  { key: '11-12', label: '11 / 12 月', months: [11, 12] }
+]
+
 // === 初始化 ===
 window.onload = () => {
   setupForm()
@@ -209,7 +225,7 @@ function parsePosText(text) {
     total = resultItems.reduce((s, it) => s + it.amount, 0)
   }
 
-  return { items: resultItems, total }
+  return { items, total }
 }
 
 // === 載具類型判斷 ===
@@ -361,6 +377,14 @@ function setupList() {
     })
   }
 
+  // 📊 發票統計按鈕
+  const statsBtn = $('#statsBtn')
+  if (statsBtn) {
+    statsBtn.addEventListener('click', () => {
+      renderStatsTable()
+    })
+  }
+
   // 建立簡單分頁列
   const table = $('.list-table')
   if (table) {
@@ -455,6 +479,96 @@ function formatDateTime(inv) {
     minute: '2-digit',
     hour12: false
   })
+}
+
+// === 發票日期 → 月份（1~12） ===
+function getInvoiceMonth(inv) {
+  if (inv.invoiceDate) {
+    const parts = inv.invoiceDate.replace(/-/g, '/').split('/')
+    if (parts.length >= 2) {
+      const m = Number(parts[1])
+      if (m >= 1 && m <= 12) return m
+    }
+  }
+  if (inv.createdAt && typeof inv.createdAt.toDate === 'function') {
+    const d = inv.createdAt.toDate()
+    return d.getMonth() + 1
+  }
+  return null
+}
+
+// 月份決定雙月份區間 index（0~5）
+function getPeriodIndexByMonth(month) {
+  if (!month || month < 1 || month > 12) return -1
+  return Math.floor((month - 1) / 2) // 1~12 → 0~5
+}
+
+// === 產生發票統計表（列：公司；欄：雙月份 + 總金額） ===
+function renderStatsTable() {
+  const area = $('#statsArea')
+  if (!area) return
+
+  if (!cachedInvoices || !cachedInvoices.length) {
+    area.innerHTML = '<p class="stats-hint">目前沒有發票資料可以統計。</p>'
+    return
+  }
+
+  // stats[companyId][periodIdx] = 金額
+  const stats = {}
+  STATS_COMPANIES.forEach(c => {
+    stats[c.id] = STATS_PERIODS.map(() => 0)
+  })
+
+  // 只統計開立成功的發票（ISSUED）
+  for (const inv of cachedInvoices) {
+    if (inv.status !== 'ISSUED') continue
+
+    const cid = inv.companyId || ''
+    if (!stats[cid]) continue  // 不是三家公司之一略過
+
+    const month = getInvoiceMonth(inv)
+    const periodIdx = getPeriodIndexByMonth(month)
+    if (periodIdx < 0) continue
+
+    const amount = Number(inv.amount || 0) || 0
+    stats[cid][periodIdx] += amount
+  }
+
+  // 組表格：列是公司，欄是 6 個雙月 + 總金額
+  let bodyHtml = ''
+
+  STATS_COMPANIES.forEach(c => {
+    const row = stats[c.id] || STATS_PERIODS.map(() => 0)
+    const total = row.reduce((s, v) => s + v, 0)
+
+    bodyHtml += `
+      <tr>
+        <td class="stats-company">${c.label}</td>
+        ${row.map(v => `
+          <td class="amount-cell">${v.toLocaleString()}</td>
+        `).join('')}
+        <td class="amount-cell total-cell">${total.toLocaleString()}</td>
+      </tr>
+    `
+  })
+
+  area.innerHTML = `
+    <div class="stats-card">
+      <h3>📊 發票金額統計（只含已開立發票）</h3>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>公司</th>
+            ${STATS_PERIODS.map(p => `<th>${p.label}</th>`).join('')}
+            <th>總金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyHtml}
+        </tbody>
+      </table>
+    </div>
+  `
 }
 
 function getFilteredSortedInvoices() {
