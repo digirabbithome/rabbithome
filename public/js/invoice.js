@@ -3,11 +3,16 @@
 import { db } from '/js/firebase.js'
 import { openSmilepayPrint } from '/js/smilepay-print.js';
 import {
-  collection, onSnapshot, query, orderBy,
-  doc, updateDoc, serverTimestamp
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  doc,
+  updateDoc,
+  serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
-// === Firebase Cloud Functions base URL ===
+// === ✅ Firebase Functions base URL（你的專案） ===
 const FUNCTIONS_BASE = 'https://us-central1-rabbithome-auth.cloudfunctions.net'
 
 const $ = (s, r = document) => r.querySelector(s)
@@ -16,27 +21,27 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
 let cachedInvoices = []
 let invoicesUnsub = null
 
-// 列表排序 / 分頁
-let currentSortField = 'date'
-let currentSortDir = 'desc'
+// === 列表排序 / 分頁狀態 ===
+let currentSortField = 'date'   // 'date' | 'company' | 'status'
+let currentSortDir = 'desc'     // 'asc' | 'desc'
 let currentPage = 1
 const ROWS_PER_PAGE = 50
 let pagerEl = null
 
-// 📊 統計用公司
+// === 發票統計用設定（列：公司；欄：雙月份 + 總金額） ===
 const STATS_COMPANIES = [
-  { id: 'rabbit', label: '數位小兔' },
-  { id: 'focus', label: '聚焦數位' },
+  { id: 'rabbit',     label: '數位小兔' },
+  { id: 'focus',      label: '聚焦數位' },
   { id: 'neversleep', label: '免睡攝影' }
 ]
 
 const STATS_PERIODS = [
-  { key: '1-2', label: '1 / 2 月', months: [1,2] },
-  { key: '3-4', label: '3 / 4 月', months: [3,4] },
-  { key: '5-6', label: '5 / 6 月', months: [5,6] },
-  { key: '7-8', label: '7 / 8 月', months: [7,8] },
-  { key: '9-10', label: '9 / 10 月', months: [9,10] },
-  { key: '11-12', label: '11 / 12 月', months: [11,12] }
+  { key: '1-2',   label: '1 / 2 月',   months: [1, 2] },
+  { key: '3-4',   label: '3 / 4 月',   months: [3, 4] },
+  { key: '5-6',   label: '5 / 6 月',   months: [5, 6] },
+  { key: '7-8',   label: '7 / 8 月',   months: [7, 8] },
+  { key: '9-10',  label: '9 / 10 月',  months: [9, 10] },
+  { key: '11-12', label: '11 / 12 月', months: [11, 12] }
 ]
 
 // === 初始化 ===
@@ -46,74 +51,99 @@ window.onload = () => {
   listenInvoices()
 }
 
-// === 表單 ===
+// === 表單區 ===
 function setupForm() {
-  $('#addItemBtn')?.addEventListener('click', e => {
-    e.preventDefault()
-    addItemRow()
-    addItemRow()
-    addItemRow()
-  })
+  const addBtn = $('#addItemBtn')
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      addItemRow()
+      addItemRow()
+      addItemRow()
+    })
+  }
 
-  $('#issueBtn')?.addEventListener('click', issueInvoice)
-  $('#refreshListBtn')?.addEventListener('click', reloadInvoices)
+  const issueBtn = $('#issueBtn')
+  if (issueBtn) {
+    issueBtn.addEventListener('click', issueInvoice)
+  }
 
-  $('#filterStatus')?.addEventListener('change', () => {
-    currentPage = 1
-    reloadInvoices()
-  })
+  const refreshListBtn = $('#refreshListBtn')
+  if (refreshListBtn) {
+    refreshListBtn.addEventListener('click', () => {
+      // 重整列表其實是用 Firestore 即時監聽，但保留按鈕手感
+      reloadInvoices()
+    })
+  }
 
-  $('#searchKeyword')?.addEventListener('input', () => {
-    currentPage = 1
-    reloadInvoices()
-  })
+  const filterStatus = $('#filterStatus')
+  if (filterStatus) {
+    filterStatus.addEventListener('change', () => {
+      currentPage = 1
+      reloadInvoices()
+    })
+  }
 
-  $('#parsePosBtn')?.addEventListener('click', e => {
-    e.preventDefault()
-    parsePosAndFill()
-  })
+  const searchKeyword = $('#searchKeyword')
+  if (searchKeyword) {
+    searchKeyword.addEventListener('input', () => {
+      currentPage = 1
+      reloadInvoices()
+    })
+  }
+
+  const parsePosBtn = $('#parsePosBtn')
+  if (parsePosBtn) {
+    parsePosBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      parsePosAndFill()
+    })
+  }
 
   // 預設一列
   addItemRow()
 }
 
 // === 商品列 ===
-function addItemRow(prefill=null) {
+function addItemRow(prefill = null) {
   const tbody = $('#itemsBody')
   if (!tbody) return
 
   const tr = document.createElement('tr')
+
   tr.innerHTML = `
     <td class="item-index"></td>
-    <td><input class="item-name"></td>
-    <td><input class="item-qty" type="number" min="1" value="1"></td>
-    <td><input class="item-price" type="number" min="0" value="0"></td>
+    <td><input class="item-name" /></td>
+    <td><input class="item-qty" type="number" min="1" value="1" /></td>
+    <td><input class="item-price" type="number" min="0" value="0" /></td>
     <td class="item-amount">0</td>
     <td><button type="button" class="btn-small danger">刪除</button></td>
   `
+
   tbody.appendChild(tr)
 
-  const nameInput  = tr.querySelector('.item-name')
-  const qtyInput   = tr.querySelector('.item-qty')
+  const nameInput = tr.querySelector('.item-name')
+  const qtyInput = tr.querySelector('.item-qty')
   const priceInput = tr.querySelector('.item-price')
-  const delBtn     = tr.querySelector('button')
+  const delBtn = tr.querySelector('button')
 
   if (prefill) {
-    nameInput.value = prefill.name
-    qtyInput.value = prefill.qty
-    priceInput.value = prefill.price
+    nameInput.value = prefill.name || ''
+    qtyInput.value = prefill.qty || 1
+    priceInput.value = prefill.price || 0
   }
 
   const recalc = () => {
-    const qty = Number(qtyInput.value)||0
-    const price = Number(priceInput.value)||0
-    tr.querySelector('.item-amount').textContent = qty*price
+    const qty = Number(qtyInput.value) || 0
+    const price = Number(priceInput.value) || 0
+    const amt = qty * price
+    tr.querySelector('.item-amount').textContent = amt
     recalcTotal()
   }
 
-  nameInput.addEventListener('input', recalc)
   qtyInput.addEventListener('input', recalc)
   priceInput.addEventListener('input', recalc)
+  nameInput.addEventListener('input', recalc)
 
   delBtn.addEventListener('click', () => {
     tr.remove()
@@ -124,182 +154,244 @@ function addItemRow(prefill=null) {
 }
 
 function updateItemIndices() {
-  $$('#itemsBody tr').forEach((tr,i)=>{
-    tr.querySelector('.item-index').textContent = i+1
+  $$('#itemsBody tr').forEach((tr, idx) => {
+    const cell = tr.querySelector('.item-index')
+    if (cell) cell.textContent = idx + 1
   })
 }
 
 function recalcTotal() {
   let total = 0
   $$('#itemsBody tr').forEach(tr => {
-    total += Number(tr.querySelector('.item-amount').textContent)||0
+    const amt = Number(tr.querySelector('.item-amount').textContent) || 0
+    total += amt
   })
-  $('#totalAmount').textContent = total
+  const totalEl = $('#totalAmount')
+  if (totalEl) totalEl.textContent = total
   updateItemIndices()
 }
 
-// === POS 解析 ===
+// === POS 內容解析 ===
 function parsePosAndFill() {
-  const raw = $('#posPaste')?.value.trim()
-  if (!raw) return alert('請先貼上 POS 明細')
+  const textarea = $('#posPaste')
+  if (!textarea) return
+
+  const raw = textarea.value.trim()
+  if (!raw) {
+    alert('請先在上方貼上 POS 明細文字')
+    return
+  }
 
   const { items, total } = parsePosText(raw)
-  if (!items.length) return alert('解析失敗，可能需要調整格式')
+  if (!items.length) {
+    alert('無法從貼上的內容解析出商品，可能格式不同，可以再一起調整解析規則。')
+    return
+  }
 
   const tbody = $('#itemsBody')
   tbody.innerHTML = ''
-  items.forEach(it => addItemRow(it))
-
+  for (const it of items) {
+    addItemRow(it)
+  }
   recalcTotal()
-  if (total > 0) $('#totalAmount').textContent = total
 
-  alert(`解析出 ${items.length} 個品項`)
+  if (total > 0) {
+    const totalEl = $('#totalAmount')
+    if (totalEl) totalEl.textContent = total
+  }
+
+  alert(`已解析出 ${items.length} 個品項${total ? `，總額：${total} 元` : ''}`)
 }
 
 function parsePosText(text) {
   const resultItems = []
-  const cleaned = text.replace(/\r/g,'')
+  const cleaned = text.replace(/\r/g, '')
 
-  const itemRegex =
-    /(\d+)\.\s*([\s\S]*?)\$\s*([\d,]+)[\s\S]*?x\s*(\d+)\s*=\s*([\d,]+)/g
+  // 依照你之前 POS 的樣式規則
+  const itemRegex = /(\d+)\.\s*([\s\S]*?)\$\s*([\d,]+)[\s\S]*?x\s*(\d+)\s*=\s*([\d,]+)/g
   let m
-  while ((m = itemRegex.exec(cleaned))!==null) {
+  while ((m = itemRegex.exec(cleaned)) !== null) {
+    const nameRaw = m[2].trim().replace(/\s+/g, ' ')
+    const price = parseInt(m[3].replace(/,/g, ''), 10) || 0
+    const qty = parseInt(m[4], 10) || 1
+    const amt = parseInt(m[5].replace(/,/g, ''), 10) || price * qty
     resultItems.push({
-      name: m[2].trim().replace(/\s+/g,' '),
-      price: Number(m[3].replace(/,/g,'')),
-      qty: Number(m[4]),
-      amount: Number(m[5].replace(/,/g,'')),
+      name: nameRaw,
+      qty,
+      price,
+      amount: amt
     })
   }
 
   let total = 0
   const totalMatch = /總額\s*([\d,]+)/.exec(cleaned)
-  if (totalMatch) total = Number(totalMatch[1].replace(/,/g,''))
+  if (totalMatch) {
+    total = parseInt(totalMatch[1].replace(/,/g, ''), 10) || 0
+  } else if (resultItems.length) {
+    total = resultItems.reduce((s, it) => s + it.amount, 0)
+  }
 
+  // 🔧 修正：回傳 resultItems
   return { items: resultItems, total }
 }
 
-// === 載具 ===
-function detectCarrierType(v) {
-  if (!v) return 'NONE'
-  if (v.startsWith('/')) return 'MOBILE'
+// === 載具類型判斷 ===
+function detectCarrierType(value) {
+  if (!value) return 'NONE'
+  if (value.startsWith('/')) return 'MOBILE'
   return 'NATURAL'
 }
 
-// === 開立發票 ===
+// === 呼叫 Cloud Functions 開立發票 ===
 async function issueInvoice() {
-  const sEl = $('#issueStatus')
-  if (sEl) sEl.textContent = '發票開立中…'
+  const statusEl = $('#issueStatus')
+  if (statusEl) statusEl.textContent = '發票開立中…'
 
-  const companyId   = $('#companySelect')?.value
-  const orderId     = $('#orderId')?.value.trim()
-  const buyerGUI    = $('#buyerGUI')?.value.trim()
-  const buyerTitle  = $('#buyerTitle')?.value.trim()
+  const companyId = $('#companySelect')?.value
+  const orderId = $('#orderId')?.value.trim()
+  const buyerGUI = $('#buyerGUI')?.value.trim()
+  const buyerTitle = $('#buyerTitle')?.value.trim()
   const contactName = $('#contactName')?.value.trim()
-  const contactPhone= $('#contactPhone')?.value.trim()
-  const contactEmail= $('#contactEmail')?.value.trim()
-  const carrierValue= $('#carrierValue')?.value.trim()
+  const contactPhone = $('#contactPhone')?.value.trim()
+  const contactEmail = $('#contactEmail')?.value.trim()
+  const carrierValue = $('#carrierValue')?.value.trim()
 
-
-  // ⭐ 新增這一行：預開發票 checkbox
-  const preInvoice = !!document.getElementById('preInvoice')?.checked
-  
   const carrierType = detectCarrierType(carrierValue)
 
-  if (carrierType==='MOBILE' && carrierValue && carrierValue.length!==8) {
-    if (!confirm('手機條碼不是8碼，確定送出？')) {
-      sEl.textContent = '取消送出'
+  // ✅ 預開發票 checkbox
+  const preInvoiceCheckbox = document.getElementById('preInvoice')
+  const preInvoice = !!(preInvoiceCheckbox && preInvoiceCheckbox.checked)
+
+  if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
+    const goOn = confirm('載具好像不是 8 碼（一般手機條碼是 8 碼、開頭為 /），確定要送出嗎？')
+    if (!goOn) {
+      if (statusEl) statusEl.textContent = '已取消送出，請確認載具內容'
       return
     }
   }
 
-  const items = $$('#itemsBody tr').map(tr=>{
+  const items = $$('#itemsBody tr').map(tr => {
     const name = tr.querySelector('.item-name').value.trim()
-    const qty  = Number(tr.querySelector('.item-qty').value)||0
-    const price= Number(tr.querySelector('.item-price').value)||0
-    return {name, qty, price, amount: qty*price}
-  }).filter(i=>i.name && i.qty>0)
+    const qty = Number(tr.querySelector('.item-qty').value) || 0
+    const price = Number(tr.querySelector('.item-price').value) || 0
+    const amount = qty * price
+    return { name, qty, price, amount }
+  }).filter(i => i.name && i.qty > 0)
 
   if (!items.length) {
-    sEl.textContent = '請至少輸入一項商品'
+    if (statusEl) statusEl.textContent = '請至少輸入或解析出一項商品'
     return
   }
 
-  const amount = items.reduce((s,it)=>s+it.amount,0)
+  const amount = items.reduce((s, it) => s + it.amount, 0)
+
+  // 捐贈功能已移除，統一當「不捐贈」
+  const donateMark = '0'
+  const donateCode = ''
 
   try {
-    const res = await fetch(`${FUNCTIONS_BASE}/createInvoice`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        companyId, orderId, buyerGUI, buyerTitle,
-        contactName, contactPhone, contactEmail,
-        amount, items, carrierType, carrierValue,
-        donateMark:'0', donateCode:'',
-    // ⭐ 加這兩個
-    preInvoice,
-    unpaid: preInvoice   // 勾預開 = 未收款
-        
+    const res = await fetch(`${FUNCTIONS_BASE}/createInvoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyId,
+        orderId,
+        buyerGUI,
+        buyerTitle,
+        contactName,
+        contactPhone,
+        contactEmail,
+        amount,
+        items,
+        carrierType,
+        carrierValue,
+        donateMark,
+        donateCode,
+        // ✅ 預開發票 / 未收款旗標傳給後端
+        preInvoice,
+        unpaid: preInvoice
       })
     })
-
     const data = await res.json()
-    if (!data.success) {
-      sEl.textContent = `開立失敗：${data.message}`
+
+    if (!res.ok || !data.success) {
+      console.error(data)
+      if (statusEl) statusEl.textContent = `開立失敗：${data.message || res.statusText}`
       return
     }
 
-    sEl.textContent =
-      `開立成功：${data.invoiceNumber}（隨機碼 ${data.randomNumber}）`
+    // ✅ 開立成功
+    if (statusEl) {
+      statusEl.textContent =
+        `開立成功：${data.invoiceNumber}（隨機碼  ${data.randomNumber}）`
+    }
 
-    openSmilepayPrint({
-      companyId,
+    // ⭐⭐⭐ 開立成功後 → 直接呼叫速買配官方列印
+    const companyIdForPrint =
+      companyId || document.getElementById('companySelect')?.value || ''
+
+    const invoiceData = {
+      companyId: companyIdForPrint,
       invoiceNumber: data.invoiceNumber,
       invoiceDate: data.invoiceDate,
       randomNumber: data.randomNumber
-    })
+    }
+    openSmilepayPrint(invoiceData)
 
+    // 重新載入下方發票列表
     reloadInvoices()
 
-  } catch(err) {
+  } catch (err) {
     console.error(err)
-    sEl.textContent = '開立失敗：伺服器錯誤'
+    if (statusEl) statusEl.textContent = '開立失敗：網路或伺服器錯誤'
   }
 }
 
-// === Firestore 監聽 ===
+// === 實時監聽 Firestore 中的發票 ===
 function listenInvoices() {
   const listBody = $('#invoiceListBody')
   if (!listBody) return
 
-  const qRef = query(collection(db,'invoices'), orderBy('createdAt','desc'))
-
+  const qRef = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'))
   invoicesUnsub = onSnapshot(qRef, snap => {
-    cachedInvoices = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const rows = []
+    snap.forEach(doc => rows.push({ id: doc.id, ...doc.data() }))
+    cachedInvoices = rows
     reloadInvoices()
   })
 }
-
 
 // === 列表相關 ===
 function setupList() {
   const headerCells = $$('.list-table thead th')
   if (!headerCells.length) return
 
-  const dateTh    = headerCells[0] // 日期
+  const dateTh = headerCells[0]    // 日期
   const companyTh = headerCells[1] // 公司
-  const statusTh  = headerCells[6] // 狀態
+  const statusTh = headerCells[6]  // 狀態
 
   ;[dateTh, companyTh, statusTh].forEach(th => {
     if (!th) return
     th.style.cursor = 'pointer'
   })
 
-  dateTh?.addEventListener('click', () => toggleSort('date'))
-  companyTh?.addEventListener('click', () => toggleSort('company'))
-  statusTh?.addEventListener('click', () => toggleSort('status'))
+  if (dateTh) {
+    dateTh.addEventListener('click', () => {
+      toggleSort('date')
+    })
+  }
+  if (companyTh) {
+    companyTh.addEventListener('click', () => {
+      toggleSort('company')
+    })
+  }
+  if (statusTh) {
+    statusTh.addEventListener('click', () => {
+      toggleSort('status')
+    })
+  }
 
-  // 📊 發票統計按鈕（toggle 顯示 / 隱藏）
+  // 📊 發票統計按鈕
   const statsBtn = $('#statsBtn')
   if (statsBtn) {
     statsBtn.addEventListener('click', () => {
@@ -307,7 +399,7 @@ function setupList() {
     })
   }
 
-  // 分頁列
+  // 建立簡單分頁列
   const table = $('.list-table')
   if (table) {
     pagerEl = document.createElement('div')
@@ -319,7 +411,7 @@ function setupList() {
     `
     table.insertAdjacentElement('afterend', pagerEl)
 
-    pagerEl.addEventListener('click', e => {
+    pagerEl.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-page]')
       if (!btn) return
       const all = getFilteredSortedInvoices()
@@ -332,7 +424,7 @@ function setupList() {
         }
       } else if (btn.dataset.page === 'next') {
         if (currentPage < totalPages) {
-          currentPage--
+          currentPage++
           reloadInvoices()
         }
       }
@@ -351,9 +443,8 @@ function toggleSort(field) {
   reloadInvoices()
 }
 
-// === 預開 / 未收款判斷 ===
 function isUnpaid(inv) {
-  // 任一 flag 為 true 都視為未收款
+  // 支援幾種欄位名，預設 preInvoice 為「預開 / 未付款」
   return !!(inv.preInvoice || inv.unpaid || inv.preInvoiceFlag)
 }
 
@@ -362,6 +453,7 @@ function getInvoiceTime(inv) {
     return inv.createdAt.toDate().getTime()
   }
   if (inv.invoiceDate) {
+    // invoiceDate 會是 2025/12/10 這種
     const d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
     return d.getTime()
   }
@@ -430,13 +522,14 @@ function renderStatsTable() {
   const area = $('#statsArea')
   if (!area) return
 
-  // toggle：已顯示就清空 + 關閉
+  // 如果現在是顯示中，就隱藏並結束（當成 toggle）
   if (area.dataset.visible === '1') {
     area.innerHTML = ''
     area.dataset.visible = '0'
     return
   }
 
+  // 還沒顯示 → 準備重算並畫表
   if (!cachedInvoices || !cachedInvoices.length) {
     area.innerHTML = '<p class="stats-hint">目前沒有發票資料可以統計。</p>'
     area.dataset.visible = '1'
@@ -449,12 +542,12 @@ function renderStatsTable() {
     stats[c.id] = STATS_PERIODS.map(() => 0)
   })
 
-  // 只統計「已開立成功」而且未作廢的
+  // 只統計開立成功的發票（ISSUED）
   for (const inv of cachedInvoices) {
     if (inv.status !== 'ISSUED') continue
 
     const cid = inv.companyId || ''
-    if (!stats[cid]) continue // 限定三家公司
+    if (!stats[cid]) continue  // 不是三家公司之一略過
 
     const month = getInvoiceMonth(inv)
     const periodIdx = getPeriodIndexByMonth(month)
@@ -464,6 +557,7 @@ function renderStatsTable() {
     stats[cid][periodIdx] += amount
   }
 
+  // 組表格：列是公司，欄是 6 個雙月 + 總金額
   let bodyHtml = ''
 
   STATS_COMPANIES.forEach(c => {
@@ -472,17 +566,11 @@ function renderStatsTable() {
 
     bodyHtml += `
       <tr>
-        <td class="stats-company" style="border:1px solid #ccc; padding:4px;">${c.label}</td>
+        <td class="stats-company">${c.label}</td>
         ${row.map(v => `
-          <td class="amount-cell"
-              style="border:1px solid #ccc; padding:4px; text-align:center;">
-            ${v.toLocaleString()}
-          </td>
+          <td class="amount-cell">${v.toLocaleString()}</td>
         `).join('')}
-        <td class="amount-cell total-cell"
-            style="border:1px solid #ccc; padding:4px; font-weight:bold; text-align:center;">
-          ${total.toLocaleString()}
-        </td>
+        <td class="amount-cell total-cell">${total.toLocaleString()}</td>
       </tr>
     `
   })
@@ -490,15 +578,12 @@ function renderStatsTable() {
   area.innerHTML = `
     <div class="stats-card">
       <h3>📊 發票金額統計（只含已開立發票）</h3>
-      <table class="stats-table"
-             style="border-collapse:collapse; width:100%; text-align:center;">
+      <table class="stats-table">
         <thead>
           <tr>
-            <th style="border:1px solid #ccc; padding:4px;">公司</th>
-            ${STATS_PERIODS.map(p => `
-              <th style="border:1px solid #ccc; padding:4px;">${p.label}</th>
-            `).join('')}
-            <th style="border:1px solid #ccc; padding:4px;">總金額</th>
+            <th>公司</th>
+            ${STATS_PERIODS.map(p => `<th>${p.label}</th>`).join('')}
+            <th>總金額</th>
           </tr>
         </thead>
         <tbody>
@@ -510,7 +595,6 @@ function renderStatsTable() {
   area.dataset.visible = '1'
 }
 
-// === 篩選 + 排序後的列表 ===
 function getFilteredSortedInvoices() {
   const keyword = $('#searchKeyword')?.value.trim().toLowerCase() || ''
   const statusFilter = $('#filterStatus')?.value || 'ALL'
@@ -523,12 +607,11 @@ function getFilteredSortedInvoices() {
   })
 
   const sorted = filtered.slice().sort((a, b) => {
-    // 1️⃣ 先讓「未收款」排最前面
+    // 先讓「未付款」的排最前面
     const ua = isUnpaid(a) ? 1 : 0
     const ub = isUnpaid(b) ? 1 : 0
     if (ua !== ub) return ub - ua
 
-    // 2️⃣ 其餘依照目前排序欄位
     let av, bv
     switch (currentSortField) {
       case 'company':
@@ -554,7 +637,7 @@ function getFilteredSortedInvoices() {
   return sorted
 }
 
-// === 重新渲染下方列表 ===
+// 重新渲染下方列表
 function reloadInvoices() {
   const tbody = $('#invoiceListBody')
   if (!tbody) return
@@ -578,29 +661,22 @@ function reloadInvoices() {
       inv.createdBy ||
       inv.nickname ||
       ''
-
     const companyBase = inv.companyName || inv.companyId || ''
     const companyText = creator ? `${companyBase}（${creator}）` : companyBase
 
     const statusText = statusToText(inv)
-    const unpaid = isUnpaid(inv)
 
-    // 列上的按鈕：
-    // - 一律有「列印」
-    // - 若狀態 = ISSUED：
-    //     * 未收款 → 顯示「已收款」＋「作廢」
-    //     * 已收款 → 只顯示「作廢」
-    let actionButtons = `<button class="btn-small" data-action="print">列印</button>`
+    // === 動態組合操作按鈕 ===
+    let actionHtml = `<button class="btn-small" data-action="print">列印</button>`
 
+    // 預開 / 未收款 → 顯示「已收款」
+    if (inv.status === 'ISSUED' && isUnpaid(inv)) {
+      actionHtml += `<button class="btn-small" data-action="markPaid">已收款</button>`
+    }
+
+    // 只要是已開立就允許作廢（你也可以限制非預開才作廢）
     if (inv.status === 'ISSUED') {
-      if (unpaid) {
-        actionButtons += `
-          <button class="btn-small success" data-action="paid">已收款</button>
-        `
-      }
-      actionButtons += `
-        <button class="btn-small danger" data-action="void">作廢</button>
-      `
+      actionHtml += `<button class="btn-small danger" data-action="void">作廢</button>`
     }
 
     tr.innerHTML = `
@@ -611,7 +687,9 @@ function reloadInvoices() {
       <td>${inv.buyerTitle || '-'}</td>
       <td>${inv.amount || 0}</td>
       <td>${statusText}</td>
-      <td>${actionButtons}</td>
+      <td>
+        ${actionHtml}
+      </td>
     `
 
     tr.dataset.id = inv.id
@@ -623,7 +701,7 @@ function reloadInvoices() {
     btn.addEventListener('click', handleRowAction)
   })
 
-  // 分頁資訊
+  // 更新分頁資訊
   if (pagerEl) {
     const info = pagerEl.querySelector('.page-info')
     if (info) {
@@ -632,15 +710,17 @@ function reloadInvoices() {
   }
 }
 
-// === 開啟發票預覽／列印（速買配官方頁面） ===
+// === 開啟發票預覽／列印 ===
 function openInvoicePreview(inv) {
   if (!inv || !inv.invoiceNumber) {
     alert('這筆資料沒有發票號碼，無法列印')
     return
   }
 
+  // 優先用這筆發票記錄裡的 companyId，沒有的話再退而求其次用畫面上的選擇
   const companyId = inv.companyId || document.getElementById('companySelect')?.value || ''
 
+  // 直接呼叫速買配官方列印
   const invoiceData = {
     companyId,
     invoiceNumber: inv.invoiceNumber,
@@ -651,7 +731,7 @@ function openInvoicePreview(inv) {
   openSmilepayPrint(invoiceData)
 }
 
-// === 列表按鈕事件 ===
+// === 列表按鈕 ===
 async function handleRowAction(e) {
   const btn = e.currentTarget
   const action = btn.dataset.action
@@ -665,17 +745,37 @@ async function handleRowAction(e) {
       const goOn = confirm('這張是「載具發票」，一般不需要列印實體。若只是要留存內部紀錄，可以按「確定」繼續列印。')
       if (!goOn) return
     }
+
     openInvoicePreview(inv)
 
   } else if (action === 'void') {
     await voidInvoice(inv)
 
-  } else if (action === 'paid') {
+  } else if (action === 'markPaid') {
     await markInvoicePaid(inv)
   }
 }
 
-// === 查詢（保留 function，雖然目前沒有按鈕） ===
+// === 標記已收款 ===
+async function markInvoicePaid(inv) {
+  const ok = confirm(`確認這筆發票已收款？\n發票號碼：${inv.invoiceNumber}`)
+  if (!ok) return
+
+  try {
+    const ref = doc(db, 'invoices', inv.id)
+    await updateDoc(ref, {
+      preInvoice: false,
+      unpaid: false,
+      paidAt: serverTimestamp()
+    })
+    alert('已標記為「已收款」，並從預開/未收款中移除。')
+  } catch (err) {
+    console.error(err)
+    alert('標記已收款失敗，請稍後再試')
+  }
+}
+
+// === 查詢（保留 function，雖然按鈕已拿掉） ===
 async function queryInvoice(inv) {
   const ok = confirm(`查詢發票狀態？\n發票號碼：${inv.invoiceNumber}`)
   if (!ok) return
@@ -697,66 +797,12 @@ async function queryInvoice(inv) {
   }
 }
 
-// === 作廢 ===
-async function voidInvoice(inv) {
-  const reason = prompt(
-    `請輸入作廢原因：\n發票號碼：${inv.invoiceNumber}`,
-    '客戶取消訂單'
-  )
-  if (!reason) return
-
-  try {
-    const res = await fetch(`${FUNCTIONS_BASE}/voidInvoice`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        companyId: inv.companyId,
-        invoiceNumber: inv.invoiceNumber,
-        reason
-      })
-    })
-    const data = await res.json()
-    if (!data.success) {
-      alert(`作廢失敗：${data.message || ''}`)
-      return
-    }
-    alert('作廢成功')
-  } catch (err) {
-    console.error(err)
-    alert('作廢失敗，請稍後再試')
-  }
-}
-
-// === 已收款（從「預開 / 未收款」變成一般發票） ===
-async function markInvoicePaid(inv) {
-  if (!inv || !inv.id) return
-
-  const ok = confirm(
-    `確認將這張發票標記為「已收款」？\n\n發票號碼：${inv.invoiceNumber || ''}`
-  )
-  if (!ok) return
-
-  try {
-    const ref = doc(db, 'invoices', inv.id)
-    await updateDoc(ref, {
-      preInvoice: false,
-      unpaid: false,
-      preInvoiceFlag: false,
-      paidAt: serverTimestamp()
-    })
-
-    alert('已標記為「已收款」')
-  } catch (err) {
-    console.error(err)
-    alert('設定已收款失敗，請稍後再試')
-  }
-}
-
 // === 列印區：電子發票證明聯 +（必要時）明細 ===
 function buildPrintArea(inv) {
   const area = $('#printArea')
   if (!area) return
 
+  // 1. 日期時間
   let d
   if (inv.invoiceDate) {
     d = new Date(inv.invoiceDate + 'T00:00:00')
@@ -780,18 +826,16 @@ function buildPrintArea(inv) {
     `${rocYear}年${periodStart.toString().padStart(2, '0')}` +
     `-${periodEnd.toString().padStart(2, '0')}月`
 
-  const invoiceNo    = inv.invoiceNumber || ''
+  const invoiceNo = inv.invoiceNumber || ''
   const randomNumber = inv.randomNumber || ''
-  const amount       = inv.amount || 0
-  const sellerGUI    = inv.sellerGUI || '48594728'
-  const buyerGUI     = inv.buyerGUI || ''
+  const amount = inv.amount || 0
+  const sellerGUI = inv.sellerGUI || '48594728'
+  const buyerGUI = inv.buyerGUI || ''
 
   const printDetailCheckbox = document.querySelector('#printDetail')
   const mustShowDetailByGUI = !!(buyerGUI && buyerGUI.trim())
   const wantDetailByCheckbox = !!(printDetailCheckbox && printDetailCheckbox.checked)
-  const showDetail =
-    (inv.items && inv.items.length) &&
-    (mustShowDetailByGUI || wantDetailByCheckbox)
+  const showDetail = (inv.items && inv.items.length) && (mustShowDetailByGUI || wantDetailByCheckbox)
 
   let detailHtml = ''
   if (showDetail) {
@@ -807,7 +851,7 @@ function buildPrintArea(inv) {
     `).join('')
 
     detailHtml = `
-      <hr class="einv-sep">
+      <hr class="einv-sep" />
       <table class="einv-detail-table">
         <thead>
           <tr>
