@@ -45,7 +45,8 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       contactName, contactPhone, contactEmail,
       amount, items,
       carrierType, carrierValue,
-      donateMark, donateCode
+      donateMark, donateCode,
+      preInvoice,unpaid
     } = req.body || {}
 
     // 簡單檢查
