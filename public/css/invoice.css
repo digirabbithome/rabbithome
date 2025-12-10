@@ -34,6 +34,8 @@ body {
 }
 
 
+
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -419,3 +421,11 @@ input:focus, select:focus, textarea:focus {
   color: #666;
 }
 
+/* 預開 / 未收款發票列 */
+.row-unpaid {
+  background-color: #fff6d1 !important;   /* 淺黃色 */
+}
+
+.row-unpaid:hover {
+  background-color: #ffefb0 !important;   /* 滑過再亮一點 */
+}
