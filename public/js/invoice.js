@@ -14,6 +14,7 @@ import {
 
 // === ✅ Firebase Functions base URL（你的專案） ===
 const FUNCTIONS_BASE = 'https://us-central1-rabbithome-auth.cloudfunctions.net'
+const getNickname = () => localStorage.getItem('nickname') || ''
 
 const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
@@ -309,7 +310,9 @@ async function issueInvoice() {
         donateCode,
         // ✅ 預開發票 / 未收款旗標傳給後端
         preInvoice,
-        unpaid: preInvoice
+        unpaid: preInvoice,
+        createdByNickname: getNickname()  // ⭐ 新增：登入暱稱
+
       })
     })
     const data = await res.json()
