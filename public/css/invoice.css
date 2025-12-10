@@ -429,3 +429,14 @@ input:focus, select:focus, textarea:focus {
 .row-unpaid:hover {
   background-color: #ffefb0 !important;   /* 滑過再亮一點 */
 }
+
+
+/* 預開 / 未收款發票列：整列淺黃色 */
+.list-table tbody tr.row-unpaid td {
+  background-color: #fff6d1 !important;   /* 淺黃底 */
+}
+
+/* 滑過時再亮一點 */
+.list-table tbody tr.row-unpaid:hover td {
+  background-color: #ffefb0 !important;
+}
