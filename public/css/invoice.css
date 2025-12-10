@@ -33,6 +33,7 @@ body {
   font-size: 1.3rem;
 }
 
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -367,3 +368,54 @@ input:focus, select:focus, textarea:focus {
   gap: 6px;
   font-weight: bold;
 }
+
+/* === 發票統計表樣式 === */
+.stats-card {
+  margin: 12px 0 16px;
+  padding: 8px 12px;
+  border: 1px solid #ffd1e0;
+  border-radius: 8px;
+  background: #fffafc;
+}
+
+.stats-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: center;
+}
+
+.stats-table th,
+.stats-table td {
+  border: 1px solid #ffb6c7;
+  padding: 6px 4px;
+  font-size: 0.9rem;
+  text-align: center;
+  word-break: break-all;
+}
+
+.stats-table thead th {
+  background: #ffe5f0;
+}
+
+.stats-table .stats-company {
+  font-weight: 600;
+}
+
+.stats-table .total-cell {
+  font-weight: 700;
+  background: #fff0f5;
+}
+
+.stats-hint {
+  margin: 8px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
