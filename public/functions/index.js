@@ -28,7 +28,6 @@ async function getCompanyConfig(companyId) {
 
 // ========== 開立發票 ==========
 // ========== 開立發票 ==========
-// ========== 開立發票 ==========
 exports.createInvoice = functions.onRequest(async (req, res) => {
   // CORS
   res.set('Access-Control-Allow-Origin', '*')
@@ -42,17 +41,16 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
   try {
     const {
       companyId, orderId,
-      buyerGUI, buyerTitle,
+      buyerGUI, buyerTitle,        // 統編 & 公司名稱 / 抬頭
       contactName, contactPhone, contactEmail,
       amount, items,
       carrierType, carrierValue,
       donateMark, donateCode,
-      preInvoice,          // ⭐ 前端傳來的「預開」勾選
-      unpaid,             // ⭐ 前端傳來的 unpaid（目前跟 preInvoice 一樣）
-      createdByNickname   // ⭐ 前端傳來的暱稱
+      preInvoice,
+      unpaid,
+      createdByNickname
     } = req.body || {}
 
-    // 簡單檢查
     if (!companyId || !items || !items.length) {
       res.status(400).json({ success: false, message: '缺少必要欄位（companyId 或 items）' })
       return
@@ -60,7 +58,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     const company = await getCompanyConfig(companyId)
 
-    // === 日期 / 時間：用台北時間（Asia/Taipei） ===
+    // === 日期 / 時間：台北時區 ===
     const now = new Date()
     const tpeNow = new Date(
       now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })
@@ -94,13 +92,10 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       return
     }
 
-    // 重新計算總金額
     const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
 
-    // === 組 SmilePay 參數 ===
-    const descStr  = normalizedItems
-      .map(it => it.name.replace(/\|/g, '、'))
-      .join('|')
+    // === SmilePay 參數 ===
+    const descStr  = normalizedItems.map(it => it.name.replace(/\|/g, '、')).join('|')
     const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
     const priceStr = normalizedItems.map(it => String(it.price)).join('|')
     const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')
@@ -115,35 +110,54 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('Intype', '07')
     params.append('TaxType', '1')
 
-    // 發票基本資料
+    // === 發票基本資料 ===
     params.append('InvoiceDate', invoiceDate)
     params.append('InvoiceTime', invoiceTime)
-    params.append('BuyerName', buyerTitle || '')
-    params.append('Buyer_Identifier', buyerGUI || '')
 
-    // 金額
-    params.append('AllAmount', String(totalAmount))
+    // === 買受人資訊（照文件欄位） ===
+    if (buyerGUI) {
+      // 有統編 → B2B
+      params.append('Buyer_id', buyerGUI)                 // 統編
+      params.append('CompanyName', buyerTitle || '')      // 公司抬頭
+    } else {
+      // 無統編 → B2C
+      params.append('Buyer_id', '')                       // 空 = B2C
+      params.append('CompanyName', '')                    // 不用公司名
+      // 個人姓名：用「買受人抬頭」或「聯絡人名稱」
+      params.append('Name', buyerTitle || contactName || '')
+    }
+
+    if (contactPhone) {
+      params.append('Phone', contactPhone)
+    }
+    if (contactEmail) {
+      params.append('Email', contactEmail)
+    }
+
+    // === 金額 ===
+    params.append('AllAmount',   String(totalAmount))
     params.append('SalesAmount', String(totalAmount))
     params.append('TotalAmount', String(totalAmount))
-    params.append('Amt', String(totalAmount))
-    params.append('UnitTAX', 'Y')
-    params.append('TaxAmount', '0')
+    params.append('Amt',         String(totalAmount))
+    params.append('UnitTAX',     'Y')
+    params.append('TaxAmount',   '0')
 
     params.append('Remark', orderId || '')
 
-    // 捐贈
+    // === 捐贈 ===
     params.append('DonateMark', donateMark || '0')
     if (donateMark === '1' && donateCode) {
       params.append('LoveCode', donateCode)
     }
 
-    // 載具
+    // === 載具（照文件：CarrierType + CarrierID） ===
     if (carrierType && carrierType !== 'NONE' && carrierValue) {
-      params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
-      params.append('CarrierId1', carrierValue)
+      const typeCode = carrierType === 'MOBILE' ? '3J0002' : 'CQ0001'
+      params.append('CarrierType', typeCode)
+      params.append('CarrierID', carrierValue)   // ✅ 正確欄位名
     }
 
-    // 商品明細
+    // === 商品明細 ===
     params.append('Description', descStr)
     params.append('Quantity',    qtyStr)
     params.append('UnitPrice',   priceStr)
@@ -170,7 +184,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       return
     }
 
-    // === 成功：寫入 Firestore ===
+    // === 成功：寫 Firestore ===
     const docRef = await db.collection('invoices').add({
       companyId,
       companyName: company.name,
@@ -187,7 +201,6 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       donateMark,
       donateCode,
 
-      // ⭐ 這三個是你要的新欄位
       preInvoice: !!preInvoice,
       unpaid: !!(preInvoice || unpaid),
       createdByNickname: createdByNickname || null,
@@ -212,6 +225,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     res.status(500).json({ success: false, message: err.message })
   }
 })
+
 
 
 
