@@ -1,376 +1,934 @@
-// === Rabbithome x SmilePay 電子發票 Cloud Functions v2025-12-07 ===
-const functions = require('firebase-functions/v2/https')
-const admin = require('firebase-admin')
-const fetch = require('node-fetch')
-const { URLSearchParams } = require('url')
+// /js/invoice.js
 
-if (!admin.apps.length) {
-  admin.initializeApp()
+import { db } from '/js/firebase.js'
+import { openSmilepayPrint } from '/js/smilepay-print.js'
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  doc,
+  updateDoc,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+
+// === ✅ Firebase Functions base URL（你的專案） ===
+const FUNCTIONS_BASE = 'https://us-central1-rabbithome-auth.cloudfunctions.net'
+
+const $ = (s, r = document) => r.querySelector(s)
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s))
+
+let cachedInvoices = []
+let invoicesUnsub = null
+
+// === 列表排序 / 分頁狀態 ===
+let currentSortField = 'date'   // 'date' | 'company' | 'status'
+let currentSortDir = 'desc'     // 'asc' | 'desc'
+let currentPage = 1
+const ROWS_PER_PAGE = 50
+let pagerEl = null
+
+// === 發票統計用設定（列：公司；欄：雙月份 + 總金額） ===
+const STATS_COMPANIES = [
+  { id: 'rabbit',     label: '數位小兔' },
+  { id: 'focus',      label: '聚焦數位' },
+  { id: 'neversleep', label: '免睡攝影' }
+]
+
+const STATS_PERIODS = [
+  { key: '1-2',   label: '1 / 2 月',   months: [1, 2] },
+  { key: '3-4',   label: '3 / 4 月',   months: [3, 4] },
+  { key: '5-6',   label: '5 / 6 月',   months: [5, 6] },
+  { key: '7-8',   label: '7 / 8 月',   months: [7, 8] },
+  { key: '9-10',  label: '9 / 10 月',  months: [9, 10] },
+  { key: '11-12', label: '11 / 12 月', months: [11, 12] }
+]
+
+// === 初始化 ===
+window.onload = () => {
+  setupForm()
+  setupList()
+  listenInvoices()
 }
-const db = admin.firestore()
 
-// ⚠️ 使用新版 EInvoice API 路徑（文件寫的那一組 SPEinvoice_xxx.asp）
-const SMILEPAY_ISSUE_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage.asp'
-// 改用 Modify 這條來作廢 / 註銷
-const SMILEPAY_MODIFY_URL = 'https://ssl.smse.com.tw/api/SPEinvoice_Storage_Modify.asp'
-const SMILEPAY_QUERY_URL  = 'https://ssl.smse.com.tw/api/SPEinvoice_Query.asp'
+// === 表單區 ===
+function setupForm () {
+  const addBtn = $('#addItemBtn')
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      addItemRow()
+      addItemRow()
+      addItemRow()
+    })
+  }
 
+  const issueBtn = $('#issueBtn')
+  if (issueBtn) {
+    issueBtn.addEventListener('click', issueInvoice)
+  }
 
+  const refreshListBtn = $('#refreshListBtn')
+  if (refreshListBtn) {
+    refreshListBtn.addEventListener('click', () => {
+      // 重整列表其實是用 Firestore 即時監聽，但保留按鈕手感
+      reloadInvoices()
+    })
+  }
 
+  const filterStatus = $('#filterStatus')
+  if (filterStatus) {
+    filterStatus.addEventListener('change', () => {
+      currentPage = 1
+      reloadInvoices()
+    })
+  }
 
+  const searchKeyword = $('#searchKeyword')
+  if (searchKeyword) {
+    searchKeyword.addEventListener('input', () => {
+      currentPage = 1
+      reloadInvoices()
+    })
+  }
 
-// 從 Firestore invoice-config/{companyId} 讀取各家公司的 Grvc / Verify_key / name
-async function getCompanyConfig(companyId) {
-  const snap = await db.collection('invoice-config').doc(companyId).get()
-  if (!snap.exists) throw new Error(`invoice-config/${companyId} 不存在`)
-  return snap.data()
+  const parsePosBtn = $('#parsePosBtn')
+  if (parsePosBtn) {
+    parsePosBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      parsePosAndFill()
+    })
+  }
+
+  // 預設一列
+  addItemRow()
 }
 
-// ========== 開立發票 ==========
-// ========== 開立發票 ==========
-// ========== 開立發票 ==========
-exports.createInvoice = functions.onRequest(async (req, res) => {
-  // CORS
-  res.set('Access-Control-Allow-Origin', '*')
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.set('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('')
+// === 商品列 ===
+function addItemRow (prefill = null) {
+  const tbody = $('#itemsBody')
+  if (!tbody) return
+
+  const tr = document.createElement('tr')
+
+  tr.innerHTML = `
+    <td class="item-index"></td>
+    <td><input class="item-name" /></td>
+    <td><input class="item-qty" type="number" min="1" value="1" /></td>
+    <td><input class="item-price" type="number" min="0" value="0" /></td>
+    <td class="item-amount">0</td>
+    <td><button type="button" class="btn-small danger">刪除</button></td>
+  `
+  tbody.appendChild(tr)
+
+  const nameInput = tr.querySelector('.item-name')
+  const qtyInput = tr.querySelector('.item-qty')
+  const priceInput = tr.querySelector('.item-price')
+  const delBtn = tr.querySelector('button')
+
+  if (prefill) {
+    nameInput.value = prefill.name || ''
+    qtyInput.value = prefill.qty || 1
+    priceInput.value = prefill.price || 0
+  }
+
+  const recalc = () => {
+    const qty = Number(qtyInput.value) || 0
+    const price = Number(priceInput.value) || 0
+    const amt = qty * price
+    tr.querySelector('.item-amount').textContent = amt
+    recalcTotal()
+  }
+
+  qtyInput.addEventListener('input', recalc)
+  priceInput.addEventListener('input', recalc)
+  nameInput.addEventListener('input', recalc)
+
+  delBtn.addEventListener('click', () => {
+    tr.remove()
+    recalcTotal()
+  })
+
+  recalc()
+}
+
+function updateItemIndices () {
+  $$('#itemsBody tr').forEach((tr, idx) => {
+    const cell = tr.querySelector('.item-index')
+    if (cell) cell.textContent = idx + 1
+  })
+}
+
+function recalcTotal () {
+  let total = 0
+  $$('#itemsBody tr').forEach(tr => {
+    const amt = Number(tr.querySelector('.item-amount').textContent) || 0
+    total += amt
+  })
+  const totalEl = $('#totalAmount')
+  if (totalEl) totalEl.textContent = total
+  updateItemIndices()
+}
+
+// === POS 內容解析 ===
+function parsePosAndFill () {
+  const textarea = $('#posPaste')
+  if (!textarea) return
+
+  const raw = textarea.value.trim()
+  if (!raw) {
+    alert('請先在上方貼上 POS 明細文字')
     return
   }
 
-  try {
-    const {
-      companyId, orderId,
-      buyerGUI, buyerTitle,
-      contactName, contactPhone, contactEmail,
-      amount, items,
-      carrierType, carrierValue,
-      donateMark, donateCode,
-      preInvoice, unpaid
-    } = req.body || {}
-
-    // ➕ 把前端送來的預開 / 未收款 做成穩定的布林值
-    const preInvoiceFlag =
-      preInvoice === true || preInvoice === '1' || preInvoice === 'Y'
-    const unpaidFlag =
-      unpaid === true || unpaid === '1' || unpaid === 'Y' || preInvoiceFlag
-      // 預開發票預設視為未收款
-
-    // 簡單檢查
-    if (!companyId || !items || !items.length) {
-      res.status(400).json({ success: false, message: '缺少必要欄位（companyId 或 items）' })
-      return
-    }
-
-    const company = await getCompanyConfig(companyId)
-
-    // === 日期 / 時間：用台北時間（Asia/Taipei） ===
-    const now = new Date()
-    // 轉成台北時間的 Date 物件
-    const tpeNow = new Date(
-      now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })
-    )
-
-    const y  = tpeNow.getFullYear()
-    const m  = String(tpeNow.getMonth() + 1).padStart(2, '0')
-    const d  = String(tpeNow.getDate()).padStart(2, '0')
-    const hh = String(tpeNow.getHours()).padStart(2, '0')
-    const mm = String(tpeNow.getMinutes()).padStart(2, '0')
-    const ss = String(tpeNow.getSeconds()).padStart(2, '0')
-
-    const invoiceDate = `${y}/${m}/${d}`      // 例如 2025/12/07
-    const invoiceTime = `${hh}:${mm}:${ss}`   // 例如 01:33:06
-
-    // === 整理品項：過濾掉空行，並算出每一筆小計 ===
-    const normalizedItems = (items || []).map(it => {
-      const qty   = Number(it.qty)   || 0
-      const price = Number(it.price) || 0
-      const lineAmt = qty * price
-      return {
-        name: String(it.name || '').trim(),
-        qty,
-        price,
-        amount: lineAmt
-      }
-    }).filter(it => it.name && it.qty > 0)
-
-    if (!normalizedItems.length) {
-      res.status(400).json({ success: false, message: '至少需要一筆有效商品明細' })
-      return
-    }
-
-    // 重新計算總金額，避免跟前端 amount 不一致
-    const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
-
-    // === 依 SmilePay 規格組四個「|」分隔的欄位 ===
-    const descStr  = normalizedItems
-      .map(it => it.name.replace(/\|/g, '、'))          // 避免品名裡自己有「|」
-      .join('|')
-    const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
-    const priceStr = normalizedItems.map(it => String(it.price)).join('|')
-    const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')  // 🔸 各項目金額
-
-    const params = new URLSearchParams()
-
-    // === 商家認證 ===
-    params.append('Grvc', company.grvc)
-    params.append('Verify_key', company.verifyKey)
-
-    // === 稅率類型：一般 5% 應稅（含稅金額） ===
-    params.append('Intype', '07')
-    params.append('TaxType', '1')
-
-    // === 發票基本資料 ===
-    params.append('InvoiceDate', invoiceDate)
-    params.append('InvoiceTime', invoiceTime)
-    params.append('BuyerName', buyerTitle || '')
-    params.append('Buyer_Identifier', buyerGUI || '')
-
-    // ✅ 金額相關（全部用重新計算的 totalAmount）
-    params.append('AllAmount', String(totalAmount))    // 總金額(含稅)
-    params.append('SalesAmount', String(totalAmount))  // 銷售額
-    params.append('TotalAmount', String(totalAmount))  // 若文件有這個欄位就一起給
-    params.append('Amt', String(totalAmount))          // 部分文件用這個名稱
-
-    // 單價是否含稅：我們 POS 單價是含稅價
-    params.append('UnitTAX', 'Y')
-    params.append('TaxAmount', '0') // 讓 SmilePay 自己算稅額即可
-
-    params.append('Remark', orderId || '')
-
-    // === 捐贈 ===
-    params.append('DonateMark', donateMark || '0')
-    if (donateMark === '1' && donateCode) {
-      params.append('LoveCode', donateCode)
-    }
-
-    // === 載具 ===
-    if (carrierType && carrierType !== 'NONE' && carrierValue) {
-      // 文件：手機條碼 3J0002，自然人憑證 CQ0001
-      params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
-      params.append('CarrierId1', carrierValue)
-    }
-
-    // === 商品明細（四個「|」字串）===
-    params.append('Description', descStr)
-    params.append('Quantity', qtyStr)
-    params.append('UnitPrice', priceStr)
-    params.append('Amount', amtStr)   // 🔸 各明細總額（最關鍵，一定要 = qty*price）
-
-    // ⭐ 在這裡印出完整 payload，方便你在 Logs 看到
-    console.log('[SmilePay Payload]', params.toString())
-
-    // === 呼叫 SmilePay EInvoice API ===
-    const spRes = await fetch(SMILEPAY_ISSUE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
-    })
-    const text = await spRes.text()
-
-    // 解析 XML
-    const invoiceNumber = /<InvoiceNumber>(.*?)<\/InvoiceNumber>/i.exec(text)?.[1] || ''
-    const randomNumber  = /<RandomNumber>(.*?)<\/RandomNumber>/i.exec(text)?.[1] || ''
-    const status        = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
-    const desc          = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
-
-    const okStatuses = ['0', '0000', 'Success', 'Successed', 'Succeeded']
-
-    if (!okStatuses.includes(status)) {
-      res.json({ success: false, message: desc || status || 'SmilePay 回傳失敗', raw: text })
-      return
-    }
-
-    // ✅ 成功就寫一筆到 Firestore
-    const docRef = await db.collection('invoices').add({
-      companyId,
-      companyName: company.name,
-      orderId,
-      buyerGUI,
-      buyerTitle,
-      contactName,
-      contactPhone,
-      contactEmail,
-      amount: totalAmount,           // 這裡也統一用重新計算的
-      items: normalizedItems,
-      carrierType,
-      carrierValue,
-      donateMark,
-      donateCode,
-      status: 'ISSUED',
-      invoiceNumber,
-      randomNumber,
-      invoiceDate,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      smilepayRaw: { xml: text },
-
-      // ⭐⭐ 新增：預開 / 未收款欄位
-      preInvoice: preInvoiceFlag,
-      unpaid: unpaidFlag
-    })
-
-    res.json({
-      success: true,
-      id: docRef.id,
-      invoiceNumber,
-      randomNumber,
-      invoiceDate
-    })
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ success: false, message: err.message })
-  }
-})
-
-
-
-// ========== 作廢發票 ==========
-// ========== 作廢發票（使用 SPEinvoice_Storage_Modify.asp + types=Cancel） ==========
-exports.voidInvoice = functions.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*')
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.set('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('')
+  const { items, total } = parsePosText(raw)
+  if (!items.length) {
+    alert('無法從貼上的內容解析出商品，可能格式不同，可以再一起調整解析規則。')
     return
   }
 
-  try {
-    const { companyId, invoiceNumber, reason } = req.body || {}
-    if (!companyId || !invoiceNumber) {
-      res.status(400).json({ success: false, message: '缺少 companyId 或 invoiceNumber' })
-      return
-    }
+  const tbody = $('#itemsBody')
+  tbody.innerHTML = ''
+  for (const it of items) {
+    addItemRow(it)
+  }
+  recalcTotal()
 
-    const company = await getCompanyConfig(companyId)
+  if (total > 0) {
+    const totalEl = $('#totalAmount')
+    if (totalEl) totalEl.textContent = total
+  }
 
-    // 先從 Firestore 找這張發票，拿到 InvoiceDate
-    const snap = await db.collection('invoices')
-      .where('companyId', '==', companyId)
-      .where('invoiceNumber', '==', invoiceNumber)
-      .limit(1)
-      .get()
+  alert(`已解析出 ${items.length} 個品項${total ? `，總額：${total} 元` : ''}`)
+}
 
-    if (snap.empty) {
-      res.json({ success: false, message: 'Firestore 中查無該發票，無法作廢' })
-      return
-    }
+function parsePosText (text) {
+  const resultItems = []
+  const cleaned = text.replace(/\r/g, '')
 
-    const invDoc = snap.docs[0]
-    const invData = invDoc.data()
-
-    let invoiceDate = invData.invoiceDate
-    if (!invoiceDate) {
-      res.json({ success: false, message: '發票日期缺失（invoiceDate），無法作廢' })
-      return
-    }
-    // 文件格式用 2025/12/10，如有 "-" 就轉一下
-    invoiceDate = invoiceDate.replace(/-/g, '/')
-
-    const cancelReason = (reason || '發票作廢').slice(0, 20)
-    const remark = (`Rabbithome void ${invoiceNumber}`).slice(0, 200)
-
-    const params = new URLSearchParams()
-    params.append('Grvc', company.grvc)
-    params.append('Verify_key', company.verifyKey)
-    params.append('InvoiceNumber', invoiceNumber)
-    params.append('InvoiceDate', invoiceDate)
-    params.append('types', 'Cancel')            // ⭐ 關鍵：作廢發票
-    params.append('CancelReason', cancelReason) // ⭐ 文件要求的欄位名
-    params.append('Remark', remark)
-
-    console.log('[SmilePay VOID payload]', params.toString())
-
-    const spRes = await fetch(SMILEPAY_MODIFY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+  // 依照你之前 POS 的樣式規則
+  const itemRegex = /(\d+)\.\s*([\s\S]*?)\$\s*([\d,]+)[\s\S]*?x\s*(\d+)\s*=\s*([\d,]+)/g
+  let m
+  while ((m = itemRegex.exec(cleaned)) !== null) {
+    const nameRaw = m[2].trim().replace(/\s+/g, ' ')
+    const price = parseInt(m[3].replace(/,/g, ''), 10) || 0
+    const qty = parseInt(m[4], 10) || 1
+    const amt = parseInt(m[5].replace(/,/g, ''), 10) || price * qty
+    resultItems.push({
+      name: nameRaw,
+      qty,
+      price,
+      amount: amt
     })
-    const text = await spRes.text()
-    console.log('[SmilePay VOID response]', text)
+  }
 
-    const statusMatch = /<Status>(-?\d+)<\/Status>/i.exec(text)
-    const descMatch   = /<Desc>(.*?)<\/Desc>/i.exec(text)
+  let total = 0
+  const totalMatch = /總額\s*([\d,]+)/.exec(cleaned)
+  if (totalMatch) {
+    total = parseInt(totalMatch[1].replace(/,/g, ''), 10) || 0
+  } else if (resultItems.length) {
+    total = resultItems.reduce((s, it) => s + it.amount, 0)
+  }
 
-    const status = statusMatch ? statusMatch[1] : ''
-    const desc   = descMatch ? descMatch[1] : ''
+  return { items: resultItems, total }
+}
 
-    // 依文件：Status > 0 表成功，或你可以照實測來調整
-    const successCodes = ['1', '0', '0000', 'Success', 'Successed', 'Succeeded']
+// === 載具類型判斷 ===
+function detectCarrierType (value) {
+  if (!value) return 'NONE'
+  if (value.startsWith('/')) return 'MOBILE'
+  return 'NATURAL'
+}
 
-    if (!successCodes.includes(status)) {
-      res.json({
-        success: false,
-        message: `SmilePay 作廢失敗（${status}）：${desc || '無詳細訊息'}`,
-        raw: text
+// === 呼叫 Cloud Functions 開立發票 ===
+async function issueInvoice () {
+  const statusEl = $('#issueStatus')
+  if (statusEl) statusEl.textContent = '發票開立中…'
+
+  const companyId = $('#companySelect')?.value
+  const orderId = $('#orderId')?.value.trim()
+  const buyerGUI = $('#buyerGUI')?.value.trim()
+  const buyerTitle = $('#buyerTitle')?.value.trim()
+  const contactName = $('#contactName')?.value.trim()
+  const contactPhone = $('#contactPhone')?.value.trim()
+  const contactEmail = $('#contactEmail')?.value.trim()
+  const carrierValue = $('#carrierValue')?.value.trim()
+
+  const preInvoiceCheckbox = $('#preInvoice')
+  const preInvoice = !!(preInvoiceCheckbox && preInvoiceCheckbox.checked)
+  const unpaid = preInvoice // 預開 = 未收款
+
+  const carrierType = detectCarrierType(carrierValue)
+
+  if (carrierType === 'MOBILE' && carrierValue && carrierValue.length !== 8) {
+    const goOn = confirm('載具好像不是 8 碼（一般手機條碼是 8 碼、開頭為 /），確定要送出嗎？')
+    if (!goOn) {
+      if (statusEl) statusEl.textContent = '已取消送出，請確認載具內容'
+      return
+    }
+  }
+
+  const items = $$('#itemsBody tr').map(tr => {
+    const name = tr.querySelector('.item-name').value.trim()
+    const qty = Number(tr.querySelector('.item-qty').value) || 0
+    const price = Number(tr.querySelector('.item-price').value) || 0
+    const amount = qty * price
+    return { name, qty, price, amount }
+  }).filter(i => i.name && i.qty > 0)
+
+  if (!items.length) {
+    if (statusEl) statusEl.textContent = '請至少輸入或解析出一項商品'
+    return
+  }
+
+  const amount = items.reduce((s, it) => s + it.amount, 0)
+
+  // 捐贈功能已移除，統一當「不捐贈」
+  const donateMark = '0'
+  const donateCode = ''
+
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/createInvoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyId,
+        orderId,
+        buyerGUI,
+        buyerTitle,
+        contactName,
+        contactPhone,
+        contactEmail,
+        amount,
+        items,
+        carrierType,
+        carrierValue,
+        donateMark,
+        donateCode,
+        preInvoice,
+        unpaid
       })
+    })
+    const data = await res.json()
+
+    if (!res.ok || !data.success) {
+      console.error(data)
+      if (statusEl) statusEl.textContent = `開立失敗：${data.message || res.statusText}`
       return
     }
 
-    // ✅ SmilePay 作廢成功 → 更新 Firestore
-    await invDoc.ref.update({
-      status: 'VOIDED',
-      voidReason: cancelReason,
-      voidDesc: desc,
-      voidAt: admin.firestore.FieldValue.serverTimestamp(),
-      voidRaw: text
-    })
+    // ✅ 開立成功
+    if (statusEl) {
+      statusEl.textContent =
+        `開立成功：${data.invoiceNumber}（隨機碼  ${data.randomNumber}）`
+    }
 
-    res.json({ success: true, message: desc || '作廢成功' })
+    // ⭐⭐⭐ 開立成功後 → 直接呼叫速買配官方列印
+    const companyIdForPrint =
+      companyId || document.getElementById('companySelect')?.value || ''
+
+    const invoiceData = {
+      companyId: companyIdForPrint,
+      invoiceNumber: data.invoiceNumber,
+      invoiceDate: data.invoiceDate,
+      randomNumber: data.randomNumber
+    }
+    openSmilepayPrint(invoiceData)
+
+    // 重新載入下方發票列表
+    reloadInvoices()
   } catch (err) {
     console.error(err)
-    res.status(500).json({ success: false, message: err.message })
+    if (statusEl) statusEl.textContent = '開立失敗：網路或伺服器錯誤'
   }
-})
+}
 
+// === 實時監聽 Firestore 中的發票 ===
+function listenInvoices () {
+  const listBody = $('#invoiceListBody')
+  if (!listBody) return
 
-// ========== 查詢發票 ==========
-exports.queryInvoice = functions.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*')
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.set('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('')
+  const qRef = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'))
+  invoicesUnsub = onSnapshot(qRef, snap => {
+    const rows = []
+    snap.forEach(doc => rows.push({ id: doc.id, ...doc.data() }))
+    cachedInvoices = rows
+    reloadInvoices()
+  })
+}
+
+// === 列表相關 ===
+function setupList () {
+  const headerCells = $$('.list-table thead th')
+  if (!headerCells.length) return
+
+  const dateTh = headerCells[0]    // 日期
+  const companyTh = headerCells[1] // 公司
+  const statusTh = headerCells[6]  // 狀態
+
+  ;[dateTh, companyTh, statusTh].forEach(th => {
+    if (!th) return
+    th.style.cursor = 'pointer'
+  })
+
+  if (dateTh) {
+    dateTh.addEventListener('click', () => {
+      toggleSort('date')
+    })
+  }
+  if (companyTh) {
+    companyTh.addEventListener('click', () => {
+      toggleSort('company')
+    })
+  }
+  if (statusTh) {
+    statusTh.addEventListener('click', () => {
+      toggleSort('status')
+    })
+  }
+
+  // 📊 發票統計按鈕
+  const statsBtn = $('#statsBtn')
+  if (statsBtn) {
+    statsBtn.addEventListener('click', () => {
+      renderStatsTable()
+    })
+  }
+
+  // 建立分頁列
+  const table = $('.list-table')
+  if (table) {
+    pagerEl = document.createElement('div')
+    pagerEl.className = 'invoice-pagination'
+    pagerEl.innerHTML = `
+      <button type="button" class="btn-small" data-page="prev">上一頁</button>
+      <span class="page-info"></span>
+      <button type="button" class="btn-small" data-page="next">下一頁</button>
+    `
+    table.insertAdjacentElement('afterend', pagerEl)
+
+    pagerEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-page]')
+      if (!btn) return
+      const all = getFilteredSortedInvoices()
+      const totalPages = Math.max(1, Math.ceil(all.length / ROWS_PER_PAGE))
+
+      if (btn.dataset.page === 'prev') {
+        if (currentPage > 1) {
+          currentPage--
+          reloadInvoices()
+        }
+      } else if (btn.dataset.page === 'next') {
+        if (currentPage < totalPages) {
+          currentPage++
+          reloadInvoices()
+        }
+      }
+    })
+  }
+}
+
+function toggleSort (field) {
+  if (currentSortField === field) {
+    currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc'
+  } else {
+    currentSortField = field
+    currentSortDir = field === 'date' ? 'desc' : 'asc'
+  }
+  currentPage = 1
+  reloadInvoices()
+}
+
+function isUnpaid (inv) {
+  // 支援幾種欄位名，預設 preInvoice 為「預開 / 未付款」
+  return !!(inv.preInvoice || inv.unpaid || inv.preInvoiceFlag)
+}
+
+function getInvoiceTime (inv) {
+  if (inv.createdAt?.toDate) {
+    return inv.createdAt.toDate().getTime()
+  }
+  if (inv.invoiceDate) {
+    const d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
+    return d.getTime()
+  }
+  return 0
+}
+
+function statusOrder (inv) {
+  const s = inv.status || ''
+  if (s === 'ISSUED') return 1
+  if (s === 'VOIDED') return 2
+  return 99
+}
+
+function statusToText (inv) {
+  const s = inv.status || ''
+  const unpaid = isUnpaid(inv)
+  if (s === 'ISSUED') {
+    return unpaid ? '已開立（未收款）' : '已開立'
+  }
+  if (s === 'VOIDED') return '已作廢'
+  return s || '-'
+}
+
+function formatDateTime (inv) {
+  let d = null
+  if (inv.createdAt?.toDate) {
+    d = inv.createdAt.toDate()
+  } else if (inv.invoiceDate) {
+    d = new Date(inv.invoiceDate.replace(/\//g, '-') + 'T00:00:00')
+  }
+  if (!d) return '-'
+  return d.toLocaleString('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+}
+
+// === 發票日期 → 月份（1~12） ===
+function getInvoiceMonth (inv) {
+  if (inv.invoiceDate) {
+    const parts = inv.invoiceDate.replace(/-/g, '/').split('/')
+    if (parts.length >= 2) {
+      const m = Number(parts[1])
+      if (m >= 1 && m <= 12) return m
+    }
+  }
+  if (inv.createdAt && typeof inv.createdAt.toDate === 'function') {
+    const d = inv.createdAt.toDate()
+    return d.getMonth() + 1
+  }
+  return null
+}
+
+// 月份決定雙月份區間 index（0~5）
+function getPeriodIndexByMonth (month) {
+  if (!month || month < 1 || month > 12) return -1
+  return Math.floor((month - 1) / 2) // 1~12 → 0~5
+}
+
+// === 產生 / 隱藏 發票統計表（列：公司；欄：雙月份 + 總金額） ===
+function renderStatsTable () {
+  const area = $('#statsArea')
+  if (!area) return
+
+  // toggle：有就隱藏
+  if (area.dataset.visible === '1') {
+    area.innerHTML = ''
+    area.dataset.visible = '0'
     return
   }
 
-  try {
-    const { companyId, invoiceNumber } = req.body || {}
-    if (!companyId || !invoiceNumber) {
-      res.status(400).json({ success: false, message: '缺少 companyId 或 invoiceNumber' })
-      return
+  if (!cachedInvoices || !cachedInvoices.length) {
+    area.innerHTML = '<p class="stats-hint">目前沒有發票資料可以統計。</p>'
+    area.dataset.visible = '1'
+    return
+  }
+
+  // stats[companyId][periodIdx] = 金額
+  const stats = {}
+  STATS_COMPANIES.forEach(c => {
+    stats[c.id] = STATS_PERIODS.map(() => 0)
+  })
+
+  // 只統計開立成功的發票（ISSUED）
+  for (const inv of cachedInvoices) {
+    if (inv.status !== 'ISSUED') continue
+
+    const cid = inv.companyId || ''
+    if (!stats[cid]) continue
+
+    const month = getInvoiceMonth(inv)
+    const periodIdx = getPeriodIndexByMonth(month)
+    if (periodIdx < 0) continue
+
+    const amount = Number(inv.amount || 0) || 0
+    stats[cid][periodIdx] += amount
+  }
+
+  let bodyHtml = ''
+  STATS_COMPANIES.forEach(c => {
+    const row = stats[c.id] || STATS_PERIODS.map(() => 0)
+    const total = row.reduce((s, v) => s + v, 0)
+    bodyHtml += `
+      <tr>
+        <td class="stats-company">${c.label}</td>
+        ${row.map(v => `<td class="amount-cell">${v.toLocaleString()}</td>`).join('')}
+        <td class="amount-cell total-cell">${total.toLocaleString()}</td>
+      </tr>
+    `
+  })
+
+  area.innerHTML = `
+    <div class="stats-card">
+      <h3>📊 發票金額統計（只含已開立發票）</h3>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>公司</th>
+            ${STATS_PERIODS.map(p => `<th>${p.label}</th>`).join('')}
+            <th>總金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyHtml}
+        </tbody>
+      </table>
+    </div>
+  `
+  area.dataset.visible = '1'
+}
+
+function getFilteredSortedInvoices () {
+  const keyword = $('#searchKeyword')?.value.trim().toLowerCase() || ''
+  const statusFilter = $('#filterStatus')?.value || 'ALL'
+
+  let filtered = cachedInvoices.filter(inv => {
+    if (statusFilter !== 'ALL' && inv.status !== statusFilter) return false
+    if (!keyword) return true
+    const s = `${inv.invoiceNumber || ''} ${inv.orderId || ''} ${inv.buyerTitle || ''}`.toLowerCase()
+    return s.includes(keyword)
+  })
+
+  const sorted = filtered.slice().sort((a, b) => {
+    // 先讓「未付款」的排最前面
+    const ua = isUnpaid(a) ? 1 : 0
+    const ub = isUnpaid(b) ? 1 : 0
+    if (ua !== ub) return ub - ua
+
+    let av, bv
+    switch (currentSortField) {
+      case 'company':
+        av = (a.companyName || a.companyId || '').toString()
+        bv = (b.companyName || b.companyId || '').toString()
+        break
+      case 'status':
+        av = statusOrder(a)
+        bv = statusOrder(b)
+        break
+      case 'date':
+      default:
+        av = getInvoiceTime(a)
+        bv = getInvoiceTime(b)
+        break
     }
 
-    const company = await getCompanyConfig(companyId)
-    const params = new URLSearchParams()
-    params.append('Grvc', company.grvc)
-    params.append('Verify_key', company.verifyKey)
-    params.append('InvoiceNumber', invoiceNumber)
+    if (av < bv) return currentSortDir === 'asc' ? -1 : 1
+    if (av > bv) return currentSortDir === 'asc' ? 1 : -1
+    return 0
+  })
 
-    const spRes = await fetch(SMILEPAY_QUERY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+  return sorted
+}
+
+// 重新渲染下方列表
+function reloadInvoices () {
+  const tbody = $('#invoiceListBody')
+  if (!tbody) return
+
+  tbody.innerHTML = ''
+
+  const all = getFilteredSortedInvoices()
+  const totalPages = Math.max(1, Math.ceil(all.length / ROWS_PER_PAGE))
+  if (currentPage > totalPages) currentPage = totalPages
+
+  const start = (currentPage - 1) * ROWS_PER_PAGE
+  const pageItems = all.slice(start, start + ROWS_PER_PAGE)
+
+  for (const inv of pageItems) {
+    const tr = document.createElement('tr')
+
+    // ⭐ 未付款 → 淺黃色底
+    if (isUnpaid(inv)) {
+      tr.classList.add('row-unpaid')
+    }
+
+    const dText = formatDateTime(inv)
+
+    const creator =
+      inv.createdByNickname ||
+      inv.createdBy ||
+      inv.nickname ||
+      ''
+    const companyBase = inv.companyName || inv.companyId || ''
+    const companyText = creator ? `${companyBase}（${creator}）` : companyBase
+
+    const statusText = statusToText(inv)
+
+    tr.innerHTML = `
+      <td>${dText}</td>
+      <td>${companyText}</td>
+      <td>${inv.invoiceNumber || '-'}</td>
+      <td>${inv.orderId || '-'}</td>
+      <td>${inv.buyerTitle || '-'}</td>
+      <td>${inv.amount || 0}</td>
+      <td>${statusText}</td>
+      <td>
+        <button class="btn-small" data-action="print">列印</button>
+        ${
+          inv.status === 'ISSUED' && isUnpaid(inv)
+            ? '<button class="btn-small" data-action="mark-paid">已收款</button>'
+            : ''
+        }
+        ${
+          inv.status === 'ISSUED'
+            ? '<button class="btn-small danger" data-action="void">作廢</button>'
+            : ''
+        }
+      </td>
+    `
+
+    tr.dataset.id = inv.id
+    tbody.appendChild(tr)
+  }
+
+  // 綁定列上的按鈕事件
+  tbody.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', handleRowAction)
+  })
+
+  // 更新分頁資訊
+  if (pagerEl) {
+    const info = pagerEl.querySelector('.page-info')
+    if (info) {
+      info.textContent = `${currentPage} / ${totalPages} 頁（共 ${all.length} 筆）`
+    }
+  }
+}
+
+// === 開啟發票預覽／列印 ===
+function openInvoicePreview (inv) {
+  if (!inv || !inv.invoiceNumber) {
+    alert('這筆資料沒有發票號碼，無法列印')
+    return
+  }
+
+  const companyId = inv.companyId || document.getElementById('companySelect')?.value || ''
+
+  const invoiceData = {
+    companyId,
+    invoiceNumber: inv.invoiceNumber,
+    invoiceDate: inv.invoiceDate || inv.invoiceDateRaw || '',
+    randomNumber: inv.randomNumber || inv.randomNumberRaw || ''
+  }
+
+  openSmilepayPrint(invoiceData)
+}
+
+// === 已收款（從預開 / 未付款 → 正常發票） ===
+async function markInvoicePaid (inv) {
+  if (!inv.id) return
+  const ok = confirm(`確認已收款？\n發票號碼：${inv.invoiceNumber || '(無)'}`)
+  if (!ok) return
+
+  try {
+    const ref = doc(db, 'invoices', inv.id)
+    await updateDoc(ref, {
+      preInvoice: false,
+      unpaid: false,
+      paidAt: serverTimestamp()
     })
-    const text = await spRes.text()
-
-    const status    = /<Status>(.*?)<\/Status>/i.exec(text)?.[1] || ''
-    const desc      = /<Desc>(.*?)<\/Desc>/i.exec(text)?.[1] || ''
-    const invStatus = /<InvoiceStatus>(.*?)<\/InvoiceStatus>/i.exec(text)?.[1] || ''
-
-    res.json({
-      success: true,
-      status,
-      statusText: desc,
-      invoiceStatus: invStatus,
-      raw: text
-    })
+    alert('已標記為已收款')
   } catch (err) {
     console.error(err)
-    res.status(500).json({ success: false, message: err.message })
+    alert('更新失敗，請稍後再試')
   }
-})
+}
 
+// === 列表按鈕 ===
+async function handleRowAction (e) {
+  const btn = e.currentTarget
+  const action = btn.dataset.action
+  const tr = btn.closest('tr')
+  const id = tr.dataset.id
+  const inv = cachedInvoices.find(i => i.id === id)
+  if (!inv) return
 
+  if (action === 'print') {
+    if (inv.carrierValue) {
+      const goOn = confirm('這張是「載具發票」，一般不需要列印實體。若只是要留存內部紀錄，可以按「確定」繼續列印。')
+      if (!goOn) return
+    }
+    openInvoicePreview(inv)
+  } else if (action === 'void') {
+    await voidInvoice(inv)
+  } else if (action === 'mark-paid') {
+    await markInvoicePaid(inv)
+  }
+}
 
+// === 查詢（保留 function，雖然按鈕已拿掉） ===
+async function queryInvoice (inv) {
+  const ok = confirm(`查詢發票狀態？\n發票號碼：${inv.invoiceNumber}`)
+  if (!ok) return
+
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/queryInvoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyId: inv.companyId,
+        invoiceNumber: inv.invoiceNumber
+      })
+    })
+    const data = await res.json()
+    alert(`查詢結果：${data.statusText || JSON.stringify(data)}`)
+  } catch (err) {
+    console.error(err)
+    alert('查詢失敗，請稍後再試')
+  }
+}
+
+// === 作廢 ===
+async function voidInvoice (inv) {
+  const reason = prompt(
+    `請輸入作廢原因：\n發票號碼：${inv.invoiceNumber}`,
+    '客戶取消訂單'
+  )
+  if (!reason) return
+
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/voidInvoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyId: inv.companyId,
+        invoiceNumber: inv.invoiceNumber,
+        reason
+      })
+    })
+    const data = await res.json()
+    if (!data.success) {
+      alert(`作廢失敗：${data.message || ''}`)
+      return
+    }
+    alert('作廢成功')
+  } catch (err) {
+    console.error(err)
+    alert('作廢失敗，請稍後再試')
+  }
+}
+
+// === 列印區：電子發票證明聯 +（必要時）明細 ===
+function buildPrintArea (inv) {
+  const area = $('#printArea')
+  if (!area) return
+
+  // 1. 日期時間
+  let d
+  if (inv.invoiceDate) {
+    d = new Date(inv.invoiceDate + 'T00:00:00')
+  } else if (inv.createdAt?.toDate) {
+    d = inv.createdAt.toDate()
+  } else {
+    d = new Date()
+  }
+
+  const year = d.getFullYear()
+  const m = d.getMonth() + 1
+  const day = d.getDate().toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  const ss = d.getSeconds().toString().padStart(2, '0')
+
+  const rocYear = year - 1911
+  const periodStart = m % 2 === 1 ? m : m - 1
+  const periodEnd = periodStart + 1
+  const periodText =
+    `${rocYear}年${periodStart.toString().padStart(2, '0')}` +
+    `-${periodEnd.toString().padStart(2, '0')}月`
+
+  const invoiceNo = inv.invoiceNumber || ''
+  const randomNumber = inv.randomNumber || ''
+  const amount = inv.amount || 0
+  const sellerGUI = inv.sellerGUI || '48594728'
+  const buyerGUI = inv.buyerGUI || ''
+
+  const printDetailCheckbox = document.querySelector('#printDetail')
+  const mustShowDetailByGUI = !!(buyerGUI && buyerGUI.trim())
+  const wantDetailByCheckbox = !!(printDetailCheckbox && printDetailCheckbox.checked)
+  const showDetail = (inv.items && inv.items.length) && (mustShowDetailByGUI || wantDetailByCheckbox)
+
+  let detailHtml = ''
+  if (showDetail) {
+    const items = inv.items || []
+    const rows = items.map((it, idx) => `
+      <tr>
+        <td style="text-align:center;">${idx + 1}</td>
+        <td>${it.name}</td>
+        <td style="text-align:center;">${it.qty}</td>
+        <td style="text-align:right;">${it.price}</td>
+        <td style="text-align:right;">${it.amount}</td>
+      </tr>
+    `).join('')
+
+    detailHtml = `
+      <hr class="einv-sep" />
+      <table class="einv-detail-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>品名</th>
+            <th>數量</th>
+            <th>單價</th>
+            <th>小計</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" style="text-align:right;">銷售額合計：${amount} 元</td>
+          </tr>
+        </tfoot>
+      </table>
+    `
+  }
+
+  area.innerHTML = `
+    <div class="einv-card">
+      <div class="einv-header">
+        <div class="einv-logo-ch">數位小兔</div>
+        <div class="einv-logo-en">Digital Rabbit</div>
+      </div>
+
+      <div class="einv-title">電子發票證明聯</div>
+      <div class="einv-period">${periodText}</div>
+      <div class="einv-number">${invoiceNo}</div>
+
+      <div class="einv-datetime">
+        ${year}-${m.toString().padStart(2, '0')}-${day}
+        ${hh}:${mm}:${ss}
+      </div>
+
+      <div class="einv-row">
+        <span>隨機碼 ${randomNumber || '----'}</span>
+        <span>總計 ${amount}</span>
+      </div>
+
+      <div class="einv-row">
+        <span>賣方</span>
+        <span>買方</span>
+      </div>
+      <div class="einv-row">
+        <span>${sellerGUI}</span>
+        <span>${buyerGUI || '—'}</span>
+      </div>
+
+      <div class="einv-barcode" id="einv-barcode"></div>
+
+      <div class="einv-qrs">
+        <div class="einv-qr" id="einv-qr-left"></div>
+        <div class="einv-qr" id="einv-qr-right"></div>
+      </div>
+    </div>
+
+    ${detailHtml}
+  `
+}
