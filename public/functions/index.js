@@ -95,10 +95,26 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
 
     // === SmilePay 參數 ===
-    const descStr  = normalizedItems.map(it => it.name.replace(/\|/g, '、')).join('|')
+    // === SmilePay 參數 ===
+    const descStr  = normalizedItems
+      .map(it => it.name.replace(/\|/g, '、'))
+      .join('|')
     const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
     const priceStr = normalizedItems.map(it => String(it.price)).join('|')
     const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')
+
+    // ✅ 保險：先檢查一下四個欄位的筆數是否一致
+    const countDesc  = descStr.split('|').length
+    const countQty   = qtyStr.split('|').length
+    const countPrice = priceStr.split('|').length
+    const countAmt   = amtStr.split('|').length
+
+    if (!(countDesc === countQty && countQty === countPrice && countPrice === countAmt)) {
+      throw new Error(
+        `商品各項目數量不符（本機檢查）：` +
+        `Name=${countDesc}, Qty=${countQty}, Price=${countPrice}, Amount=${countAmt}`
+      )
+    }
 
     const params = new URLSearchParams()
 
@@ -147,28 +163,30 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('orderid', orderId || '')
     // ★ 新增這行：data_id = 自訂發票編號（也就是訂單編號）
     params.append('data_id', orderId || '')
-    
+
     // === 捐贈 ===
     params.append('DonateMark', donateMark || '0')
     if (donateMark === '1' && donateCode) {
       params.append('LoveCode', donateCode)
     }
 
-    // === 載具（照文件：CarrierType + CarrierID） ===
     // === 載具 ===
-if (carrierType && carrierType !== 'NONE' && carrierValue) {
-  // 手機條碼：3J0002，自然人憑證：CQ0001
-  params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
-  params.append('CarrierID', carrierValue)   // ✅ 只有有填載具才傳，欄位名改成文件寫的
-}
+    if (carrierType && carrierType !== 'NONE' && carrierValue) {
+      // 手機條碼：3J0002，自然人憑證：CQ0001
+      params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
+      params.append('CarrierID', carrierValue)
+    }
 
     // === 商品明細 ===
-    params.append('Description', descStr)
-    params.append('Quantity',    qtyStr)
-    params.append('UnitPrice',   priceStr)
-    params.append('Amount',      amtStr)
+    // ⚠️ 這裡改成文件上寫的欄位名稱：ItemName / Quantity / Price / Amount
+    params.append('ItemName', descStr)
+    params.append('Quantity', qtyStr)
+    params.append('Price',    priceStr)
+    params.append('Amount',   amtStr)
 
     console.log('[SmilePay Payload]', params.toString())
+
+    
 
     // === 呼叫 SmilePay ===
     const spRes = await fetch(SMILEPAY_ISSUE_URL, {
