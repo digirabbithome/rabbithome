@@ -95,35 +95,45 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
 
     // === SmilePay 參數 ===
-    // === SmilePay 參數 ===
+        // === SmilePay 參數 ===
+    // 商品名稱 / 數量 / 單價 / 小計
     const descStr  = normalizedItems
-      .map(it => it.name.replace(/\|/g, '、'))
+      .map(it => it.name.replace(/\|/g, '、'))   // 名稱不能含「|」
       .join('|')
     const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
     const priceStr = normalizedItems.map(it => String(it.price)).join('|')
     const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')
-    // ★ 單位欄位：照官方文件要有一個 Unit，筆數也要跟其他欄位一樣
-    //   不能用中文（件 / 個 / 條），用英文縮寫 pcs 就好
+
+    // ★ 單位：官方欄位叫 Unit，不能填中文，用英文縮寫，例如 pcs
     const unitStr  = normalizedItems.map(() => 'pcs').join('|')
 
-    // ✅ 保險：先檢查一下五個欄位的筆數是否一致
+    // ★ 商品稅率：文件 ProductTaxType，1=應稅
+    const productTaxTypeStr = normalizedItems.map(() => '1').join('|')
+
+    // ★ 商品備註：可以留空，但每一項都要有一個位置
+    const remarkStr = normalizedItems.map(() => '').join('|')
+
+    // ✅ 保險：七個欄位的筆數都要一樣
     const countDesc  = descStr.split('|').length
     const countQty   = qtyStr.split('|').length
     const countPrice = priceStr.split('|').length
     const countAmt   = amtStr.split('|').length
     const countUnit  = unitStr.split('|').length
+    const countPTT   = productTaxTypeStr.split('|').length
+    const countRemark= remarkStr.split('|').length
 
-    if (
-      !(
-        countDesc === countQty &&
-        countQty === countPrice &&
-        countPrice === countAmt &&
-        countAmt === countUnit
-      )
-    ) {
+    if (!(
+      countDesc === countQty &&
+      countQty === countPrice &&
+      countPrice === countAmt &&
+      countAmt === countUnit &&
+      countUnit === countPTT &&
+      countPTT === countRemark
+    )) {
       throw new Error(
         '商品各項目數量不符（本機檢查）：' +
-        `Desc=${countDesc}, Qty=${countQty}, Price=${countPrice}, Amount=${countAmt}, Unit=${countUnit}`
+        `Desc=${countDesc}, Qty=${countQty}, Price=${countPrice}, Amount=${countAmt}, ` +
+        `Unit=${countUnit}, ProductTaxType=${countPTT}, Remark=${countRemark}`
       )
     }
 
@@ -161,18 +171,17 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       params.append('Email', contactEmail)
     }
 
-    // === 金額 ===
+    // === 金額（總額） ===
     params.append('AllAmount',   String(totalAmount))
     params.append('SalesAmount', String(totalAmount))
     params.append('TotalAmount', String(totalAmount))
     params.append('Amt',         String(totalAmount))
-    params.append('UnitTAX',     'Y')
-    params.append('TaxAmount',   '0')
+    params.append('UnitTAX',     'Y')      // 單價含稅
+    params.append('TaxAmount',   '0')      // 你現在是總額=銷售額，不另外拆稅額
 
     params.append('Remark', orderId || '')
-    // === 自訂訂單編號（速買配欄位：orderid） ===
+    // 自訂訂單編號（速買配欄位：orderid / data_id）
     params.append('orderid', orderId || '')
-    // data_id = 自訂發票編號（也就是訂單編號）
     params.append('data_id', orderId || '')
 
     // === 捐贈 ===
@@ -188,13 +197,24 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       params.append('CarrierID', carrierValue)
     }
 
-    // === 商品明細 ===
-    // ★ 依照你剛剛貼的官方表格：Description / Quantity / UnitPrice / Unit / Amount
-    params.append('Description', descStr)
-    params.append('Quantity',    qtyStr)
-    params.append('UnitPrice',   priceStr)
-    params.append('Unit',        unitStr)
-    params.append('Amount',      amtStr)
+    // === 商品明細（照你剛剛傳的官方表格）===
+    // Description / Quantity / UnitPrice / Unit / ProductTaxType / Remark / Amount
+    params.append('Description',      descStr)
+    params.append('Quantity',         qtyStr)
+    params.append('UnitPrice',        priceStr)
+    params.append('Unit',             unitStr)
+    params.append('ProductTaxType',   productTaxTypeStr)
+    params.append('Remark',           remarkStr)
+    params.append('Amount',           amtStr)
+
+    console.log('[SmilePay Payload]', params.toString())
+
+
+
+
+
+
+    
 
     console.log('[SmilePay Payload]', params.toString())
 
