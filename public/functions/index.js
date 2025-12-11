@@ -102,17 +102,28 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
     const priceStr = normalizedItems.map(it => String(it.price)).join('|')
     const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')
+    // ★ 單位欄位：照官方文件要有一個 Unit，筆數也要跟其他欄位一樣
+    //   不能用中文（件 / 個 / 條），用英文縮寫 pcs 就好
+    const unitStr  = normalizedItems.map(() => 'pcs').join('|')
 
-    // ✅ 保險：先檢查一下四個欄位的筆數是否一致
+    // ✅ 保險：先檢查一下五個欄位的筆數是否一致
     const countDesc  = descStr.split('|').length
     const countQty   = qtyStr.split('|').length
     const countPrice = priceStr.split('|').length
     const countAmt   = amtStr.split('|').length
+    const countUnit  = unitStr.split('|').length
 
-    if (!(countDesc === countQty && countQty === countPrice && countPrice === countAmt)) {
+    if (
+      !(
+        countDesc === countQty &&
+        countQty === countPrice &&
+        countPrice === countAmt &&
+        countAmt === countUnit
+      )
+    ) {
       throw new Error(
-        `商品各項目數量不符（本機檢查）：` +
-        `Name=${countDesc}, Qty=${countQty}, Price=${countPrice}, Amount=${countAmt}`
+        '商品各項目數量不符（本機檢查）：' +
+        `Desc=${countDesc}, Qty=${countQty}, Price=${countPrice}, Amount=${countAmt}, Unit=${countUnit}`
       )
     }
 
@@ -161,7 +172,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     params.append('Remark', orderId || '')
     // === 自訂訂單編號（速買配欄位：orderid） ===
     params.append('orderid', orderId || '')
-    // ★ 新增這行：data_id = 自訂發票編號（也就是訂單編號）
+    // data_id = 自訂發票編號（也就是訂單編號）
     params.append('data_id', orderId || '')
 
     // === 捐贈 ===
@@ -178,13 +189,16 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     }
 
     // === 商品明細 ===
-    // ⚠️ 這裡改成文件上寫的欄位名稱：ItemName / Quantity / Price / Amount
-    params.append('ItemName', descStr)
-    params.append('Quantity', qtyStr)
-    params.append('Price',    priceStr)
-    params.append('Amount',   amtStr)
+    // ★ 依照你剛剛貼的官方表格：Description / Quantity / UnitPrice / Unit / Amount
+    params.append('Description', descStr)
+    params.append('Quantity',    qtyStr)
+    params.append('UnitPrice',   priceStr)
+    params.append('Unit',        unitStr)
+    params.append('Amount',      amtStr)
 
     console.log('[SmilePay Payload]', params.toString())
+
+
 
     
 
