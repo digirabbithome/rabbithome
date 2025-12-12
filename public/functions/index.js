@@ -172,12 +172,27 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
     }
 
     // === 金額（總額） ===
-    params.append('AllAmount',   String(totalAmount))
-    params.append('SalesAmount', String(totalAmount))
-    params.append('TotalAmount', String(totalAmount))
-    params.append('Amt',         String(totalAmount))
-    params.append('UnitTAX',     'Y')      // 單價含稅
-    params.append('TaxAmount',   '0')      // 你現在是總額=銷售額，不另外拆稅額
+    // === 金額（總額） ===
+// totalAmount = 含稅總額（你前面已用 items 合計算出來）
+const gross = Math.round(Number(totalAmount) || 0)
+
+// 用「含稅回推」：跟 SIMPOS 一樣的算法（避免差 1）
+const salesAmount = Math.round(gross / 1.05) // 未稅銷售額
+const taxAmount   = gross - salesAmount      // 稅額（用差額補齊）
+
+params.append('TaxType', '1')            // 應稅
+params.append('UnitTAX', 'Y')            // 單價含稅
+
+params.append('AllAmount',   String(gross))       // 含稅總額
+params.append('SalesAmount', String(salesAmount)) // 未稅銷售額
+params.append('TaxAmount',   String(taxAmount))   // 稅額
+
+// 你原本有傳的欄位（保留）
+params.append('TotalAmount', String(gross))
+params.append('Amt',         String(gross))
+
+
+    
 
     params.append('Remark', orderId || '')
     // 自訂訂單編號（速買配欄位：orderid / data_id）
