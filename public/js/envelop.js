@@ -453,7 +453,7 @@ function bindNoteButtons(){
       if (tracking) {
         var message =
           '哈囉～您的商品小幫手' + helper + '已經幫您出貨了囉！📦💗\n\n' +
-          '這是您的貨件追蹤單號：\n' +
+          '這是您的郵局貨件追蹤單號：\n' +
           '👉 ' + tracking + '\n' +
           '大約 1～2 個工作天就會抵達嚕 😊\n' +
           '記得留意一下包裹唷！\n\n' +
