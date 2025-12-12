@@ -205,36 +205,87 @@ function parsePosAndFill() {
 }
 
 function parsePosText(text) {
-  const resultItems = []
-  const cleaned = text.replace(/\r/g, '')
+  const cleaned = text.replace(/\r/g, '').trim();
 
-  // 依照你之前 POS 的樣式規則
-  const itemRegex = /(\d+)\.\s*([\s\S]*?)\$\s*([\d,]+)[\s\S]*?x\s*(\d+)\s*=\s*([\d,]+)/g
-  let m
+  // ========= 1) Excel 報價單解析（tab 分隔） =========
+  const hasTab = cleaned.includes('\t');
+  if (hasTab) {
+    const lines = cleaned.split('\n').map(s => s.trim()).filter(Boolean);
+
+    const items = [];
+    let total = 0;
+
+    // 上限保護：避免誤貼整張表爆量（可自行調整）
+    const LIMIT = 500;
+
+    for (const line of lines) {
+      const cols = line.split('\t').map(s => s.trim());
+      if (cols.length < 4) continue;
+
+      // footer：含稅 / 總計
+      if (cols.some(c => c.includes('含稅')) || cols.some(c => c.includes('總計'))) {
+        // 嘗試抓總計（最後一欄）
+        const maybeTotal = cols.map(c => c.replace(/[,，]/g, '')).find(c => /^\d+$/.test(c));
+        if (maybeTotal) total = parseInt(maybeTotal, 10) || total;
+        continue;
+      }
+
+      // 標題列略過
+      if (cols.some(c => /品名|名稱|單價|數量|小計/.test(c))) continue;
+
+      // 你的格式：序號 / 品名 / 單價 / 數量 / 小計
+      const name = (cols[1] || '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+      const price = parseInt((cols[2] || '').replace(/[^\d.-]/g, ''), 10) || 0;
+      const qty = parseInt((cols[3] || '').replace(/[^\d.-]/g, ''), 10) || 0;
+
+      if (!name || qty <= 0 || price <= 0) continue;
+
+      items.push({
+        name,
+        qty,
+        price,
+        amount: qty * price
+      });
+
+      if (items.length >= LIMIT) break;
+    }
+
+    if (items.length) {
+      // 若沒有抓到 footer 的總計，就用明細加總
+      if (!total) total = items.reduce((s, it) => s + it.amount, 0);
+      return { items, total };
+    }
+    // 如果有 tab 但解析不到，會繼續往下走 SIMPOS（容錯）
+  }
+
+  // ========= 2) SIMPOS 原本解析（維持不動） =========
+  const resultItems = [];
+
+  const itemRegex = /(\d+)\.\s*([\s\S]*?)\$\s*([\d,]+)[\s\S]*?x\s*(\d+)\s*=\s*([\d,]+)/g;
+  let m;
   while ((m = itemRegex.exec(cleaned)) !== null) {
-    const nameRaw = m[2].trim().replace(/\s+/g, ' ')
-    const price = parseInt(m[3].replace(/,/g, ''), 10) || 0
-    const qty = parseInt(m[4], 10) || 1
-    const amt = parseInt(m[5].replace(/,/g, ''), 10) || price * qty
-    resultItems.push({
-      name: nameRaw,
-      qty,
-      price,
-      amount: amt
-    })
+    const nameRaw = m[2].trim().replace(/\s+/g, ' ');
+    const price = parseInt(m[3].replace(/,/g, ''), 10) || 0;
+    const qty = parseInt(m[4], 10) || 1;
+    const amt = parseInt(m[5].replace(/,/g, ''), 10) || price * qty;
+    resultItems.push({ name: nameRaw, qty, price, amount: amt });
   }
 
-  let total = 0
-  const totalMatch = /總額\s*([\d,]+)/.exec(cleaned)
+  let total = 0;
+  const totalMatch = /總額\s*([\d,]+)/.exec(cleaned);
   if (totalMatch) {
-    total = parseInt(totalMatch[1].replace(/,/g, ''), 10) || 0
+    total = parseInt(totalMatch[1].replace(/,/g, ''), 10) || 0;
   } else if (resultItems.length) {
-    total = resultItems.reduce((s, it) => s + it.amount, 0)
+    total = resultItems.reduce((s, it) => s + it.amount, 0);
   }
 
-  // 🔧 修正：回傳 resultItems
-  return { items: resultItems, total }
+  return { items: resultItems, total };
 }
+
+
+
+
+
 
 // === 載具類型判斷 ===
 function detectCarrierType(value) {
