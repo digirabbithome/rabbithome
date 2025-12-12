@@ -33,6 +33,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*')
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.set('Access-Control-Allow-Headers', 'Content-Type')
+
   if (req.method === 'OPTIONS') {
     res.status(204).send('')
     return
@@ -40,12 +41,19 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
   try {
     const {
-      companyId, orderId,
-      buyerGUI, buyerTitle,        // 統編 & 公司名稱 / 抬頭
-      contactName, contactPhone, contactEmail,
-      amount, items,
-      carrierType, carrierValue,
-      donateMark, donateCode,
+      companyId,
+      orderId,
+      buyerGUI,
+      buyerTitle,
+      contactName,
+      contactPhone,
+      contactEmail,
+      amount,
+      items,
+      carrierType,
+      carrierValue,
+      donateMark,
+      donateCode,
       preInvoice,
       unpaid,
       createdByNickname
@@ -60,9 +68,7 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     // === 日期 / 時間：台北時區 ===
     const now = new Date()
-    const tpeNow = new Date(
-      now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })
-    )
+    const tpeNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
 
     const y  = tpeNow.getFullYear()
     const m  = String(tpeNow.getMonth() + 1).padStart(2, '0')
@@ -76,9 +82,10 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
 
     // === 整理品項 ===
     const normalizedItems = (items || []).map(it => {
-      const qty   = Number(it.qty)   || 0
+      const qty = Number(it.qty) || 0
       const price = Number(it.price) || 0
       const lineAmt = qty * price
+
       return {
         name: String(it.name || '').trim(),
         qty,
@@ -92,150 +99,113 @@ exports.createInvoice = functions.onRequest(async (req, res) => {
       return
     }
 
-    const totalAmount = normalizedItems.reduce((sum, it) => sum + it.amount, 0)
+    // 以明細加總為準（忽略前端傳進來的 amount，避免不一致）
+    const totalAmount = normalizedItems.reduce((sum, it) => sum + (Number(it.amount) || 0), 0)
+    const gross = Math.round(Number(totalAmount) || 0)
 
-    // === SmilePay 參數 ===
-        // === SmilePay 參數 ===
-    // 商品名稱 / 數量 / 單價 / 小計
-    const descStr  = normalizedItems
-      .map(it => it.name.replace(/\|/g, '、'))   // 名稱不能含「|」
+    // === SmilePay 明細欄位（7 欄筆數要一致）===
+    const descStr = normalizedItems
+      .map(it => it.name.replace(/\|/g, '、')) // 名稱不能含 |
       .join('|')
-    const qtyStr   = normalizedItems.map(it => String(it.qty)).join('|')
+
+    const qtyStr = normalizedItems.map(it => String(it.qty)).join('|')
     const priceStr = normalizedItems.map(it => String(it.price)).join('|')
-    const amtStr   = normalizedItems.map(it => String(it.amount)).join('|')
+    const amtStr = normalizedItems.map(it => String(it.amount)).join('|')
 
-    // ★ 單位：官方欄位叫 Unit，不能填中文，用英文縮寫，例如 pcs
-    const unitStr  = normalizedItems.map(() => 'pcs').join('|')
+    // Unit：用英文縮寫
+    const unitStr = normalizedItems.map(() => 'pcs').join('|')
 
-    // ★ 商品稅率：文件 ProductTaxType，1=應稅
+    // ProductTaxType：先固定 1（應稅）
+    // 若你要做免稅/零稅率，這裡再依據 UI 改成 2/3
     const productTaxTypeStr = normalizedItems.map(() => '1').join('|')
 
-    // ★ 商品備註：可以留空，但每一項都要有一個位置
-    const remarkStr = normalizedItems.map(() => '').join('|')
+    // 商品備註：每項都要佔位
+    const itemRemarkStr = normalizedItems.map(() => '').join('|')
 
-    // ✅ 保險：七個欄位的筆數都要一樣
-    const countDesc  = descStr.split('|').length
-    const countQty   = qtyStr.split('|').length
-    const countPrice = priceStr.split('|').length
-    const countAmt   = amtStr.split('|').length
-    const countUnit  = unitStr.split('|').length
-    const countPTT   = productTaxTypeStr.split('|').length
-    const countRemark= remarkStr.split('|').length
-
-    if (!(
-      countDesc === countQty &&
-      countQty === countPrice &&
-      countPrice === countAmt &&
-      countAmt === countUnit &&
-      countUnit === countPTT &&
-      countPTT === countRemark
-    )) {
+    // ✅ 保險：七個欄位筆數一致
+    const counts = [
+      descStr.split('|').length,
+      qtyStr.split('|').length,
+      priceStr.split('|').length,
+      amtStr.split('|').length,
+      unitStr.split('|').length,
+      productTaxTypeStr.split('|').length,
+      itemRemarkStr.split('|').length
+    ]
+    const allSame = counts.every(c => c === counts[0])
+    if (!allSame) {
       throw new Error(
         '商品各項目數量不符（本機檢查）：' +
-        `Desc=${countDesc}, Qty=${countQty}, Price=${countPrice}, Amount=${countAmt}, ` +
-        `Unit=${countUnit}, ProductTaxType=${countPTT}, Remark=${countRemark}`
+        `Desc=${counts[0]}, Qty=${counts[1]}, Price=${counts[2]}, Amount=${counts[3]}, ` +
+        `Unit=${counts[4]}, ProductTaxType=${counts[5]}, Remark=${counts[6]}`
       )
     }
 
+    // === 組參數 ===
     const params = new URLSearchParams()
 
     // 商家認證
     params.append('Grvc', company.grvc)
     params.append('Verify_key', company.verifyKey)
 
-    // 稅率類型
+    // 交易類型 & 課稅別（⚠️ 只送一次 TaxType）
     params.append('Intype', '07')
-    params.append('TaxType', '1')
+    params.append('TaxType', '1') // 1=應稅
 
-    // === 發票基本資料 ===
+    // 發票日期時間
     params.append('InvoiceDate', invoiceDate)
     params.append('InvoiceTime', invoiceTime)
 
-    // === 買受人資訊（照文件欄位） ===
+    // 買受人資訊
     if (buyerGUI) {
-      // 有統編 → B2B
-      params.append('Buyer_id', buyerGUI)                 // 統編
-      params.append('CompanyName', buyerTitle || '')      // 公司抬頭
+      // B2B
+      params.append('Buyer_id', buyerGUI)
+      params.append('CompanyName', buyerTitle || '')
     } else {
-      // 無統編 → B2C
-      params.append('Buyer_id', '')                       // 空 = B2C
-      params.append('CompanyName', '')                    // 不用公司名
-      // 個人姓名：用「買受人抬頭」或「聯絡人名稱」
+      // B2C
+      params.append('Buyer_id', '')
+      params.append('CompanyName', '')
       params.append('Name', buyerTitle || contactName || '')
     }
 
-    if (contactPhone) {
-      params.append('Phone', contactPhone)
-    }
-    if (contactEmail) {
-      params.append('Email', contactEmail)
-    }
+    if (contactPhone) params.append('Phone', contactPhone)
+    if (contactEmail) params.append('Email', contactEmail)
 
-    // === 金額（總額） ===
-    // === 金額（總額） ===
-// totalAmount = 含稅總額（你前面已用 items 合計算出來）
-const gross = Math.round(Number(totalAmount) || 0)
+    // 金額（用含稅總額；單價含稅）
+    params.append('UnitTAX', 'Y')             // ✅ 單價含稅（避免你目前 UI/Excel/SIMPOS 都是含稅價格時不一致）
+    params.append('AllAmount', String(gross)) // 含稅總額
 
-// 用「含稅回推」：跟 SIMPOS 一樣的算法（避免差 1）
-const salesAmount = Math.round(gross / 1.05) // 未稅銷售額
-const taxAmount   = gross - salesAmount      // 稅額（用差額補齊）
+    // 這兩個你原本就有傳，保留（避免某些情境 SmilePay 需要）
+    params.append('TotalAmount', String(gross))
+    params.append('Amt', String(gross))
 
-params.append('TaxType', '1')            // 應稅
-params.append('UnitTAX', 'Y')            // 單價含稅
-
-params.append('AllAmount',   String(gross))       // 含稅總額
-params.append('SalesAmount', String(salesAmount)) // 未稅銷售額
-params.append('TaxAmount',   String(taxAmount))   // 稅額
-
-// 你原本有傳的欄位（保留）
-params.append('TotalAmount', String(gross))
-params.append('Amt',         String(gross))
-
-
-    
-
-    params.append('Remark', orderId || '')
-    // 自訂訂單編號（速買配欄位：orderid / data_id）
+    // 訂單/自訂識別
+    // ⚠️ 不要再用 params.append('Remark', orderId) 了，因為商品明細也要用 Remark（會重複 key）
     params.append('orderid', orderId || '')
     params.append('data_id', orderId || '')
 
-    // === 捐贈 ===
+    // 捐贈
     params.append('DonateMark', donateMark || '0')
-    if (donateMark === '1' && donateCode) {
+    if ((donateMark || '0') === '1' && donateCode) {
       params.append('LoveCode', donateCode)
     }
 
-    // === 載具 ===
+    // 載具
     if (carrierType && carrierType !== 'NONE' && carrierValue) {
-      // 手機條碼：3J0002，自然人憑證：CQ0001
       params.append('CarrierType', carrierType === 'MOBILE' ? '3J0002' : 'CQ0001')
       params.append('CarrierID', carrierValue)
     }
 
-    // === 商品明細（照你剛剛傳的官方表格）===
-    // Description / Quantity / UnitPrice / Unit / ProductTaxType / Remark / Amount
-    params.append('Description',      descStr)
-    params.append('Quantity',         qtyStr)
-    params.append('UnitPrice',        priceStr)
-    params.append('Unit',             unitStr)
-    params.append('ProductTaxType',   productTaxTypeStr)
-    params.append('Remark',           remarkStr)
-    params.append('Amount',           amtStr)
+    // 商品明細（照 SmilePay 欄位）
+    params.append('Description', descStr)
+    params.append('Quantity', qtyStr)
+    params.append('UnitPrice', priceStr)
+    params.append('Unit', unitStr)
+    params.append('ProductTaxType', productTaxTypeStr)
+    params.append('Remark', itemRemarkStr) // ✅ 這裡保留作「商品備註」
+    params.append('Amount', amtStr)
 
     console.log('[SmilePay Payload]', params.toString())
-
-
-
-
-
-
-    
-
-    console.log('[SmilePay Payload]', params.toString())
-
-
-
-    
 
     // === 呼叫 SmilePay ===
     const spRes = await fetch(SMILEPAY_ISSUE_URL, {
@@ -266,7 +236,7 @@ params.append('Amt',         String(gross))
       contactName,
       contactPhone,
       contactEmail,
-      amount: totalAmount,
+      amount: gross,
       items: normalizedItems,
       carrierType,
       carrierValue,
@@ -276,6 +246,9 @@ params.append('Amt',         String(gross))
       preInvoice: !!preInvoice,
       unpaid: !!(preInvoice || unpaid),
       createdByNickname: createdByNickname || null,
+
+      // 你之後若要列印「銷售額(應稅)/稅額/總計」可以用 gross 回推
+      // taxType: '1',
 
       status: 'ISSUED',
       invoiceNumber,
