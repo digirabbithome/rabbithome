@@ -44,7 +44,7 @@ export async function openSmilepayPrint(inv) {
     InvoiceDate: invoiceDate,
     RaNumber: raNumber,
     DetailPrint: 'Y',
-    AutoPrint: 'Y'
+    AutoPrint: 'N'
   });
 
   const url = `${SMILEPAY_PRINT_URL}?${params.toString()}`;
