@@ -1,4 +1,4 @@
-
+if(0){
 async function sendData() {
   const data = {
     name: "測試商品",
@@ -29,3 +29,4 @@ async function sendData() {
 }
 
 document.getElementById('sendTest')?.addEventListener('click', sendData);
+}
