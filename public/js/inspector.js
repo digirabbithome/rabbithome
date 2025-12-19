@@ -1,4 +1,15 @@
-if(0){
+
+
+const _fetch = window.fetch;
+window.fetch = function(resource, init) {
+  const url = typeof resource === 'string' ? resource : (resource?.url || '');
+  if (url.includes('n8n.rabbitbuy.online')) {
+    console.warn('Blocked fetch to n8n:', url);
+    return Promise.reject(new Error('Blocked n8n fetch (temporary stop)'));
+  }
+  return _fetch(resource, init);
+};
+
 async function sendData() {
   const data = {
     name: "測試商品",
@@ -26,7 +37,7 @@ async function sendData() {
   } catch (err) {
     resultBox.textContent = '🚫 發生錯誤：' + err.message;
   }
-}
+
 
 document.getElementById('sendTest')?.addEventListener('click', sendData);
 }
