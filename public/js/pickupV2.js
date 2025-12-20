@@ -42,93 +42,56 @@ window.onload = async () => {
 
   await fetchData()
   renderList()
-//列印取貨單
-const serial = (data.serial || '').toString().replace(/\s+/g, '')
-const s1 = serial.slice(0, 4)
-const s2 = serial.slice(4, 8)
+   //列印取貨單
 
-const noteText = (data.note && data.note.trim()) ? data.note.trim() : '—'
-const paidText = data.paid || '—'
-const staffText = data.createdBy || ''
 
-area.innerHTML = `
-  <div class="pickup-ticket">
-    <div class="ticket-serial">
-      <span class="serial-small">${s1}</span><span class="serial-big">${s2}</span>
-    </div>
-    <div class="ticket-line"></div>
+  // 列印取貨單（點中間名字）
+document.addEventListener('click', e => {
+  const el = e.target.closest('.print-link')
+  if (!el) return
 
-    <div class="ticket-body">
-      <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
-      <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
+  const id = el.dataset.id
+  const data = pickupList.find(p => p.id === id)
+  if (!data) return
 
-      <!-- ✅ 合併成同一行：—（未付款）妹妹 -->
-      <div class="row">
-        <span class="k">備註：</span>
-        <span class="v">${noteText}（${paidText}）${staffText}</span>
+  const area = document.getElementById('print-area')
+
+  // ✅ 取貨編號：前4小、後4大
+  const serial = (data.serial || '').toString().replace(/\s+/g, '')
+  const s1 = serial.slice(0, 4)
+  const s2 = serial.slice(4, 8)
+
+  // ✅ 合併備註 + 付款 + 業務
+  const noteText = (data.note && data.note.trim()) ? data.note.trim() : '—'
+  const paidText = data.paid || '—'
+  const staffText = data.createdBy || ''
+
+  area.innerHTML = `
+    <div class="pickup-ticket">
+      <div class="ticket-serial">
+        <span class="serial-small">${s1}</span><span class="serial-big">${s2}</span>
+      </div>
+      <div class="ticket-line"></div>
+
+      <div class="ticket-body">
+        <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
+        <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
+        <div class="row"><span class="k">備註：</span><span class="v">${noteText}（${paidText}）${staffText}</span></div>
       </div>
     </div>
-  </div>
-`
-    
-    document.getElementById('list-area').style.display = 'none'
-    area.style.display = 'block'
-    window.print()
-    area.style.display = 'none'
-    document.getElementById('list-area').style.display = 'block'
-  })
+  `
 
-  // 內嵌編輯：商品／備註
-  document.addEventListener('click', (e) => {
-    const t = e.target
-    if (!t.classList.contains('editable')) return
-    if (t.dataset.editing === '1') return
-    t.dataset.editing = '1'
+  document.getElementById('list-area').style.display = 'none'
+  area.style.display = 'block'
+  window.print()
+  area.style.display = 'none'
+  document.getElementById('list-area').style.display = 'block'
+})
 
-    const id = t.dataset.id
-    const field = t.dataset.field // 'product' | 'note'
-    const original = t.textContent.trim()
 
-    const ta = document.createElement('textarea')
-    ta.value = original
-    ta.style.width = '100%'
-    ta.style.minHeight = field === 'note' ? '48px' : '32px'
-    ta.style.fontSize = '14px'
-    ta.style.borderRadius = '6px'
-    ta.style.border = '1px solid #ccc'
-    ta.style.padding = '6px'
-    ta.style.boxSizing = 'border-box'
 
-    t.innerHTML = ''
-    t.appendChild(ta)
-    ta.focus()
-    ta.select()
 
-    ta.addEventListener('keydown', (ev) => {
-      if (field === 'product' && ev.key === 'Enter' && !ev.shiftKey) {
-        ev.preventDefault()
-        ta.blur()
-      }
-    })
-
-    ta.addEventListener('blur', async () => {
-      const newVal = ta.value.trim()
-      try {
-        if (newVal !== original) {
-          await saveEdit(id, field, newVal)
-          const idx = pickupList.findIndex(p => p.id === id)
-          if (idx >= 0) pickupList[idx][field] = newVal
-        }
-        t.textContent = newVal || (field === 'note' ? '—' : '')
-      } catch (err) {
-        console.error('update failed', err)
-        t.textContent = original
-        alert('更新失敗，請再試一次')
-      } finally {
-        t.dataset.editing = '0'
-      }
-    })
-  })
+  
 
   // 📌 左邊圖釘：設為完成
   document.addEventListener('click', async (e) => {
