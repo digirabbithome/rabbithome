@@ -42,29 +42,34 @@ window.onload = async () => {
 
   await fetchData()
   renderList()
+//列印取貨單
+const serial = (data.serial || '').toString().replace(/\s+/g, '')
+const s1 = serial.slice(0, 4)
+const s2 = serial.slice(4, 8)
 
-  // 列印取貨單
-  document.addEventListener('click', e => {
-    if (!e.target.classList.contains('print-link')) return
-    const id = e.target.dataset.id
-    const data = pickupList.find(p => p.id === id)
-    if (!data) return
+const noteText = (data.note && data.note.trim()) ? data.note.trim() : '—'
+const paidText = data.paid || '—'
+const staffText = data.createdBy || ''
 
-const area = document.getElementById('print-area')
 area.innerHTML = `
   <div class="pickup-ticket">
-    <div class="ticket-serial">${data.serial || ''}</div>
+    <div class="ticket-serial">
+      <span class="serial-small">${s1}</span><span class="serial-big">${s2}</span>
+    </div>
     <div class="ticket-line"></div>
 
     <div class="ticket-body">
       <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
       <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
-      <div class="row"><span class="k">備註：</span><span class="v pre">${data.note || '—'}</span>（${data.paid || '—'}）</div>
-      <div class="row"><span class="k">服務業務：</span><span class="v">${data.createdBy || ''}</span></div>
+
+      <!-- ✅ 合併成同一行：—（未付款）妹妹 -->
+      <div class="row">
+        <span class="k">備註：</span>
+        <span class="v">${noteText}（${paidText}）${staffText}</span>
+      </div>
     </div>
   </div>
 `
-
     
     document.getElementById('list-area').style.display = 'none'
     area.style.display = 'block'
