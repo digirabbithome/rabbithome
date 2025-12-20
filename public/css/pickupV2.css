@@ -135,6 +135,7 @@ button {
 
   display: flex;
   justify-content: flex-start; /* ✅ 靠左 */
+  padding: 0 0.05cm 0 0.25cm; /* ✅ 左邊多一點、右邊少一點 */
   align-items: flex-end;
 
   white-space: nowrap;
