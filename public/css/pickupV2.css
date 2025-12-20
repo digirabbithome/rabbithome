@@ -124,11 +124,15 @@ button {
 }
 
 /* ✅ 編號：貼頂、整行吃滿 */
-.ticket-serial{
+.ticket-serial {
   box-sizing: border-box;
   width: 10cm;
-  padding: 0.25cm 0.35cm 0; /* 左右留一點，頂部幾乎貼齊 */
+  padding: 0.25cm 0.35cm 0;
   margin: 0;
+
+  display: flex;              /* ✅ 新增 */
+  justify-content: flex-end;  /* ✅ 靠右 */
+
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -157,14 +161,16 @@ button {
 }
 
 /* 內容縮小塞下面 */
-.ticket-body{
+.ticket-body {
   padding: 0.22cm 0.35cm 0.25cm;
   font-size: 12px;
   line-height: 1.35;
-  overflow: hidden; /* 超過就裁掉不印 */
+  overflow: hidden;
+
+  font-weight: 400;   /* ✅ 確保整區不是粗體 */
 }
 
 .row{ margin: 0.12cm 0; }
-.k{ font-weight: 800; }
-.v{ font-weight: 500; }
+.k{ font-weight: 500; }
+.v{ font-weight: 400; }
 .pre{ white-space: pre-line; word-break: break-word; }
