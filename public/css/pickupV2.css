@@ -90,3 +90,78 @@ button {
 
 /* 保留換行顯示 */
 .pickup-card .multiline { white-space: pre-line; }
+
+
+/* ===== 列印固定尺寸：10cm x 8cm ===== */
+@media print {
+  @page {
+    size: 10cm 8cm;
+    margin: 0;
+  }
+
+  html, body {
+    width: 10cm;
+    height: 8cm;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* 只印 print-area */
+  body * {
+    visibility: hidden !important;
+  }
+  #print-area, #print-area * {
+    visibility: visible !important;
+  }
+
+  #print-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 10cm;
+    height: 8cm;
+    overflow: hidden; /* 超過就裁掉不印 */
+  }
+}
+
+/* ===== 票面內容樣式 ===== */
+.pickup-ticket {
+  box-sizing: border-box;
+  width: 10cm;
+  height: 8cm;
+  padding: 0.4cm 0.45cm;
+  overflow: hidden;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+.ticket-serial {
+  font-size: 38px;       /* 取貨編號大字 */
+  font-weight: 800;
+  line-height: 1.05;
+  white-space: nowrap;   /* 不換行 */
+  overflow: hidden;
+  text-overflow: clip;   /* 超過就直接裁掉 */
+}
+
+.ticket-line {
+  margin-top: 0.2cm;
+  border-top: 2px solid #000;
+}
+
+.ticket-body {
+  margin-top: 0.25cm;
+  font-size: 12px;       /* 下面小字 */
+  line-height: 1.35;
+  overflow: hidden;
+  max-height: calc(8cm - 0.4cm - 0.45cm - 38px - 0.2cm - 0.25cm - 2px);
+}
+
+.row { margin: 0.1cm 0; }
+.k { font-weight: 700; }
+.v { font-weight: 500; }
+
+.pre {
+  white-space: pre-line; /* 商品/備註保留換行 */
+  word-break: break-word;
+}
