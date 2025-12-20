@@ -130,16 +130,20 @@ button {
 .ticket-serial{
   box-sizing: border-box;
   width: 10cm;
-  height: 1.55cm;        /* 固定一個高度，避免被 line-height 撐大 */
-  padding: 0 0.2cm 0 0.2cm; /* 左右留極小，避免右邊切到 */
+  padding: 0 0.15cm;
   margin: 0;
 
   display: flex;
-  justify-content: flex-end;
-  align-items: flex-end; /* ✅ 前四碼不會掉下去，跟後四碼底部對齊 */
+  justify-content: flex-start; /* ✅ 靠左 */
+  align-items: flex-end;
 
   white-space: nowrap;
-  overflow: hidden;      /* 仍裁切，但我們控制字體不會超出 */
+  overflow: hidden;
+}
+
+.ticket-serial{
+  transform: scaleX(0.88);
+  transform-origin: left bottom;  /* ✅ 靠左縮放基準 */
 }
 
 /* ✅ 前四碼：小字，但貼齊後四碼底部 */
