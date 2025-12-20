@@ -93,75 +93,78 @@ button {
 
 
 /* ===== 列印固定尺寸：10cm x 8cm ===== */
+
 @media print {
-  @page {
-    size: 10cm 8cm;
-    margin: 0;
-  }
+  @page { size: 10cm 8cm; margin: 0; }
 
   html, body {
-    width: 10cm;
-    height: 8cm;
-    margin: 0 !important;
-    padding: 0 !important;
+    width: 10cm; height: 8cm;
+    margin: 0 !important; padding: 0 !important;
     overflow: hidden !important;
   }
 
-  /* 只印 print-area */
-  body * {
-    visibility: hidden !important;
-  }
-  #print-area, #print-area * {
-    visibility: visible !important;
-  }
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
 
   #print-area {
     position: fixed;
-    left: 0;
-    top: 0;
-    width: 10cm;
-    height: 8cm;
-    overflow: hidden; /* 超過就裁掉不印 */
+    left: 0; top: 0;
+    width: 10cm; height: 8cm;
+    overflow: hidden;
   }
 }
 
-/* ===== 票面內容樣式 ===== */
-.pickup-ticket {
+/* ✅ 票面：上方不要留白（讓編號貼頂） */
+.pickup-ticket{
+  box-sizing: border-box;
+  width: 10cm; height: 8cm;
+  padding: 0;              /* ← 關鍵：不要 padding 才能貼到最上面 */
+  overflow: hidden;
+  font-family: "Noto Sans TC","Microsoft JhengHei",sans-serif;
+}
+
+/* ✅ 編號：貼頂、整行吃滿 */
+.ticket-serial{
   box-sizing: border-box;
   width: 10cm;
-  height: 8cm;
-  padding: 0.4cm 0.45cm;
+  padding: 0.25cm 0.35cm 0; /* 左右留一點，頂部幾乎貼齊 */
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
   overflow: hidden;
-  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
 
-.ticket-serial {
-  font-size: 38px;       /* 取貨編號大字 */
-  font-weight: 800;
-  line-height: 1.05;
-  white-space: nowrap;   /* 不換行 */
-  overflow: hidden;
-  text-overflow: clip;   /* 超過就直接裁掉 */
+/* 前四小 */
+.serial-small{
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: baseline;
 }
 
-.ticket-line {
-  margin-top: 0.2cm;
+/* 後四大粗（主要讓同事一眼看到） */
+.serial-big{
+  font-size: 54px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  vertical-align: baseline;
+}
+
+/* 隔線緊貼 */
+.ticket-line{
+  margin: 0.18cm 0.35cm 0;
   border-top: 2px solid #000;
 }
 
-.ticket-body {
-  margin-top: 0.25cm;
-  font-size: 12px;       /* 下面小字 */
+/* 內容縮小塞下面 */
+.ticket-body{
+  padding: 0.22cm 0.35cm 0.25cm;
+  font-size: 12px;
   line-height: 1.35;
-  overflow: hidden;
-  max-height: calc(8cm - 0.4cm - 0.45cm - 38px - 0.2cm - 0.25cm - 2px);
+  overflow: hidden; /* 超過就裁掉不印 */
 }
 
-.row { margin: 0.1cm 0; }
-.k { font-weight: 700; }
-.v { font-weight: 500; }
-
-.pre {
-  white-space: pre-line; /* 商品/備註保留換行 */
-  word-break: break-word;
-}
+.row{ margin: 0.12cm 0; }
+.k{ font-weight: 800; }
+.v{ font-weight: 500; }
+.pre{ white-space: pre-line; word-break: break-word; }
