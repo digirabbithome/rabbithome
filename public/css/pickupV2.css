@@ -114,49 +114,55 @@ button {
   }
 }
 
-/* ✅ 票面：上方不要留白（讓編號貼頂） */
+
+/* ✅ 票面：完全貼頂，避免任何預設留白 */
 .pickup-ticket{
   box-sizing: border-box;
-  width: 10cm; height: 8cm;
-  padding: 0;              /* ← 關鍵：不要 padding 才能貼到最上面 */
+  width: 10cm;
+  height: 8cm;
+  padding: 0;            /* 票面不留白 */
+  margin: 0;
   overflow: hidden;
   font-family: "Noto Sans TC","Microsoft JhengHei",sans-serif;
 }
 
-/* ✅ 編號：貼頂、整行吃滿 */
-.ticket-serial {
+/* ✅ 編號列：貼頂 + 靠右 + 不被裁切 */
+.ticket-serial{
   box-sizing: border-box;
   width: 10cm;
-  padding: 0.25cm 0.35cm 0;
+  height: 1.55cm;        /* 固定一個高度，避免被 line-height 撐大 */
+  padding: 0 0.2cm 0 0.2cm; /* 左右留極小，避免右邊切到 */
   margin: 0;
 
-  display: flex;              /* ✅ 新增 */
-  justify-content: flex-end;  /* ✅ 靠右 */
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end; /* ✅ 前四碼不會掉下去，跟後四碼底部對齊 */
 
-  line-height: 1;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: hidden;      /* 仍裁切，但我們控制字體不會超出 */
 }
 
-/* 前四小 */
+/* ✅ 前四碼：小字，但貼齊後四碼底部 */
 .serial-small{
   font-size: 26px;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  vertical-align: baseline;
+  line-height: 1;
+  margin-right: 0.08cm;  /* 小小間距 */
 }
 
-/* 後四大粗（主要讓同事一眼看到） */
+/* ✅ 後四碼：大粗，但不會卡到右邊 */
 .serial-big{
-  font-size: 54px;
+  font-size: 70px;       /* 你現在太大會切，這個是安全值 */
   font-weight: 900;
-  letter-spacing: 0.02em;
-  vertical-align: baseline;
+  line-height: 0.9;      /* ✅ 減少上方留白 */
+  letter-spacing: 0.01em;
 }
+
+
 
 /* 隔線緊貼 */
 .ticket-line{
-  margin: 0.18cm 0.35cm 0;
+  margin: 0.05cm 0.2cm 0;  /* 更貼近編號列 */
   border-top: 2px solid #000;
 }
 
