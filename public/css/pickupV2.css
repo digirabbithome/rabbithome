@@ -95,7 +95,7 @@ button {
 /* ===== 列印固定尺寸：10cm x 8cm ===== */
 
 @media print {
-  @page { size: 10cm 8cm; margin: 0; }
+  @page { size: 8cm 10cm; margin: 0; }
 
   html, body {
     width: 10cm; height: 8cm;
