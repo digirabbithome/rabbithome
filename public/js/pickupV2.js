@@ -50,19 +50,22 @@ window.onload = async () => {
     const data = pickupList.find(p => p.id === id)
     if (!data) return
 
-    const area = document.getElementById('print-area')
-    area.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <img src="img/logo-black.png" style="height: 48px;" />
-        <div style="font-size: 40px; font-weight: bold;">${data.serial || ''}</div>
-      </div>
-      <hr style="margin: 20px 0; border-top: 2px solid #000;" />
-      <h2 style="text-align: center; margin-bottom: 24px;">數位小兔取貨單</h2>
-      <p><strong>取貨人：</strong>${data.contact || ''}</p>
-      <p><strong>商品：</strong><span style="white-space:pre-line;">${data.product || ''}</span></p>
-      <p><strong>備註：</strong><span style="white-space:pre-line;">${data.note || '—'}</span>（${data.paid || '—'}）</p>
-      <p><strong>服務業務：</strong>${data.createdBy || ''}</p>
-    `
+const area = document.getElementById('print-area')
+area.innerHTML = `
+  <div class="pickup-ticket">
+    <div class="ticket-serial">${data.serial || ''}</div>
+    <div class="ticket-line"></div>
+
+    <div class="ticket-body">
+      <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
+      <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
+      <div class="row"><span class="k">備註：</span><span class="v pre">${data.note || '—'}</span>（${data.paid || '—'}）</div>
+      <div class="row"><span class="k">服務業務：</span><span class="v">${data.createdBy || ''}</span></div>
+    </div>
+  </div>
+`
+
+    
     document.getElementById('list-area').style.display = 'none'
     area.style.display = 'block'
     window.print()
