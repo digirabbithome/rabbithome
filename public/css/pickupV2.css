@@ -152,7 +152,7 @@ button {
 
 /* ✅ 後四碼：大粗，但不會卡到右邊 */
 .serial-big{
-  font-size: 70px;       /* 你現在太大會切，這個是安全值 */
+  font-size: 100px;       /* 你現在太大會切，這個是安全值 */
   font-weight: 900;
   line-height: 0.9;      /* ✅ 減少上方留白 */
   letter-spacing: 0.01em;
