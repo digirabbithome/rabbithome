@@ -92,15 +92,18 @@ button {
 .pickup-card .multiline { white-space: pre-line; }
 
 
-/* ===== 列印固定尺寸：10cm x 8cm ===== */
+
+/* ===== 列印固定尺寸：9cm x 7cm（保證不超框）===== */
 
 @media print {
-  @page { size: 8cm 10cm; margin: 0; }
+  /* ✅ 紙張尺寸：左右 9cm、上下 7cm */
+  @page { size: 9cm 7cm; margin: 0; }
 
   html, body {
-    width: 10cm; height: 8cm;
+    width: 9cm; height: 7cm;
     margin: 0 !important; padding: 0 !important;
     overflow: hidden !important;
+    background: #fff !important;
   }
 
   body * { visibility: hidden !important; }
@@ -109,78 +112,99 @@ button {
   #print-area {
     position: fixed;
     left: 0; top: 0;
-    width: 10cm; height: 8cm;
-    overflow: hidden;
+    width: 9cm; height: 7cm;
+
+    /* ✅ 列印時不需要預覽卡片樣式，避免造成留白/裁切 */
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+
+    overflow: hidden !important;
+    background: #fff !important;
   }
 }
 
-
-/* ✅ 票面：完全貼頂，避免任何預設留白 */
+/* ✅ 票面：固定 9x7，並留安全邊界（印表機不可列印邊界保險） */
 .pickup-ticket{
   box-sizing: border-box;
-  width: 10cm;
-  height: 8cm;
-  padding: 0;            /* 票面不留白 */
+  width: 9cm;
+  height: 7cm;
+
+  /* ✅ 不建議完全 0：很多印表機會吃邊，這樣更穩 */
+  padding: 0.12cm 0.18cm;
+
   margin: 0;
   overflow: hidden;
   font-family: "Noto Sans TC","Microsoft JhengHei",sans-serif;
 }
 
-/* ===== 編號列：貼頂、靠左、不切字 ===== */
+/* ===== 編號列：貼頂、靠左、不切字（加保險縮放）===== */
 .ticket-serial{
   box-sizing: border-box;
-  width: 10cm;
+  width: 100%;
   margin: 0;
-  margin-top: 0cm;          /* ⬅ 貼齊最上緣（實戰值） */
 
   display: flex;
-  justify-content: flex-start; /* ⬅ 全部靠左 */
+  justify-content: flex-start;
   align-items: flex-end;
 
-  padding: 0 0.1cm 0 0.25cm;   /* 左邊留一點安全距 */
+  /* ✅ 避免大字擠爆 */
   white-space: nowrap;
   overflow: hidden;
 
-  transform: scaleX(0.88);     /* ⬅ 橫向壓縮，防止右切 */
-  transform-origin: left bottom;
+  /* ✅ 右切保險（整列縮放，比只 scaleX 更穩） */
+  transform: scale(0.90);
+  transform-origin: left top;
 }
 
 /* 前四碼：小字 */
 .serial-small{
-  font-size: 24px;             /* ⬅ 比你原本再穩一點 */
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
   margin-right: 0.12cm;
 }
 
-/* 後四碼：大字（安全尺寸，不會再爆） */
+/* 後四碼：大字（9x7 安全值） */
 .serial-big{
-  font-size: 100px;             /* ⬅ 關鍵：從 80 改為 60 */
+  font-size: 66px;     /* ✅ 你原本 100 太容易爆；這個在 9x7 很穩 */
   font-weight: 900;
   line-height: 0.9;
   letter-spacing: 0.01em;
 }
 
-
-
-
-/* 隔線緊貼 */
+/* 隔線：貼近但不壓到內容 */
 .ticket-line{
-  margin: 0.05cm 0.2cm 0;  /* 更貼近編號列 */
+  margin: 0.06cm 0 0.05cm;
   border-top: 2px solid #000;
 }
 
-/* 內容縮小塞下面 */
-.ticket-body {
-  padding: 0.22cm 0.35cm 0.25cm;
-  font-size: 12px;
-  line-height: 1.35;
+/* 內容：固定區域，長字串也會斷行，保證不超出 */
+.ticket-body{
+  box-sizing: border-box;
+
+  /* ✅ 內容區高度：7cm 內預留給編號列 + 線條（保守抓） */
+  height: calc(7cm - 2.25cm);
+
+  padding: 0.12cm 0.05cm 0;
+  font-size: 11px;
+  line-height: 1.25;
   overflow: hidden;
 
-  font-weight: 400;   /* ✅ 確保整區不是粗體 */
+  font-weight: 400;
 }
 
-.row{ margin: 0.12cm 0; }
+/* ✅ 長地址/單號：一定要斷行，不然會撐爆 */
+.ticket-body,
+.ticket-body .pre{
+  white-space: pre-line;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.row{ margin: 0.08cm 0; }
 .k{ font-weight: 500; }
 .v{ font-weight: 400; }
-.pre{ white-space: pre-line; word-break: break-word; }
+
