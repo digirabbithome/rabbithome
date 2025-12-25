@@ -126,42 +126,41 @@ button {
   font-family: "Noto Sans TC","Microsoft JhengHei",sans-serif;
 }
 
-/* ✅ 編號列：貼頂 + 靠右 + 不被裁切 */
+/* ===== 編號列：貼頂、靠左、不切字 ===== */
 .ticket-serial{
   box-sizing: border-box;
   width: 10cm;
-  padding: 0 0.15cm;
   margin: 0;
-  margin-top: -0.8cm;   /* ✅ 關鍵：硬頂到最上 */
+  margin-top: -0.8cm;          /* ⬅ 貼齊最上緣（實戰值） */
+
   display: flex;
-  justify-content: flex-start; /* ✅ 靠左 */
-  padding: 0 0.05cm 0 0.25cm; /* ✅ 左邊多一點、右邊少一點 */
+  justify-content: flex-start; /* ⬅ 全部靠左 */
   align-items: flex-end;
 
+  padding: 0 0.1cm 0 0.25cm;   /* 左邊留一點安全距 */
   white-space: nowrap;
   overflow: hidden;
+
+  transform: scaleX(0.88);     /* ⬅ 橫向壓縮，防止右切 */
+  transform-origin: left bottom;
 }
 
-.ticket-serial{
-  transform: scaleX(0.88);
-  transform-origin: left bottom;  /* ✅ 靠左縮放基準 */
-}
-
-/* ✅ 前四碼：小字，但貼齊後四碼底部 */
+/* 前四碼：小字 */
 .serial-small{
-  font-size: 26px;
+  font-size: 24px;             /* ⬅ 比你原本再穩一點 */
   font-weight: 700;
   line-height: 1;
-  margin-right: 0.08cm;  /* 小小間距 */
+  margin-right: 0.12cm;
 }
 
-/* ✅ 後四碼：大粗，但不會卡到右邊 */
+/* 後四碼：大字（安全尺寸，不會再爆） */
 .serial-big{
-  font-size: 80px;       /* 你現在太大會切，這個是安全值 */
+  font-size: 60px;             /* ⬅ 關鍵：從 80 改為 60 */
   font-weight: 900;
-  line-height: 0.9;      /* ✅ 減少上方留白 */
+  line-height: 0.9;
   letter-spacing: 0.01em;
 }
+
 
 
 
