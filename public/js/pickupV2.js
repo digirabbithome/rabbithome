@@ -1,8 +1,7 @@
 import { db } from '/js/firebase.js'
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
-import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
 
 let pickupList = []
 
@@ -14,17 +13,18 @@ const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
   day: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false       // 24 小時制
+  hour12: false
 })
 
 window.onload = async () => {
-  document.getElementById('addBtn').addEventListener('click', addPickup)
-  document.getElementById('search').addEventListener('input', renderList)
-  document.getElementById('showFormBtn').addEventListener('click', () => {
+  document.getElementById('addBtn')?.addEventListener('click', addPickup)
+  document.getElementById('search')?.addEventListener('input', renderList)
+
+  document.getElementById('showFormBtn')?.addEventListener('click', () => {
     document.getElementById('form-area').style.display = 'block'
     document.getElementById('list-area').style.display = 'none'
   })
-  document.getElementById('cancelFormBtn').addEventListener('click', () => {
+  document.getElementById('cancelFormBtn')?.addEventListener('click', () => {
     document.getElementById('form-area').style.display = 'none'
     document.getElementById('list-area').style.display = 'block'
   })
@@ -33,7 +33,6 @@ window.onload = async () => {
   const todayBtn = document.getElementById('todayDoneBtn')
   if (todayBtn) {
     todayBtn.addEventListener('click', () => {
-      // 清空搜尋，避免被關鍵字影響
       const search = document.getElementById('search')
       if (search) search.value = ''
       renderTodayDone()
@@ -42,76 +41,125 @@ window.onload = async () => {
 
   await fetchData()
   renderList()
-   //列印取貨單
 
+  // ✅ 列印取貨單（點中間名字）
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('.print-link')
+    if (!el) return
 
-  // 列印取貨單（點中間名字）
-document.addEventListener('click', e => {
-  const el = e.target.closest('.print-link')
-  if (!el) return
+    const id = el.dataset.id
+    const data = pickupList.find(p => p.id === id)
+    if (!data) return
 
-  const id = el.dataset.id
-  const data = pickupList.find(p => p.id === id)
-  if (!data) return
+    const area = document.getElementById('print-area')
 
-  const area = document.getElementById('print-area')
+    // ✅ 取貨編號：前4小、後4大
+    const serial = (data.serial || '').toString().replace(/\s+/g, '')
+    const s1 = serial.slice(0, 4)
+    const s2 = serial.slice(4, 8)
 
-  // ✅ 取貨編號：前4小、後4大
-  const serial = (data.serial || '').toString().replace(/\s+/g, '')
-  const s1 = serial.slice(0, 4)
-  const s2 = serial.slice(4, 8)
+    // ✅ 合併備註 + 付款 + 業務
+    const noteText = (data.note && data.note.trim()) ? data.note.trim() : '—'
+    const paidText = data.paid || '—'
+    const staffText = data.createdBy || ''
 
-  // ✅ 合併備註 + 付款 + 業務
-  const noteText = (data.note && data.note.trim()) ? data.note.trim() : '—'
-  const paidText = data.paid || '—'
-  const staffText = data.createdBy || ''
+    area.innerHTML = `
+      <div class="pickup-ticket">
+        <div class="ticket-serial">
+          <span class="serial-small">${s1}</span><span class="serial-big">${s2}</span>
+        </div>
+        <div class="ticket-line"></div>
 
-  area.innerHTML = `
-    <div class="pickup-ticket">
-      <div class="ticket-serial">
-        <span class="serial-small">${s1}</span><span class="serial-big">${s2}</span>
+        <div class="ticket-body">
+          <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
+          <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
+          <div class="row"><span class="k">備註：</span><span class="v">${noteText}（${paidText}）${staffText}</span></div>
+        </div>
       </div>
-      <div class="ticket-line"></div>
+    `
 
-      <div class="ticket-body">
-        <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
-        <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
-        <div class="row"><span class="k">備註：</span><span class="v">${noteText}（${paidText}）${staffText}</span></div>
-      </div>
-    </div>
-  `
+    document.getElementById('list-area').style.display = 'none'
+    area.style.display = 'block'
+    window.print()
+    area.style.display = 'none'
+    document.getElementById('list-area').style.display = 'block'
+  })
 
-  document.getElementById('list-area').style.display = 'none'
-  area.style.display = 'block'
-  window.print()
-  area.style.display = 'none'
-  document.getElementById('list-area').style.display = 'block'
-})
+  // ✅ 內嵌編輯：商品／備註（點一下就可改）
+  document.addEventListener('click', (e) => {
+    const t = e.target
+    if (!t.classList.contains('editable')) return
+    if (t.dataset.editing === '1') return
+    t.dataset.editing = '1'
 
+    const id = t.dataset.id
+    const field = t.dataset.field // 'product' | 'note'
+    const original = t.textContent.trim()
 
+    const ta = document.createElement('textarea')
+    ta.value = original
+    ta.style.width = '100%'
+    ta.style.minHeight = field === 'note' ? '48px' : '32px'
+    ta.style.fontSize = '14px'
+    ta.style.borderRadius = '6px'
+    ta.style.border = '1px solid #ccc'
+    ta.style.padding = '6px'
+    ta.style.boxSizing = 'border-box'
 
+    t.innerHTML = ''
+    t.appendChild(ta)
+    ta.focus()
+    ta.select()
 
-  
+    // 商品欄：Enter 直接存（Shift+Enter 才換行）
+    ta.addEventListener('keydown', (ev) => {
+      if (field === 'product' && ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault()
+        ta.blur()
+      }
+    })
+
+    ta.addEventListener('blur', async () => {
+      const newVal = ta.value.trim()
+      try {
+        if (newVal !== original) {
+          await saveEdit(id, field, newVal)
+          const idx = pickupList.findIndex(p => p.id === id)
+          if (idx >= 0) pickupList[idx][field] = newVal
+        }
+        t.textContent = newVal || (field === 'note' ? '—' : '')
+      } catch (err) {
+        console.error('update failed', err)
+        t.textContent = original
+        alert('更新失敗，請再試一次')
+      } finally {
+        t.dataset.editing = '0'
+      }
+    })
+  })
 
   // 📌 左邊圖釘：設為完成
   document.addEventListener('click', async (e) => {
     if (!e.target.classList.contains('pin-toggle')) return
     const id = e.target.dataset.id
     if (!id) return
+
     const nickname = localStorage.getItem('nickname') || '未登入'
     const ref = doc(db, 'pickups', id)
+
     await updateDoc(ref, {
       pinStatus: 1,
       doneBy: nickname,
-      doneAt: serverTimestamp()    // 取貨完成時間
+      doneAt: serverTimestamp()
     })
+
     const item = pickupList.find(p => p.id === id)
     if (item) {
       item.pinStatus = 1
       item.doneBy = nickname
-      // 前端暫時用現在時間，等下次 reload 會以 serverTimestamp 為準
-      item.doneAt = { toDate: () => new Date() }
+      item.doneAt = { toDate: () => new Date() } // 前端暫時用現在時間
     }
+
     renderList()
   })
 
@@ -126,7 +174,6 @@ document.addEventListener('click', e => {
     if (!item) return
 
     const serial = item.serial || ''
-
     const msg = `您好
 商品已經幫您保留在櫃檯了
 來數位小兔取貨時
@@ -135,7 +182,6 @@ document.addEventListener('click', e => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(msg)
-        // 靜靜完成，不跳 alert
       } else {
         console.warn('此瀏覽器不支援 navigator.clipboard')
       }
@@ -173,26 +219,22 @@ function comparePickup(a, b) {
 function compareByDoneTime(a, b) {
   const t1 = a.doneAt?.toDate?.() || new Date(0)
   const t2 = b.doneAt?.toDate?.() || new Date(0)
-  return t2 - t1   // 新 → 舊
+  return t2 - t1
 }
 
 // 建卡片（一般列表 & 本日已取貨共用）
 function createPickupCard(p) {
-  // 底色
   let bgColor = '#fff9b1'
   if (p.paid === '已付訂金') bgColor = '#d0f0ff'
   if (p.paid === '已付全額') bgColor = '#d9f7c5'
 
-  // 超過14天未取 → 紅
   const now = new Date()
   const createdAt = p.createdAt?.toDate?.() || new Date(0)
   const dayDiff = (now - createdAt) / (1000 * 60 * 60 * 24)
   if (dayDiff > 14) bgColor = '#ffb1b1'
 
-  // 已取走 → 灰
   if (p.pinStatus === 1) bgColor = '#e0e0e0'
 
-  // 取貨時間文字（有 doneAt 才顯示）
   let doneTimeText = ''
   if (p.doneAt?.toDate) {
     const d = p.doneAt.toDate()
@@ -204,10 +246,8 @@ function createPickupCard(p) {
   div.style.backgroundColor = bgColor
   div.innerHTML = `
     <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 4px;">
-      <!-- 左邊：設為完成 -->
       <span class="pin-toggle" data-id="${p.id}" style="cursor:pointer;">📌</span>
       &nbsp;${p.serial || "—"}&nbsp;
-      <!-- 右邊：複製訊息 -->
       <span class="pin-copy" data-id="${p.id}" style="cursor:pointer;">📌</span>
       &nbsp;&nbsp;
       <span class="print-link" data-id="${p.id}" style="cursor:pointer; text-decoration: underline;">
@@ -227,9 +267,7 @@ function createPickupCard(p) {
       （${p.paid || '—'}）(${p.createdBy || ''})
     </small>
     ${doneTimeText
-      ? `<div style="margin-top:4px; font-size:12px; color:#e85b81; font-weight:700;">
-           取貨時間：${doneTimeText}
-         </div>`
+      ? `<div style="margin-top:4px; font-size:12px; color:#e85b81; font-weight:700;">取貨時間：${doneTimeText}</div>`
       : ''
     }
   `
@@ -238,20 +276,19 @@ function createPickupCard(p) {
 
 // 一般列表：預設只顯示未完成，搜尋可搜到已完成
 function renderList() {
-  const kwRaw = document.getElementById('search').value || ''
+  const kwRaw = document.getElementById('search')?.value || ''
   const kw = kwRaw.trim().toLowerCase()
   const isSearching = kw.length > 0
 
   const list = document.getElementById('pickup-list')
+  if (!list) return
   list.innerHTML = ''
 
   pickupList.sort(comparePickup)
 
   pickupList.forEach(p => {
-    // 預設（非搜尋狀態）→ 只顯示未完成
     if (!isSearching && p.pinStatus === 1) return
 
-    // 搜尋比對
     if (isSearching) {
       const match = [p.serial, p.contact, p.product, p.note, p.createdBy]
         .some(v => (v || '').toLowerCase().includes(kw))
@@ -265,13 +302,13 @@ function renderList() {
 // 本日已取貨（依照 doneBy 分區 + 中間有名字 + 頭像，卡片依 doneAt 排序）
 function renderTodayDone() {
   const list = document.getElementById('pickup-list')
+  if (!list) return
   list.innerHTML = ''
 
   const now = new Date()
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
 
-  // 取得今天完成的訂單
   const todayDone = pickupList.filter(p => {
     if (p.pinStatus !== 1) return false
     const doneAt = p.doneAt?.toDate?.()
@@ -284,7 +321,6 @@ function renderTodayDone() {
     return
   }
 
-  // 頭像對照表
   const avatarMap = {
     '花花': '👩‍🦰',
     '妹妹': '🧑‍🧑‍🧒',
@@ -296,7 +332,6 @@ function renderTodayDone() {
     '未標註': '👤'
   }
 
-  // 依 doneBy 分組
   const groups = {}
   todayDone.forEach(p => {
     const name = p.doneBy || '未標註'
@@ -309,7 +344,6 @@ function renderTodayDone() {
   sortedNames.forEach(name => {
     const avatar = avatarMap[name] || '👤'
 
-    // 分隔線 + 名稱
     const divider = document.createElement('div')
     divider.style.display = 'flex'
     divider.style.alignItems = 'center'
@@ -324,7 +358,6 @@ function renderTodayDone() {
     `
     list.appendChild(divider)
 
-    // 卡片：依完成時間排序（新 → 舊）
     groups[name].sort(compareByDoneTime).forEach(p => {
       list.appendChild(createPickupCard(p))
     })
