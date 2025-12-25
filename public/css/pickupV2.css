@@ -131,7 +131,7 @@ button {
   box-sizing: border-box;
   width: 10cm;
   margin: 0;
-  margin-top: -0.8cm;          /* ⬅ 貼齊最上緣（實戰值） */
+  margin-top: 0cm;          /* ⬅ 貼齊最上緣（實戰值） */
 
   display: flex;
   justify-content: flex-start; /* ⬅ 全部靠左 */
