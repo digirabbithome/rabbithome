@@ -155,7 +155,7 @@ button {
 
 /* 後四碼：大字（安全尺寸，不會再爆） */
 .serial-big{
-  font-size: 60px;             /* ⬅ 關鍵：從 80 改為 60 */
+  font-size: 100px;             /* ⬅ 關鍵：從 80 改為 60 */
   font-weight: 900;
   line-height: 0.9;
   letter-spacing: 0.01em;
