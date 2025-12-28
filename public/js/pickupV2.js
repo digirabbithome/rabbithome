@@ -16,6 +16,26 @@ const timeFormatter = new Intl.DateTimeFormat('zh-TW', {
   hour12: false
 })
 
+
+// === 文字清理：刪除空行 / 去掉「備註：」前綴 ===
+function cleanMultiline(text) {
+  const s = (text ?? '').toString().replace(/\r\n/g, '\n');
+  return s
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
+
+function cleanNote(note) {
+  return (note ?? '')
+    .toString()
+    .replace(/^\s*備註\s*[:：]\s*/,'')
+    .replace(/^\s*備注\s*[:：]\s*/,'')
+    .trim();
+}
+
+
 window.onload = async () => {
   document.getElementById('addBtn')?.addEventListener('click', addPickup)
   document.getElementById('search')?.addEventListener('input', renderList)
@@ -58,10 +78,23 @@ window.onload = async () => {
     const s1 = serial.slice(0, 4)
     const s2 = serial.slice(4, 8)
 
-    // ✅ 合併備註 + 付款 + 業務
-    const noteText = (data.note && data.note.trim()) ? data.note.trim() : '—'
-    const paidText = data.paid || '—'
-    const staffText = data.createdBy || ''
+    // ✅ 合併備註 + 付款 + 業務（並移到「取貨人」後面顯示）
+    const noteText = cleanNote(data.note)
+    const paidText = (data.paid || '').trim()
+    const staffText = (data.createdBy || '').trim()
+
+    // 商品：刪除空行（避免中間出現多餘空白）
+    const productText = cleanMultiline(data.product || '')
+
+    // 取貨人後面加上：備註內容 +（付款狀態）+ 負責人（不顯示「備註：」字樣）
+    const tailParts = []
+    if (noteText) tailParts.push(noteText)
+    if (paidText) tailParts.push(`（${paidText}）`)
+    if (staffText) tailParts.push(staffText)
+    const tailText = tailParts.join('')
+    const contactText = (data.contact || '').trim()
+    const contactWithTail = tailText ? `${contactText} ${tailText}`.trim() : contactText
+
 
     area.innerHTML = `
       <div class="pickup-ticket">
@@ -71,9 +104,8 @@ window.onload = async () => {
         <div class="ticket-line"></div>
 
         <div class="ticket-body">
-          <div class="row"><span class="k">取貨人：</span><span class="v">${data.contact || ''}</span></div>
-          <div class="row"><span class="k">商品：</span><span class="v pre">${data.product || ''}</span></div>
-          <div class="row"><span class="k">備註：</span><span class="v">${noteText}（${paidText}）${staffText}</span></div>
+          <div class="row"><span class="k">取貨人：</span><span class="v">${contactWithTail}</span></div>
+          <div class="row"><span class="k">商品：</span><span class="v pre">${productText}</span></div>
         </div>
       </div>
     `

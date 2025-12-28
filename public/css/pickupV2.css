@@ -97,10 +97,10 @@ button {
 
 @media print {
   /* ✅ 紙張尺寸：左右 9cm、上下 7cm */
-  @page { size: 9.5cm 8cm; margin: 0; }
+  @page { size: 9cm 7cm; margin: 0; }
 
   html, body {
-    width: 9.5cm; height: 8cm;
+    width: 9cm; height: 7cm;
     margin: 0 !important; padding: 0 !important;
     overflow: hidden !important;
     background: #fff !important;
@@ -112,7 +112,7 @@ button {
   #print-area {
     position: fixed;
     left: 0; top: 0;
-    width: 9.5cm; height: 8cm;
+    width: 9cm; height: 7cm;
 
     /* ✅ 列印時不需要預覽卡片樣式，避免造成留白/裁切 */
     margin: 0 !important;
@@ -129,8 +129,7 @@ button {
 /* ✅ 票面：固定 9x7，並留安全邊界（印表機不可列印邊界保險） */
 .pickup-ticket{
   box-sizing: border-box;
-  width: 9.5cm;
-  height: 8cm;
+  width: 9cm; height: 7cm;
 
   /* ✅ 不建議完全 0：很多印表機會吃邊，這樣更穩 */
   padding: 0.12cm 0.18cm;
@@ -186,7 +185,7 @@ button {
   box-sizing: border-box;
 
   /* ✅ 內容區高度：7cm 內預留給編號列 + 線條（保守抓） */
-  height: calc(7cm - 2.25cm);
+  height: calc(7cm - 2.05cm);
 
   padding: 0.12cm 0.05cm 0;
   font-size: 11px;
@@ -208,3 +207,16 @@ button {
 .k{ font-weight: 500; }
 .v{ font-weight: 400; }
 
+
+/* ===== 整張縮放模式（列印保險）：調整 --ticket-scale 即可 ===== */
+:root{
+  /* 1 = 原尺寸；0.95 = 縮小5%；0.90 = 縮小10% */
+  --ticket-scale: 0.95;
+}
+
+@media print{
+  .pickup-ticket{
+    transform: scale(var(--ticket-scale));
+    transform-origin: left top;
+  }
+}
