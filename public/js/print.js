@@ -154,6 +154,8 @@ if (serialNo) {
   const sn = data.serial ? String(data.serial) : '';
   const promo = ' 超熱賣商品！拍下開箱照或作品，歡迎在 IG 限動分享標記數位小兔 @digirabbit_tw';
 
+    serialNo.style.textAlign = 'left';   // ✅ 關鍵這一行
+  
   serialNo.innerHTML = sn
     ? `${sn}<span style="font-size:11px;color:#777;margin-left:6px;">${promo}</span>`
     : '';
