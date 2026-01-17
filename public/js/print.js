@@ -152,7 +152,7 @@ window.addEventListener('load', async () => {
 
 if (serialNo) {
   const sn = data.serial ? String(data.serial) : '';
-  const promo = ' 超熱賣商品！拍下開箱照或作品，歡迎在 IG 限動分享標記@digirabbit_tw';
+  const promo = ' 超熱賣商品！拍下開箱照或作品，在 IG 限動分享標記@digirabbit_tw 吧';
 
     serialNo.style.textAlign = 'left';   // ✅ 關鍵這一行
   
