@@ -152,7 +152,7 @@ window.addEventListener('load', async () => {
 
 if (serialNo) {
   const sn = data.serial ? String(data.serial) : '';
-  const promo = ' 超熱賣商品！歡迎拍下開箱照或作品，在 Instagram 限動分享標記數位小兔 @digirabbit_tw';
+  const promo = ' 超熱賣商品！拍下開箱照或作品，歡迎在 IG 限動分享標記數位小兔 @digirabbit_tw';
 
   serialNo.innerHTML = sn
     ? `${sn}<span style="font-size:11px;color:#777;margin-left:6px;">${promo}</span>`
