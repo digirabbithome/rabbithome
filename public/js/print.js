@@ -150,14 +150,25 @@ window.addEventListener('load', async () => {
 //    serialNo.textContent = data.serial ? String(data.serial) : '';
 //  }
 
-if (serialNo) {
+//if (serialNo) {
+//  const sn = data.serial ? String(data.serial) : '';
+//  const promo = '｜本商品為超熱賣商品！歡迎拍下開箱照或作品，在 Instagram 限時動態分享並標記 @digirabbit_tw';
+//
+//  serialNo.innerHTML = sn
+//    ? `${sn}<span style="font-size:11px;color:#777;margin-left:6px;">${promo}</span>`
+//    : '';
+//}
+
+
+  if (serialNo) {
   const sn = data.serial ? String(data.serial) : '';
-  const promo = '｜本商品為超熱賣商品！歡迎拍下開箱照或作品，在 Instagram 限時動態分享並標記 @digirabbit_tw';
+  const promo = '超熱賣商品！歡迎拍下開箱照或作品，在 Instagram 限時動態分享並標記 @digirabbit_tw';
 
   serialNo.innerHTML = sn
-    ? `${sn}<span style="font-size:11px;color:#777;margin-left:6px;">${promo}</span>`
+    ? `${sn}<span style="display:block;margin-top:2mm;font-size:11px;color:#777;line-height:1.3;">${promo}</span>`
     : '';
 }
+
 
 
 
