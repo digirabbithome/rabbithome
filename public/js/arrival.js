@@ -3,7 +3,7 @@
 import { db } from '/js/firebase.js';
 import {
   collection, addDoc, serverTimestamp, query, orderBy, getDocs,
-  updateDoc, doc
+  updateDoc, doc, where
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 let allData = [];
@@ -178,8 +178,33 @@ async function addItem() {
   await loadData();
 }
 
+
+// ✅ 依 popmenu（timeFilter）決定 DB 端抓取時間範圍：先選再抓資料
+function buildSinceFromTimeFilter() {
+  const val = document.getElementById('timeFilter')?.value || ''
+  const days = parseInt(val, 10)
+  if (!days || isNaN(days)) return null // 不限時間 / 未選
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 async function loadData() {
-  const qy = query(collection(db, 'arrival'), orderBy('createdAt','desc'));
+  const since = buildSinceFromTimeFilter()
+
+  // ✅ 先選 timeFilter，再去 DB 端抓資料（大幅減少讀取量）
+  const qy = since
+    ? query(
+        collection(db, 'arrival'),
+        where('createdAt', '>=', since),
+        orderBy('createdAt', 'desc')
+      )
+    : query(
+        collection(db, 'arrival'),
+        orderBy('createdAt', 'desc')
+      )
+
   const snap = await getDocs(qy);
   
 allData = snap.docs.map(d => {
@@ -446,7 +471,8 @@ function bindSearchBar() {
     noteEl.className = kwEl.className || noteEl.className;
   }
 
-  const ids = ['searchKeyword','searchNoteAccount','searchMarket','timeFilter','statusFilter'];
+  // 🔎 這些是「前端篩選」：不需要重抓 DB
+  const ids = ['searchKeyword','searchNoteAccount','searchMarket','statusFilter'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -458,6 +484,15 @@ function bindSearchBar() {
   });
 
   document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', auto));
+
+  // ✅ timeFilter（popmenu）是「資料量」篩選：改變就重新抓 DB
+  const tf = document.getElementById('timeFilter');
+  if (tf) {
+    tf.addEventListener('change', async () => {
+      currentPage = 1;
+      await loadData();
+    });
+  }
 }
 
 
